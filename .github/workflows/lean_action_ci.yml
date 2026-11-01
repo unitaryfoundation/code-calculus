@@ -1,0 +1,43 @@
+name: Lean Action CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lean/**'
+      # spec/** and the fixture JSON are included so that a spec change which
+      # makes a Lean docstring or theorem statement stale fails this build
+      # rather than silently drifting; the lint job (lint_docs.sh) covers
+      # citation validity in spec/ on its own.
+      - 'spec/**'
+      - 'machine/fixtures/mvp_fixtures.json'
+      - '.github/workflows/lean_action_ci.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'lean/**'
+      # spec/** and the fixture JSON are included so that a spec change which
+      # makes a Lean docstring or theorem statement stale fails this build
+      # rather than silently drifting; the lint job (lint_docs.sh) covers
+      # citation validity in spec/ on its own.
+      - 'spec/**'
+      - 'machine/fixtures/mvp_fixtures.json'
+      - '.github/workflows/lean_action_ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: leanprover/lean-action@fe408643ea7367d8c0404a8be3975bb145f5fb64 # v1.7.0
+        with:
+          lake-package-directory: lean

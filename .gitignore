@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Build output
+*.pdf
+
+# Private working notes
+private/
