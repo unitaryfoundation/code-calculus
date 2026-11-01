@@ -5,7 +5,7 @@
   "source_of_truth": {
     "governing": "spec/ plus this JSON. AGENTS.md (Normative artifacts): machine/ is a derived transcription, so where spec/ and this JSON disagree spec/ wins and the transcription is fixed; where this JSON and an evaluator disagree, this JSON is what the evaluator must match. A disagreement anywhere in that triangle is a defect in one of the three, not a precedence call.",
     "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model), on branch redteam-followup-corrections. Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
-    "state_model_note": "State tuple includes the semantic used-identifier set per the red-team R1 disposition (2026-09-26): C = (Q, X, Z, pres, used)."
+    "state_model_note": "State tuple includes the semantic used-identifier set per the review finding disposition (2026-09-26): C = (Q, X, Z, pres, used)."
   },
   "status": "current",
   "outcome_vocabulary": {
@@ -13,8 +13,8 @@
     "no_derivation": "well-typed term, but no evaluation derivation (inapplicable); absence of derivation IS the behavior",
     "malformed": "rejected by the grammar alone (ill-typed)",
     "false": "a semantic counterexample exists",
-    "not_derivable": "no derivation in the current rule system (may be a gap or by design); the label is recorded for one claim in a stated scope, naming the rule system and the record date (red-team R9, dispositioned 2026-09-26)",
-    "unavailable": "deliberately underivable in the MVP by design commitment; cannot be derived by omission; claimed per evaluation, not per state (red-team S5, dispositioned 2026-09-26)",
+    "not_derivable": "no derivation in the current rule system (may be a gap or by design); the label is recorded for one claim in a stated scope, naming the rule system and the record date (review finding, dispositioned 2026-09-26)",
+    "unavailable": "deliberately underivable in the MVP by design commitment; cannot be derived by omission; claimed per evaluation, not per state (review finding, dispositioned 2026-09-26)",
     "not_yet_defined": "outside the current assertion language",
     "hand": "true of the state but deliberately underivable in the calculus (distance values)"
   },
@@ -25,7 +25,7 @@
     "rows": "displayed rows are written (support, identifier); unordered sets",
     "infinite_distance": "'+inf' follows the proposal's empty-sector convention",
     "equivalences": "approx is qubit-relabeling equivalence (presentation transport); equiv is identical Q AND identical labeled rows AND identical used-identifier set (used made semantic by the R1 disposition, 2026-09-26; Q added by , 2026-10-29)",
-    "canonical_mint": "the mint is the first element of the fixed identifier enumeration not in `used`; fixture identifiers like c1/c2 are example-local metavariables for 'the next canonically minted identifier' (red-team R5), not literal distinct names",
+    "canonical_mint": "the mint is the first element of the fixed identifier enumeration not in `used`; fixture identifiers like c1/c2 are example-local metavariables for 'the next canonically minted identifier' (review finding), not literal distinct names",
     "acceptance_surface": "boolean, present on every record. true = MVP acceptance surface (W0-W16), fixed by spec/GATES.md *Addenda* 2(ii) 2026-09-26. false = supplementary MVP probe, executed under spec/CLAIMS.md section 2 as a probe but not part of that surface (W21, added 2026-10-05; maintainer disposition option B; W22, added 2026-10-18, same treatment). W17-W20 are later-layer probes and are not recorded in this file at all. W25-W28 (added 2026-10-29, , refusal probes for stale certificates, used-set collisions, I2 on the Z side, and ambient containment) carry the same treatment."
   },
   "usage": {
@@ -322,7 +322,7 @@
         "premise_same_sector_independence": true
       },
       "caveats": [
-        "red-team R5: identifier metavariables are example-local, not literal distinct names"
+        "review finding: identifier metavariables are example-local, not literal distinct names"
       ]
     },
     {
@@ -431,7 +431,7 @@
         "detail": "m1;m2 applies (final state A2 of W5); m2;m1 has no derivation (1 . 12 = 1 so addStab_1 fails on A). One order applies, the other does not: the moves do not permute; conditional permutation cannot be claimed here."
       },
       "caveats": [
-        "probe point of OBL-CROSS-SECTOR-PERMUTATION; red-team R2's fourth case is adopted (maintainer decision 2026-09-26): both orders applicable with unequal outputs; W8 is a case-3 instance (exactly one order applicable)"
+        "probe point of OBL-CROSS-SECTOR-PERMUTATION; review finding's fourth case is adopted (maintainer decision 2026-09-26): both orders applicable with unequal outputs; W8 is a case-3 instance (exactly one order applicable)"
       ]
     },
     {
@@ -517,8 +517,8 @@
         "w7_note": "A3 is not approx A under the ratified stable-ID convention (a1 has no image); under the rejected free-renaming convention it would be"
       },
       "caveats": [
-        "relabeling congruence OBL-PRESENTATION-CONJUGATION is proved (sections 4.22, presentation conjugation); red-team R4's disposition (maintainer decision 2026-09-26) adopts transported-command congruence (sigma m for additions), so 'all judgments agree across the pair' means agreement under that congruence, not same-command agreement",
-        "notation per red-team R6"
+        "relabeling congruence OBL-PRESENTATION-CONJUGATION is proved (sections 4.22, presentation conjugation); review finding's disposition (maintainer decision 2026-09-26) adopts transported-command congruence (sigma m for additions), so 'all judgments agree across the pair' means agreement under that congruence, not same-command agreement",
+        "notation per review finding"
       ]
     },
     {
@@ -578,7 +578,7 @@
             "assertion": "d_Z(C') = 1",
             "truth": "true [hand]",
             "outcome": "unavailable",
-            "why": "unavailability is claimed for this evaluation: the annotation of delete_a1 carries no distance lower bound or equality (red-team S5, dispositioned 2026-09-26); the value stays true and hand-checked, and a fact about A1 derived through another route stays admissible; absence of a derivation through this route is not falsity"
+            "why": "unavailability is claimed for this evaluation: the annotation of delete_a1 carries no distance lower bound or equality (review finding, dispositioned 2026-09-26); the value stays true and hand-checked, and a fact about A1 derived through another route stays admissible; absence of a derivation through this route is not falsity"
           },
           {
             "assertion": "rate(C) >= 1/2",
@@ -587,9 +587,9 @@
             "why": "outside the initial assertion language (proposal 6)"
           }
         ],
-        "point": "each label applies to one claim in a stated scope; the four labels are distinct but are not claimed to be a disjoint partition of facts (red-team R9, dispositioned 2026-09-26)"
+        "point": "each label applies to one claim in a stated scope; the four labels are distinct but are not claimed to be a disjoint partition of facts (review finding, dispositioned 2026-09-26)"
       },
-      "mechanization_warning": "an implementation that derives a deletion-distance lower bound or equality through the delete evaluation has a soundness bug, not a feature; the non-increase upper bound is allowed (red-team S6), and facts about the same state derived through other evaluations are admissible (red-team S5)"
+      "mechanization_warning": "an implementation that derives a deletion-distance lower bound or equality through the delete evaluation has a soundness bug, not a feature; the non-increase upper bound is allowed (review finding), and facts about the same state derived through other evaluations are admissible (review finding)"
     },
     {
       "id": "W14",
@@ -719,7 +719,7 @@
         "premise_used_disjoint": true
       },
       "caveats": [
-        "red-team R8 (resolved 2026-09-26): the disjointness premise also covers used-identifier sets; a used-set collision makes the sum inapplicable exactly like a qubit collision"
+        "review finding (resolved 2026-09-26): the disjointness premise also covers used-identifier sets; a used-set collision makes the sum inapplicable exactly like a qubit collision"
       ]
     },
     {

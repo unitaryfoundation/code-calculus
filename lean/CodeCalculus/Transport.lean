@@ -9,7 +9,7 @@ Mechanized form of the transport half of `spec/OPERATIONAL_SEMANTICS.md` §4.11
 ("structural judgments compose through valid sequences; a claim that refers to
 a deleted generator is not transported automatically"), on the `Chain`,
 `Derives`, and `Models` machinery of `Soundness.lean`, together with the
-fixed-reference-set invalidation model of §4.15 (red-team R7 disposition) on
+fixed-reference-set invalidation model of §4.15 (review finding disposition) on
 which the obligation's transported-context conclusion rests.
 
 Four pieces.
