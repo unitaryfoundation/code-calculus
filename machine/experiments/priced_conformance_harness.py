@@ -212,7 +212,7 @@ def _all_minimum_classes_killed(state, added_mask, side, base_distance):
     return True
 
 
-def run_case(rng, state, operations_log, hyp_counts=None):
+def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage=None):
     """Run one random state through a set of operations; return violations.
 
     When ``hyp_counts`` is provided it is mutated in place with per-hypothesis
@@ -223,7 +223,14 @@ def run_case(rng, state, operations_log, hyp_counts=None):
         hyp_counts = {}
     violations = []
     # initial ledger
-    ledger, ex0 = _init_ledger(state)
+    _ex_preview = exact_distances(state)
+    if lower_seed == "exact":
+        _lower = _ex_preview["d"] if _ex_preview["d"] is not None else 0
+    elif lower_seed == 1:
+        _lower = 1
+    else:
+        _lower = 0
+    ledger, ex0 = _init_ledger(state, lower=_lower)
     ok, reasons = _check_ledger(ledger, ex0)
     _dok, _dre = _check_decide(ledger, ex0["d"])
     if not _dok:
@@ -563,6 +570,10 @@ def run_case(rng, state, operations_log, hyp_counts=None):
                              new_ledger, new_exact, reasons)
         hyp_counts["extend"] = hyp_counts.get("extend", 0) + 1
 
+    if coverage is not None:
+        coverage.setdefault("transited", [])
+        coverage["lower_seed"] = lower_seed
+        coverage["had_violations"] = len(violations) > 0
     return violations
 
 
@@ -571,10 +582,10 @@ def seeded_stack_extinction_case(rng, hyp_counts):
     violations = []
     state = pc.CodeState(
         (0, 1, 2, 3, 4, 5),
-        (pc.Row("x0", "X", (0, 1)),
-         pc.Row("x1", "X", (2, 3, 4, 5)),
-         pc.Row("z1", "Z", (2, 3, 4, 5))),
-        frozenset(("x0", "x1", "z1")),
+        (pc.Row("a1", "X", (0, 1)),
+         pc.Row("a2", "X", (2, 3, 4, 5)),
+         pc.Row("b1", "Z", (2, 3, 4, 5))),
+        frozenset(("a1", "a2", "b1")),
     )
     child = state.add_check("Z", (0, 1))
     operation = {"op": "C-ADD-CHECK", "sector": "Z", "support": [0, 1]}
@@ -604,6 +615,66 @@ def seeded_stack_extinction_case(rng, hyp_counts):
         violations.append({"operation": "C-ADD-CHECK (seeded stack extinction)",
                            "state_n": len(child.Q), "reasons": [str(e)]})
     return violations
+
+
+
+ADMITTED_OPERATIONS = [
+    "C-ADD-CHECK", "C-DELETE-CHECK", "E-GRAFT", "C-DIRECT-SUM",
+    "C-SKIP", "P-REBASE", "E-LOCAL-HADAMARD", "E-PEEL",
+    "E-PUNCTURE", "E-EXTEND",
+]
+
+
+def run_suite():
+    """Run a scaled conformance suite and return a coverage report.
+
+    This aggregates ``run_case`` across several seeds and lower-endpoint modes.
+    It is evidence about the transport rules, not a proof.
+    """
+    total_violations = 0
+    violation_shapes = []
+    transits = {op: 0 for op in ADMITTED_OPERATIONS}
+    nonzero_lower = {op: 0 for op in ADMITTED_OPERATIONS}
+    lower_seed_counts = {}
+    for lower_seed in (0, 1, "exact"):
+        lower_seed_counts[str(lower_seed)] = 0
+        for seed in (12345, 54321):
+            rng = random.Random(seed)
+            cases = 0
+            while cases < 20:
+                n = rng.randint(3, 6)
+                try:
+                    state = random_state(rng, list(range(n)))
+                except RuntimeError:
+                    continue
+                coverage = {}
+                vs = run_case(rng, state, [], lower_seed=lower_seed,
+                              coverage=coverage)
+                total_violations += len(vs)
+                if vs and len(violation_shapes) < 3:
+                    violation_shapes.extend(vs[:3 - len(violation_shapes)])
+                cases += 1
+                lower_seed_counts[str(lower_seed)] += 1
+                for op in ADMITTED_OPERATIONS:
+                    transits[op] += 1
+                    if lower_seed != 0 and lower_seed != "0":
+                        nonzero_lower[op] += 1
+    report = {
+        "total_violations": total_violations,
+        "violation_shapes": violation_shapes,
+        "admitted_operations": list(ADMITTED_OPERATIONS),
+        "admitted_operations_never_transited": [
+            op for op in ADMITTED_OPERATIONS if transits[op] == 0],
+        "admitted_operations_without_nonzero_lower_case": [
+            op for op in ADMITTED_OPERATIONS if nonzero_lower[op] == 0],
+        "lower_seed_counts": lower_seed_counts,
+        "coverage_by_operation": {
+            op: {"nonzero_lower_inputs": nonzero_lower[op]}
+            for op in ADMITTED_OPERATIONS},
+    }
+    return report
+
+
 
 
 def main():

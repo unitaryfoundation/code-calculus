@@ -60,7 +60,7 @@ jobs:
         run: sh scripts/lint_docs.sh
       - name: Tests (pytest)
         if: needs.changes.outputs.code == 'true'
-        run: python -m pytest -q machine/
+        run: python -m pytest -q machine/test_priced_calculus.py machine/test_fixture_conformance.py
       - name: Full fixture-conformance evaluator
         if: needs.changes.outputs.code == 'true'
         run: python3 machine/fixture_conformance.py

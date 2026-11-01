@@ -1,1 +1,20 @@
-{}
+{
+  "harness": "priced_conformance_harness",
+  "git_commit": "dba87eeed729019434872e58cbd76f33f0f9276d",
+  "cases_attempted": 200,
+  "total_violations": 0,
+  "per_operation_violation_counts": {},
+  "hypothesis_application_counts": {
+    "sector_gauging": 256,
+    "deletion_price": 192,
+    "hadamard_sector_swap": 200,
+    "peel": 683,
+    "puncture": 981,
+    "extend": 174,
+    "rebase": 240,
+    "graft_price": 18,
+    "direct_sum_extinction": 1
+  },
+  "violation_shapes": [],
+  "note": "Evidence only. Does not discharge OBL-PRICED-INTERVAL-SOUNDNESS."
+}
