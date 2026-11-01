@@ -1,0 +1,218 @@
+{
+ "$comment": "Priced consumer transcription. Normative sources are spec/JUDGMENT_LAYER.md sections 2a-2f and 5 and spec/OPERATIONAL_SEMANTICS.md sections 2 and 4.25-4.30. Every transcribed rule carries a `source` of the form `spec/<FILE>.md §<section>`; scripts/lint_docs.sh check 4 (scripts/lint_transcription_sources.py) requires the section to exist once and to name the rule's operation. Prose wins on disagreement.", "_meta": {
+  "authority": "This is a machine-readable transcription of the interval consumer contract, not a proof object. It must be updated when the normative prose changes.",
+  "implementation": "machine/priced_calculus.py",
+  "experiment": "the conformance harness"
+ },
+ "ledger": {
+  "separate_from_state": true,
+  "fields": [
+   "d",
+   "d_X",
+   "d_Z",
+   "currently_valid_logical_witnesses",
+   "conditional_input_sources"
+  ],
+  "interval": {
+   "meaning": "Closed integer interval [lower, upper] containing the exact distance, conditional on every supplied input being true.",
+   "lower_default": 0,
+   "upper_default": "infinity unless a valid logical witness supplies a finite upper endpoint",
+   "infinity_encoding": "The implementation serializes None as 'inf'. For a lower endpoint it denotes k=0 and infinite distance; for an upper endpoint it denotes no finite upper witness."
+  },
+  "initialization": {
+   "lower_bounds": "Optional explicit inputs with source references; the consumer does not verify their truth.",
+   "upper_bounds": "Validate each supplied logical witness against the imported state, then use its weight.",
+   "full_distance": "d = min(d_X, d_Z)."
+  }
+ },
+ "conditional_inputs": {
+  "deletion_price": {
+   "for": "Full distance only.",
+   "fields": [
+    "w_del",
+    "w_exp",
+    "evidence"
+   ],
+   "claimed_rule": "d' = min(d, w_del, w_exp)",
+   "consumer_check": "Require nonnegative integer prices and a nonempty evidence reference; do not validate the underlying minima. The price moves the full-distance endpoints only; it moves no d_X or d_Z endpoint.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
+  },
+  "graft_price": {
+   "fields": [
+    "w_expose",
+    "evidence"
+   ],
+   "claimed_rule": "d' in [min(L, p), min(p, U_nonspliced)]; sector-wise, d'_sigma in [min(L_sigma, p), min(p, U_sigma)] for the non-spliced sector; the spliced sector carries its lower endpoint only and drops its upper endpoint unless a child-valid witness supplies one",
+   "consumer_check": "Require a nonnegative integer price and a nonempty evidence reference; do not validate the underlying minimum. The price is indexed to the NON-spliced sector, so it moves that sector's endpoints and the full-distance endpoints. The spliced sector needs no price and gets none.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
+  },
+  "strict_improvement": {
+   "fields": [
+    "base_distance",
+    "all_minimum_classes_killed",
+    "enumeration_id"
+   ],
+   "claimed_rule": "d' >= d + 1",
+   "consumer_check": "Require an exact old interval, a matching base_distance, true all_minimum_classes_killed flag, and nonempty enumeration_id. The enumeration itself is trusted, not checked.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
+  },
+  "direct_sum_extinction": {
+   "for": "C-ADD-CHECK on a stack/direct-sum parent where one factor is gauged to extinction (k_A' = 0).",
+   "fields": [
+    "base_distance",
+    "factor_distance",
+    "evidence"
+   ],
+   "claimed_rule": "d' = d_B (exact, interval [d_B, d_B]) when d_B > d_A; equivalently d' >= d + 1",
+   "consumer_check": "Require an exact old interval with matching base_distance, a factor_distance strictly greater than base_distance, and a nonempty evidence reference. The cheap structural side is computed, not trusted: a two-block disjoint union (tanner components), the added check inside one block, k of the block containing the added check equal to zero, k of the surviving block at least one, and no carried sector bound exceeding d_B. Only the factor distance d_B is trusted; general k' > 0 remains open, and no family beyond the stack family is licensed.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
+  },
+  "sector_gauging": {
+   "for": "C-ADD-CHECK sector-aware gauging price.",
+   "fields": [
+    "w_X",
+    "w_Z",
+    "evidence"
+   ],
+   "claimed_rule": "the supplied sector's lower endpoint is raised to w_sigma (never below the carried bound); when both w_X and w_Z are supplied, the full-distance lower endpoint may be raised to their minimum",
+   "consumer_check": "Require at least one nonnegative integer sector price and a nonempty evidence reference. Prices are trusted, not verified.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
+  },
+  "seam_certificate": {
+   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE has an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31: disjoint factor namespaces plus seam checks); the certificate remains a conditional judgment over factor codes and a seam, and the logical-witness prerequisite for distance claims stays open.",
+   "fields": [
+    "move_word_A",
+    "move_word_B",
+    "evidence"
+   ],
+   "claimed_rule": "admissible iff move_word_A == move_word_B (identical move words over {U,D,L,R}^*); then d_Z(Q) = min(d_A, d_B)",
+   "consumer_check": "Require a single move_word string (or an equal pair move_words) and a nonempty evidence reference. The consumer does not validate the underlying move words; it checks only shape and admissibility equality.",
+   "source": "spec/JUDGMENT_LAYER.md §2e"
+  }
+ },
+ "interval_rules": {
+  "C-SKIP": {
+   "rule": "Keep all endpoints and witnesses.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "C-ADD-CHECK": {
+   "rule": "Carry old lower endpoints by monotonicity; discard old upper endpoints and rebuild them from witnesses valid in the child. Optional inputs (strict improvement, sector-aware gauging price, direct-sum extinction) raise lower endpoints conditionally and never lower one.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "C-DELETE-CHECK": {
+   "rule": "Reset lower endpoints to zero unless the full-distance price is supplied; carry old upper bounds by deletion non-increase and tighten with surviving or new witnesses. The full-distance price moves the full-distance endpoints only; the source's deletion relation has no sector-wise counterpart, so the price moves no d_X or d_Z endpoint.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-GRAFT": {
+   "rule": "Full distance: reset lower and upper endpoints to zero/+inf unless an exposure price is supplied; the price moves the full-distance endpoints. Spliced sector: carry the lower endpoint only; drop the upper endpoint to +inf unless a witness valid in the child supplies one. Non-spliced sector: reset the lower endpoint to zero and carry the non-increase upper bound, unless the exposure price tightens it; the price is indexed to this sector. Sector upper endpoints tighten from witnesses valid in the child; a witness never widens or discards a carried endpoint.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "C-DIRECT-SUM": {
+   "rule": "For corresponding distances, combine lower and upper endpoints by minimum. Witness collections are not combined by this helper.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "C-SEQUENCE": {
+   "rule": "Run transitions in order and transport the ledger after each step; the composed transport is the composition of the per-step rules (OPERATIONAL_SEMANTICS.md §4.13, OBL-PRICED-INTERVAL-SOUNDNESS, proved under the corrected E-GRAFT rules). The claim-level half, that a judgment composes through a sequence only when its schema does, is OBL-JUDGMENT-TRANSPORT (§4.11; JUDGMENT_LAYER.md §5).",
+   "source": "spec/JUDGMENT_LAYER.md §5"
+  },
+  "P-REBASE": {
+   "rule": "The row spaces are unchanged in both sectors, so every span-expressible endpoint stays valid for the child and every endpoint and witness is kept (OPERATIONAL_SEMANTICS.md §4.26). No revalidation is needed (a revalidation must also pass, trivially).",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-LOCAL-HADAMARD": {
+   "rule": "Admitted for T=Q and for T=empty (the identity: every interval and witness carries unchanged, and the child state is the parent). At T=Q the full-distance interval keeps both endpoints (d' = d, the weight-preserving conjugation; §4.27). The two sector intervals swap (both endpoints; d'_X = d_Z and d'_Z = d_X), and every witness's side swaps, then each revalidates against the child as a child-side witness of the swapped sector (an old sigma-side witness is checked as a bar-sigma-side witness of the child; the old X-side support's commutation is against the child's X span -- the old Z span -- which is exactly the old parent fact).",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-PEEL": {
+   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.28: the selected sector's distance cannot decrease and the opposite sector's cannot increase, but no cell carrying either direction is admitted; the reset is a refusal by design, and the full distance is bounded in neither direction). Witnesses are kept only where they revalidate in the child.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-PUNCTURE": {
+   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.29): a refusal by design, not an impossibility. The unnamed free-qubit instance (puncturing qubit 2 of Q={0,1,2} with the Z display {0,1}) raises the X distance 1->2, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal <= or >= claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. Hole-punch pricing is blocked on the D2 lower bound : no price cell or fixture enters until it lands. Witnesses are kept only where they revalidate in the child.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-EXTEND": {
+   "rule": "With Delta = empty the move is a C-ADD-CHECK sequence (§4.30): every sector carries its lower endpoint and rebuilds its upper endpoint from child-valid witnesses (adding a check can only raise a distance, so the pre-change upper endpoint is not a sound bound). With Delta nonempty no distance rule is derivable and none is admitted: every interval's lower endpoint resets to zero and only child-valid witnesses supply upper endpoints.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
+  },
+  "E-GLUE": {
+   "rule": "Evaluator transition admitted (OPERATIONAL_SEMANTICS.md §4.31); the ledger transport is the §2e/§2f conditional cell. Lower endpoints: in every sector and the full distance, the minimum of the two factor ledgers' lower endpoints (the glued code is the direct sum with seam checks added; the direct sum's sector distances are the factor minima and adding a check never lowers a distance, so each glued distance is at least the minimum of the factor distances, OPERATIONAL_SEMANTICS.md §4.31). Upper endpoints: only the Z sector's, as the minimum of the two factors' Z upper endpoints, and only under an admissible seam certificate (identical move words with an evidence reference, §2e); the X and full upper endpoints are left to witnesses valid in the child. The consumer's ledger transport requires an admissible certificate and otherwise has no derivation, although §2f records the lower endpoints as sound without one. No scalar relation d = min(d_A, d_B) is admitted, and the logical-witness prerequisite (TAXONOMY.md §2.10) stays open.",
+   "source": "spec/JUDGMENT_LAYER.md §2f"
+  }
+ },
+ "geometry": {
+  "parameter": "The layout is LEDGER DATA: supplied per code, held beside the state, not part of it. Two states differing only in their layout are the same state, and the layout is not transported by `used`.",
+  "radius": "The interaction radius of the display in the supplied layout: the largest Euclidean diameter of any displayed row's support. A derived property of the display relative to the layout, in the same sense that w is a derived property of the display -- computed, never stored, never a search. A function of the pair (state, layout), so a state with no layout has no radius. Arithmetic (spec/JUDGMENT_LAYER.md section 2d.1): the coordinates are read as exact rationals (a JSON float at its exact binary value, a decimal string at its exact decimal value) and every comparison is made on squared diameters, so no verdict depends on a square root or a floating-point tolerance.",
+  "no_hypothesis_required": "No radius cell needs a consumer-supplied hypothesis. Unlike the distance cells, there is no price, no lower bound, and no witness: the quantity is exactly computable from the display and the layout.",
+  "carry_rules": {
+   "C-SKIP": {
+    "rule": "r' = r.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "C-DELETE-CHECK": {
+    "rule": "r' = max { diam_lambda(s) : s in rows' }, so r' <= r. Exact.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "C-ADD-CHECK": {
+    "rule": "r' = max(r, diam_lambda(new row)). Exact.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-GRAFT": {
+    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= 2r by the triangle inequality on the graft's adjacent products. The naive claim that the graft preserves the radius is FALSE: 198 of 823 applicable grafts over the challenge's board entries with n <= 14 increase it on the pinned checkout 9d30c66a (see the conformance harness). (see the conformance harness).",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "C-DIRECT-SUM": {
+    "rule": "r = max(r_A, r_B) over the disjoint union of the two layouts. The radius law needs no hypothesis; the HONESTY of the merged layout does, and this cell is conditional on it. Not exercised by the consumer: run_sequence and radius_squared_in_layout take one document and one layout, so no merged layout is built. A layout-union input is required before this cell can be exercised.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "C-SEQUENCE": {
+    "rule": "Run transitions in order and transport the layout after each step; the composition follows the per-step rules.",
+    "source": "spec/OPERATIONAL_SEMANTICS.md §C-SEQUENCE"
+   }
+  },
+  "locality_caps": [
+    {"max_layers": 1, "radius_cap": 4.0, "class": "local-2d-single"},
+    {"max_layers": 2, "radius_cap": 7.0, "class": "local-2d-bilayer"}
+  ],
+  "honesty": "A layout is honest when at most `layers` qubits share a site and distinct sites are at least 1 apart. Honesty is a property of the layout alone, so it is inherited unchanged by C-SKIP, C-DELETE-CHECK and C-ADD-CHECK, and preserved by E-GRAFT: removing a qubit can only lower a site's occupancy and can only raise the minimum site spacing. A direct sum does NOT preserve it automatically.",
+  "class": "The locality class is NOT a calculus property. It is a consumer-side verdict computed from the transported radius against consumer-supplied caps; the caps are the consumer's constants, and the class's transport follows from the radius's carry rules rather than from a cell of its own. Classes nest by radius, not by layer count: a code qualifies for every class whose layer cap and radius cap it satisfies, and the consumer assigns the tightest. A 1-layer code of radius 4.1 is therefore local-2d-bilayer. The verdict compares the squared radius against the squared cap exactly (r <= c iff r*r <= c*c for c >= 0); no tolerance is involved.",
+  "export": "Inherit the parent's layout restricted to the qubits the child kept, and recompute the interaction radius against the child's own check set. The claim is the four-decimal round-up of the exact radius, computed by integer arithmetic on the exact squared diameter, so it is an upper bound on the real value rather than on a floating-point measurement of it; the verifier parses the same decimal, so claim and entry cannot drift apart."
+ },
+ "decision": {
+  "target": "T",
+  "rules": [
+   {
+    "result": "certify",
+    "condition": "lower(d) >= T",
+    "source": "spec/JUDGMENT_LAYER.md §2b"
+   },
+   {
+    "result": "prune",
+    "condition": "finite upper(d) < T",
+    "source": "spec/JUDGMENT_LAYER.md §2b"
+   },
+   {
+    "result": "re-measure",
+    "condition": "otherwise",
+    "source": "spec/JUDGMENT_LAYER.md §2b"
+   }
+  ],
+  "claim_limit": "A decision is relative to its recorded inputs. It does not upgrade input evidence status or establish general soundness."
+ },
+ "witness_validation": {
+  "X_logical": "support is nonempty and contained in Q; it commutes with all Z checks and is outside the X stabilizer span.",
+  "Z_logical": "support is nonempty and contained in Q; it commutes with all X checks and is outside the Z stabilizer span.",
+  "distance_search": "No exact-distance search is implemented in the consumer.",
+  "source": "spec/JUDGMENT_LAYER.md §2c"
+ },
+ "qldpc_adapter": {
+  "import": "Choose a deterministic independent subset of the listed check rows in each sector. This preserves row spaces and is representation conversion, not a calculus transition.",
+  "export": "Emit witness-backed distance entries with confidence upper_bound only. Keep all lower endpoints in this local ledger; do not export them as qLDPC distance claims.",
+  "locality": "Inherit the parent's layout restricted to the qubits the child kept, and recompute the interaction radius against the child's own check set. The radius is a function of the check set, so a parent's claim is never carried into a child whose checks differ; the claim is the four-decimal round-up of the exact radius, computed on the exact squared diameter, so it bounds the real value rather than a floating-point measurement of it."
+ },
+ "trust_boundary": [
+  "Validate code transitions, CSS orthogonality, displayed independence, k checks, witness validity, and input field shape.",
+  "Do not validate external lower bounds, deletion/exposure minima, exact old distances, or exhaustive minimum-weight-class enumerations.",
+  "Do not interpret randomized verifier non-refutation as a lower-bound certificate."
+ ]
+}

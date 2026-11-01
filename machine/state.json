@@ -1,0 +1,168 @@
+{
+  "$comment": "State encoding, transcribed from spec/REPRESENTATION.md and spec/STATE_MODEL.md. Prose wins on disagreement.",
+  "_meta": {
+    "source_of_truth": [
+      "spec/REPRESENTATION.md",
+      "spec/STATE_MODEL.md"
+    ],
+    "authority": "This file is a faithful transcription for mechanization consumers. Where it disagrees with spec/, the prose wins and this file must be fixed.",
+    "generated": "2026-10-27",
+    "representation": "sparse supports over qubit indices; the encoding qldpc-challenge already ships an archived note for its own codes, which this file does not transcribe."
+  },
+  "state": {
+    "Q": {
+      "type": "array[integer]",
+      "description": "Qubit namespace. A finite set of naturals, encoded as a strictly increasing list. Explicitly NOT the range 0..n-1, so C-DIRECT-SUM is a plain disjoint union with no relabelling step.",
+      "constraints": [
+        "strictly increasing",
+        "no duplicates"
+      ]
+    },
+    "rows": {
+      "type": "array[displayed_row]",
+      "description": "The display. UNORDERED: state identity does not depend on row order or matrix layout (FD1 exit condition).",
+      "item": {
+        "id": {
+          "type": "string",
+          "description": "Stable generator identifier. Injective on live rows; never reused (I3)."
+        },
+        "sector": {
+          "type": "string",
+          "enum": [
+            "X",
+            "Z"
+          ],
+          "description": "Sector label, matching the row space the row spans (I4). Explicit rather than inferred from position, so a malformed state is representable and can be rejected."
+        },
+        "support": {
+          "type": "array[integer]",
+          "description": "One stabilizer as the list of qubits it acts on. Strictly increasing, no repeats. Subsets of Q.",
+          "constraints": [
+            "strictly increasing",
+            "no duplicates",
+            "every element in Q"
+          ]
+        }
+      }
+    },
+    "used": {
+      "type": "array[string]",
+      "description": "Every identifier ever minted on this state: live union retired. SEMANTIC, not provenance . Read by the canonical mint, by state equality, and by the C-DIRECT-SUM disjointness premise."
+    },
+    "formalization_status": "Partial mechanization present under lean/ (state model, canonical mint, term language, invariants, and a soundness slice); see lean/README.md. Not a proof of soundness."
+  },
+  "derived_not_stored": {
+    "n": "n = |Q|",
+    "k": "k = n - dim(rows_X) - dim(rows_Z), where dim is GF(2) rank of the display. I1 makes the display spanning, so rank of the display IS rank of the row space.",
+    "w": "w = max { wt(r) : r in rows } (0 if the display is empty). Max stabilizer weight; derived, exact, not a state field, not minted or transported by used .",
+    "r": "r = max { diam_lambda(s) : s in rows } (0 if the display is empty), where diam_lambda is the largest Euclidean distance between two points of a row's support in a supplied layout lambda. Derived, exact, not a state field, not minted or transported by used . A function of the PAIR (state, layout), so a state with no layout has no radius; the layout is ledger data, not state data.",
+    "note": "qldpc-challenge declares n and k as fields. Here they are redundant declared values that must agree with the computed ones. Disagreement is a MALFORMED input, not a value adopted."
+  },
+  "invariants": {
+    "I1_WellFormedCSS": {
+      "statement": "X = <rows_X> and Z = <rows_Z>, and X is orthogonal to Z. Nontrivial X intersect Z is permitted.",
+      "defining": true,
+      "note": "The span clause is DEFINITIONAL . The row space IS the span of the display; this is not a property of the display."
+    },
+    "I2_displayed_independence": "Each displayed row is not in the span of the other displayed rows of its sector.",
+    "I3_identifier_discipline": "id is injective on live rows; a retired identifier is never reused; fresh identifiers are minted canonically as the first element of a fixed enumeration not in `used`. There is no fresh-name choice anywhere, so every primitive is deterministic outright.",
+    "I4_sector_typing": "Every displayed row carries exactly one sector label, matching the row space it spans.",
+    "I5_valid_provenance": "Provenance records are append-only and refer only to identifiers live or retired at the recorded step. Steps are read by nothing else: no Eval premise and no judgment reads them."
+  },
+  "equality": {
+    "symbol": "equiv",
+    "definition": "C1 equiv C2 iff identical Q AND identical labeled rows AND identical used.",
+    "consequences": [
+      "Q is part of identity: states with the same labeled rows and used set on different namespaces differ in n, k, and applicability, and are not equal .",
+      "used is part of identity: a state reached by a delete/add loop is NOT equal to its origin even when the row space is restored.",
+      "row order is not part of identity, and Q is read as a set."
+    ]
+  },
+  "not_represented": {
+    "phases": "Phase-insensitive (FD1). Y-type behaviour arises from X intersect Z, never from an explicit phase.",
+    "distance": "d_X, d_Z, d are not state fields. The separate consumer ledger carries sourced intervals and witnesses; transitions do not search exact distance. External lower bounds, exact prices, and minimum-weight-class enumerations are explicit judgment inputs and are not verified by the consumer.",
+    "Pi_fields": "Interfaces, boundaries, metrics, logical witnesses, certificates, constructor inputs, inversion data. None are MVP data.",
+    "layout": "The geometric placement of the qubits is not carried by this encoding. It is LEDGER DATA, not a Pi field: supplied per code and held beside the state, so two states differing only in their layout are the same state."
+  },
+  "evaluator_contract": {
+    "spanning": "ASSUMED, not checked. The evaluator trusts the span clause of I1 (definitional, so not checkable) and verifies I1's orthogonality clause plus I2-I5.",
+    "cost_of_that_decision": "Sound on spanning displays only. Given a non-spanning independent display it computes a k that does not correspond to a code and reports transformations whose premises were decided against the wrong row space. That is a silent wrong answer, not an error.",
+    "available_but_unused": "Rank arithmetic over the incidence matrix is the same computation the derivation uses, and would turn the assumption into a precondition. Not done in the MVP because I1 makes it redundant.",
+    "formalization_status": "WP0-WP1 present under lean/ (state model, canonical mint, term language, I1-I5, Eval skeleton), plus the first derivation-layer soundness slice (lean/CodeCalculus/Soundness.lean, 2026-10-25), stated for a well-formed evaluation chain with the evaluation assumed; not a proof of soundness.",
+    "consumer_status": "Executable interval consumer present at machine/priced_calculus.py; this is not a proof assistant and does not establish soundness."
+  },
+  "consumer_ledger": {
+    "separate_from_state": true,
+    "fields": [
+      "d interval",
+      "d_X interval",
+      "d_Z interval",
+      "currently valid logical witnesses",
+      "conditional input evidence references",
+      "the supplied layout, as ledger data",
+      "the interaction radius recomputed against it"
+    ],
+    "target_decisions": [
+      "certify",
+      "prune",
+      "re-measure"
+    ],
+    "trust_boundary": "The consumer validates witnesses and structural consistency but does not validate supplied lower bounds, exact prices, or exhaustive enumerations."
+  },
+  "update_owners": {
+    "E-GRAFT": {
+      "Q": "Remove q.",
+      "rows": "Retire every selected-sector row touching q; add canonically minted adjacent products restricted to Q\\{q}; retain other selected-sector rows; shorten opposite-sector rows at q.",
+      "ids": "Retired IDs remain in used; add IDs minted in canonical order.",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2"
+    },
+    "P-REBASE": {
+      "Q": "unchanged",
+      "rows": "retire the selected sector's displayed rows; mint canonically named GL(m,2) combinations of them (identifiers minted canonically); opposite sector rows untouched",
+      "ids": "retired IDs remain in used; minted IDs added",
+      "used": "retain retired identifiers and add minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.26",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "E-LOCAL-HADAMARD": {
+      "Q": "unchanged",
+      "rows": "swap the sector label of every displayed row; supports, identifiers and used unchanged",
+      "ids": "unchanged",
+      "used": "unchanged",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.27",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "E-PEEL": {
+      "Q": "remove q",
+      "rows": "retire the unique selected-sector row touching q; shorten opposite-sector rows at q; other selected-sector rows unchanged",
+      "ids": "retired ID remains in used; no mint",
+      "used": "unchanged (retired ID retained)",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.28",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "E-PUNCTURE": {
+      "Q": "remove q",
+      "rows": "delete every displayed row (both sectors) whose support contains q; surviving rows are q-free and retained",
+      "ids": "retired IDs remain in used; no mint",
+      "used": "unchanged (retired IDs retained)",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.29",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "E-EXTEND": {
+      "Q": "add the disjoint qubit set Delta",
+      "rows": "append canonically minted (sector, support) rows over Q union Delta; factor rows unchanged",
+      "ids": "mint one identifier per addition in canonical order",
+      "used": "retain old used and add minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.30",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "E-GLUE": {
+      "Q": "union of the two factor namespaces",
+      "rows": "factor rows followed by one canonically minted row per admissible seam check; no factor row removed or altered",
+      "ids": "mint one identifier per seam check over the union of the factors' used sets",
+      "used": "union of the factors' used sets plus minted seam identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.31",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    }
+  }
+}

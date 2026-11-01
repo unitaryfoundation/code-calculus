@@ -1,0 +1,190 @@
+{
+  "_meta": {
+    "description": "Machine-readable operation registry derived from spec/TAXONOMY.md and spec/CLAIMS.md.",
+    "generated": "2026-10-29",
+    "authority": "spec/TAXONOMY.md and spec/CLAIMS.md are the sources of truth; this file is a derived index. On any disagreement, normative prose wins.",
+    "notes": "contract_status values use the spec/CLAIMS.md vocabulary (taxonomy-only, contract-draft, ...). null means the operation does not appear in the initial contract index; its contract status is not recorded there and must not be inferred."
+  },
+  "operations": [
+    {
+      "id": "P-RELABEL",
+      "name": "Qubit relabeling",
+      "layer": "supporting-presentation",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "P-REBASE",
+      "name": "Generator rebasing and row replacement",
+      "layer": "supporting-presentation",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "C-SKIP",
+      "name": "Identity / skip",
+      "layer": "core-css-calculus",
+      "contract_status": "contract-stated"
+    },
+    {
+      "id": "C-DIRECT-SUM",
+      "name": "Direct sum",
+      "layer": "core-css-calculus",
+      "contract_status": "contract-stated"
+    },
+    {
+      "id": "C-DELETE-CHECK",
+      "name": "Stabilizer/check deletion",
+      "layer": "core-css-calculus",
+      "contract_status": "contract-stated"
+    },
+    {
+      "id": "C-ADD-CHECK",
+      "name": "Stabilizer/check addition",
+      "layer": "core-css-calculus",
+      "contract_status": "contract-stated"
+    },
+    {
+      "id": "C-SEQUENCE",
+      "name": "Sequential composition",
+      "layer": "core-css-calculus",
+      "contract_status": "contract-stated"
+    },
+    {
+      "id": "E-PEEL",
+      "name": "Qubit/check peeling",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "E-GRAFT",
+      "name": "Row-space grafting",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "E-PUNCTURE",
+      "name": "Puncturing",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "E-EXTEND",
+      "name": "Qubit/check extension",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "E-GLUE",
+      "name": "Interface gluing / merge",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "E-SPLIT",
+      "name": "Split",
+      "layer": "candidate-css-extension",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "E-LOCAL-HADAMARD",
+      "name": "Local Hadamard (per-qubit sector swap)",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "A-PRODUCT",
+      "name": "Algebraic product of code-level objects",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "A-CONCAT",
+      "name": "Concatenation",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "A-QUOTIENT",
+      "name": "Quotient and subspace transformation",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "A-DOUBLE",
+      "name": "Duplication (double it) construction",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-NESTED-CSS",
+      "name": "CSS code from nested classical codes",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-HGP",
+      "name": "Hypergraph product",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-LIFTED",
+      "name": "Lifted product",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-BALANCED",
+      "name": "Balanced product",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-GROUP-ALGEBRA",
+      "name": "Group-algebra and two-block constructions",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-TANNER",
+      "name": "Local code on a graph / quantum Tanner construction",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "L-TILE",
+      "name": "Tile or cellulation construction",
+      "layer": "lower-level-constructor",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-GAUGE-FIX",
+      "name": "Gauge fixing",
+      "layer": "extended-state-model",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-SUBSYSTEM",
+      "name": "Subsystem-code deformation",
+      "layer": "extended-state-model",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-LOCAL-CLIFFORD",
+      "name": "Local/block-Clifford conjugation",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-SYMPLECTIC-DOUBLE",
+      "name": "Symplectic doubling (general stabilizer to CSS)",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-SYMPLECTIC-HALVE",
+      "name": "Symplectic halving (CSS to general stabilizer)",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    }
+  ]
+}

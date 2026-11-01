@@ -1,0 +1,525 @@
+{
+  "$comment": "Term grammar and the transition relation, transcribed from spec/TERM_LANGUAGE.md and spec/OPERATIONAL_SEMANTICS.md. Prose wins on disagreement.",
+  "_meta": {
+    "source_of_truth": [
+      "spec/TERM_LANGUAGE.md",
+      "spec/OPERATIONAL_SEMANTICS.md"
+    ],
+    "authority": "Faithful transcription for mechanization consumers. Where it disagrees with spec/, the prose wins and this file must be fixed.",
+    "generated": "2026-10-27",
+    "precision_note": "This file is written to the standard a Lean formalization would consume from: an agent must be able to build the development from this plus state.json without re-deriving the semantics from prose. That standard holds whether or not Lean comes soon, because re-tightening a transcription after an implementation exists costs more than getting it right first."
+  },
+  "categories": {
+    "expression": {
+      "nonterminal": "e",
+      "productions": [
+        {
+          "symbol": "S",
+          "meaning": "A presented phase-insensitive CSS state."
+        },
+        {
+          "symbol": "e1 (+) e2",
+          "meaning": "Direct sum. Constructs states, NOT a command."
+        }
+      ]
+    },
+    "command": {
+      "nonterminal": "m",
+      "productions": [
+        {
+          "symbol": "skip",
+          "id": "C-SKIP"
+        },
+        {
+          "symbol": "delete_r",
+          "id": "C-DELETE-CHECK",
+          "argument": "r names a displayed generator"
+        },
+        {
+          "symbol": "addStab_r",
+          "id": "C-ADD-CHECK",
+          "argument": "r carries a chosen sector type"
+        },
+        {
+          "symbol": "graft_q_tau_chain",
+          "id": "E-GRAFT",
+          "argument": "q is a live qubit; tau is X or Z; ordered_row_ids names exactly every tau row touching q"
+        },
+        {
+          "symbol": "peel_{q,tau;r}",
+          "id": "E-PEEL",
+          "argument": "q is a live qubit; tau is X or Z; r names a displayed tau row containing q"
+        },
+        {
+          "symbol": "puncture_q",
+          "id": "E-PUNCTURE",
+          "argument": "q is a live qubit"
+        },
+        {
+          "symbol": "extend_{Delta;u}",
+          "id": "E-EXTEND",
+          "argument": "Delta is a qubit set disjoint from Q; u is an ordered list of typed (sector, support) additions over Q union Delta"
+        },
+        {
+          "symbol": "hadamard_T",
+          "id": "E-LOCAL-HADAMARD",
+          "argument": "T is a list of distinct qubit labels of Q (a repeated label is malformed: a list with repeats does not name a subset); the transition is admitted for T=Q (the sector exchange) and T=empty (the identity), and is inapplicable otherwise"
+        },
+        {
+          "symbol": "rebase_{tau;M}",
+          "id": "P-REBASE",
+          "argument": "tau is X or Z; M is an invertible (GL(m,2)) matrix over that sector's displayed rows"
+        },
+        {
+          "symbol": "m1 ; m2",
+          "id": "C-SEQUENCE",
+          "order": "conventional left-to-right; the second command's applicability is checked against the INTERMEDIATE state, not the original"
+        }
+      ]
+    },
+    "closed_term": {
+      "form": "m >< e",
+      "meaning": "Evaluate the state expression e, then execute command m against the result.",
+      "note": "e always denotes a state and m denotes a PARTIAL state transformer. The grammar never composes a state with a command as if both were functions."
+    }
+  },
+  "kernel_is_five": {
+    "note": "The five core primitives remain the kernel. E-GRAFT, the five Gate 6 CSS cells admitted 2026-10-23, and the binary E-GLUE evaluator transition (section 4.30, 2026-10-27) are separately admitted as conditional construction transitions. Other operations outside these productions have NO production and are not encoded as commands over an existing CSS state.",
+    "excluded": [
+      {
+        "id": "P-RELABEL",
+        "reason": "Presentation operation. A congruence to be PROVED (OBL-PRESENTATION-CONJUGATION), not a command."
+      },
+      {
+        "id": "P-REBASE",
+        "reason": "Admitted as a conditional extension transition (see admitted_extensions), not one of the kernel five."
+      },
+      {
+        "id": "A-* / L-*",
+        "reason": "Need typed classical, algebraic, graph or cellulation inputs."
+      },
+      {
+        "id": "X-*",
+        "reason": "Needs an extended state model."
+      },
+      {
+        "id": "E-* (unadmitted)",
+        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE's binary evaluator transition is listed in admitted_extensions (no unary production; contract-index row taxonomy-only). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
+      }
+    ],
+    "admitted_extensions": [
+      {
+        "id": "E-GRAFT",
+        "classification": "transition-defined; conditional distance cells; transition soundness proved under the coverage guard (section 4.12), rung unchanged",
+        "judgment_inputs": "exposure price is separate from command syntax and state"
+      },
+      {
+        "id": "P-REBASE",
+        "classification": "transition-defined; conditional cell; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+        "judgment_inputs": "none (span-exact)"
+      },
+      {
+        "id": "E-PEEL",
+        "classification": "transition-defined; conditional cell; no distance rule (refusal by design: derived sector inequalities unpriced)",
+        "judgment_inputs": "none"
+      },
+      {
+        "id": "E-PUNCTURE",
+        "classification": "transition-defined; conditional cell; no distance rule (refusal by design: sector direction depends on deleted qubit; hole-punch pricing blocked on D2)",
+        "judgment_inputs": "none"
+      },
+      {
+        "id": "E-EXTEND",
+        "classification": "transition-defined; conditional cell; distance monotonicity only for Delta=empty",
+        "judgment_inputs": "none"
+      },
+      {
+        "id": "E-LOCAL-HADAMARD",
+        "classification": "transition-defined for T=Q (and T=empty identity); conditional cell",
+        "judgment_inputs": "none"
+      },
+      {
+        "id": "E-GLUE",
+        "classification": "binary evaluator transition defined (section 4.30, 2026-10-27), no unary production; conditional cell (sections 2e/2f); contract-index row taxonomy-only; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+        "judgment_inputs": "seam certificate (identical move words plus an evidence reference) for the Z-sector upper endpoint; lower endpoints need none"
+      }
+    ]
+  },
+  "ambient_space": {
+    "carrier": "F_2^Q, where Q is the state's qubit namespace",
+    "statement": "X and Z are subspaces of F_2^Q. Every displayed row and every `addStab` argument r is a vector on Q: supp(r) subseteq Q. Complements (Z-perp, X-perp) are taken INSIDE F_2^Q, so `r in Z-perp` presupposes r in F_2^Q.",
+    "source_of_truth": "spec/STATE_MODEL.md section 1; spec/OPERATIONAL_SEMANTICS.md section 2 (C-ADD-CHECK)",
+    "why_it_is_a_field": "Without it the C-ADD-CHECK commutation premise is readable as a bare dot product, which accepts a row whose support leaves Q and yields a display satisfying I1-I5 that is not a code on Q (fixture W22)."
+  },
+  "relation": {
+    "name": "Eval",
+    "arity": [
+      "command m",
+      "state S",
+      "state S'"
+    ],
+    "shape": "partial big-step",
+    "partiality": "No judgment when a command is inapplicable. No residual commands, no half-updated states, no partial results are ever exposed (W10).",
+    "construction": "Eval(m >< e, S') when EvalExpr(e, S) and Eval(m, S, S')",
+    "derived_denotation": "Added 2026-10-25 (, Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
+  },
+  "outcomes": {
+    "derivable": "A derivation exists and the assertion is included.",
+    "no_derivation": "Well-typed term, but no evaluation derivation (inapplicable). ABSENCE OF DERIVATION IS THE BEHAVIOUR, not a failure of it.",
+    "malformed": "Rejected by the grammar alone (ill-typed).",
+    "distinction": "malformed, no_derivation and false are THREE different outcomes. A well-typed term naming an undisplayed generator is no_derivation, not malformed and not false."
+  },
+  "rules": [
+    {
+      "id": "C-SKIP",
+      "form": "Eval(skip, S, S)",
+      "premises": [],
+      "update": {
+        "state": "unchanged",
+        "steps": "append one skip record"
+      },
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-SKIP"
+    },
+    {
+      "id": "C-DIRECT-SUM",
+      "form": "EvalExpr(S1 (+) S2, S)",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "No new row is introduced; each factor row retains its support in Q_i subseteq Q_1 union Q_2, so containment is inherited (W22 reading)."
+        },
+        {
+          "predicate": "disjoint_qubit_namespaces",
+          "formula": "Q1 INTERSECT Q2 = {}"
+        },
+        {
+          "predicate": "disjoint_used",
+          "formula": "used1 INTERSECT used2 = {}"
+        }
+      ],
+      "update": {
+        "Q": "Q1 UNION Q2",
+        "rows": "rows1 ++ rows2",
+        "used": "used1 UNION used2"
+      },
+      "inapplicable_when": "Either namespace collision OR identifier collision. Both make the constructor inapplicable, exactly as qubit-namespace collision does.",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-DIRECT-SUM"
+    },
+    {
+      "id": "C-DELETE-CHECK",
+      "form": "DisplayedGenerator(r, pres) AND Independent(r; pres)  |-  Eval(delete_r, C, C')",
+      "premises": [
+        {
+          "predicate": "DisplayedGenerator",
+          "formula": "r is live in pres",
+          "reads": [
+            "rows",
+            "used"
+          ]
+        },
+        {
+          "predicate": "Independent",
+          "formula": "r is not in the span of the other displayed rows of its sector",
+          "reads": [
+            "rows"
+          ],
+          "is": "I2"
+        }
+      ],
+      "update": {
+        "Q": "unchanged",
+        "rows": "remove exactly r from its sector",
+        "id": "retire r",
+        "used": "r REMAINS in used",
+        "steps": "append a record naming r"
+      },
+      "why_inapplicable_is_silent": "A well-typed delete naming an undisplayed row yields no derivation.",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-DELETE-CHECK"
+    },
+    {
+      "id": "C-ADD-CHECK",
+      "form": "(r in F_2^Q AND r in Z-perp AND r notin X) |- Eval(addStab_r:X, C, C')   |   (r in F_2^Q AND r in X-perp AND r notin Z) |- Eval(addStab_r:Z, C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "r in F_2^Q, i.e. supp(r) subseteq Q. Z-perp and X-perp are complements INSIDE F_2^Q (see ambient_space); this premise is not a bare dot product.",
+          "reads": [
+            "Q"
+          ]
+        },
+        {
+          "predicate": "opposite_sector_commutation",
+          "formula": "X-type: r in Z-perp.   Z-type: r in X-perp. Both read inside F_2^Q."
+        },
+        {
+          "predicate": "same_sector_independence",
+          "formula": "X-type: r notin X.    Z-type: r notin Z."
+        }
+      ],
+      "inapplicable_when": "Any premise fails. An out-of-namespace row (supp(r) not subseteq Q) has NO derivation: the term is well-typed and the same row applies against a state whose namespace contains its support (fixture W22) - it is no_derivation, not malformed and not false.",
+      "update": {
+        "Q": "unchanged",
+        "rows": "append r with its sector label",
+        "id": "mint CANONICALLY: the first element of a fixed enumeration of the identifier namespace not in `used`",
+        "used": "add the mint"
+      },
+      "determinism": "The mint is canonical, so there is no fresh-name choice and this rule is deterministic outright.",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-ADD-CHECK"
+    },
+    {
+      "id": "E-GRAFT",
+      "form": "Eval(graft(q,tau;[r1,...,rm]), C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "Every surviving, shortened, and minted row has support in Q' = Q\\{q} (W22 reading): surviving selected rows are q-free, opposite rows are shortened at q, and minted adjacent products have q-coordinate 0. A row that left Q' would be malformed at the encoding."
+        },
+        {
+          "predicate": "live_qubit",
+          "formula": "q is in Q"
+        },
+        {
+          "predicate": "exact_touching_chain",
+          "formula": "[r1,...,rm] is duplicate-free and contains exactly all displayed tau rows whose support contains q; m >= 1"
+        },
+        {
+          "predicate": "constructed_css_and_independent",
+          "formula": "Adjacent tau-row products restricted to Q\\{q}, with opposite rows shortened at q, form independent CSS sectors"
+        },
+        {
+          "predicate": "dimension_preservation",
+          "formula": "k'=k is required for applicability and follows from the rank bookkeeping (n'=n-1, the spliced sector loses one displayed row, the opposite sector's rank is unchanged) under the touching-chain and opposite-sector guards; the transition does not re-verify it beyond those guards"
+        },
+        {
+          "predicate": "coverage_guard",
+          "formula": "Every remaining qubit is touched by at least one check of each sector; empirical modeling guard, not general theorem"
+        },
+        {
+          "predicate": "opposite_sector_presence",
+          "formula": "q belongs to at least one displayed opposite-sector row (the grafted qubit must have an opposite-sector check through it)"
+        }
+      ],
+      "update": {
+        "Q": "Q minus {q}",
+        "rows": "retire all listed tau rows; add canonically minted adjacent products (r_i + r_(i+1)) restricted to Q\\{q}; retain other tau rows; shorten every opposite-sector row at q",
+        "used": "retain retired identifiers and add canonical identifiers for new rows",
+        "distance_hypotheses": "not read by Eval; supplied separately to the judgment layer"
+      },
+      "inapplicable_when": "Any transition premise fails; no partial state is exposed.",
+      "standing": "transition specified; transition soundness proved under the coverage guard (spec/OPERATIONAL_SEMANTICS.md section 4.12); well-formedness preservation mechanized (wf_graft_of_eval); ladder rung unchanged",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7E-GRAFT"
+    },
+    {
+      "id": "C-SEQUENCE",
+      "form": "Eval(m1,S0,S1) AND Eval(m2,S1,S2)  |-  Eval(m1;m2, S0, S2)",
+      "premises": [],
+      "update": {
+        "composed": "in order"
+      },
+      "inapplicable_when": "If either subcommand is inapplicable the sequence has NO evaluation derivation. Associativity and denotational adequacy are OBL-SEQUENCE-ASSOCIATIVITY - proof obligations, NOT assumed equations.",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-SEQUENCE"
+    },
+    {
+      "id": "P-REBASE",
+      "form": "Eval(rebase(tau;M), C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "Q is unchanged and each output support is an F_2-combination (symmetric difference) of input supports, hence a subset of Q (W22 reading)."
+        },
+        {
+          "predicate": "sector_typing",
+          "formula": "tau is X or Z"
+        },
+        {
+          "predicate": "gl_mix",
+          "formula": "M is an m x m matrix over F_2 with full rank, m = the sector's displayed-row count; a singular M has no derivation"
+        },
+        {
+          "predicate": "nonempty_display",
+          "formula": "the sector's display is nonempty (the empty sector has no rebase command)"
+        }
+      ],
+      "update": {
+        "Q": "unchanged",
+        "rows": "each tau display row is replaced by its F_2 combination over M (symmetric difference of supports, sorted); rows minted canonically; other sector retained",
+        "used": "grows by exactly the m minted identifiers",
+        "steps": "not read"
+      },
+      "inapplicable_when": "Sector display empty or M singular; malformed matrix data is malformed.",
+      "standing": "transition specified; derivations at OPERATIONAL_SEMANTICS.md \u00a74.26; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.26"
+    },
+    {
+      "id": "E-LOCAL-HADAMARD",
+      "form": "Eval(hadamard_T, C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "Supports and Q are unchanged by the sector exchange, so every displayed row remains a subset of Q (W22 reading)."
+        },
+        {
+          "predicate": "namespace_subset",
+          "formula": "T is a qubit subset of Q"
+        },
+        {
+          "predicate": "distinct_labels",
+          "formula": "T lists each qubit label at most once; a list with repeats is malformed rather than inapplicable (a list with repeats does not name a subset)"
+        },
+        {
+          "predicate": "sector_exchange_instance",
+          "formula": "T = Q (the admitted instance); T = empty is the identity; any other T has no derivation (the S1-dispositioned split-subset mechanics are out of scope)"
+        }
+      ],
+      "update": {
+        "Q": "unchanged",
+        "rows": "every displayed row's sector is swapped (X to Z and Z to X); supports, identifiers, and used are unchanged",
+        "used": "unchanged",
+        "steps": "not read"
+      },
+      "inapplicable_when": "Ill-typed T; T strictly between empty and Q",
+      "standing": "transition specified for T=Q only; derivations at \u00a74.27; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.27"
+    },
+    {
+      "id": "E-PEEL",
+      "form": "Eval(peel(q,tau;r), C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "The output namespace is Q\\{q}; surviving selected rows are q-free and surviving opposite rows are shortened at q, so every row has support in Q\\{q} (W22 reading)."
+        },
+        {
+          "predicate": "live_qubit",
+          "formula": "q is in Q"
+        },
+        {
+          "predicate": "displayed_row",
+          "formula": "r names a displayed tau row containing q"
+        },
+        {
+          "predicate": "unique_touch",
+          "formula": "exactly one displayed tau row contains q, which is r"
+        },
+        {
+          "predicate": "zero_check_guard",
+          "formula": "no opposite-sector displayed row has support exactly {q} (a redundancy check; it never binds under a well-formed parent, \u00a74.28)"
+        }
+      ],
+      "update": {
+        "Q": "Q minus {q}",
+        "rows": "retire r; selected-sector survivors untouched (q-free by unique touch); every opposite-sector row shortened at q",
+        "used": "retains the retired identifier",
+        "steps": "not read"
+      },
+      "inapplicable_when": "Any applicability premise fails; the output's I1-I5 check is a validity report (\u00a74.28 shows both I1 and I2 automatic under the premises)",
+      "standing": "transition specified; n'=n-1 and k'=k exact (\u00a74.28); no distance rule admitted in either polarity (a refusal by design: section 4.28 derives the selected-sector non-decrease and the opposite-sector non-increase, and no cell carries them)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.28"
+    },
+    {
+      "id": "E-PUNCTURE",
+      "form": "Eval(puncture(q), C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "The output namespace is Q\\{q}; only q-free rows survive, so every displayed row has support in Q\\{q} (W22 reading)."
+        },
+        {
+          "predicate": "live_qubit",
+          "formula": "q is in Q"
+        }
+      ],
+      "update": {
+        "Q": "Q minus {q}",
+        "rows": "every displayed row of either sector whose support contains q is retired",
+        "used": "retains the retired identifiers",
+        "steps": "not read"
+      },
+      "inapplicable_when": "q not in Q; no other premise (I1-I5 hold automatically, \u00a74.29)",
+      "standing": "transition specified (the check-puncturing induced stabilizer update required by TAXONOMY.md \u00a72.8); no distance rule carries, and hole-punch pricing is blocked on the D2 lower bound ()",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.29"
+    },
+    {
+      "id": "E-EXTEND",
+      "form": "Eval(extend(Delta;u), C, C')",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "The ambient grows to Q union Delta before the first addition and every added support is checked to be a subset of Q union Delta (W22 reading); complements are taken inside F_2^(Q union Delta)."
+        },
+        {
+          "predicate": "disjoint_qubits",
+          "formula": "Delta is disjoint from Q (malformed when it overlaps)"
+        },
+        {
+          "predicate": "typed_additions",
+          "formula": "each addition is a (sector, support) pair with support a sorted, repeat-free, nonempty subset of Q union Delta"
+        },
+        {
+          "predicate": "cumulative_independence_and_communication",
+          "formula": "at its own list position, each addition commutes with the opposite sector's rows so far and is outside their same-sector span over F_2^(Q union Delta) (the ambient is the new namespace, the W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "Q union Delta",
+        "rows": "additions appended in list order as canonically minted rows",
+        "used": "grows by exactly the minted identifiers",
+        "steps": "not read"
+      },
+      "inapplicable_when": "An addition's commutation or independence fails (no derivation); ill-typed data is malformed",
+      "standing": "transition specified; n'=n+|Delta| and k'=k+|Delta|-s_X-s_Z exact (\u00a74.30); distance monotonicity only for Delta=empty (the C-ADD-CHECK cells)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.30"
+    },
+    {
+      "id": "E-GLUE",
+      "form": "Eval(glue(C_A, C_B; seam checks), C)  -  a binary evaluator transition over two presented states; E-GLUE has no unary grammar production (TERM_LANGUAGE.md section 2)",
+      "premises": [
+        {
+          "predicate": "ambient_membership",
+          "formula": "The child namespace is Q_A union Q_B; factor rows retain supports in Q_A or Q_B and every seam check is typed with support subseteq Q_A union Q_B (W22 reading)."
+        },
+        {
+          "predicate": "disjoint_qubit_namespaces",
+          "formula": "Q_A INTERSECT Q_B = {}"
+        },
+        {
+          "predicate": "disjoint_used",
+          "formula": "used_A INTERSECT used_B = {}"
+        },
+        {
+          "predicate": "typed_seam_checks",
+          "formula": "each seam check is a pair (tau, supp) with tau in {X, Z} and supp a nonempty, repeat-free subset of Q_A UNION Q_B; ill-typed seam data is malformed"
+        },
+        {
+          "predicate": "seam_commutation_and_independence",
+          "formula": "each seam check, at its own list position, commutes with every displayed row of the opposite sector and lies outside the span of the displayed rows of its own sector, both read over F_2^(Q_A UNION Q_B) and over the rows accumulated so far (factor rows plus earlier seam checks), so the output display is independent"
+        }
+      ],
+      "update": {
+        "Q": "Q_A UNION Q_B",
+        "rows": "rows_A ++ rows_B, then one canonically minted row per seam check in list order; no factor row is removed or altered",
+        "used": "used_A UNION used_B, grown by exactly the minted identifiers",
+        "steps": "not read"
+      },
+      "inapplicable_when": "A qubit-namespace or identifier collision, or a seam check failing commutation or independence (no derivation). A seam certificate, when supplied, is consumed for admissibility only (JUDGMENT_LAYER.md section 2e): differing move words, or a certificate without an evidence reference, give no derivation.",
+      "standing": "transition specified (section 4.30, 2026-10-27; maintainer decision to define the transition). Well-formedness of the output follows the C-DIRECT-SUM argument plus the independence premises. No distance relation beyond the section 2e/2f conditional cell; the scalar relation d = min(d_A, d_B) is not admitted; the logical-witness prerequisite (TAXONOMY.md section 2.10) remains open; sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31); the contract-index row stays taxonomy-only.",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.31"
+    }
+  ],
+  "what_the_semantics_does_not_do": [
+    "Does not compute exact distance. Conditional deletion and graft prices and exhaustive minimum-weight-class enumerations are consumer judgment inputs, not verified by the state transition.",
+    "Does not exhibit a residual. An inapplicable command has no derivation, so nothing says WHERE a sequence got stuck.",
+    "Does not read `steps`. No premise and no judgment consults provenance.",
+    "Does not quotient by presentation. P-RELABEL is a congruence to be proved, not a built-in equality.",
+    {
+      "id": "E-GLUE",
+      "note": "The evaluator transition (section 4.30, 2026-10-27) defines the state update only. No distance relation is admitted beyond the section 2e/2f conditional cell; the logical-witness prerequisite (TAXONOMY.md section 2.10) remains not-yet-defined, and the scalar relation d = min(d_A, d_B) is not admitted."
+    }
+  ],
+  "standing": {
+    "mechanized": false,
+    "sound": "not claimed",
+    "note": "The hand derivations in spec/OPERATIONAL_SEMANTICS.md section 4 are evidence in this repository, not kernel-checked results. The soundness metatheorem is OBL-JUDGMENT-SOUNDNESS and is `proved` by hand derivation (spec/OPERATIONAL_SEMANTICS.md section 4.11). A partial mechanization exists under lean/; see lean/README.md for its scope.",
+    "conformance": "Each entry in fixtures/mvp_fixtures.json is an acceptance test: evaluating `term` on `initial_state` must produce `expected` exactly, or fail exactly as specified - no derivation, no stuck residual, no partial state."
+  }
+}

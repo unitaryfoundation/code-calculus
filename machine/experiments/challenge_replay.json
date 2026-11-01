@@ -1,0 +1,483 @@
+{
+  "qldpc_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
+  "addition": {
+    "parent": "an archived note",
+    "parent_parameters": {
+      "n": 10,
+      "k": 2
+    },
+    "parent_exact_distance_experiment": {
+      "X": 3,
+      "Z": 3,
+      "d": 3,
+      "vectors_examined": 1023
+    },
+    "operation": {
+      "op": "C-ADD-CHECK",
+      "sector": "X",
+      "support": [
+        0,
+        8,
+        9
+      ],
+      "witnesses": {
+        "X": [
+          0,
+          1,
+          5
+        ],
+        "Z": [
+          0,
+          3,
+          9
+        ]
+      }
+    },
+    "child_parameters": {
+      "n": 10,
+      "k": 1
+    },
+    "child_exact_distance_validation_only": {
+      "X": 3,
+      "Z": 3,
+      "d": 3,
+      "vectors_examined": 1023
+    },
+    "bounded_witness_search_candidates": {
+      "X": 59,
+      "Z": 76
+    },
+    "consumer_trace": [
+      {
+        "step": 1,
+        "operation": "C-ADD-CHECK",
+        "n": 10,
+        "k": 1,
+        "intervals": {
+          "d": {
+            "lower": 3,
+            "upper": 3
+          },
+          "d_X": {
+            "lower": 3,
+            "upper": 3
+          },
+          "d_Z": {
+            "lower": 3,
+            "upper": 3
+          },
+          "conditional_inputs": [
+            {
+              "cell": "input lower bound",
+              "property": "X",
+              "source": "experiment-only exhaustive enumeration of the parent"
+            },
+            {
+              "cell": "input lower bound",
+              "property": "Z",
+              "source": "experiment-only exhaustive enumeration of the parent"
+            },
+            {
+              "cell": "input lower bound",
+              "property": "d",
+              "source": "experiment-only exhaustive enumeration of the parent"
+            }
+          ],
+          "witnesses": {
+            "X": [
+              {
+                "support": [
+                  0,
+                  1,
+                  5
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              }
+            ],
+            "Z": [
+              {
+                "support": [
+                  5,
+                  8,
+                  9
+                ],
+                "value": 3,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  0,
+                  3,
+                  9
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              }
+            ]
+          }
+        },
+        "verdict": "certify",
+        "state_changed": true
+      }
+    ],
+    "challenge_verifier": {
+      "ok": true,
+      "earned_distance": {
+        "X": {
+          "value": 3,
+          "tier": "upper_bound"
+        },
+        "Z": {
+          "value": 3,
+          "tier": "upper_bound"
+        },
+        "d": {
+          "value": 3,
+          "tier": "upper_bound"
+        }
+      },
+      "distance_not_refuted": "no lighter logical in 2900 RIS trials (seed 445500258)",
+      "failed_checks": []
+    },
+    "interpretation": "The propagation path used the parent's exhaustive lower bound, C-ADD-CHECK monotonicity, and child logical witnesses. The second exact enumeration was an independent experiment-only check, not part of the consumer path."
+  },
+  "strict_improvement_survey": {
+    "parent": "an archived note",
+    "parent_exact_distance_experiment": 3,
+    "support_vectors_examined_per_sector": 1023,
+    "exact_distance_oracle": "experiment-only; not called by the consumer; minimum weight over all logicals in each sector",
+    "sectors": {
+      "X": {
+        "valid_single_check_additions": 48,
+        "best_child_distance": 3,
+        "best_support": null,
+        "strict_improvement_found": false
+      },
+      "Z": {
+        "valid_single_check_additions": 48,
+        "best_child_distance": 3,
+        "best_support": null,
+        "strict_improvement_found": false
+      }
+    }
+  },
+  "graft": {
+    "parent": "an archived note",
+    "operation": {
+      "op": "E-GRAFT",
+      "qubit": 0,
+      "sector": "X",
+      "ordered_row_ids": [
+        "a1",
+        "a2"
+      ],
+      "witnesses": {
+        "X": [
+          1,
+          2,
+          9
+        ],
+        "Z": [
+          1,
+          2
+        ]
+      }
+    },
+    "child_parameters": {
+      "n": 9,
+      "k": 2
+    },
+    "bounded_witness_search_candidates": {
+      "X": 52,
+      "Z": 10
+    },
+    "consumer_trace": [
+      {
+        "step": 1,
+        "operation": "E-GRAFT",
+        "n": 9,
+        "k": 2,
+        "intervals": {
+          "d": {
+            "lower": 0,
+            "upper": 2
+          },
+          "d_X": {
+            "lower": 0,
+            "upper": 3
+          },
+          "d_Z": {
+            "lower": 0,
+            "upper": 2
+          },
+          "conditional_inputs": [],
+          "witnesses": {
+            "X": [
+              {
+                "support": [
+                  1,
+                  2,
+                  9
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              }
+            ],
+            "Z": [
+              {
+                "support": [
+                  5,
+                  8,
+                  9
+                ],
+                "value": 3,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  1,
+                  2
+                ],
+                "value": 2,
+                "source": "supplied post-step logical witness"
+              }
+            ]
+          }
+        },
+        "verdict": "prune",
+        "state_changed": true
+      }
+    ],
+    "child_exact_distance_validation_only": {
+      "X": 3,
+      "Z": 2,
+      "d": 2,
+      "vectors_examined": 511
+    },
+    "sector_wise_comparison": {
+      "spliced_sector": "X",
+      "parent": {
+        "X": 3,
+        "Z": 3
+      },
+      "child": {
+        "X": 3,
+        "Z": 2
+      },
+      "spliced_sector_unchanged": true,
+      "other_sector_not_raised": true,
+      "note": "The source states d'_tau = d_tau for the spliced sector and d'_sigma <= d_sigma for each sector (code-deformation rows 28.4 and 28.5). These are the measured values to compare against; agreement is evidence, never confirmation."
+    },
+    "challenge_verifier": {
+      "ok": true,
+      "earned_distance": {
+        "X": {
+          "value": 3,
+          "tier": "upper_bound"
+        },
+        "Z": {
+          "value": 2,
+          "tier": "upper_bound"
+        },
+        "d": {
+          "value": 2,
+          "tier": "upper_bound"
+        }
+      },
+      "distance_not_refuted": "no lighter logical in 2860 RIS trials (seed 1468587204)",
+      "failed_checks": []
+    },
+    "interpretation": "The consumer prunes target 3 from a valid weight-2 upper witness. Post-hoc exhaustive enumeration finds the child's distance to be 2, so the transported upper bound is exact on this instance, and the spliced sector is unchanged at 3 as the source's sector-wise relation predicts. The randomized verifier's failure to find a lighter logical is consistent with that, and is still not a lower-bound certificate: it is a randomized refutation, and the ledger's lower endpoint remains 0."
+  },
+  "deletion": {
+    "parent": "an archived note",
+    "children": [
+      "an archived note",
+      "an archived note"
+    ],
+    "final_child_parameters": {
+      "n": 119,
+      "k": 36
+    },
+    "consumer_trace": [
+      {
+        "step": 1,
+        "operation": "C-DELETE-CHECK",
+        "n": 119,
+        "k": 35,
+        "intervals": {
+          "d": {
+            "lower": 0,
+            "upper": 3
+          },
+          "d_X": {
+            "lower": 0,
+            "upper": 5
+          },
+          "d_Z": {
+            "lower": 0,
+            "upper": 3
+          },
+          "conditional_inputs": [],
+          "witnesses": {
+            "X": [
+              {
+                "support": [
+                  0,
+                  4,
+                  9,
+                  14,
+                  34
+                ],
+                "value": 5,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  4,
+                  37,
+                  39,
+                  69,
+                  77
+                ],
+                "value": 5,
+                "source": "supplied post-step logical witness"
+              }
+            ],
+            "Z": [
+              {
+                "support": [
+                  22,
+                  24,
+                  36,
+                  91,
+                  92
+                ],
+                "value": 5,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  56,
+                  79,
+                  112
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              }
+            ]
+          }
+        },
+        "verdict": "prune",
+        "state_changed": true
+      },
+      {
+        "step": 2,
+        "operation": "C-DELETE-CHECK",
+        "n": 119,
+        "k": 36,
+        "intervals": {
+          "d": {
+            "lower": 0,
+            "upper": 3
+          },
+          "d_X": {
+            "lower": 0,
+            "upper": 5
+          },
+          "d_Z": {
+            "lower": 0,
+            "upper": 3
+          },
+          "conditional_inputs": [],
+          "witnesses": {
+            "X": [
+              {
+                "support": [
+                  0,
+                  4,
+                  9,
+                  14,
+                  34
+                ],
+                "value": 5,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  4,
+                  37,
+                  39,
+                  69,
+                  77
+                ],
+                "value": 5,
+                "source": "supplied post-step logical witness"
+              }
+            ],
+            "Z": [
+              {
+                "support": [
+                  22,
+                  24,
+                  36,
+                  91,
+                  92
+                ],
+                "value": 5,
+                "source": "qldpc-challenge witness"
+              },
+              {
+                "support": [
+                  56,
+                  79,
+                  112
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              },
+              {
+                "support": [
+                  19,
+                  56,
+                  68
+                ],
+                "value": 3,
+                "source": "supplied post-step logical witness"
+              }
+            ]
+          }
+        },
+        "verdict": "prune",
+        "state_changed": true
+      }
+    ],
+    "final_interval": {
+      "lower": 0,
+      "upper": 3
+    },
+    "verdict_for_target_4": "prune",
+    "exact_distance_remeasurements": 0,
+    "challenge_verifier": {
+      "ok": true,
+      "earned_distance": {
+        "X": {
+          "value": 5,
+          "tier": "upper_bound"
+        },
+        "Z": {
+          "value": 3,
+          "tier": "upper_bound"
+        },
+        "d": {
+          "value": 3,
+          "tier": "upper_bound"
+        }
+      },
+      "distance_not_refuted": "no lighter logical in 7260 RIS trials (seed 486254860)",
+      "failed_checks": []
+    },
+    "interpretation": "The supplied challenge witnesses tighten the upper bound to 3, so target distance 4 is pruned without an exact distance run. The calculus does not infer a lower bound or claim the exact child distance."
+  }
+}

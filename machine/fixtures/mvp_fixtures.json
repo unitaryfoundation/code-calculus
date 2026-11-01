@@ -1,0 +1,2236 @@
+{
+  "schema_version": "0.3.0",
+  "title": "MVP acceptance fixtures (W0-W16 acceptance surface) plus supplementary MVP probes (W21-W28, acceptance_surface: false)",
+  "schema_note": "0.3.0 (2026-10-27): adds per-premise structured fields (premise_*) to conformance records, additive over 0.2.0; no existing field removed. 0.2.0 -> 0.3.0 is a fixture-schema bump only. 0.2.0 (2026-10-05): adds the boolean field `acceptance_surface` to every record. 0.1.0 -> 0.2.0 is additive only; no W0-W16 record's content changed. The field marks what the conformance rule executes. `true` = MVP acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26. `false` = supplementary probe, executed as a probe but NOT part of that surface. Maintainer disposition 2026-10-05, option B. See spec/CLAIMS.md sections 2 and 7. 2026-10-29 (): the W25 probe adds an optional, probe-local `expected.certificate` input object ({sector, bound}) read by machine/fixture_conformance.py; additive only, no existing record changed, schema_version stays 0.3.0.",
+  "source_of_truth": {
+    "governing": "spec/ plus this JSON. AGENTS.md (Normative artifacts): machine/ is a derived transcription, so where spec/ and this JSON disagree spec/ wins and the transcription is fixed; where this JSON and an evaluator disagree, this JSON is what the evaluator must match. A disagreement anywhere in that triangle is a defect in one of the three, not a precedence call.",
+    "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model), on branch redteam-followup-corrections. Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
+    "state_model_note": "State tuple includes the semantic used-identifier set per the red-team R1 disposition (2026-09-26): C = (Q, X, Z, pres, used)."
+  },
+  "status": "current",
+  "outcome_vocabulary": {
+    "derivable": "a derivation exists in the current rule system and the assertion is included",
+    "no_derivation": "well-typed term, but no evaluation derivation (inapplicable); absence of derivation IS the behavior",
+    "malformed": "rejected by the grammar alone (ill-typed)",
+    "false": "a semantic counterexample exists",
+    "not_derivable": "no derivation in the current rule system (may be a gap or by design); the label is recorded for one claim in a stated scope, naming the rule system and the record date (red-team R9, dispositioned 2026-09-26)",
+    "unavailable": "deliberately underivable in the MVP by design commitment; cannot be derived by omission; claimed per evaluation, not per state (red-team S5, dispositioned 2026-09-26)",
+    "not_yet_defined": "outside the current assertion language",
+    "hand": "true of the state but deliberately underivable in the calculus (distance values)"
+  },
+  "conventions": {
+    "qubit_labels": "A label like '12' denotes the characteristic-two vector with support {1,2} in F_2^Q",
+    "arithmetic": "dot products are mod 2",
+    "empty_row": "'0' or 'empty' denotes the zero row",
+    "rows": "displayed rows are written (support, identifier); unordered sets",
+    "infinite_distance": "'+inf' follows the proposal's empty-sector convention",
+    "equivalences": "approx is qubit-relabeling equivalence (presentation transport); equiv is identical Q AND identical labeled rows AND identical used-identifier set (used made semantic by the R1 disposition, 2026-09-26; Q added by , 2026-10-29)",
+    "canonical_mint": "the mint is the first element of the fixed identifier enumeration not in `used`; fixture identifiers like c1/c2 are example-local metavariables for 'the next canonically minted identifier' (red-team R5), not literal distinct names",
+    "acceptance_surface": "boolean, present on every record. true = MVP acceptance surface (W0-W16), fixed by spec/GATES.md *Addenda* 2(ii) 2026-09-26. false = supplementary MVP probe, executed under spec/CLAIMS.md section 2 as a probe but not part of that surface (W21, added 2026-10-05; maintainer disposition option B; W22, added 2026-10-18, same treatment). W17-W20 are later-layer probes and are not recorded in this file at all. W25-W28 (added 2026-10-29, , refusal probes for stale certificates, used-set collisions, I2 on the Z side, and ambient containment) carry the same treatment."
+  },
+  "usage": {
+    "consumer": "Full kernel conformance evaluator (state-level replay: machine/fixture_conformance.py) or Lean 4 mechanization; the  consumer in machine/priced_calculus.py implements a separate transition subset and does not consume this fixture file.",
+    "contract": "each entry is an acceptance test: evaluation of `term` on `initial_state` must produce `expected` exactly, or fail exactly as specified (no derivation, no stuck residual, no partial state)",
+    "big_step_only": "the semantics is partial big-step: no residual commands or partial states are exposed (W10)",
+    "priced_consumer_boundary": " construction and interval tests live in machine/test_priced_calculus.py and the conformance harness W0-W16 acceptance content and W21/W22 supplementary probes are unchanged."
+  },
+  "fixtures": [
+    {
+      "id": "W0",
+      "acceptance_surface": true,
+      "title": "FD1 positive state",
+      "category": "state-wellformed",
+      "initial_state": {
+        "name": "A",
+        "Q": [
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "12",
+            "id": "a1"
+          },
+          {
+            "support": "23",
+            "id": "a2"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "123",
+            "id": "b1"
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "b1"
+        ]
+      },
+      "term": null,
+      "expected": {
+        "outcome": "derivable",
+        "detail": "well-formed presented state: X=<12,23> (even-weight subspace), Z=<123>; X perp Z (I1); displayed independence (I2); identifier/sector discipline (I3, I4)",
+        "parameters": {
+          "n": 3,
+          "dim_X": 2,
+          "dim_Z": 1,
+          "k": 0
+        },
+        "distances_hand": {
+          "d_X": "+inf",
+          "d_Z": "+inf",
+          "reason": "Z perp = X and X perp = Z, both quotients trivial"
+        }
+      },
+      "reused_by": [
+        "W3",
+        "W4",
+        "W5",
+        "W6",
+        "W7",
+        "W8",
+        "W9",
+        "W10",
+        "W11",
+        "W12",
+        "W13",
+        "W16"
+      ]
+    },
+    {
+      "id": "W1",
+      "acceptance_surface": true,
+      "title": "FD1 negative state: dependent displayed rows",
+      "category": "state-malformed",
+      "initial_state": {
+        "name": "A_dagger",
+        "Q": [
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "12",
+            "id": "a1"
+          },
+          {
+            "support": "23",
+            "id": "a2"
+          },
+          {
+            "support": "13",
+            "id": "a3"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "123",
+            "id": "b1"
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "b1"
+        ]
+      },
+      "term": null,
+      "expected": {
+        "outcome": "malformed",
+        "detail": "13 = 12 + 23 so invariant I2 fails: not a well-formed presented state (row spaces still satisfy X perp Z; the defect is in the presentation)"
+      },
+      "reused_by": [
+        "W4"
+      ]
+    },
+    {
+      "id": "W2",
+      "acceptance_surface": true,
+      "title": "FD1 negative state: CSS violation",
+      "category": "state-malformed",
+      "initial_state": {
+        "name": null,
+        "Q": [
+          1,
+          2
+        ],
+        "rows_X": [
+          {
+            "support": "12",
+            "id": "c1"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "1",
+            "id": "d1"
+          }
+        ],
+        "used": [
+          "c1",
+          "d1"
+        ]
+      },
+      "term": null,
+      "expected": {
+        "outcome": "malformed",
+        "detail": "12 . 1 = 1 != 0: invariant I1 fails; WellFormedCSS rejects the state"
+      }
+    },
+    {
+      "id": "W3",
+      "acceptance_surface": true,
+      "title": "Valid deletion",
+      "category": "deletion-valid",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "delete_{a1}",
+      "expected": {
+        "outcome": "derivable",
+        "applicability": [
+          "DisplayedGenerator(a1, pres)",
+          "Independent(a1; pres)"
+        ],
+        "result_state": {
+          "name": "A1",
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [
+            {
+              "support": "23",
+              "id": "a2"
+            }
+          ],
+          "rows_Z": [
+            {
+              "support": "123",
+              "id": "b1"
+            }
+          ],
+          "used": [
+            "a1",
+            "a2",
+            "b1"
+          ],
+          "note": "a1 retired: removed from live presentation, retained in used, never reused"
+        },
+        "judgments": {
+          "n'": 3,
+          "k'": 1,
+          "k_relation": "k' = k + 1"
+        },
+        "distances_hand": {
+          "d_X": 2,
+          "d_Z": 1,
+          "derivable": false
+        },
+        "well_formedness": "removing rows cannot violate X perp Z",
+        "premise_displayed_generator": true,
+        "premise_independent": true
+      }
+    },
+    {
+      "id": "W4",
+      "acceptance_surface": true,
+      "title": "Dependent-generator deletion",
+      "category": "deletion-inapplicable",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "delete_{13}",
+      "expected": {
+        "outcome": "no_derivation",
+        "detail": "13 = 12 + 23 is in the row space but is not a displayed row: DisplayedGenerator(13, pres) fails. Being in the row space is not enough; deletion names displayed generators.",
+        "premise_displayed_generator": false
+      },
+      "variant": {
+        "initial_state": {
+          "ref": "W1"
+        },
+        "term": "delete_{a3}",
+        "expected": {
+          "outcome": "no_derivation",
+          "detail": "input state fails I2; even fed to the rule, Independent(a3; pres) fails (13 in <12,23>)"
+        }
+      },
+      "probe": "both preconditions of C-DELETE-CHECK are load-bearing"
+    },
+    {
+      "id": "W5",
+      "acceptance_surface": true,
+      "title": "Valid addition",
+      "category": "addition-valid",
+      "initial_state": {
+        "ref": "W3.result_state"
+      },
+      "term": "addStab_{c} : Z-type row '1'",
+      "expected": {
+        "outcome": "derivable",
+        "applicability": [
+          "1 in X'^perp (1 . 23 = 0)",
+          "1 notin Z"
+        ],
+        "result_state": {
+          "name": "A2",
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [
+            {
+              "support": "23",
+              "id": "a2"
+            }
+          ],
+          "rows_Z": [
+            {
+              "support": "123",
+              "id": "b1"
+            },
+            {
+              "support": "1",
+              "id": "c1"
+            }
+          ],
+          "used": [
+            "a1",
+            "a2",
+            "b1",
+            "c1"
+          ],
+          "note": "c1 is the next canonically minted identifier (metavariable per conventions.canonical_mint)"
+        },
+        "judgments": {
+          "k''": 0,
+          "k_relation": "k'' = k' - 1"
+        },
+        "distance_bounds": "addition monotonicity holds (trivially here); bounds agreement is consistency evidence, not proof",
+        "premise_ambient_membership": true,
+        "premise_support_in_Q": true,
+        "premise_opposite_sector_commutation": true,
+        "premise_commutation_bare_dot_product": true,
+        "premise_same_sector_independence": true
+      },
+      "caveats": [
+        "red-team R5: identifier metavariables are example-local, not literal distinct names"
+      ]
+    },
+    {
+      "id": "W6",
+      "acceptance_surface": true,
+      "title": "Addition violating independence",
+      "category": "addition-inapplicable",
+      "initial_state": {
+        "ref": "W3.result_state"
+      },
+      "term": "addStab : X-type row '23'",
+      "expected": {
+        "outcome": "no_derivation",
+        "detail": "23 in X' already: same-sector independence (r notin X) fails",
+        "premise_ambient_membership": true,
+        "premise_support_in_Q": true,
+        "premise_opposite_sector_commutation": true,
+        "premise_commutation_bare_dot_product": true,
+        "premise_same_sector_independence": false
+      },
+      "variant": {
+        "initial_state": {
+          "ref": "W0"
+        },
+        "term": "addStab : X-type row '1'",
+        "expected": {
+          "outcome": "no_derivation",
+          "detail": "1 . 123 = 1 so 1 notin Z^perp: opposite-sector commutation fails"
+        }
+      }
+    },
+    {
+      "id": "W7",
+      "acceptance_surface": true,
+      "title": "Row-replacement loop",
+      "category": "sequence-valid",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "(delete_{a1}; addStab : X-type row '13')",
+      "expected": {
+        "outcome": "derivable",
+        "steps": [
+          {
+            "detail": "delete a1 as in W3 -> A1"
+          },
+          {
+            "detail": "add X-row 13: 13 in Z^perp (13 . 123 = 0), 13 notin X' = <23> -> applicable; mints c2"
+          }
+        ],
+        "result_state": {
+          "name": "A3",
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [
+            {
+              "support": "23",
+              "id": "a2"
+            },
+            {
+              "support": "13",
+              "id": "c2"
+            }
+          ],
+          "rows_Z": [
+            {
+              "support": "123",
+              "id": "b1"
+            }
+          ],
+          "used": [
+            "a1",
+            "a2",
+            "b1",
+            "c2"
+          ],
+          "row_space_note": "X'' = <23,13> = {0, 23, 13, 12} = X"
+        },
+        "judgments": {
+          "k_final": 0,
+          "n": 3,
+          "note": "row space restored; k returns to 0 through an intermediate k=1 state"
+        },
+        "presentation": "A3 is NOT equiv A: identifier sets differ (a1 retired, c2 fresh); equivalence transports identifiers",
+        "future_pi": "a certificate referencing a1 is invalidated at step 1 even though the final code equals the original (not MVP data)"
+      },
+      "caveats": [
+        "probe point of OBL-ROW-REPLACEMENT-FACTOR (proved for the loop, sections 4.16 and 4.18); example agreement is not proof"
+      ],
+      "degenerate_case": "s = 0 gives delete-then-readd with a fresh identifier: the converse-order case of the partial-inverse law; row space and displayed supports are restored, the state is not (fresh identifier, used strictly grows)"
+    },
+    {
+      "id": "W8",
+      "acceptance_surface": true,
+      "title": "Noncommuting addition",
+      "category": "permutation-inapplicable",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "m1;m2 and m2;m1 where m1 = delete_{a1}, m2 = addStab : Z-type row '1'",
+      "expected": {
+        "outcome": "no_derivation",
+        "detail": "m1;m2 applies (final state A2 of W5); m2;m1 has no derivation (1 . 12 = 1 so addStab_1 fails on A). One order applies, the other does not: the moves do not permute; conditional permutation cannot be claimed here."
+      },
+      "caveats": [
+        "probe point of OBL-CROSS-SECTOR-PERMUTATION; red-team R2's fourth case is adopted (maintainer decision 2026-09-26): both orders applicable with unequal outputs; W8 is a case-3 instance (exactly one order applicable)"
+      ]
+    },
+    {
+      "id": "W9",
+      "acceptance_surface": true,
+      "title": "Valid sequences",
+      "category": "sequence-valid",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "(delete_{a2}; delete_{a1})",
+      "expected": {
+        "outcome": "derivable",
+        "steps": [
+          {
+            "detail": "delete 23 (X): independent -> X' = <12>, k = 1"
+          },
+          {
+            "detail": "checked against the INTERMEDIATE state: 12 notin <empty> -> X'' = empty, k = 2"
+          }
+        ],
+        "result_state": {
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [],
+          "rows_Z": [
+            {
+              "support": "123",
+              "id": "b1"
+            }
+          ],
+          "k": 2
+        },
+        "reversed_order": "delete_{a1};delete_{a2} reaches the same final row spaces and parameters; steps differ only in record order (evidence for OBL-ORDER-INDEPENDENT-DELETION, conjectural, not proof)"
+      }
+    },
+    {
+      "id": "W10",
+      "acceptance_surface": true,
+      "title": "Sequence whose later command fails after an earlier state change",
+      "category": "sequence-inapplicable",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "(delete_{a1}; delete_{a1})",
+      "expected": {
+        "outcome": "no_derivation",
+        "detail": "step 1 applies (W3); step 2: a1 was retired at step 1, DisplayedGenerator(a1, pres) fails against the intermediate state -> the WHOLE sequence has no evaluation derivation. No stuck residual is produced; the earlier state change is invisible outside a completed derivation."
+      },
+      "variant": {
+        "initial_state": {
+          "ref": "W3.result_state"
+        },
+        "term": "(addStab : X-type '13'; addStab : X-type '12')",
+        "expected": {
+          "outcome": "no_derivation",
+          "detail": "step 1 raises X' to <23,13>; step 2 fails independence (12 in <23,13>) despite the intermediate k-decrease"
+        }
+      }
+    },
+    {
+      "id": "W11",
+      "acceptance_surface": true,
+      "title": "Presentation-equivalent states",
+      "category": "presentation-equivalence",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": null,
+      "expected": {
+        "outcome": "derivable",
+        "positive_pair": {
+          "B": "sigma(A) with sigma = (2 3): qubit labels transported (12->13, 23->23, 123->123); identifiers and sector labels transported with their rows (a1 on 13, a2 on 23, b1 on 123)",
+          "verdict": "A approx B by proposal 3.2; all judgments must agree across the pair"
+        },
+        "negative_pair": {
+          "A_prime": "A with a1 renamed to a fresh identifier z1, otherwise identical",
+          "verdict": "A' is not approx A: equivalence transports identifiers along the bijection and does not rename them (FD7 ruling 2026-09-23: identifiers are semantically visible, no free renaming)"
+        },
+        "w7_note": "A3 is not approx A under the ratified stable-ID convention (a1 has no image); under the rejected free-renaming convention it would be"
+      },
+      "caveats": [
+        "relabeling congruence OBL-PRESENTATION-CONJUGATION is proved (sections 4.22, presentation conjugation); red-team R4's disposition (maintainer decision 2026-09-26) adopts transported-command congruence (sigma m for additions), so 'all judgments agree across the pair' means agreement under that congruence, not same-command agreement",
+        "notation per red-team R6"
+      ]
+    },
+    {
+      "id": "W12",
+      "acceptance_surface": true,
+      "title": "Deletion can affect both distance sectors",
+      "category": "judgment-hand",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "delete_{a1}",
+      "expected": {
+        "outcome": "derivable",
+        "detail": "result A1 as in W3; the calculus derives only the class admissions, quotient-level transport (proposed), and k' = k + 1",
+        "distances_hand": {
+          "d_X": {
+            "before": "+inf",
+            "after": 2,
+            "mechanism": "new X-logical class 12 + X' = {12,13} enters Z^perp \\ X'"
+          },
+          "d_Z": {
+            "before": "+inf",
+            "after": 1,
+            "mechanism": "new Z-logical class witnessed by u = 1: u in X'^perp, u . 12 = 1, u notin Z, weight 1"
+          }
+        },
+        "note": "both sectors change under a single X-type deletion; distance values are [hand] and underivable (W13)",
+        "premise_displayed_generator": true,
+        "premise_independent": true
+      }
+    },
+    {
+      "id": "W13",
+      "acceptance_surface": true,
+      "title": "Judgment must remain unavailable",
+      "category": "outcome-vocabulary",
+      "initial_state": {
+        "ref": "W3.result_state"
+      },
+      "term": null,
+      "expected": {
+        "outcome": "derivable",
+        "assertions": [
+          {
+            "assertion": "k(C') = 1",
+            "truth": "true",
+            "outcome": "derivable",
+            "why": "deletion rule derives k' = k + 1"
+          },
+          {
+            "assertion": "k(C') = 0",
+            "truth": "false",
+            "outcome": "false",
+            "why": "counterexample: A1 has k = 1"
+          },
+          {
+            "assertion": "d_Z(C') = 1",
+            "truth": "true [hand]",
+            "outcome": "unavailable",
+            "why": "unavailability is claimed for this evaluation: the annotation of delete_a1 carries no distance lower bound or equality (red-team S5, dispositioned 2026-09-26); the value stays true and hand-checked, and a fact about A1 derived through another route stays admissible; absence of a derivation through this route is not falsity"
+          },
+          {
+            "assertion": "rate(C) >= 1/2",
+            "truth": null,
+            "outcome": "not_yet_defined",
+            "why": "outside the initial assertion language (proposal 6)"
+          }
+        ],
+        "point": "each label applies to one claim in a stated scope; the four labels are distinct but are not claimed to be a disjoint partition of facts (red-team R9, dispositioned 2026-09-26)"
+      },
+      "mechanization_warning": "an implementation that derives a deletion-distance lower bound or equality through the delete evaluation has a soundness bug, not a feature; the non-increase upper bound is allowed (red-team S6), and facts about the same state derived through other evaluations are admissible (red-team S5)"
+    },
+    {
+      "id": "W14",
+      "acceptance_surface": true,
+      "title": "Valid direct sums",
+      "category": "direct-sum-valid",
+      "initial_state": {
+        "S_L": {
+          "Q": [
+            1,
+            2
+          ],
+          "rows_X": [
+            {
+              "support": "12",
+              "id": "p1"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "p1"
+          ]
+        },
+        "S_R": {
+          "Q": [
+            3,
+            4
+          ],
+          "rows_X": [
+            {
+              "support": "34",
+              "id": "q1"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "q1"
+          ]
+        }
+      },
+      "term": "S_L (+) S_R",
+      "expected": {
+        "outcome": "derivable",
+        "result_state": {
+          "Q": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "rows_X": [
+            {
+              "support": "12",
+              "id": "p1"
+            },
+            {
+              "support": "34",
+              "id": "q1"
+            }
+          ],
+          "used": [
+            "p1",
+            "q1"
+          ]
+        },
+        "judgments": {
+          "n": {
+            "summands": [
+              2,
+              2
+            ],
+            "sum": 4
+          },
+          "k": {
+            "summands": [
+              1,
+              1
+            ],
+            "sum": 2
+          },
+          "d_X_hand": {
+            "summands": [
+              1,
+              1
+            ],
+            "sum": 1,
+            "law": "min"
+          },
+          "d_Z_hand": {
+            "summands": [
+              2,
+              2
+            ],
+            "sum": 2,
+            "law": "min"
+          }
+        },
+        "premise_qubit_disjoint": true,
+        "premise_used_disjoint": true
+      },
+      "caveats": [
+        "commutativity/associativity hold as literal equality equiv in this fixture but are OBL-DIRECT-SUM-LAWS (evidence proved, section 4.8); example agreement is not proof (equivalence level settled 2026-09-30 in favour of equiv, superseding the earlier approx wording)"
+      ]
+    },
+    {
+      "id": "W15",
+      "acceptance_surface": true,
+      "title": "Overlapping namespaces",
+      "category": "direct-sum-inapplicable",
+      "initial_state": {
+        "S_L": {
+          "ref": "W14.initial_state.S_L"
+        },
+        "S_R_prime": {
+          "Q": [
+            2,
+            3
+          ],
+          "note": "itself well-formed"
+        }
+      },
+      "term": "S_L (+) S_R'",
+      "expected": {
+        "outcome": "no_derivation",
+        "detail": "Q_L cap Q_R' = {2} != empty: the disjointness premise of C-DIRECT-SUM fails. Both states are valid individually; the constructor, not the states, is inapplicable.",
+        "premise_qubit_disjoint": false,
+        "premise_used_disjoint": true
+      },
+      "caveats": [
+        "red-team R8 (resolved 2026-09-26): the disjointness premise also covers used-identifier sets; a used-set collision makes the sum inapplicable exactly like a qubit collision"
+      ]
+    },
+    {
+      "id": "W16",
+      "acceptance_surface": true,
+      "title": "Mixed-type deletion set (ledger-requested)",
+      "category": "sequence-valid",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "(delete_{a1}; delete_{b1})",
+      "expected": {
+        "outcome": "derivable",
+        "steps": [
+          {
+            "detail": "delete a1 -> A1 (W3)"
+          },
+          {
+            "detail": "delete b1 (Z-type 123): displayed and independent (123 != 0) -> applicable"
+          }
+        ],
+        "result_state": {
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [
+            {
+              "support": "23",
+              "id": "a2"
+            }
+          ],
+          "rows_Z": [],
+          "k": 2,
+          "k_note": "net +2, one per deleted row"
+        },
+        "reversed_order": "delete b1 first reaches the same final row spaces and parameters; steps agree up to record order",
+        "future_pi": "mixed-type certificate invalidation is where an implementation would surface errors; in the MVP the only context effect is the step-log record per deletion"
+      }
+    },
+    {
+      "id": "W21",
+      "title": "Overlapping used-identifier sets",
+      "category": "direct-sum-inapplicable",
+      "acceptance_surface": false,
+      "probe_note": "Supplementary MVP probe added 2026-10-05 (spec/REPRESENTATION.md 'Supplementary MVP probes'); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, per maintainer disposition of 2026-10-05 (option B: supplementary, surface unchanged). Still executed under spec/CLAIMS.md section 2 as a probe. Next free W-number: W17-W20 are later-layer probes outside the MVP surface.",
+      "initial_state": {
+        "S_L": {
+          "Q": [
+            1,
+            2
+          ],
+          "rows_X": [
+            {
+              "support": "12",
+              "id": "p1"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "p1"
+          ]
+        },
+        "S_R_double_prime": {
+          "Q": [
+            3,
+            4
+          ],
+          "rows_X": [
+            {
+              "support": "34",
+              "id": "p1"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "p1"
+          ]
+        }
+      },
+      "term": "S_L (+) S_R_double_prime",
+      "expected": {
+        "outcome": "no_derivation",
+        "premise_qubit_disjoint": true,
+        "premise_used_disjoint": false,
+        "detail": "Q_L intersect Q_R' = {1,2} intersect {3,4} = empty, so the qubit-namespace premise HOLDS; used_L intersect used_R' = {p1} is non-empty, so the C-DIRECT-SUM used-disjointness premise after the R1 disposition FAILS - no EvalExpr derivation. Both states are individually well-formed; the constructor, not the states, is inapplicable. Mirrors W15 exactly, on the other premise.",
+        "non_vacuity": "used is per-state identifier history and the canonical mint (I3) allocates relative to that state's used, not globally; two independently constructed states may both mint p1 (merging separately built codes). If the premise were automatic it would carry no content."
+      },
+      "caveats": [
+        "purpose: an implementation checking only qubit disjointness would reproduce every W0-W16 fixture and still be wrong about the R1 used-disjointness premise; the defect would surface in use rather than in the acceptance surface"
+      ]
+    },
+    {
+      "id": "W22",
+      "title": "Addition of a row whose support leaves Q (ambient-space probe)",
+      "category": "addition-inapplicable",
+      "acceptance_surface": false,
+      "probe_note": "Supplementary MVP probe added 2026-10-18 (ablation of 2026-10-16, Finding 4; disposition recorded in CHANGELOG.md 2026-10-18); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26. Recorded in the shape of W21 under the same treatment as the 2026-10-05 option B disposition: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Next free W-number: W23 (W17-W20 are later-layer probes outside the MVP surface).",
+      "initial_state": {
+        "name": "A1",
+        "ref_result_of": "W3",
+        "Q": [
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "23",
+            "id": "a2"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "123",
+            "id": "b1"
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "b1"
+        ]
+      },
+      "term": "addStab_{r:X} with supp(r) = {8}",
+      "expected": {
+        "outcome": "no_derivation",
+        "premise_support_in_Q": false,
+        "premise_commutation_bare_dot_product": true,
+        "premise_same_sector_independence": true,
+        "detail": "supp(r) = {8} is not a subset of Q = {1,2,3}: r is not a vector of F_2^Q, so 'r in Z-perp' is false as read inside F_2^Q (STATE_MODEL.md section 1; OPERATIONAL_SEMANTICS.md section 2) and C-ADD-CHECK has no Eval derivation. The term is well-typed, so the outcome is no_derivation - not malformed, not false: the same row applies against a state whose namespace contains qubit 8. The two bare predicates both hold (r commutes with the Z-row 123 and r lies outside the X-row space), which is exactly why the ambient reading is load-bearing.",
+        "non_vacuity": "A support leaving Q is representable in the encoding (a support is any strictly increasing list of naturals) and a state carrying one satisfies I1-I5 of STATE_MODEL.md; only the ambient containment of section 1 rejects it. An evaluator reading 'r in Z-perp' as a bare dot product accepts the row, leaves Q unchanged, and reports a state that is not a code on Q - every k and distance bound read off it is about a different object (measured: ablation of 2026-10-16, Finding 4).",
+        "malformed_case_note": "A STATE with a row whose support leaves Q is a different case: malformed at the encoding (REPRESENTATION.md sections 2 and 6; machine/state.json constraint 'every element in Q'), rejected before any evaluation - not no_derivation.",
+        "premise_ambient_membership": false,
+        "premise_opposite_sector_commutation": false
+      },
+      "caveats": [
+        "purpose: an implementation reading the C-ADD-CHECK commutation premise as a bare dot product would reproduce every W0-W16 fixture and still accept this; the defect would surface in use rather than in the acceptance surface"
+      ]
+    },
+    {
+      "id": "W23",
+      "acceptance_surface": false,
+      "title": "Deletion transport instance (Family A): small challenge code, single deletion",
+      "category": "deletion-instance",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "01",
+            "id": "a1"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "01",
+            "id": "b1"
+          }
+        ],
+        "used": [
+          "a1",
+          "b1"
+        ]
+      },
+      "term": "delete_{a1}",
+      "expected": {
+        "outcome": "derivable",
+        "result_state": {
+          "Q": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "rows_X": [],
+          "rows_Z": [
+            {
+              "support": "01",
+              "id": "b1"
+            }
+          ],
+          "used": [
+            "a1",
+            "b1"
+          ]
+        },
+        "parameters": {
+          "n": 4,
+          "dim_X": 0,
+          "dim_Z": 1,
+          "k": 3
+        },
+        "note": "Family A from spec/GATES.md ( evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
+        "premise_displayed_generator": true,
+        "premise_independent": true
+      }
+    },
+    {
+      "id": "W24",
+      "acceptance_surface": false,
+      "title": "Two-step deletion chain (pinned replay)",
+      "category": "deletion-instance",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111,
+          112,
+          113,
+          114,
+          115,
+          116,
+          117,
+          118
+        ],
+        "rows_X": [
+          {
+            "support": [
+              16,
+              18,
+              56,
+              75,
+              104,
+              116
+            ],
+            "id": "a1"
+          },
+          {
+            "support": [
+              24,
+              34,
+              81,
+              92,
+              105,
+              114
+            ],
+            "id": "a2"
+          },
+          {
+            "support": [
+              12,
+              13,
+              29,
+              58,
+              59,
+              105
+            ],
+            "id": "a3"
+          },
+          {
+            "support": [
+              2,
+              4,
+              9,
+              52,
+              54,
+              99
+            ],
+            "id": "a4"
+          },
+          {
+            "support": [
+              11,
+              29,
+              38,
+              52,
+              109,
+              110
+            ],
+            "id": "a5"
+          },
+          {
+            "support": [
+              33,
+              46,
+              48,
+              58,
+              67,
+              77
+            ],
+            "id": "a6"
+          },
+          {
+            "support": [
+              10,
+              46,
+              76,
+              83,
+              90,
+              104
+            ],
+            "id": "a7"
+          },
+          {
+            "support": [
+              1,
+              22,
+              36,
+              53,
+              97,
+              107
+            ],
+            "id": "a8"
+          },
+          {
+            "support": [
+              38,
+              50,
+              55,
+              90,
+              94,
+              118
+            ],
+            "id": "a9"
+          },
+          {
+            "support": [
+              7,
+              53,
+              75,
+              78,
+              103,
+              110
+            ],
+            "id": "a10"
+          },
+          {
+            "support": [
+              30,
+              44,
+              51,
+              83,
+              86,
+              101
+            ],
+            "id": "a11"
+          },
+          {
+            "support": [
+              3,
+              32,
+              35,
+              48,
+              88,
+              111
+            ],
+            "id": "a12"
+          },
+          {
+            "support": [
+              9,
+              37,
+              47,
+              64,
+              69,
+              116
+            ],
+            "id": "a13"
+          },
+          {
+            "support": [
+              26,
+              27,
+              64,
+              108,
+              117,
+              118
+            ],
+            "id": "a14"
+          },
+          {
+            "support": [
+              19,
+              42,
+              68,
+              72,
+              117
+            ],
+            "id": "a15"
+          },
+          {
+            "support": [
+              0,
+              15,
+              49,
+              66,
+              72,
+              96
+            ],
+            "id": "a16"
+          },
+          {
+            "support": [
+              7,
+              8,
+              14,
+              81,
+              86
+            ],
+            "id": "a17"
+          },
+          {
+            "support": [
+              16,
+              20,
+              61,
+              62,
+              114,
+              115
+            ],
+            "id": "a18"
+          },
+          {
+            "support": [
+              20,
+              26,
+              31,
+              33,
+              63,
+              113
+            ],
+            "id": "a19"
+          },
+          {
+            "support": [
+              50,
+              60,
+              71,
+              91,
+              92,
+              106
+            ],
+            "id": "a20"
+          },
+          {
+            "support": [
+              40,
+              57,
+              74,
+              78,
+              108,
+              111
+            ],
+            "id": "a21"
+          },
+          {
+            "support": [
+              19,
+              56,
+              59,
+              79,
+              84,
+              87
+            ],
+            "id": "a22"
+          },
+          {
+            "support": [
+              36,
+              54,
+              67,
+              68,
+              91,
+              98
+            ],
+            "id": "a23"
+          },
+          {
+            "support": [
+              2,
+              87,
+              88,
+              93,
+              100,
+              101
+            ],
+            "id": "a24"
+          },
+          {
+            "support": [
+              14,
+              39,
+              43,
+              69,
+              77,
+              80
+            ],
+            "id": "a25"
+          },
+          {
+            "support": [
+              3,
+              6,
+              18,
+              49,
+              60,
+              70
+            ],
+            "id": "a26"
+          },
+          {
+            "support": [
+              15,
+              43,
+              93,
+              94,
+              97,
+              115
+            ],
+            "id": "a27"
+          },
+          {
+            "support": [
+              0,
+              10,
+              17,
+              34,
+              57,
+              99
+            ],
+            "id": "a28"
+          },
+          {
+            "support": [
+              11,
+              31,
+              51,
+              66,
+              73,
+              95
+            ],
+            "id": "a29"
+          },
+          {
+            "support": [
+              39,
+              40,
+              41,
+              71,
+              84,
+              95
+            ],
+            "id": "a30"
+          },
+          {
+            "support": [
+              1,
+              13,
+              27,
+              30,
+              65,
+              70
+            ],
+            "id": "a31"
+          },
+          {
+            "support": [
+              21,
+              41,
+              76,
+              89,
+              102,
+              107
+            ],
+            "id": "a32"
+          },
+          {
+            "support": [
+              5,
+              23,
+              63,
+              100,
+              103,
+              106
+            ],
+            "id": "a33"
+          },
+          {
+            "support": [
+              12,
+              23,
+              25,
+              47,
+              89,
+              96
+            ],
+            "id": "a34"
+          },
+          {
+            "support": [
+              25,
+              28,
+              44,
+              62,
+              74,
+              98
+            ],
+            "id": "a35"
+          },
+          {
+            "support": [
+              22,
+              24,
+              35,
+              37,
+              45,
+              73
+            ],
+            "id": "a36"
+          },
+          {
+            "support": [
+              4,
+              6,
+              8,
+              85,
+              102,
+              113
+            ],
+            "id": "a37"
+          },
+          {
+            "support": [
+              21,
+              32,
+              42,
+              61,
+              82,
+              109
+            ],
+            "id": "a38"
+          },
+          {
+            "support": [
+              28,
+              45,
+              55,
+              79,
+              85,
+              112
+            ],
+            "id": "a39"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": [
+              36,
+              50,
+              91,
+              94,
+              97
+            ],
+            "id": "b1"
+          },
+          {
+            "support": [
+              2,
+              48,
+              54,
+              67,
+              88
+            ],
+            "id": "b2"
+          },
+          {
+            "support": [
+              64,
+              75,
+              78,
+              108,
+              116
+            ],
+            "id": "b3"
+          },
+          {
+            "support": [
+              26,
+              33,
+              64,
+              69,
+              77
+            ],
+            "id": "b4"
+          },
+          {
+            "support": [
+              24,
+              28,
+              45,
+              62,
+              114
+            ],
+            "id": "b5"
+          },
+          {
+            "support": [
+              21,
+              82,
+              85,
+              102,
+              112
+            ],
+            "id": "b6"
+          },
+          {
+            "support": [
+              68,
+              74,
+              98,
+              108,
+              117
+            ],
+            "id": "b7"
+          },
+          {
+            "support": [
+              6,
+              60,
+              63,
+              106,
+              113
+            ],
+            "id": "b8"
+          },
+          {
+            "support": [
+              6,
+              18,
+              76,
+              102,
+              104
+            ],
+            "id": "b9"
+          },
+          {
+            "support": [
+              27,
+              49,
+              70,
+              72,
+              117
+            ],
+            "id": "b10"
+          },
+          {
+            "support": [
+              8,
+              31,
+              51,
+              86,
+              113
+            ],
+            "id": "b11"
+          },
+          {
+            "support": [
+              39,
+              41,
+              46,
+              76,
+              77
+            ],
+            "id": "b12"
+          },
+          {
+            "support": [
+              20,
+              32,
+              33,
+              48,
+              61
+            ],
+            "id": "b13"
+          },
+          {
+            "support": [
+              15,
+              42,
+              61,
+              72,
+              115
+            ],
+            "id": "b14"
+          },
+          {
+            "support": [
+              19,
+              29,
+              42,
+              59,
+              109
+            ],
+            "id": "b15"
+          },
+          {
+            "support": [
+              17,
+              32,
+              57,
+              82,
+              111
+            ],
+            "id": "b16"
+          },
+          {
+            "support": [
+              13,
+              30,
+              46,
+              58,
+              83
+            ],
+            "id": "b17"
+          },
+          {
+            "support": [
+              5,
+              12,
+              13,
+              23,
+              65
+            ],
+            "id": "b18"
+          },
+          {
+            "support": [
+              50,
+              55,
+              71,
+              79,
+              84
+            ],
+            "id": "b19"
+          },
+          {
+            "support": [
+              16,
+              90,
+              94,
+              104,
+              115
+            ],
+            "id": "b20"
+          },
+          {
+            "support": [
+              11,
+              26,
+              31,
+              38,
+              118
+            ],
+            "id": "b21"
+          },
+          {
+            "support": [
+              28,
+              44,
+              79,
+              87,
+              101
+            ],
+            "id": "b22"
+          },
+          {
+            "support": [
+              14,
+              17,
+              34,
+              80,
+              81
+            ],
+            "id": "b23"
+          },
+          {
+            "support": [
+              35,
+              40,
+              73,
+              95,
+              111
+            ],
+            "id": "b24"
+          },
+          {
+            "support": [
+              41,
+              66,
+              89,
+              95,
+              96
+            ],
+            "id": "b25"
+          },
+          {
+            "support": [
+              25,
+              36,
+              89,
+              98,
+              107
+            ],
+            "id": "b26"
+          },
+          {
+            "support": [
+              4,
+              9,
+              37,
+              45,
+              85
+            ],
+            "id": "b27"
+          },
+          {
+            "support": [
+              10,
+              44,
+              57,
+              74,
+              83
+            ],
+            "id": "b28"
+          },
+          {
+            "support": [
+              7,
+              16,
+              75,
+              81,
+              114
+            ],
+            "id": "b29"
+          },
+          {
+            "support": [
+              11,
+              24,
+              29,
+              73,
+              105
+            ],
+            "id": "b30"
+          },
+          {
+            "support": [
+              2,
+              52,
+              100,
+              103,
+              110
+            ],
+            "id": "b31"
+          },
+          {
+            "support": [
+              20,
+              23,
+              25,
+              62,
+              63
+            ],
+            "id": "b32"
+          },
+          {
+            "support": [
+              21,
+              53,
+              107,
+              109,
+              110
+            ],
+            "id": "b33"
+          },
+          {
+            "support": [
+              1,
+              7,
+              30,
+              53,
+              86
+            ],
+            "id": "b34"
+          },
+          {
+            "support": [
+              40,
+              71,
+              78,
+              103,
+              106
+            ],
+            "id": "b35"
+          },
+          {
+            "support": [
+              12,
+              47,
+              56,
+              59,
+              116
+            ],
+            "id": "b36"
+          },
+          {
+            "support": [
+              0,
+              34,
+              49,
+              60,
+              92
+            ],
+            "id": "b37"
+          },
+          {
+            "support": [
+              3,
+              18,
+              56,
+              87,
+              88
+            ],
+            "id": "b38"
+          },
+          {
+            "support": [
+              22,
+              37,
+              43,
+              69,
+              97
+            ],
+            "id": "b39"
+          },
+          {
+            "support": [
+              15,
+              51,
+              66,
+              93,
+              101
+            ],
+            "id": "b40"
+          },
+          {
+            "support": [
+              27,
+              55,
+              65,
+              112,
+              118
+            ],
+            "id": "b41"
+          },
+          {
+            "support": [
+              58,
+              67,
+              91,
+              92,
+              105
+            ],
+            "id": "b42"
+          },
+          {
+            "support": [
+              1,
+              3,
+              22,
+              35,
+              70
+            ],
+            "id": "b43"
+          },
+          {
+            "support": [
+              10,
+              38,
+              52,
+              90,
+              99
+            ],
+            "id": "b44"
+          },
+          {
+            "support": [
+              5,
+              43,
+              80,
+              93,
+              100
+            ],
+            "id": "b45"
+          },
+          {
+            "support": [
+              0,
+              9,
+              47,
+              96,
+              99
+            ],
+            "id": "b46"
+          }
+        ],
+        "used": [
+          "a1",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15",
+          "a16",
+          "a17",
+          "a18",
+          "a19",
+          "a2",
+          "a20",
+          "a21",
+          "a22",
+          "a23",
+          "a24",
+          "a25",
+          "a26",
+          "a27",
+          "a28",
+          "a29",
+          "a3",
+          "a30",
+          "a31",
+          "a32",
+          "a33",
+          "a34",
+          "a35",
+          "a36",
+          "a37",
+          "a38",
+          "a39",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "b1",
+          "b10",
+          "b11",
+          "b12",
+          "b13",
+          "b14",
+          "b15",
+          "b16",
+          "b17",
+          "b18",
+          "b19",
+          "b2",
+          "b20",
+          "b21",
+          "b22",
+          "b23",
+          "b24",
+          "b25",
+          "b26",
+          "b27",
+          "b28",
+          "b29",
+          "b3",
+          "b30",
+          "b31",
+          "b32",
+          "b33",
+          "b34",
+          "b35",
+          "b36",
+          "b37",
+          "b38",
+          "b39",
+          "b4",
+          "b40",
+          "b41",
+          "b42",
+          "b43",
+          "b44",
+          "b45",
+          "b46",
+          "b5",
+          "b6",
+          "b7",
+          "b8",
+          "b9"
+        ]
+      },
+      "term": "(delete_{a1}; delete_{a23})",
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 119,
+          "dim_X": 37,
+          "dim_Z": 46,
+          "k": 36
+        },
+        "note": "Two-step deletion chain on pinned 119-34-5 ( evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
+        "premise_displayed_generator": true,
+        "premise_independent": true
+      }
+    },
+    {
+      "id": "W25",
+      "acceptance_surface": false,
+      "title": "Stale certificate inherited after its generator is deleted",
+      "category": "certificate-inherit-inapplicable",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The judged claim is certificate inheritance, transcribed in machine/fixture_conformance.py: the term delete_{a1} itself derives, and the certificate block lives in `expected.certificate` (an additive, probe-local input; schema_version stays 0.3.0). Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "initial_state": {
+        "ref": "W0"
+      },
+      "term": "delete_{a1}",
+      "expected": {
+        "outcome": "no_derivation",
+        "certificate": {
+          "sector": "X",
+          "bound": 3
+        },
+        "premise_certificate_checker_accepts": true,
+        "premise_certificate_state_matches_current": false,
+        "premise_inherited_claim_would_be_false": true,
+        "detail": "A kill certificate for d_X >= 3 is minted for the pre-deletion state A (W0) and CHECKED AND ACCEPTED -- it is true of the parent, where d_X = +inf -- so the refusal below cannot read as a bad-artifact refusal. The term delete_{a1} derives and yields A1 (= W3.result_state), but the certificate's carried state still names row a1, so the carried-state comparison fails and no derivation closes for 'the certificate's bound carries to A1': absence of a derivation is the witness (the W13 half, dispositioned 2026-10-11). The inherited claim would also be FALSE of the child -- d_X(A1) = 2 < 3, measured post hoc by the exhaustive oracle, which is evidence and outside the calculus -- so the record pins refusal (no_derivation) for the inheritance judgment and refutation (false) for the inherited claim as two distinct labels; the exact child value stays unavailable through this route rather than being inherited, and neither label is collapsed into the other.",
+        "non_vacuity": "If the carried-state comparison were dropped (ablation 4b, guard A2), the evaluator would inherit the parent certificate and report derivable while the true child distance is 2 - the UNSOUND 'd = 3 (inherited)' report of ablation probe P1. If the refusal were vacuous, premise_certificate_checker_accepts would be false: the artifact is valid, only its staleness refuses it, and that premise fails the record when it does not hold."
+      },
+      "caveats": [
+        "purpose: an implementation that re-checks the certificate but not the state it speaks about would reproduce every W0-W16 fixture and still inherit this one; per-state scope is checker contract clause 5 (spec/GATES.md section 4), and this probe makes that clause executable rather than asserted"
+      ]
+    },
+    {
+      "id": "W26",
+      "acceptance_surface": false,
+      "title": "Two states sharing a live identifier, with unequal used sets",
+      "category": "direct-sum-inapplicable",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Sharpening of W21: the shared identifier p1 is live on both sides, but the two used sets are UNEQUAL, so an implementation testing used-set equality rather than nonempty intersection reproduces W21 and still accepts this sum. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "initial_state": {
+        "S_L": {
+          "Q": [
+            1,
+            2,
+            3
+          ],
+          "rows_X": [
+            {
+              "support": "12",
+              "id": "p1"
+            },
+            {
+              "support": "23",
+              "id": "p2"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "p1",
+            "p2"
+          ]
+        },
+        "S_R_shared": {
+          "Q": [
+            4,
+            5
+          ],
+          "rows_X": [
+            {
+              "support": "45",
+              "id": "p1"
+            }
+          ],
+          "rows_Z": [],
+          "used": [
+            "p1"
+          ]
+        }
+      },
+      "term": "S_L (+) S_R_shared",
+      "expected": {
+        "outcome": "no_derivation",
+        "premise_qubit_disjoint": true,
+        "premise_used_disjoint": false,
+        "detail": "Q_L intersect Q_R = {1,2,3} intersect {4,5} = empty, so the qubit-namespace premise HOLDS; the live identifier p1 is a displayed row of each summand, so used_L intersect used_R = {p1} is nonempty and the C-DIRECT-SUM used-disjointness premise after the R1 disposition (2026-09-26) FAILS - no EvalExpr derivation. Both summands are individually well-formed; the constructor, not the states, is inapplicable. Unlike W21 the used sets are not equal ({p1,p2} vs {p1}): the premise is a nonempty intersection, not set equality.",
+        "non_vacuity": "used_L != used_R here, so an equality test on the two used sets accepts this sum while reproducing W21 (where the sets are equal); an implementation checking only qubit disjointness accepts both. The collision must be read as an intersection over the identifier history of the two summands."
+      },
+      "caveats": [
+        "purpose: an implementation testing used-set equality rather than intersection would reproduce every W0-W16 fixture, W21 and W22 and still be wrong about the R1 used-disjointness premise; the defect would surface in use rather than in the acceptance surface"
+      ]
+    },
+    {
+      "id": "W27",
+      "acceptance_surface": false,
+      "title": "Dependent displayed Z rows (I2 on the Z side)",
+      "category": "state-malformed",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. W1 pins the I2 (displayed independence) violation on the X side; this record pins it on the Z side. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "initial_state": {
+        "Q": [
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "123",
+            "id": "a1"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "13",
+            "id": "b1"
+          },
+          {
+            "support": "23",
+            "id": "b2"
+          },
+          {
+            "support": "12",
+            "id": "b3"
+          }
+        ],
+        "used": [
+          "a1",
+          "b1",
+          "b2",
+          "b3"
+        ]
+      },
+      "term": null,
+      "expected": {
+        "outcome": "malformed",
+        "detail": "b3 = b1 + b2 in F_2^Q, so the displayed Z rows violate I2 (displayed independence). I1 holds - the X row 123 has even overlap with every Z row - so the refusal is attributable to I2 alone. Rejected before any evaluation, exactly as W1 is rejected on the X side: the state is not a well-formed presented state (row spaces still satisfy X perp Z; the defect is in the presentation).",
+        "non_vacuity": "An implementation that runs the independence test only on X rows reproduces every W0-W16 fixture (W1 included) and still accepts this state, because k is computed from the true rank (3 - 1 - 2 = 0): the display would count three Z generators where the row space has two, and every downstream k and distance bound reads a display that is not independent."
+      },
+      "caveats": [
+        "purpose: an implementation that checks I2 only in the X sector would reproduce the whole acceptance surface and still be wrong about the sector-symmetric statement of the invariant"
+      ]
+    },
+    {
+      "id": "W28",
+      "acceptance_surface": false,
+      "title": "State with a row whose support leaves Q (encoding-level probe)",
+      "category": "state-malformed",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The state-level counterpart of W22: W22's malformed_case_note names a state carrying such a row as a different case (malformed at the encoding, not no_derivation), and this record executes that case. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "initial_state": {
+        "Q": [
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "support": "23",
+            "id": "a2"
+          },
+          {
+            "support": "45",
+            "id": "a3"
+          }
+        ],
+        "rows_Z": [
+          {
+            "support": "123",
+            "id": "b1"
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "b1"
+        ]
+      },
+      "term": null,
+      "expected": {
+        "outcome": "malformed",
+        "detail": "a3 has support {4,5}, which is not a subset of Q = {1,2,3}: supp(r) subseteq Q is a typing condition on the display (STATE_MODEL.md section 1), NOT one of I1-I5 - this state satisfies I1-I5 exactly as written (X = <23,45>, Z = <123>, orthogonal, independent, k = 0), so an evaluator that checks only the invariants accepts it and starts reading k and distance bounds off a state that is not a code on Q. Malformed at the encoding (REPRESENTATION.md sections 2 and 6; machine/state.json constraint 'every element in Q'), rejected before any evaluation - not no_derivation, not false. This is the state-level counterpart of the term-level probe W22, whose malformed_case_note records this case as different from its own.",
+        "non_vacuity": "Every other clause of well-formedness holds here, so the refusal is attributable to the ambient-containment typing alone; an implementation reading supp(r) subseteq Q only in the C-ADD-CHECK premise (W22) reproduces every W0-W16 fixture, W21, W22 and W23 and still accepts this state at construction."
+      },
+      "caveats": [
+        "purpose: an implementation whose state constructor checks I1-I5 but not ambient containment would reproduce the acceptance surface and still build states that are not codes on Q (ablation 4b, guard A14, at the construction level)"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "id": "W17",
+      "reason": "later-layer probe (lower-level-constructor layer, L-*): constructor judgment transport from the Lean-QEC/QECLean prior-art update; not part of the MVP acceptance surface",
+      "also_excluded": [
+        "W18",
+        "W19"
+      ],
+      "reason_all": "extension-layer probes (heterogeneous-distance merge, grow-rotate-shrink routing); outside the MVP calculus"
+    }
+  ]
+}
