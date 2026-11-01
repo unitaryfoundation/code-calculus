@@ -108,4 +108,4 @@ jobs:
           fi
       - name: Run pinned replay
         working-directory: code-calculus
-        run: python3 machine/experiments/issue21_challenge_replay.py ../qldpc-challenge
+        run: python3 machine/experiments/challenge_replay.py ../qldpc-challenge

@@ -1,0 +1,6 @@
+name = "CodeCalculus"
+version = "0.1.0"
+defaultTargets = ["CodeCalculus"]
+
+[[lean_lib]]
+name = "CodeCalculus"

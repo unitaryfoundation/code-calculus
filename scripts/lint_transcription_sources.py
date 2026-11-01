@@ -24,7 +24,7 @@ such as `C-SKIP`. The checks are:
   7. every `.md` path named in any `machine/*.json` resolves (as a
      repo-relative path, or as a bare `spec/` file name, which is how the
      transcriptions cite normative sections) — added 2026-10-29
-     after nine references to a since-renamed `notes/CONFORMANCE_CONTRACT.md`
+     after nine references to a since-renamed `an archived note`
      went unnoticed;
   8. `state.json`, `operation_registry.json` and `machine/fixtures/
      mvp_fixtures.json` are covered too: their `source_of_truth` paths
@@ -179,8 +179,8 @@ def resolves_md(name):
 
     A reference that *does* name a directory must resolve exactly: that is the
     shape a since-moved path has, and it is what nine references to
-    `notes/CONFORMANCE_CONTRACT.md` looked like before the file's successor was
-    found at `spec/CONFORMANCE.md`."""
+    `an archived note` looked like before the file's successor was
+    found at `an archived note`."""
     if os.path.isfile(name):
         return True
     if os.path.isfile(os.path.join("spec", os.path.basename(name))):

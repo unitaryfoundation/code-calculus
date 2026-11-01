@@ -9,7 +9,7 @@
 #      carries a `source` that resolves to one spec/ section naming the
 #      operation (scripts/lint_transcription_sources.py);
 #   5. malformed links are reported: a backtick-quoted path used as a link
-#      without brackets (`X.md`(Y)), doubled opening brackets before a link,
+#      without brackets (`an archived note`(Y)), doubled opening brackets before a link,
 #      and link *text* that names a file which exists nowhere in the repo.
 #
 # ID tokens are extracted as maximal runs of uppercase letters, digits, and
@@ -67,7 +67,7 @@ if ! python3 scripts/lint_transcription_sources.py; then
 fi
 
 # 5. Malformed links, in the live tree only. (a) a backtick-quoted path used as
-#    a link without brackets -- `spec/X.md`(spec/X.md) renders as code plus
+#    a link without brackets -- `an archived note`(an archived note) renders as code plus
 #    parentheses, so the reference never becomes clickable; (b) a doubled
 #    opening bracket, the signature of a relabel substitution that ate one
 #    bracket; (c) link *text* that names a file which exists nowhere in the
