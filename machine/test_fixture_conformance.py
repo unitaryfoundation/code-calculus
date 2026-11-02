@@ -1,4 +1,4 @@
-"""Conformance entry point for the MVP fixture evaluator (TODO item 2)."""
+"""Conformance entry point for the MVP fixture evaluator."""
 
 import os
 import sys

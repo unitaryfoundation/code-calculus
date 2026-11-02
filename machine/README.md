@@ -28,7 +28,8 @@ proofs.
   transcription.
 - `fixtures/` — `mvp_fixtures.json` (the state-level fixture surface) and
   `qldpc_10_2_3_b.json`.
-  (`an archived note`), layout/graft surveys, and recorded reports.
+- `experiments/` — fixture-conformance and priced-conformance reports, the
+  certificate prototype, and the pinned qLDPC challenge replay.
 - `test_*.py` — the test suite run by CI (`python -m pytest -q machine/`).
 - `requirements.txt` — Python dependencies.
 

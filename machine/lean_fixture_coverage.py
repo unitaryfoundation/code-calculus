@@ -142,7 +142,7 @@ def coverage_report():
 
 def main():
     r = coverage_report()
-    print("Lean <-> Python fixture coverage ( spike)")
+    print("Lean <-> Python fixture coverage")
     print("  python fixtures:                  %d" % r["python_fixtures"])
     print("  lean state definitions:           %d" % r["lean_state_defs"])
     print("  lean covered fixtures:            %d" % r["lean_covered_fixtures"])
@@ -157,7 +157,7 @@ def main():
     print("What this cannot see:")
     print("  - This report counts well-formedness theorems only. The Eval/EvalExpr")
     print("    replays of the single-step and two-step fixtures (positive and negative)")
-    print("    live in lean/CodeCalculus/FixtureEvalReplay.lean () and are")
+    print("    live in lean/CodeCalculus/FixtureEvalReplay.lean and are")
     print("    not counted here.")
     print("  - No distance, price, or interval transport is computed on the Lean side.")
     if "W24" in r["lean_uncovered_fixtures"]:
