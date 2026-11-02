@@ -520,7 +520,7 @@ evidence status licenses (no available argument yet).
  not $\equiv$), and enumerating the `used` set among the unions in
  `OBL-DIRECT-SUM-LAWS`. This bullet was the sole outlier.
 - $\approx$ — presentation equivalence: relabeling transport of qubits,
- displayed rows, identifiers, and sector labels (proposal §3.2).
+ displayed rows, identifiers, and sector labels (the research proposal (see REFERENCES.md)).
 - Fresh identifiers are minted by the canonical rule (I3), so every MVP
  primitive is deterministic; displayed rows are finite unordered sets. The
  determinism claim made in this convention is discharged per primitive by
@@ -752,7 +752,7 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 **Statement.** $(m_1;m_2);m_3\equiv m_1;(m_2;m_3)$ as partial state
 transformers — literally equal, `steps` included, since step-log concatenation
 is associative — and the big-step relation is adequate for the conventional
-left-to-right reading (proposal §4: associativity and denotational adequacy are
+left-to-right reading (the research proposal (see REFERENCES.md): associativity and denotational adequacy are
 proof obligations, not assumed equations).
 
 **Note.** The denotation the adequacy half is stated
@@ -1014,7 +1014,7 @@ relabeling $\sigma$ with $\tilde S=\sigma S\approx S$:
 `P-REBASE` remains deferred in the MVP: its clause cannot be exercised until
 support-sensitive applicability is formalized.
 
-**Hypotheses.** The presentation equivalence of proposal §3.2; the
+**Hypotheses.** The presentation equivalence of the research proposal (see REFERENCES.md); the
 identifier-visibility reading, ratified at the walkthrough.
 
 **Dependencies.** `OBL-DIRECT-SUM-LAWS`; .
@@ -1067,7 +1067,7 @@ statement about presentation equivalence and not about the direct-sum laws.
 
 **Disposition.**
 This statement previously opened "Direct sum is associative and commutative up to
-$\approx$", citing proposal §3.2, which said the laws hold "not by literal equality
+$\approx$", citing the research proposal (see REFERENCES.md), which said the laws hold "not by literal equality
 of labeled states". The two artifacts disagreed, and this entry also disagreed
 with itself: its next sentence already said both bracketings and both orders
 "literally agree". Resolved in favour of literal equality, on the ground that the
@@ -1106,7 +1106,7 @@ named whose presentation could differ. The statement above is left verbatim
 pending a dated . The separately-corrected claim that the
 value of $C_A\oplus C_B$ for an ordered pair is determined does not depend on
 this question; see [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2,
-`C-DIRECT-SUM`. **Resolution:** the ledger and proposal §3.2 are brought into
+`C-DIRECT-SUM`. **Resolution:** the ledger and the research proposal (see REFERENCES.md) are brought into
 agreement with each other and with 's collection convention by the disposition
 above, which fixes the laws at $\equiv$.
 
@@ -1183,7 +1183,7 @@ composition schema (S1, `JUDGMENT_LAYER.md` §7.2.4) and the interval
 composition theorem (S2, §8.5); verdict monotonicity is S3 §9.2. No status
 change.
 
-**Hypotheses.** Persistence conditions on annotations (proposal §7.4); the
+**Hypotheses.** Persistence conditions on annotations (the research proposal (see REFERENCES.md)); the
 annotation-invalidation design of the future context inventory.
 
 **Dependencies.** ; `OBL-SEQUENCE-ASSOCIATIVITY`;
@@ -1217,7 +1217,7 @@ operations.
 **Intended mechanization status:** Lean metatheorem after –; Gate 6 input.
 
 **Statement.** Every later derived command must be proved equivalent to its
-sequence of elementary commands before admission (proposal §4 factorization),
+sequence of elementary commands before admission (the research proposal (see REFERENCES.md) factorization),
 where equivalence is $\equiv$ or $\approx$ as the derived signature indicates
 and mints are canonical (I3). Instances already identified: multi-row deletion
 as a batch operation (`spec/TAXONOMY.md` §2.3, via
@@ -1388,7 +1388,7 @@ by these landings: they are mechanization progress, not a status upgrade.
 
 
 **Statement.** $\Gamma\vdash \operatorname{Eval}(m,S,S') : R$ implies
-$\operatorname{Eval}(m,S,S')$ and $(S,m,S')\models R$ (proposal §5): every
+$\operatorname{Eval}(m,S,S')$ and $(S,m,S')\models R$ (the research proposal (see REFERENCES.md)): every
 derivable annotation is true of the denoted command evaluation.
 
 **Hypotheses.** $\Gamma$ contains only well-formedness assumptions of ; the

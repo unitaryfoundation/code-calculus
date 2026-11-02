@@ -393,7 +393,7 @@ normative dependency.)*
  product — two length-two chain complexes, the total complex truncated to its
  central three terms — so it instantiates this record rather than adjoining to it,
  and it is emphatically not `C-DIRECT-SUM` (the output qubit set overlaps both
- inputs, so the namespace-disjointness premise of proposal §7.1 and the
+ inputs, so the namespace-disjointness premise of the research proposal (see REFERENCES.md) and the
  used-set premise of I3 are both unavailable, and $k$ multiplies where
  `C-DIRECT-SUM` adds).
 - **Why "Constructor-specific" is now too weak.** It hides that the parameter
@@ -482,7 +482,7 @@ normative dependency.)*
  a Gate 7 decision that may never occur, so a repair decided today may
  accommodate a constructor that is never admitted. That reasoning is retained here
  so the trade-off is auditable.
- lower-level constructors require typed input objects is Gate 7 (proposal §10,
+ lower-level constructors require typed input objects is Gate 7 (the research proposal (see REFERENCES.md),
  *constructor, family, and completeness decision*). Both remain open; neither is
  dispositioned here.
 - **Claim status.** The distance-gain statement for this constructor is
@@ -497,7 +497,7 @@ normative dependency.)*
  $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$; those judgments are `not yet
  defined` here, not `unavailable`.
 - **Admission status.** §2.13 has no grammar production — `A-*`/`L-*` constructors
- need typed inputs (proposal §8; crosswalk in `spec/TERM_LANGUAGE.md §2`) — and it
+ need typed inputs (the research proposal (see REFERENCES.md); crosswalk in `spec/TERM_LANGUAGE.md §2`) — and it
  carries taxonomy-only rows for the L-* constructors; see [`CLAIMS.md`](CLAIMS.md)
  *Initial contract index* and no stable identifier, so it sits below the ladder's
  first rung (`taxonomy-only`) rather than on it. The families it would serve are

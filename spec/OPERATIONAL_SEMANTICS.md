@@ -139,8 +139,7 @@ one-face union merge iff the added row is the face boundary of a defect face
 no gauging step is a merge. Multi-defect combined gauging ($k-1$) differs from
 multi-face filling ($k-|D'|$). This is an identification under the face-set
 model; the remainder (graft as a one-qubit split; check deletion as a mapping
-cone or sui generis) is open. Source: *code-deformation* claim 15.10
-(Theorem 22.1 + Corollary 22.2).
+cone or sui generis) is open. Source: external input (see REFERENCES.md).
 
 ### `C-SEQUENCE`
 
@@ -152,8 +151,7 @@ fusion partner's face set; when they are not disjoint, order moves the
 distance (punch-then-fuse $d_Z=5$ versus fuse-then-punch $d_Z=4$ on the
 frame+plug family). Sequence certificates must record row order. This is a
 conditional statement about the face-set model, not a claim about general
-schedules. Source: *code-deformation* claims 15.8 (Prop. 20.2) and 15.9
-(Witness 20.3).
+schedules. Source: external input (see REFERENCES.md).
 
 ### `E-GRAFT`
 
@@ -238,7 +236,7 @@ re-derived mechanically. Their qualifications are retained verbatim, per `AGENTS
 Dated hand derivations behind the
 `established` claim-status tags of the proposal. Each is to be re-derived
 – — these are not machine-checked. All parameters are the
-proposal §3.1 definitions.
+the research proposal (see REFERENCES.md) definitions.
 
 **§4.1 — Deletion (`C-DELETE-CHECK`).** The deleted row is displayed and
 independent (I2), so removing it drops the rank of its sector's row space by
@@ -1034,10 +1032,10 @@ of a fixed-dimensional row space. $\square$
 
 ## 4.19 — Reproduced derivations for the conditional construction cells
 
-Hand derivations, reproduced from
-`../emlint-dev/papers/code-deformation/PROOFS.md` (Theorem 12.1 — manuscript
-Theorem 7 —, Proposition 18.3, Theorem 28.1–28.3) and adapted to this
-repository's CSS state model and vocabulary. Evidence, not machine-checked.
+Hand derivations, reproduced from an external manuscript (Theorem 12.1 —
+manuscript Theorem 7 —, Proposition 18.3, Theorem 28.1–28.3) and adapted to
+this repository's CSS state model and vocabulary. Evidence, not machine-checked.
+See `REFERENCES.md`.
 
 Three of the source's steps do not transfer to the transition as specified in
 §2, and are marked **corrected** below: Lemma 28.1a, the spliced-sector

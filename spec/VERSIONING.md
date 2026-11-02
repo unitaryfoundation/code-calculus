@@ -53,7 +53,7 @@ historical `stdCSS-1` baseline. The release table records both axis sets.
 | --- | --- |
 | State model | phase-insensitive standard CSS |
 | Operation set | `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE` |
-| Assertion language | proposal §5–§6: $n$, $k$, $d_X$, $d_Z$; $=$, $\leq$, $\geq$; structural predicates; finite conjunction |
+| Assertion language | the research proposal (see REFERENCES.md): $n$, $k$, $d_X$, $d_Z$; $=$, $\leq$, $\geq$; structural predicates; finite conjunction |
 | Obligation set | the Gate 0–5 targets tracked in [`OBLIGATIONS.md`](OBLIGATIONS.md) |
 
 **Item-level convention:** absence of an `introduced-in` field means `stdCSS-1`
@@ -157,7 +157,7 @@ pin, as the tree stands at `f030b61`, is:
  the six Gate 6 CSS-level conditional cells (`E-GLUE`, `E-PEEL`,
  `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD`, `P-REBASE`), at their recorded
  rungs; `E-GLUE` remains without a unary grammar production.
-- **Assertion language:** proposal §5–§6: $n$, $k$, $d_X$, $d_Z$, $d$, $w$,
+- **Assertion language:** the research proposal (see REFERENCES.md): $n$, $k$, $d_X$, $d_Z$, $d$, $w$,
  $r$; $=$, $\leq$, $\geq$; structural predicates; finite conjunction; plus
  the Gate 6 structural effects of §4.26–§4.30.
 - **Obligation set:** Gates 0 and 1 (ratified

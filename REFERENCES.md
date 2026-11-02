@@ -42,3 +42,44 @@ The proposal and the archived note are internal planning records; the
 manuscript is a separate (in-preparation) publication. Publishing them here
 would conflate planning history with normative specification. The calculus is
 stated so that its normative content does not depend on reading either.
+
+## External inputs taken (not reproduced in full)
+
+The following results are taken as inputs from the manuscript named above.
+Where a derivation is reproduced in this repository, the location is given.
+None of these is a proof of a calculus claim; each enters only as a
+conditional cell or as a recorded input, and the consumer never validates it.
+
+- **Theorem 12.1** (manuscript Theorem 7), *code-deformation* §4.1 — priced
+  single-check deletion: exact `d' = min(d, w_del, w_exp)` when the consumer
+  supplies `w_del`, `w_exp`. Reproduced at
+  `spec/OPERATIONAL_SEMANTICS.md` §4.19.
+- **Proposition 18.3**, *code-deformation* §5.2 — strict improvement under
+  addition: `d' ≥ d+1` with an exhaustive minimum-weight-class enumeration.
+  Reproduced at `spec/OPERATIONAL_SEMANTICS.md` §4.19.
+- **Lemma 18.5**, *code-deformation* §5.2 — sector-aware gauging: a supplied
+  sector's lower bound is raised to `w_σ`.
+- **Proposition 18.6 + Corollary 18.7**, *code-deformation* §5.2 —
+  direct-sum extinction: `d' = d_B` under the stated structural side
+  conditions (stack family only).
+- **Theorems 27.2 / 27.5 / 27.8**, *code-deformation* §9.4 — `A-CONCAT`
+  tower factorization as a deletion/exposure price provider (not a
+  constructor).
+- **Theorem 28.1**, *code-deformation* §9.5 — only deleted rows can expose a
+  logical. Reproduced at `spec/OPERATIONAL_SEMANTICS.md` §4.19.
+- **Theorem 28.2**, *code-deformation* §9.5 — sector-wise graft price.
+  Reproduced (with corrections) at `spec/OPERATIONAL_SEMANTICS.md` §4.19.
+- **Theorem 28.3**, *code-deformation* §9.5 — scalar monotonicity; **refuted**
+  for this transition (see `spec/OPERATIONAL_SEMANTICS.md` §4.13 and §4.20).
+- **Claims 15.8, 15.9, 15.10**, *code-deformation* — face-set-model
+  observations about gauging-as-merge and sequencing non-commutativity.
+  Recorded at `spec/OPERATIONAL_SEMANTICS.md` §2.
+
+## Historical provenance
+
+Shorthand citations (`proposal §N`, `code-deformation`, `manuscript`,
+`an archived internal note`) are historical provenance only. The normative
+content of `spec/` does not depend on reading any of them, and they are not
+required to understand or use the calculus. Where a result above is reproduced,
+the reproduction in `spec/OPERATIONAL_SEMANTICS.md` §4 is the authoritative
+statement in this repository.

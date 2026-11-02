@@ -36,7 +36,7 @@ The planning target consisting of skip, direct sum, single-check deletion, singl
 The distinction between taxonomy-only, syntax-candidate, transition-defined, state-sound, contract-stated, contract-proved, and mechanized. A draft contract or planned transition is not an admitted or mechanized rule.
 
 **Opaque distance term**:
-A distance predicate $d_X$ or $d_Z$ appearing in an assertion. It is not a function of the row space: no rule or procedure may compute a distance from the exact state update, and an assertion equating a distance to an expression over the row space is not well-formed (proposal §6 *Distance opacity*; ratified.
+A distance predicate $d_X$ or $d_Z$ appearing in an assertion. It is not a function of the row space: no rule or procedure may compute a distance from the exact state update, and an assertion equating a distance to an expression over the row space is not well-formed (the research proposal (see REFERENCES.md) *Distance opacity*; ratified.
 _Avoid_: any phrasing implying the calculus evaluates a distance, and any future claim of the form "$d$ is a function of the row space", which is unstatable in this language without a release bump.
 
 **Unavailable judgment**:
