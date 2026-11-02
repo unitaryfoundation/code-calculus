@@ -1,6 +1,6 @@
 {
   "harness": "priced_conformance_harness",
-  "git_commit": "dba87eeed729019434872e58cbd76f33f0f9276d",
+  "git_commit": "81e99156600f393162d756d70fa1e3dd8d525b35",
   "cases_attempted": 200,
   "total_violations": 0,
   "per_operation_violation_counts": {},

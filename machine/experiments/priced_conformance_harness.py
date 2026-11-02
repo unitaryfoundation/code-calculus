@@ -191,23 +191,29 @@ def _all_minimum_classes_killed(state, added_mask, side, base_distance):
     """Whether every weight-base_distance logical (as vectors) is killed."""
     if base_distance is None:
         return False
-    same = [row.mask for row in state.sector_rows(side)]
-    opposite = [row.mask for row in state.sector_rows("Z" if side == "X" else "X")]
+    # The added check lies in `side`; it can kill logicals of the opposite
+    # sector (anticommute) and, conservatively, we only claim a kill when
+    # the anticommutation condition holds.  Logical classes of the opposite
+    # sector commute with the `side` stabilizers and avoid the opposite
+    # sector's own stabilizer span.
+    logical_sector = "Z" if side == "X" else "X"
+    commute_with = [row.mask for row in state.sector_rows(side)]
+    avoid_span = [row.mask for row in state.sector_rows(logical_sector)]
     # enumerate all vectors of exact weight base_distance
     q_labels = list(state.Q)
     for combo in itertools.combinations(q_labels, base_distance):
         mask = 0
         for q in combo:
             mask |= 1 << q
-        # logical: commutes with opposite, not in same span
-        if not all(_popcount(mask & row) % 2 == 0 for row in opposite):
+        # logical: commutes with the added check's sector, not in the
+        # opposite sector's stabilizer span
+        if not all(_popcount(mask & row) % 2 == 0 for row in commute_with):
             continue
-        if pc.in_span(mask, same):
+        if pc.in_span(mask, avoid_span):
             continue
-        # killed if odd intersection with added_mask OR in killed span
+        # killed if odd intersection with added_mask
         if _popcount(mask & added_mask) % 2 == 0:
-            # not killed by anticommutation; check killed span not implemented
-            # conservatively: not killed
+            # not killed by anticommutation (K-membership not trusted here)
             return False
     return True
 
@@ -266,7 +272,15 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
             for q in support:
                 added_mask |= 1 << q
             base = current_exact["d"]
-            if base is not None and current_ledger.full.lower == current_ledger.full.upper == base:
+            opposite_sector = "Z" if sector == "X" else "X"
+            # Strict improvement of the full distance is only possible when
+            # the added check's own sector is not itself the bottleneck:
+            # otherwise a minimum logical in that sector survives.
+            own_distance = current_exact.get(sector)
+            if (base is not None
+                    and current_ledger.full.lower == current_ledger.full.upper == base
+                    and current_exact.get(opposite_sector) == base
+                    and (own_distance is None or own_distance > base)):
                 if _all_minimum_classes_killed(current_state, added_mask, sector, base):
                     hyp = {"strict_improvement": {
                         "base_distance": base,
