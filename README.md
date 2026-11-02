@@ -306,6 +306,37 @@ derivation error) are reported as normal issues, not security issues — see
 `SECURITY.md`. Decisions belong in pull requests or `CHANGELOG.md`, not
 amended into the artifact they concern.
 
+## Citation
+
+If you use code-calculus in your work, please cite the repository:
+
+```bibtex
+@software{rennela2026codecalculus,
+  title        = {code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes},
+  author       = {Mathys Rennela},
+  year         = {2026},
+  version      = {0.1.0},
+  publisher    = {Unitary Foundation},
+  url          = {https://github.com/unitaryfoundation/code-calculus},
+  license      = {Apache-2.0}
+}
+```
+
+A manuscript describing the calculus is in preparation; once it is available,
+this citation will be updated to point to it.
+
+## AI Acknowledgement
+
+We used generative AI tools during parts of the research, software-development,
+and writing workflow for this project. These tools assisted with code generation
+and review, implementation analysis, documentation editing, and checks of
+selected derivations or arguments. All substantive design, validation, and
+release decisions were made by the human contributors.
+
+## Funding
+
+This work was supported by the Unitary Foundation.
+
 ## License
 
 Apache 2.0 — see `LICENSE`.

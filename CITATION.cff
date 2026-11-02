@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes"
+authors:
+  - family-names: Rennela
+    given-names: Mathys
+repository-code: "https://github.com/unitaryfoundation/code-calculus"
+url: "https://github.com/unitaryfoundation/code-calculus"
+version: 0.1.0
+date-released: "2026-11-01"
+license: Apache-2.0
+publisher: Unitary Foundation
