@@ -1,5 +1,11 @@
 # code-calculus
 
+[![Supported By-Unitary Foundation](https://img.shields.io/badge/Supported%20By-Unitary%20Foundation-FFFF00.svg)](https://unitary.foundation)
+[![License](https://img.shields.io/github/license/unitaryfoundation/code-calculus.svg)](https://github.com/unitaryfoundation/code-calculus/blob/main/LICENSE)
+[![Validation](https://github.com/unitaryfoundation/code-calculus/actions/workflows/ci.yml/badge.svg)](https://github.com/unitaryfoundation/code-calculus/actions/workflows/ci.yml)
+[![Lean](https://github.com/unitaryfoundation/code-calculus/actions/workflows/lean_action_ci.yml/badge.svg)](https://github.com/unitaryfoundation/code-calculus/actions/workflows/lean_action_ci.yml)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/unitaryfoundation/code-calculus/blob/main/CODE_OF_CONDUCT.md)
+
 > A formal calculus of transformations on CSS quantum error-correcting codes.
 
 **code-calculus** is a research artifact (Apache 2.0) that treats code
