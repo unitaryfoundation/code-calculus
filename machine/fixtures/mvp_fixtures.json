@@ -4,7 +4,7 @@
   "schema_note": "0.3.0 (2026-10-27): adds per-premise structured fields (premise_*) to conformance records, additive over 0.2.0; no existing field removed. 0.2.0 -> 0.3.0 is a fixture-schema bump only. 0.2.0 (2026-10-05): adds the boolean field `acceptance_surface` to every record. 0.1.0 -> 0.2.0 is additive only; no W0-W16 record's content changed. The field marks what the conformance rule executes. `true` = MVP acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26. `false` = supplementary probe, executed as a probe but NOT part of that surface. Maintainer disposition 2026-10-05, option B. See spec/CLAIMS.md sections 2 and 7. 2026-10-29 (): the W25 probe adds an optional, probe-local `expected.certificate` input object ({sector, bound}) read by machine/fixture_conformance.py; additive only, no existing record changed, schema_version stays 0.3.0.",
   "source_of_truth": {
     "governing": "spec/ plus this JSON. AGENTS.md (Normative artifacts): machine/ is a derived transcription, so where spec/ and this JSON disagree spec/ wins and the transcription is fixed; where this JSON and an evaluator disagree, this JSON is what the evaluator must match. A disagreement anywhere in that triangle is a defect in one of the three, not a precedence call.",
-    "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model), on branch redteam-followup-corrections. Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
+    "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model). Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
     "state_model_note": "State tuple includes the semantic used-identifier set per the review finding disposition (2026-09-26): C = (Q, X, Z, pres, used)."
   },
   "status": "current",
@@ -2048,7 +2048,7 @@
       "acceptance_surface": false,
       "title": "Stale certificate inherited after its generator is deleted",
       "category": "certificate-inherit-inapplicable",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The judged claim is certificate inheritance, transcribed in machine/fixture_conformance.py: the term delete_{a1} itself derives, and the certificate block lives in `expected.certificate` (an additive, probe-local input; schema_version stays 0.3.0). Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The judged claim is certificate inheritance, transcribed in machine/fixture_conformance.py: the term delete_{a1} itself derives, and the certificate block lives in `expected.certificate` (an additive, probe-local input; schema_version stays 0.3.0). Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "ref": "W0"
       },
@@ -2074,7 +2074,7 @@
       "acceptance_surface": false,
       "title": "Two states sharing a live identifier, with unequal used sets",
       "category": "direct-sum-inapplicable",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Sharpening of W21: the shared identifier p1 is live on both sides, but the two used sets are UNEQUAL, so an implementation testing used-set equality rather than nonempty intersection reproduces W21 and still accepts this sum. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Sharpening of W21: the shared identifier p1 is live on both sides, but the two used sets are UNEQUAL, so an implementation testing used-set equality rather than nonempty intersection reproduces W21 and still accepts this sum. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "S_L": {
           "Q": [
@@ -2132,7 +2132,7 @@
       "acceptance_surface": false,
       "title": "Dependent displayed Z rows (I2 on the Z side)",
       "category": "state-malformed",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. W1 pins the I2 (displayed independence) violation on the X side; this record pins it on the Z side. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. W1 pins the I2 (displayed independence) violation on the X side; this record pins it on the Z side. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "Q": [
           1,
@@ -2181,7 +2181,7 @@
       "acceptance_surface": false,
       "title": "State with a row whose support leaves Q (encoding-level probe)",
       "category": "state-malformed",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The state-level counterpart of W22: W22's malformed_case_note names a state carrying such a row as a different case (malformed at the encoding, not no_derivation), and this record executes that case. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The state-level counterpart of W22: W22's malformed_case_note names a state carrying such a row as a different case (malformed at the encoding, not no_derivation), and this record executes that case. Next free W-number: W29 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "Q": [
           1,

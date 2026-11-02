@@ -158,7 +158,7 @@
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "E-GRAFT": {
-    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= 2r by the triangle inequality on the graft's adjacent products. The naive claim that the graft preserves the radius is FALSE: 198 of 823 applicable grafts over the challenge's board entries with n <= 14 increase it on the pinned checkout 9d30c66a (see the conformance harness). (see the conformance harness).",
+    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= 2r by the triangle inequality on the graft's adjacent products. The naive claim that the graft preserves the radius is FALSE: 198 of 823 applicable grafts over the challenge's board entries with n <= 14 increase it on the pinned checkout 9d30c66a (see the conformance harness).",
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "C-DIRECT-SUM": {

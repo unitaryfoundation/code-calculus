@@ -161,7 +161,7 @@
     "shape": "partial big-step",
     "partiality": "No judgment when a command is inapplicable. No residual commands, no half-updated states, no partial results are ever exposed (W10).",
     "construction": "Eval(m >< e, S') when EvalExpr(e, S) and Eval(m, S, S')",
-    "derived_denotation": "Added 2026-10-25 (, Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
+    "derived_denotation": "Added 2026-10-25 (Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
   },
   "outcomes": {
     "derivable": "A derivation exists and the assertion is included.",

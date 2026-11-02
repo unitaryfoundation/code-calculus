@@ -7,7 +7,7 @@ This script turns the *lower-bound half* of that oracle into a checkable
 artifact: a kill certificate per sector for ``d_sigma >= 3`` on the pinned
 ``an archived note`` parent, verified by the checker in
 `machine/certificates.py`. It records the artifact sizes and the
-kill-criterion assessment required by the 's first-branch deliverable
+kill-criterion assessment required by the first-branch deliverable
 (`an archived note` sections 5 and 8).
 
 The upper-bound half stays where it already was: a logical witness the

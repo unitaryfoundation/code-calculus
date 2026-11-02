@@ -25,5 +25,5 @@ Run from the repository root:
 
 ```sh
 sh scripts/lint_docs.sh
-PYTHONPYCACHEPREFIX=/private/tmp/code-calculus-pycache python3 -m unittest machine.test_priced_calculus -v
+PYTHONPYCACHEPREFIX=/tmp/code-calculus-pycache python3 -m unittest machine.test_priced_calculus -v
 ```

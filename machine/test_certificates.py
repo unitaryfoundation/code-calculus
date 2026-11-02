@@ -1,4 +1,4 @@
-"""Certificate-layer prototype tests (, first branch).
+"""Certificate-layer prototype tests.
 
 The format and checker live in `machine/certificates.py`; the committed
 instance artifact is `the conformance harness`. No

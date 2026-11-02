@@ -3,7 +3,7 @@ import CodeCalculus.KernelObligations
 import CodeCalculus.Fixtures
 
 /-!
-# The exact distance as a concrete measure (, Route B of )
+# The exact distance as a concrete measure
 
 `judgment_soundness` (`Soundness.lean`) takes one hypothesis about the
 distance measure, `MeasureMonotone dMeasure`, and Route A of 

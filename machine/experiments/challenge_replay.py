@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce  21's small-code and real-deletion challenge exercises.
+"""Reproduce the small-code and real-deletion challenge exercises.
 
 The qLDPC verifier is invoked unchanged. Exact enumeration is kept in this
 experiment only: one small parent measurement seeds the interval, and a second

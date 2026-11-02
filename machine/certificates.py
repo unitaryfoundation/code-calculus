@@ -1,8 +1,7 @@
 """Certificate format and checker prototype for sector distance lower bounds.
 
 This module is the first branch of the certificate layer explored in
-`the archived notes` (option (ii), opened on ,
-2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
+`the archived notes` (option (ii), opened 2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
 same way the upper endpoint already is: an untrusted producer emits a
 self-contained artifact, and a small total checker accepts or rejects it
 without searching.

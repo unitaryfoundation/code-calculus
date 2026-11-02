@@ -182,7 +182,7 @@ hand derivation; `hadamardState_stateK`, `stateK_swap`, and
 `peelEval_Q_length` are facts about the transitions, not a soundness
 discharge.
 
-Well-formedness guard (, review findings RC-4 and RG-10). The
+Well-formedness guard (review findings RC-4 and RG-10). The
 `k = 0` hypothesis `hk0` and the three monotonicity hypotheses range over
 well-formed states only, and the theorem takes `EncodingWellFormed` of the
 input state, which `wf_of_eval_all` carries to the output and along a

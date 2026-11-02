@@ -6,7 +6,7 @@ import CodeCalculus.RebaseRankSector
 import CodeCalculus.GraftWellFormedness
 
 /-!
-# Well-formedness of the rebase update (, WP6)
+# Well-formedness of the rebase update (WP6)
 
 `Eval.rebase` carries `EncodingWellFormed s'` as a premise, mirroring the
 consumer's validity report on the output (`spec/OPERATIONAL_SEMANTICS.md`

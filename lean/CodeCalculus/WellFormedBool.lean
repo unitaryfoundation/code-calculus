@@ -1,7 +1,7 @@
 import CodeCalculus.State
 
 /-!
-# The Bool/Prop bridge for well-formedness (, WP6)
+# The Bool/Prop bridge for well-formedness (WP6)
 
 `State.lean` carries two readings of well-formedness: the predicate
 `EncodingWellFormed` the theorems quantify over, and the computable test

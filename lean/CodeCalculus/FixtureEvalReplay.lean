@@ -5,7 +5,7 @@ import CodeCalculus.WellFormedBool
 import CodeCalculus.Soundness
 
 /-!
-# Fixture replays under `Eval` and `EvalExpr` (, WP6)
+# Fixture replays under `Eval` and `EvalExpr` (WP6)
 
 `FixtureReplay.lean` decides `wellFormedBool` of the hand-typed fixture
 states and nothing else, so a mistyped result state went unnoticed (the W5

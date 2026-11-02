@@ -13,7 +13,7 @@ set executed by `machine/fixture_conformance.py`, and reports:
   - a mismatch count (uncovered fixtures).
 
 What it cannot see is stated in the report and in
-`the archived notes`. Since  the Lean side
+`the archived notes`. Since the Lean side
 replays the single-step and two-step fixtures under `Eval` and `EvalExpr`
 (`lean/CodeCalculus/FixtureEvalReplay.lean`); this report counts
 well-formedness theorems only and does not read those replays. Distances and
