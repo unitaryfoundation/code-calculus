@@ -14,15 +14,15 @@ e \;::=\; S \;\mid\; e_1 \oplus e_2
 $$
 
 $$
-m \;::=\; \operatorname{skip}
-\;\mid\; \operatorname{delete}_r
-\;\mid\; \operatorname{addStab}_r
-\;\mid\; \operatorname{graft}_{q,\tau;\vec r}
-\;\mid\; \operatorname{peel}_{q,\tau;r}
-\;\mid\; \operatorname{puncture}_q
-\;\mid\; \operatorname{extend}_{\Delta;\vec u}
-\;\mid\; \operatorname{hadamard}_T
-\;\mid\; \operatorname{rebase}_{\tau;M}
+m \;::=\; \mathrm{skip}
+\;\mid\; \mathrm{delete}_r
+\;\mid\; \mathrm{addStab}_r
+\;\mid\; \mathrm{graft}_{q,\tau;\vec r}
+\;\mid\; \mathrm{peel}_{q,\tau;r}
+\;\mid\; \mathrm{puncture}_q
+\;\mid\; \mathrm{extend}_{\Delta;\vec u}
+\;\mid\; \mathrm{hadamard}_T
+\;\mid\; \mathrm{rebase}_{\tau;M}
 \;\mid\; m_1; m_2
 $$
 
@@ -37,16 +37,16 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 
 | Taxonomy ID | Kind | Production | Notation |
 | --- | --- | --- | --- |
-| `C-SKIP` | command | $m ::= \operatorname{skip}$ | `skip` |
+| `C-SKIP` | command | $m ::= \mathrm{skip}$ | `skip` |
 | `C-DIRECT-SUM` | expression-constructor | $e ::= e_1\oplus e_2$ | `e₁ ⊕ e₂` |
-| `C-DELETE-CHECK` | command | $m ::= \operatorname{delete}_r$ | `delete_r` |
-| `C-ADD-CHECK` | command | $m ::= \operatorname{addStab}_r$ | `addStab_r` |
-| `E-GRAFT` | command | $m ::= \operatorname{graft}_{q,\tau;\vec r}$ | `graft(q, τ; [r₁,…,rₘ])` |
-| `E-PEEL` | command | $m ::= \operatorname{peel}_{q,\tau;r}$ | `peel(q, τ; r)` |
-| `E-PUNCTURE` | command | $m ::= \operatorname{puncture}_q$ | `puncture(q)` |
-| `E-EXTEND` | command | $m ::= \operatorname{extend}_{\Delta;\vec u}$ | `extend(Δ; [(τ₁,u₁),…])` |
-| `E-LOCAL-HADAMARD` | command | $m ::= \operatorname{hadamard}_T$ | `hadamard(T)` — admitted for $T=Q$ or $T=\varnothing$ |
-| `P-REBASE` | command | $m ::= \operatorname{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
+| `C-DELETE-CHECK` | command | $m ::= \mathrm{delete}_r$ | `delete_r` |
+| `C-ADD-CHECK` | command | $m ::= \mathrm{addStab}_r$ | `addStab_r` |
+| `E-GRAFT` | command | $m ::= \mathrm{graft}_{q,\tau;\vec r}$ | `graft(q, τ; [r₁,…,rₘ])` |
+| `E-PEEL` | command | $m ::= \mathrm{peel}_{q,\tau;r}$ | `peel(q, τ; r)` |
+| `E-PUNCTURE` | command | $m ::= \mathrm{puncture}_q$ | `puncture(q)` |
+| `E-EXTEND` | command | $m ::= \mathrm{extend}_{\Delta;\vec u}$ | `extend(Δ; [(τ₁,u₁),…])` |
+| `E-LOCAL-HADAMARD` | command | $m ::= \mathrm{hadamard}_T$ | `hadamard(T)` — admitted for $T=Q$ or $T=\varnothing$ |
+| `P-REBASE` | command | $m ::= \mathrm{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
 | `C-SEQUENCE` | command | $m ::= m_1;m_2$ | `m₁ ; m₂` |
 | `P-RELABEL` | presentation-operation | **none** | — |
 
@@ -89,30 +89,30 @@ inputs, and `X-*` needs an extended state model.
 
 ## 3. Well-formed terms
 
-- $\operatorname{delete}_a\triangleright S$
-- $(\operatorname{delete}_a;\operatorname{addStab}_b)\triangleright S$
+- $\mathrm{delete}_a\triangleright S$
+- $(\mathrm{delete}_a;\mathrm{addStab}_b)\triangleright S$
 - $m\triangleright (S\oplus T)$
-- $\operatorname{graft}_{q,X;[a_1,a_2]}\triangleright S$
-- $\operatorname{peel}_{q,Z;a}\triangleright S$
-- $\operatorname{puncture}_a\triangleright S$
-- $\operatorname{extend}_{\{5\};\,(X,\{1,5\})}\triangleright S$
-- $\operatorname{hadamard}_{Q}\triangleright S$
-- $\operatorname{rebase}_{X;M}\triangleright S$ with $M\in\mathrm{GL}(m_X,2)$
-- $\operatorname{skip}\triangleright S$
+- $\mathrm{graft}_{q,X;[a_1,a_2]}\triangleright S$
+- $\mathrm{peel}_{q,Z;a}\triangleright S$
+- $\mathrm{puncture}_a\triangleright S$
+- $\mathrm{extend}_{\{5\};\,(X,\{1,5\})}\triangleright S$
+- $\mathrm{hadamard}_{Q}\triangleright S$
+- $\mathrm{rebase}_{X;M}\triangleright S$ with $M\in\mathrm{GL}(m_X,2)$
+- $\mathrm{skip}\triangleright S$
 
 ## 4. Malformed — rejected by the grammar alone
 
 | Term | Why |
 | --- | --- |
 | $S\triangleright S$ | a state in command position; $\triangleright$'s left side is a command |
-| $\operatorname{delete}_a\triangleright \operatorname{skip}$ | a command in expression position; $e$ never contains commands |
-| $(\operatorname{delete}_a\triangleright S);m$ | a closed term is not a command; `;` composes commands only |
+| $\mathrm{delete}_a\triangleright \mathrm{skip}$ | a command in expression position; $e$ never contains commands |
+| $(\mathrm{delete}_a\triangleright S);m$ | a closed term is not a command; `;` composes commands only |
 | $(m\triangleright S)\oplus(m'\triangleright T)$ | $\oplus$ combines state expressions, not terms |
 | $m_1;m_2\triangleright (e_1;e_2)$ | `;` is undefined on state expressions |
 
 ## 5. Well-typed but inapplicable is a third thing
 
-$\operatorname{delete}_a\triangleright S$ is a **well-typed term with no
+$\mathrm{delete}_a\triangleright S$ is a **well-typed term with no
 evaluation derivation** when $a$ is not displayed in $S$. This is not
 malformation and not `false`; it is `no_derivation`, and *absence of derivation
 is part of the semantics, not a failure of it*.

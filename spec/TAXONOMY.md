@@ -131,7 +131,7 @@ dependency.)*
 | **Conditions** | The new rows must have the same type, be independent, and span the original row space |
 | **Parameter effects** | The semantic code, $n$, $k$, and distances are unchanged; support-sensitive predicates may change truth value |
 | **Primitive / derived** | Supporting primitive |
-| **Formalization status** | Transition defined 2026-10-23: the command $\operatorname{rebase}_{\tau;M}$ is in the grammar ([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2) and its typed transition, applicability ($M \in \mathrm{GL}$), update, and derivations are in [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2 and §4.26, under the 2026-10-23 Gate 6 admission (`JUDGMENT_LAYER.md` §2f); `OBL-REBASE-GENERATION` discharged at §4.26. Its sound admission is discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
+| **Formalization status** | Transition defined 2026-10-23: the command $\mathrm{rebase}_{\tau;M}$ is in the grammar ([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2) and its typed transition, applicability ($M \in \mathrm{GL}$), update, and derivations are in [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2 and §4.26, under the 2026-10-23 Gate 6 admission (`JUDGMENT_LAYER.md` §2f); `OBL-REBASE-GENERATION` discharged at §4.26. Its sound admission is discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
 | **Partial inverse** | Any other basis change |
 
 Rebasing is not the same as deleting a stabilizer. It changes the displayed presentation but not the stabilizer subgroup.
@@ -415,7 +415,7 @@ normative dependency.)*
 - **The well-formedness clash.** The instance deliberately retains *dependent*
  displayed rows. Its own count formulas give, for one flagged-amplifier step,
  $n' = 90$, $k' = 8$, and $m_X' + m_Z' = 108$ retained check rows, whence
- $\operatorname{rank} H_X + \operatorname{rank} H_Z = 90 - 8 = 82$ and 26 dependent
+ $\mathrm{rank} H_X + \mathrm{rank} H_Z = 90 - 8 = 82$ and 26 dependent
  displayed rows. Since I1 requires displayed rows to span $X$ and $Z$, and I2
  requires displayed independence (citation corrected 2026-10-10 — it read
  "I2/I5", citing two invariants that do not state spanning), the constructor's

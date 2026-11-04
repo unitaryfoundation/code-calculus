@@ -10,7 +10,7 @@ This document consolidates the proposal's operational semantics.
 ## 1. The relation
 
 $$
-\operatorname{Eval}(m,\,S,\,S')
+\mathrm{Eval}(m,\,S,\,S')
 $$
 
 is a **partial big-step** relation over phase-insensitive presented CSS states.
@@ -18,18 +18,18 @@ There is no judgment when a command is inapplicable, and no partial result is
 ever exposed: no residual commands, no half-updated states.
 
 $$
-\operatorname{Eval}(m\triangleright e,\, S')
+\mathrm{Eval}(m\triangleright e,\, S')
 \quad\text{when}\quad
-\operatorname{EvalExpr}(e,\,S)\ \text{and}\ \operatorname{Eval}(m,\,S,\,S')
+\mathrm{EvalExpr}(e,\,S)\ \text{and}\ \mathrm{Eval}(m,\,S,\,S')
 $$
 
-**Base rule.** $\operatorname{Eval}(\operatorname{skip}, S, S)$.
+**Base rule.** $\mathrm{Eval}(\mathrm{skip}, S, S)$.
 
 **Sequencing.**
 
 $$
-\frac{\operatorname{Eval}(m_1,S_0,S_1)\qquad\operatorname{Eval}(m_2,S_1,S_2)}
- {\operatorname{Eval}(m_1;m_2,S_0,S_2)}
+\frac{\mathrm{Eval}(m_1,S_0,S_1)\qquad\mathrm{Eval}(m_2,S_1,S_2)}
+ {\mathrm{Eval}(m_1;m_2,S_0,S_2)}
 $$
 
 If either subcommand is inapplicable the sequence has **no** evaluation
@@ -46,21 +46,21 @@ consequence and no computation, and the `Option`-shaped carrier.
 $$
 \llbracket m\rrbracket(S) \;=\;
 \begin{cases}
-\mathsf{some}\ S' & \text{if } \operatorname{Eval}(m,\,S,\,S'),\\
+\mathsf{some}\ S' & \text{if } \mathrm{Eval}(m,\,S,\,S'),\\
 \mathsf{none} & \text{otherwise,}
 \end{cases}
 \qquad
 \llbracket e\rrbracket \;=\;
 \begin{cases}
-\mathsf{some}\ S & \text{if } \operatorname{EvalExpr}(e,\,S),\\
+\mathsf{some}\ S & \text{if } \mathrm{EvalExpr}(e,\,S),\\
 \mathsf{none} & \text{otherwise.}
 \end{cases}
 $$
 
-Adequacy is definitional in this direction: $\operatorname{Eval}(m,S,S')$
+Adequacy is definitional in this direction: $\mathrm{Eval}(m,S,S')$
 holds iff $\llbracket m\rrbracket(S) = \mathsf{some}\ S'$, by the clause
 itself. The clause reads $\llbracket m\rrbracket(S) = \mathsf{some}\ S'$ for
-the unique $S'$ with $\operatorname{Eval}(m,S,S')$, and $\mathsf{none}$ if
+the unique $S'$ with $\mathrm{Eval}(m,S,S')$, and $\mathsf{none}$ if
 there is none; uniqueness is §4.8's determinism derivation for the five MVP
 primitives (`C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`,
 `C-SEQUENCE`) and the explicit update functions of the §2 and §4 transitions
@@ -93,7 +93,7 @@ No preconditions. State unchanged; one `skip` record appended to `steps`.
 ### `C-DIRECT-SUM`
 
 $$
-\operatorname{EvalExpr}(S_1\oplus S_2,\,S)
+\mathrm{EvalExpr}(S_1\oplus S_2,\,S)
 $$
 
 premises: $Q_1\cap Q_2=\varnothing$ and
@@ -104,9 +104,9 @@ concatenated, identifier sets unioned. Both collisions make the constructor
 ### `C-DELETE-CHECK`
 
 $$
-\frac{\operatorname{DisplayedGenerator}(r,\mathsf{pres})\qquad
- \operatorname{Independent}(r;\mathsf{pres})}
- {\operatorname{Eval}(\operatorname{delete}_r,\,C,\,C')}
+\frac{\mathrm{DisplayedGenerator}(r,\mathsf{pres})\qquad
+ \mathrm{Independent}(r;\mathsf{pres})}
+ {\mathrm{Eval}(\mathrm{delete}_r,\,C,\,C')}
 $$
 
 $C'$ removes exactly the selected generator. The qubit namespace is unchanged; the
@@ -116,16 +116,16 @@ identifier is **retired but stays in `used`**.
 
 $$
 \frac{r\in Z^\perp\qquad r\notin X}
- {\operatorname{Eval}(\operatorname{addStab}_{r:X},\,C,\,C')}
+ {\mathrm{Eval}(\mathrm{addStab}_{r:X},\,C,\,C')}
 \qquad
 \frac{r\in X^\perp\qquad r\notin Z}
- {\operatorname{Eval}(\operatorname{addStab}_{r:Z},\,C,\,C')}
+ {\mathrm{Eval}(\mathrm{addStab}_{r:Z},\,C,\,C')}
 $$
 
 The premises are the standard CSS commutation and same-sector independence
 conditions, **with both complements taken inside $\mathbb{F}_2^Q$**
 ([`STATE_MODEL.md`](STATE_MODEL.md) §1): $r\in Z^\perp$ presupposes
-$r\in\mathbb{F}_2^Q$, i.e. $\operatorname{supp}(r)\subseteq Q$. A candidate row
+$r\in\mathbb{F}_2^Q$, i.e. $\mathrm{supp}(r)\subseteq Q$. A candidate row
 whose support leaves $Q$ fails the premise and the outcome is **no derivation**,
 not malformation — the term is well-typed, and the same row applies against a
 state whose namespace contains its support (probe `W22`). Reading $Z^\perp$ as a
@@ -339,29 +339,29 @@ not `steps`, the semantic field. Write $S_1 \equiv_{\mathrm{sem}} S$ for
 agreement on all semantic fields ($Q$, $X$, $Z$, labeled rows, `used`).
 
 **Premises used.** The `C-SKIP` card: the only derivable form of
-`Eval(skip,·,·)` is $Eval(\operatorname{skip},S,S)$; state update $S'=S$ on every
+`Eval(skip,·,·)` is $Eval(\mathrm{skip},S,S)$; state update $S'=S$ on every
 semantic field; applicability *none*, so always applicable. The `C-SEQUENCE`
 card: $\dfrac{Eval(m_1,S_0,S_1)\quad Eval(m_2,S_1,S_2)}{Eval(m_1;m_2,S_0,S_2)}$.
 
-**Forward ($m \Rightarrow \operatorname{skip};m$).** Assume
-$Eval(m,S,S')$. The bare `C-SKIP` rule gives $Eval(\operatorname{skip},S,S)$ with
+**Forward ($m \Rightarrow \mathrm{skip};m$).** Assume
+$Eval(m,S,S')$. The bare `C-SKIP` rule gives $Eval(\mathrm{skip},S,S)$ with
 no premises. Applying `C-SEQUENCE` to that and the assumption yields
-$Eval(\operatorname{skip};m,S,S')$, i.e. the left conjunct holds with
+$Eval(\mathrm{skip};m,S,S')$, i.e. the left conjunct holds with
 $S''=S'$.
 
-**Reverse ($\operatorname{skip};m \Rightarrow m$).** Assume
-$Eval(\operatorname{skip};m,S,S'')$. By `C-SEQUENCE` there is an intermediate
-$S_1$ with $Eval(\operatorname{skip},S,S_1)$ and $Eval(m,S_1,S'')$. The `C-SKIP`
+**Reverse ($\mathrm{skip};m \Rightarrow m$).** Assume
+$Eval(\mathrm{skip};m,S,S'')$. By `C-SEQUENCE` there is an intermediate
+$S_1$ with $Eval(\mathrm{skip},S,S_1)$ and $Eval(m,S_1,S'')$. The `C-SKIP`
 card forces $S_1\equiv_{\mathrm{sem}}S$ — the rule's conclusion is $S$ itself,
 and only the semantically inert step record differs. By the framing lemma,
 $Eval(m,S_1,S'')$ is equivalent to $Eval(m,S,S'')$. Hence the right conjunct
 holds.
 
-**Sequencing on the right is the same argument.** $Eval(m;\operatorname{skip},S,S''')$
-holds iff there is $S_1$ with $Eval(m,S,S_1)$ and $Eval(\operatorname{skip},S_1,S''')$,
+**Sequencing on the right is the same argument.** $Eval(m;\mathrm{skip},S,S''')$
+holds iff there is $S_1$ with $Eval(m,S,S_1)$ and $Eval(\mathrm{skip},S_1,S''')$,
 and the `C-SKIP` card forces $S'''\equiv_{\mathrm{sem}}S_1$; conversely
 $Eval(m,S,S')$ together with the bare skip rule on $S'$ gives
-$Eval(m;\operatorname{skip},S,S')$ directly, with no lemma needed. $\square$
+$Eval(m;\mathrm{skip},S,S')$ directly, with no lemma needed. $\square$
 
 **Stronger than the obligation states.** The obligation asserts $S''$ and $S'''$
 "agree with $S'$ up to $\equiv$". The derivation delivers more: they agree on
@@ -438,8 +438,8 @@ namespaces and disjoint `used` sets.
  canonical minting is preserved.
 - I4, I5: sector labels and provenance are inherited blockwise.
 
-**`C-SEQUENCE`.** If $\operatorname{Eval}(m_1,S_0,S_1)$ and
-$\operatorname{Eval}(m_2,S_1,S_2)$ with $S_0$ well-formed, then $S_1$ is
+**`C-SEQUENCE`.** If $\mathrm{Eval}(m_1,S_0,S_1)$ and
+$\mathrm{Eval}(m_2,S_1,S_2)$ with $S_0$ well-formed, then $S_1$ is
 well-formed by the instance for $m_1$, and $S_2$ is well-formed by the instance
 for $m_2$. By induction on the sequence length, every intermediate state and the
 final state satisfy I1–I5.
@@ -469,13 +469,13 @@ function of the complete semantic input state and its explicit term data:
 output. Hence on its applicability domain each primitive is functional: two
 derivations with the same input and term yield $\equiv$-equal outputs. $\square$
 
-**`OBL-SEQUENCE-ASSOCIATIVITY`.** $\operatorname{Eval}(m_1;m_2,S,S')$ holds iff
-there is an intermediate $S_1$ with $\operatorname{Eval}(m_1,S,S_1)$ and
-$\operatorname{Eval}(m_2,S_1,S')$. For $(m_1;m_2);m_3$ this requires
-$S_{12}$ with $\operatorname{Eval}(m_1;m_2,S,S_{12})$ and
-$\operatorname{Eval}(m_3,S_{12},S')$, i.e. $S_1$ with
-$\operatorname{Eval}(m_1,S,S_1)$ and $S_2$ with
-$\operatorname{Eval}(m_2,S_1,S_2)$ and $\operatorname{Eval}(m_3,S_2,S')$ —
+**`OBL-SEQUENCE-ASSOCIATIVITY`.** $\mathrm{Eval}(m_1;m_2,S,S')$ holds iff
+there is an intermediate $S_1$ with $\mathrm{Eval}(m_1,S,S_1)$ and
+$\mathrm{Eval}(m_2,S_1,S')$. For $(m_1;m_2);m_3$ this requires
+$S_{12}$ with $\mathrm{Eval}(m_1;m_2,S,S_{12})$ and
+$\mathrm{Eval}(m_3,S_{12},S')$, i.e. $S_1$ with
+$\mathrm{Eval}(m_1,S,S_1)$ and $S_2$ with
+$\mathrm{Eval}(m_2,S_1,S_2)$ and $\mathrm{Eval}(m_3,S_2,S')$ —
 exactly the chain for $m_1;(m_2;m_3)$. When a middle command is inapplicable,
 no intermediate exists in either bracketing, so both are undefined together
 (`W10`). $\square$
@@ -524,17 +524,17 @@ $\square$
  result is that summand's deletion result plus the untouched other summand.
  `used` bookkeeping is per-block (the retired identifier stays in the owning
  summand's `used`). Hence the frame law holds.
-- *Addition clause (conditional).* If $\operatorname{supp}(r)\subseteq Q_A$,
+- *Addition clause (conditional).* If $\mathrm{supp}(r)\subseteq Q_A$,
  then $r$ annihilates $Z_B$ and cannot meet $X_B$, so applicability splits
  per block and holds on the sum iff it holds on $A$. The result is $A'\oplus B$
  provided the allocation-compatibility premise holds:
- $\operatorname{mint}(\mathsf{used}_A\cup\mathsf{used}_B)=
- \operatorname{mint}(\mathsf{used}_A)$, i.e.
- $\operatorname{mint}(\mathsf{used}_A)\notin\mathsf{used}_B$. Every
- identifier before $\operatorname{mint}(\mathsf{used}_A)$ in the fixed
+ $\mathrm{mint}(\mathsf{used}_A\cup\mathsf{used}_B)=
+ \mathrm{mint}(\mathsf{used}_A)$, i.e.
+ $\mathrm{mint}(\mathsf{used}_A)\notin\mathsf{used}_B$. Every
+ identifier before $\mathrm{mint}(\mathsf{used}_A)$ in the fixed
  enumeration lies in $\mathsf{used}_A$, so under the `C-DIRECT-SUM`
  disjointness of the two `used` sets the premise says that
- $\mathsf{used}_B$ starts strictly after $\operatorname{mint}(\mathsf{used}_A)$.
+ $\mathsf{used}_B$ starts strictly after $\mathrm{mint}(\mathsf{used}_A)$.
  Without that premise the summands are still applicable but mint
  differently, and the clause fails, which is why it is a hypothesis.
 
@@ -556,33 +556,33 @@ analysis below is by command pair; there are no summands and no per-sector
 $\mathsf{used}_X, \mathsf{used}_Z$ sets — $m_X$ and $m_Z$ act sequentially
 on one state.
 
-- **`Delete` / `Delete` ($\operatorname{delete}_{r_X}, \operatorname{delete}_{r_Z}$).**
+- **`Delete` / `Delete` ($\mathrm{delete}_{r_X}, \mathrm{delete}_{r_Z}$).**
  Deletions do not mint identifiers and do not change $\mathsf{used}$, and
  opposite-sector deletions do not affect each other's `DisplayedGenerator` or
  `Independent` premises. Both orders apply iff both deletions apply on $S$; when
  both apply the outputs are always $\equiv$-equal (**Case 1**), and otherwise
  **Case 4**.
 
-- **`Delete` / `Add` ($\operatorname{delete}_{r_X}, \operatorname{addStab}_{s:Z}$
+- **`Delete` / `Add` ($\mathrm{delete}_{r_X}, \mathrm{addStab}_{s:Z}$
  or the symmetric pair).** Because deletion leaves $\mathsf{used}$ unchanged,
- $\operatorname{addStab}$ mints $\operatorname{mint}(\mathsf{used})$ in
+ $\mathrm{addStab}$ mints $\mathrm{mint}(\mathsf{used})$ in
  both orders whenever both orders apply, yielding $\equiv$-equal outputs
  (**Case 1**). **Case 3** (exactly one order applies) arises iff $r_X$ is
  displayed and independent in $S$, $s \in \mathbb{F}_2^Q \setminus Z$
  commutes with $\mathit{rows}_X \setminus \{r_X\}$, and
- $s \cdot r_X = 1$: then $\operatorname{delete}_{r_X};\operatorname{addStab}_{s:Z}$
- applies while $\operatorname{addStab}_{s:Z};\operatorname{delete}_{r_X}$
+ $s \cdot r_X = 1$: then $\mathrm{delete}_{r_X};\mathrm{addStab}_{s:Z}$
+ applies while $\mathrm{addStab}_{s:Z};\mathrm{delete}_{r_X}$
  fails (fixture `W8`). The reverse single-order case
- ($\operatorname{addStab};\operatorname{delete}$ applies while
- $\operatorname{delete};\operatorname{addStab}$ fails) is impossible because
+ ($\mathrm{addStab};\mathrm{delete}$ applies while
+ $\mathrm{delete};\mathrm{addStab}$ fails) is impossible because
  deleting $r_X$ only shrinks $X$ (weakening $s \in X^\perp$) and leaves $Z$
  untouched.
 
-- **`Add` / `Add` ($\operatorname{addStab}_{r:X}, \operatorname{addStab}_{s:Z}$).**
+- **`Add` / `Add` ($\mathrm{addStab}_{r:X}, \mathrm{addStab}_{s:Z}$).**
  Both orders apply iff each applies on $S$ and $r \cdot s = 0$. When both
- apply, the first command always mints $i_1 = \operatorname{mint}(\mathsf{used})$
+ apply, the first command always mints $i_1 = \mathrm{mint}(\mathsf{used})$
  and the second always mints
- $i_2 = \operatorname{mint}(\mathsf{used} \cup \{i_1\}) \neq i_1$,
+ $i_2 = \mathrm{mint}(\mathsf{used} \cup \{i_1\}) \neq i_1$,
  swapping the identifier-to-sector assignment between
  $m_X;m_Z$ and $m_Z;m_X$ (the witness). Thus when both orders apply for
  `Add`/`Add`, they always fall into **Case 2** (never Case 1). And if
@@ -712,7 +712,7 @@ $k'=k$ premise and the dimension bound (`ranksFit_of_wf`), which
 forces both output sectors to full rank, rather than by the lifting argument
 below, which is unchanged.
 
-Let $S$ be well-formed and $\operatorname{E-GRAFT}(q,\tau,\vec r)$ applicable
+Let $S$ be well-formed and $\mathrm{E-GRAFT}(q,\tau,\vec r)$ applicable
 per `spec/OPERATIONAL_SEMANTICS.md` §2: $q\in Q$; $\vec r$ names exactly all
 $\tau$-rows touching $q$ in chain order; the opposite-sector guard holds
 ($q$ belongs to at least one $\bar\tau$-row, guard); coverage holds
@@ -726,7 +726,7 @@ belongs to both $r_i$ and $r_{i+1}$, so its support lies in $Q'$.
 
 - **$n'=n-1$.** By construction $Q'=Q\setminus\{q\}$, so $n'=n-1$.
 - **I1 (CSS orthogonality).** Every new $\tau$-row is $r_i\oplus r_{i+1}$ with
- $q\in \operatorname{supp}(r_i)\cap\operatorname{supp}(r_{i+1})$, so its
+ $q\in \mathrm{supp}(r_i)\cap\mathrm{supp}(r_{i+1})$, so its
  $q$-coordinate vanishes ($x_q=0$); every untouched $\tau$-row already has
  $x_q=0$. Thus for any shortened $\bar\tau$-row $z'=z|_{Q\setminus\{q\}}$,
  $x'\cdot z' = x\cdot z = 0$ by input I1. No check is needed.
@@ -920,10 +920,10 @@ independent). Provenance step records differ in order only, which is allowed.
 
 **Annotation-transport part.** Under the fixed-reference-set model, deleting
 identifier $r$ updates the valid set by
-$V\mapsto V\setminus\{c:r\in\operatorname{Ref}(c)\}$. The composition over
+$V\mapsto V\setminus\{c:r\in\mathrm{Ref}(c)\}$. The composition over
 $S=\{r_1,\dots,r_t\}$ is
 $(f_{r_t}\circ\cdots\circ f_{r_1})(V)=V\setminus\bigcup_{r\in S}\{c:r\in
-\operatorname{Ref}(c)\}$, which makes set-level commutativity and idempotence
+\mathrm{Ref}(c)\}$, which makes set-level commutativity and idempotence
 immediate from set difference. Hence the transported context depends only on the
 deleted-identifier set $S$, not on enumeration order. $\square$
 
@@ -944,7 +944,7 @@ generators of the same type.
 
 - *Applicability of addition.* `C-ADD-CHECK` has three applicability premises
  (`spec/OPERATIONAL_SEMANTICS.md` §2; `machine/semantics.json`):
- 1. Ambient membership (W22): $\operatorname{supp}(r+s)\subseteq Q$, since
+ 1. Ambient membership (W22): $\mathrm{supp}(r+s)\subseteq Q$, since
  $r\in\mathbb{F}_2^Q$ and $s\in\langle\mathit{rows}_\tau\setminus\{r\}\rangle
  \subseteq\mathbb{F}_2^Q$.
  2. Opposite-sector commutation: $r+s\in(\mathit{rows}_{\bar\tau})^\perp$,
@@ -1076,7 +1076,7 @@ Setting: stabilizer $S$, add $r$ independent commuting Paulis $A$ with
 $S'=S+\langle A\rangle$, $k'=k-r$, killed span $K=S+\langle A\rangle$ over
 $S$.
 
-By Proposition 18.2, $d'=\min\{\operatorname{wt}(g):g\in N(S),\ g\in A^\perp,\
+By Proposition 18.2, $d'=\min\{\mathrm{wt}(g):g\in N(S),\ g\in A^\perp,\
 g\notin S+\langle A\rangle\}$. Thus $d'=d$ iff some weight-$d$ old logical
 survives (commutes with every $a\in A$ and avoids $K$); negating gives
 
@@ -1099,8 +1099,8 @@ In an `E-GRAFT` at qubit $q$, the opposite sector's checks are only shortened:
 $c\mapsto c\setminus\{q\}$. For any logical $E$ of the child, $E_q=0$, so
 
 $$
-\operatorname{popcount}(E\cap(c\setminus\{q\}))
-=\operatorname{popcount}(E\cap c),
+\mathrm{popcount}(E\cap(c\setminus\{q\}))
+=\mathrm{popcount}(E\cap c),
 $$
 
 because $E$ has zero weight at $q$. Commutation parity is unchanged, so a
@@ -1352,7 +1352,7 @@ child's coordinates are the parent's coordinates read at the child's qubits.
  > **Claim.** $r'\le 2r$.
 
  *Proof.* Let $a_i,a_{i+1}$ be two consecutive rows of the graft chain, so
- $q\in\operatorname{supp}(a_i)\cap\operatorname{supp}(a_{i+1})$, and let
+ $q\in\mathrm{supp}(a_i)\cap\mathrm{supp}(a_{i+1})$, and let
  $b=(a_i\oplus a_{i+1})\cap Q'$ be the support of the minted row. Take
  $u,v\in b$. Each of $u,v$ lies in $a_i\setminus\{q\}$, in
  $a_{i+1}\setminus\{q\}$, or one in each.
@@ -1561,8 +1561,8 @@ labels only. Supports are presented in increasing order by the display
 contract, so a transported support is presented in the child's label order.
 
 **Claim.** For every command $m$ in the MVP kernel and every state $S$:
-$$\operatorname{Eval}(m,S,S') \iff
-\operatorname{Eval}(\sigma m,\tilde S,\widetilde{S'})$$
+$$\mathrm{Eval}(m,S,S') \iff
+\mathrm{Eval}(\sigma m,\tilde S,\widetilde{S'})$$
 where $\sigma m$ is the transported command (support-transported for
 additions, identifier-stable for deletions, pointwise for sequences), and
 $\widetilde{S'}=\sigma S'$.
@@ -1571,8 +1571,8 @@ The proof is by structural induction on the evaluation derivation. Each
 clause below checks that every premise of the rule is invariant under
 $\sigma$ and that the conclusion state transports.
 
-- **`C-SKIP`.** $\operatorname{Eval}(\mathsf{skip},S,S)$ holds iff
- $S'=S$. Under $\sigma$, $\operatorname{Eval}(\mathsf{skip},\tilde S,\tilde S)$
+- **`C-SKIP`.** $\mathrm{Eval}(\mathsf{skip},S,S)$ holds iff
+ $S'=S$. Under $\sigma$, $\mathrm{Eval}(\mathsf{skip},\tilde S,\tilde S)$
  holds iff $\widetilde{S'}=\tilde S$, i.e. $\sigma S'=\sigma S$, i.e.
  $S'=S$ since $\sigma$ is a bijection. $\square$ for skip.
 
@@ -1580,70 +1580,70 @@ $\sigma$ and that the conclusion state transports.
  preserves disjointness:
  $\sigma Q_A\cap \sigma Q_B=\sigma(Q_A\cap Q_B)$, and $\mathsf{used}$ is
  untouched by $\sigma$, so $\mathsf{used}$-disjointness is label-invariant.
- Hence $\operatorname{EvalExpr}(e_1\oplus e_2,S)$ iff
- $\operatorname{EvalExpr}(\sigma(e_1\oplus e_2),\tilde S)$, with output
+ Hence $\mathrm{EvalExpr}(e_1\oplus e_2,S)$ iff
+ $\mathrm{EvalExpr}(\sigma(e_1\oplus e_2),\tilde S)$, with output
  $\widetilde{S_1\oplus S_2}=\tilde S_1\oplus \tilde S_2$. Per-summand
  relabelings compose with the summand embedding; relabelings cutting across a
  summand boundary are outside the congruence's scope (scoping). $\square$
  for direct sum.
 
 - **`C-DELETE-CHECK`.** Premises:
- 1. $\operatorname{DisplayedGenerator}(r,S)$: $r$ names a live row of $S$.
+ 1. $\mathrm{DisplayedGenerator}(r,S)$: $r$ names a live row of $S$.
  The row set transports bijectively and identifiers are untouched, so $r$
  names a live row of $\tilde S$. Conversely the same map back.
- 2. $\operatorname{IndependentGenerator}(r,S)$: $r$'s vector is not in the
+ 2. $\mathrm{IndependentGenerator}(r,S)$: $r$'s vector is not in the
  span of the other rows in its sector. Linear span membership is invariant
  under the coordinate permutation $\sigma$ on qubit labels, so independence
  transports in both directions.
- Conclusion: $\operatorname{deleteState}(S,r)$ removes the row with id $r$
+ Conclusion: $\mathrm{deleteState}(S,r)$ removes the row with id $r$
  and leaves $\mathsf{used}$ unchanged. Since $\sigma$ commutes with filtering
- by id, $\sigma(\operatorname{deleteState}(S,r))=
- \operatorname{deleteState}(\tilde S,r)$. Thus
- $\operatorname{Eval}(\operatorname{delete}_r,S,S')$ iff
- $\operatorname{Eval}(\operatorname{delete}_r,\tilde S,\widetilde{S'})$,
+ by id, $\sigma(\mathrm{deleteState}(S,r))=
+ \mathrm{deleteState}(\tilde S,r)$. Thus
+ $\mathrm{Eval}(\mathrm{delete}_r,S,S')$ iff
+ $\mathrm{Eval}(\mathrm{delete}_r,\tilde S,\widetilde{S'})$,
  with the same identifier $r$ on both sides (identifier-stable).
  $\square$ for deletion.
 
 - **`C-ADD-CHECK`.** The transported command is
- $\operatorname{addStab}_{\sigma r}$, where $\sigma r$ is the transported
+ $\mathrm{addStab}_{\sigma r}$, where $\sigma r$ is the transported
  support. Premises:
- 1. $\operatorname{supportSubset}(r,Q)$: $\sigma$ maps $Q$ to $\tilde Q$, so
+ 1. $\mathrm{supportSubset}(r,Q)$: $\sigma$ maps $Q$ to $\tilde Q$, so
  $\sigma r\subseteq \tilde Q$.
  2. $r.\mathrm{Nodup}$ and $r$ sorted: $\sigma$ is injective, so nodup
  transports; sortedness is re-presented in the child's label order by the
  display contract.
  3. Commutation: for every opposite-sector row $x\in S$,
- $\operatorname{supportIntersectionSize}(r,x.\mathrm{support})\bmod 2=0$.
+ $\mathrm{supportIntersectionSize}(r,x.\mathrm{support})\bmod 2=0$.
  $\sigma$ is a bijection, so
  $|\sigma r\cap \sigma x.\mathrm{support}|=|r\cap x.\mathrm{support}|$;
  parity is preserved for every transported opposite-sector row.
  4. Independence:
- $\neg\operatorname{inSpanRows}(S.Q,\mathit{sectorRows}(S,\tau),
- \operatorname{rowVector}(S.Q,\langle\operatorname{mint}(\mathsf{used}),\tau,r\rangle))$.
+ $\neg\mathrm{inSpanRows}(S.Q,\mathit{sectorRows}(S,\tau),
+ \mathrm{rowVector}(S.Q,\langle\mathrm{mint}(\mathsf{used}),\tau,r\rangle))$.
  Coordinate permutation $\sigma$ preserves span membership, and
- $\operatorname{mint}(\mathsf{used})$ is unchanged because $\sigma$ does not
+ $\mathrm{mint}(\mathsf{used})$ is unchanged because $\sigma$ does not
  touch $\mathsf{used}$ (identifiers are not qubit labels), so the minted
  identifier agrees on both sides.
- Conclusion: $\operatorname{addState}(S,\tau,r)$ appends a row with id
- $\operatorname{mint}(\mathsf{used})$, sector $\tau$, support $r$, and updates
- $\mathsf{used}$. Transporting gives $\operatorname{addState}(\tilde S,\tau,
+ Conclusion: $\mathrm{addState}(S,\tau,r)$ appends a row with id
+ $\mathrm{mint}(\mathsf{used})$, sector $\tau$, support $r$, and updates
+ $\mathsf{used}$. Transporting gives $\mathrm{addState}(\tilde S,\tau,
  \sigma r)$ with the same minted id and $\mathsf{used}$, so
- $\widetilde{S'}=\operatorname{addState}(\tilde S,\tau,\sigma r)$.
- Hence $\operatorname{Eval}(\operatorname{addStab}_{r:\tau},S,S')$ iff
- $\operatorname{Eval}(\operatorname{addStab}_{\sigma r:\tau},\tilde S,\widetilde{S'})$.
+ $\widetilde{S'}=\mathrm{addState}(\tilde S,\tau,\sigma r)$.
+ Hence $\mathrm{Eval}(\mathrm{addStab}_{r:\tau},S,S')$ iff
+ $\mathrm{Eval}(\mathrm{addStab}_{\sigma r:\tau},\tilde S,\widetilde{S'})$.
  The transported command **must** be used: with the same command
- $\operatorname{addStab}_{r:\tau}$ on both sides the congruence fails for
+ $\mathrm{addStab}_{r:\tau}$ on both sides the congruence fails for
  additions, as the witness shows (swap of qubits 1 and 2 makes an
  $X$-addition applicable on $S$ but not on $\sigma S$ because the
  commutation parity changes). $\square$ for addition.
 
 - **`C-SEQUENCE`.** By induction on the two sub-derivations: if
- $\operatorname{Eval}(m_1,S,S_1)$ iff
- $\operatorname{Eval}(\sigma m_1,\tilde S,\widetilde{S_1})$ and
- $\operatorname{Eval}(m_2,S_1,S')$ iff
- $\operatorname{Eval}(\sigma m_2,\widetilde{S_1},\widetilde{S'})$, then
- $\operatorname{Eval}(m_1;m_2,S,S')$ iff
- $\operatorname{Eval}(\sigma m_1;\sigma m_2,\tilde S,\widetilde{S'})$.
+ $\mathrm{Eval}(m_1,S,S_1)$ iff
+ $\mathrm{Eval}(\sigma m_1,\tilde S,\widetilde{S_1})$ and
+ $\mathrm{Eval}(m_2,S_1,S')$ iff
+ $\mathrm{Eval}(\sigma m_2,\widetilde{S_1},\widetilde{S'})$, then
+ $\mathrm{Eval}(m_1;m_2,S,S')$ iff
+ $\mathrm{Eval}(\sigma m_1;\sigma m_2,\tilde S,\widetilde{S'})$.
  $\square$ for sequences.
 
 - **`E-GRAFT` (extension).** The graft is not in the MVP kernel statement's
@@ -1654,7 +1654,7 @@ $\sigma$ and that the conclusion state transports.
  under coordinate permutation $\sigma$ (bitmask rank is invariant under
  column permutation) and under identifier-stable minting ($\mathsf{used}$
  unchanged). Hence the graft clause transports with command
- $\operatorname{graft}_{\sigma q,\tau,\sigma(\vec r)}$. $\square$ for graft.
+ $\mathrm{graft}_{\sigma q,\tau,\sigma(\vec r)}$. $\square$ for graft.
 
 **Expression congruence (scoped).** For $\oplus$, the congruence holds for
 relabelings applied uniformly to the whole sum: a global bijection preserves
@@ -1682,7 +1682,7 @@ machine-checked proof; re-derivation target is the / slices.
 **Set-up.** In a well-formed presented CSS state the displayed $\tau$-rows of a
 sector $V_\tau=(v_1,\ldots,v_m)$ are independent (I2) and span the sector's
 row space (reading (A) of : $X=\langle \mathit{rows}_X\rangle$ by
-construction). The command $\operatorname{rebase}_{\tau;M}$ names a matrix
+construction). The command $\mathrm{rebase}_{\tau;M}$ names a matrix
 $M\in\mathbb{F}_2^{m\times m}$; the registered output replaces each $v_i$ by
 $v_i'=\bigoplus_j M_{ij}v_j$ with canonical mint identifiers. (Sterile technicality:
 a nonempty display is presupposed by the $m\times m$ shape; the empty sector
@@ -1814,7 +1814,7 @@ span side are the old opposite/old same sectors, so every parent-valid
 witness revalidates; the revalidation is recorded, not assumed). The full
 interval keeps both endpoints.
 
-**Not claimed.** The term-$\operatorname{hadamard}_T$ general instance
+**Not claimed.** The term-$\mathrm{hadamard}_T$ general instance
 ($\varnothing \subsetneq T \subsetneq Q$) — §2.12's record splits along both
 row spaces under the dispositioned condition — is **not** admitted here: a
 row $v$ with $v\cap T \ne \varnothing$ and $v\setminus T \ne \varnothing$
@@ -2026,7 +2026,7 @@ $Q\cup\Delta$ (the $W22$ reading); surviving and minted rows all have
 support in $Q\cup\Delta$. The complement reading of `W22` is stated
 explicitly here: complements are taken inside $\mathbb{F}_2^{Q\cup\Delta}$.
 
-**Output I1–I5.** Cumulative: §4.7's $\operatorname{addStab}$ instance —
+**Output I1–I5.** Cumulative: §4.7's $\mathrm{addStab}$ instance —
 applied at each addition's step against the intermediate state's display —
 gives I1–I5 for each intermediate state. The intermediate states here differ
 from the §4.7 case only in that the ambient grew *before* the first addition;
@@ -2044,7 +2044,7 @@ k + |\Delta| - s_X - s_Z,$$
 exactly. ∎ (The formula is *the child's* $k$, not a separate invariant.)
 
 **Distances.** With $\Delta = \varnothing$ the move is a
-$C$-$\operatorname{ADD}$-$\operatorname{CHECK}$ sequence in the ambient the
+$C$-$\mathrm{ADD}$-$\mathrm{CHECK}$ sequence in the ambient the
 §4.3 monotonicity is stated over: every sector carries its lower endpoint
 (distance cannot decrease under an added check) and rebuilds its upper
 endpoint from child-valid witnesses only. The pre-change upper endpoint is

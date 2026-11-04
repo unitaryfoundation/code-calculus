@@ -195,7 +195,7 @@ cells remain `transition-defined` at best.
 ### `C-SKIP` — Identity (`skip`)
 
 **Taxonomy ID:** `C-SKIP`. **Layer:** Core CSS calculus.
-**Syntax category / kind:** command (`m ::= \operatorname{skip}`,
+**Syntax category / kind:** command (`m ::= \mathrm{skip}`,
 [`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2).
 **Primitive or derived:** primitive production.
 **Contract status:** `contract-stated` (record completed 2026-10-27).
@@ -318,7 +318,7 @@ later factorization; nothing else is consumed or produced.
 ### `C-DELETE-CHECK` — Stabilizer/check deletion (`delete_r`)
 
 **Taxonomy ID:** `C-DELETE-CHECK`. **Layer:** Core CSS-code transformation.
-**Syntax category / kind:** command (`m ::= \operatorname{delete}_r`,
+**Syntax category / kind:** command (`m ::= \mathrm{delete}_r`,
 [`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2).
 **Primitive or derived:** Primitive.
 **Contract status:** `contract-stated` (record completed 2026-10-27; the
@@ -326,8 +326,8 @@ template above shows this card's identity block in illustrative form).
 
 **Input / output (§2):** presented state $C$ and a displayed generator $r$;
 the output is the state with exactly $r$ removed. **Applicability (§3):**
-$\operatorname{DisplayedGenerator}(r,\mathsf{pres})$ and
-$\operatorname{Independent}(r;\mathsf{pres})$ — span non-membership
+$\mathrm{DisplayedGenerator}(r,\mathsf{pres})$ and
+$\mathrm{Independent}(r;\mathsf{pres})$ — span non-membership
 $r \notin \langle \mathit{rows}_\tau \setminus \{r\}\rangle$ (§4.7), which
 holds for every displayed $r$ by I2. **State update:** $Q$ unchanged; $r$
 removed from the presentation and its sector row space; the identifier is
@@ -406,7 +406,7 @@ reproduced §4.19 and §2a; carry-table rows, [`JUDGMENT_LAYER.md`](JUDGMENT_LAY
 ### `C-ADD-CHECK` — Stabilizer/check addition (`add_r`)
 
 **Taxonomy ID:** `C-ADD-CHECK`. **Layer:** Core CSS-code transformation.
-**Syntax category / kind:** command (`m ::= \operatorname{add}_r`,
+**Syntax category / kind:** command (`m ::= \mathrm{add}_r`,
 [`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2).
 **Primitive or derived:** Primitive.
 **Contract status:** `contract-stated` (record completed 2026-10-27).

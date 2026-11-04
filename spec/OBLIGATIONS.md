@@ -27,7 +27,7 @@ Later-layer probes `W17`–`W20` are recorded in the fixture file.
 | `W13` | a claim referring to a deleted generator does not transport; distance values are true of the state but **deliberately underivable** | `OBL-JUDGMENT-TRANSPORT` |
 | `W14` | direct-sum distance law holds, with the equality level corrected to **literal** $\equiv$ — the defect that survived six days and two review dispositions | `OBL-DIRECT-SUM-LAWS` |
 | `W21` | an implementation checking only **qubit** disjointness is insufficient; `used` sets must also be disjoint | `OBL-FRAME-LAW` |
-| `W22` | an implementation reading the `C-ADD-CHECK` commutation premise as a bare dot product is insufficient; complements are taken inside $\mathbb{F}_2^Q$, so $\operatorname{supp}(r)\subseteq Q$ is required | `OBL-WELL-FORMEDNESS-PRESERVATION` |
+| `W22` | an implementation reading the `C-ADD-CHECK` commutation premise as a bare dot product is insufficient; complements are taken inside $\mathbb{F}_2^Q$, so $\mathrm{supp}(r)\subseteq Q$ is required | `OBL-WELL-FORMEDNESS-PRESERVATION` |
 | `W10` | a later command failing after an earlier one succeeds yields **no derivation**, not a stuck residual — the semantics exposes no partial state | `OBL-SEQUENCE-ASSOCIATIVITY` |
 
 **What this is not.** Eight worked cases out of the 25 records in that file. The
@@ -128,9 +128,9 @@ operation.
  presentation-conjugation obligation).
 - The context-update table specifies annotation invalidation, which
  follows the **fixed-reference-set model**: each
- certificate or witness $c$ carries a reference set $\operatorname{Ref}(c)$ of
+ certificate or witness $c$ carries a reference set $\mathrm{Ref}(c)$ of
  generator identifiers, and deleting identifier $r$ updates the valid set by
- $V\mapsto V\setminus\{c : r\in\operatorname{Ref}(c)\}$. This update family is
+ $V\mapsto V\setminus\{c : r\in\mathrm{Ref}(c)\}$. This update family is
  pairwise commuting and idempotent, and its composition depends only on the
  deleted-identifier set $S$.
 
@@ -168,8 +168,8 @@ contracts; presentation conjugation (for the excluded interleavings).
 - **Disposition.** The qualification below is confirmed: idempotence alone does
  not suffice. Adopt the **fixed-reference-set model** as the hypothesis
  replacing bare idempotence: each certificate carries
- $\operatorname{Ref}(c)$, with invalidation
- $V\mapsto V\setminus\{c : r\in\operatorname{Ref}(c)\}$. This family is
+ $\mathrm{Ref}(c)$, with invalidation
+ $V\mapsto V\setminus\{c : r\in\mathrm{Ref}(c)\}$. This family is
  pairwise commuting (the updates remove disjoint singletons for distinct $r$),
  idempotent, and its composition depends only on the deleted-identifier set —
  exactly what the annotation-transport conclusion needs. Bare-idempotence-only
@@ -451,9 +451,9 @@ conditional permutation (applicability of the contraction-first serialization);
  **Correction (review finding — adopted, disposition below):** the original
  parenthetical explanation ("the bridge forces a pass through the
  intersection") is false for arbitrary paths. Witness: on $Q=\{1,2\}$, $Z=0$,
- $X_0=\operatorname{span}\{1\}$, $X_1=\operatorname{span}\{2\}$: add an $X$-row
+ $X_0=\mathrm{span}\{1\}$, $X_1=\mathrm{span}\{2\}$: add an $X$-row
  on qubit 2, then delete the original row on qubit 1 — the path passes through
- $\operatorname{span}\{1,2\}$ and never through $X_0\cap X_1=0$, with $k$
+ $\mathrm{span}\{1,2\}$ and never through $X_0\cap X_1=0$, with $k$
  values $1,0,1$. What remains correct, and what the entry claims, is the
  nonexistence of a **monotone-$k$** path for incomparable endpoints: every
  non-skip command changes $k$ by exactly one, so monotonicity forces
@@ -564,8 +564,8 @@ Lean: `eval_deterministic` gives literal equality, which implies $\equiv$
 `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`, and the expression constructor
 `C-DIRECT-SUM` (two-input, not a unary command) — and every well-formed input on
 which $p$ is applicable, at most one output state is produced: if
-$\operatorname{Eval}(p,S,S_1')$ and $\operatorname{Eval}(p,S,S_2')$ both hold
-($\operatorname{EvalExpr}(e_1\oplus e_2,S_A\oplus S_B,S')$ for the constructor),
+$\mathrm{Eval}(p,S,S_1')$ and $\mathrm{Eval}(p,S,S_2')$ both hold
+($\mathrm{EvalExpr}(e_1\oplus e_2,S_A\oplus S_B,S')$ for the constructor),
 then $S_1'\equiv S_2'$. Equivalently, the transition relation of each MVP
 primitive is functional on its applicability domain.
 
@@ -673,15 +673,15 @@ admission.
 
 **Statement (restated per the disposition).** For each MVP *command*
 (`C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) and every applicable
-transition $\operatorname{Eval}(\mathit{op},S,S')$, and for the expression
+transition $\mathrm{Eval}(\mathit{op},S,S')$, and for the expression
 constructor `C-DIRECT-SUM` every applicable two-input judgment
-$\operatorname{EvalExpr}(e_1\oplus e_2,\ S_A\oplus S_B)$ (it is not a unary
+$\mathrm{EvalExpr}(e_1\oplus e_2,\ S_A\oplus S_B)$ (it is not a unary
 command), the output satisfies `WellFormedCSS`: invariants I1–I5 hold of $S'$
 after the field updates of
 [`STATE_MODEL.md`](STATE_MODEL.md) §4.
 
 **Disposition.** The original
-one-$\operatorname{Eval}$ form quantified over a unary judgment that direct sum
+one-$\mathrm{Eval}$ form quantified over a unary judgment that direct sum
 does not have; the restated statement splits the two judgment forms, matching
 the `C-DIRECT-SUM` card's worked derivation shape
 ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2). The earlier
@@ -722,9 +722,9 @@ normal state. The derivation is re-derived mechanically in the slice
 **Intended mechanization status:** Lean theorem in the slice; Gate 3 input.
 
 **Statement.** For every command $m$ and well-formed $S$:
-$\operatorname{Eval}(m,S,S')$ holds if and only if
-$\operatorname{Eval}(\operatorname{skip};m,S,S'')$ if and only if
-$\operatorname{Eval}(m;\operatorname{skip},S,S''')$, where $S''$ and $S'''$
+$\mathrm{Eval}(m,S,S')$ holds if and only if
+$\mathrm{Eval}(\mathrm{skip};m,S,S'')$ if and only if
+$\mathrm{Eval}(m;\mathrm{skip},S,S''')$, where $S''$ and $S'''$
 agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 
 **Hypotheses.** $m$ well-typed; $S$ satisfies I1–I5.
@@ -733,7 +733,7 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 
 **Known edge cases and counterexamples.**
 
-- $\operatorname{skip};\operatorname{skip}$ is the degenerate case; the `steps`
+- $\mathrm{skip};\mathrm{skip}$ is the degenerate case; the `steps`
  records differ across the three forms, which is why the statement is modulo
  $\equiv$.
 
@@ -759,7 +759,7 @@ proof obligations, not assumed equations).
 against is the derived denotation at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §1a:
 $\llbracket m\rrbracket(S) = \mathsf{some}\ S'$ iff
-$\operatorname{Eval}(m,S,S')$. This note adds the pointer only; the
+$\mathrm{Eval}(m,S,S')$. This note adds the pointer only; the
 obligation's status is unchanged.
 
 **Hypotheses.** Well-typed commands; $S$ satisfies I1–I5.
@@ -921,24 +921,24 @@ unchanged.
 
 **Statement (restated per the disposition).**
 
-- **Deletion clause (unconditional).** $\operatorname{delete}_r$ with $r$ a
+- **Deletion clause (unconditional).** $\mathrm{delete}_r$ with $r$ a
  displayed row of $A\oplus B$ is applicable iff $r$ is displayed in exactly one
- summand, and then $\operatorname{Eval}(\operatorname{delete}_r,\ A\oplus B,\
+ summand, and then $\mathrm{Eval}(\mathrm{delete}_r,\ A\oplus B,\
  C_A'\oplus B)$ where $C_A'$ is the summand's deletion result. Proof shape:
  displayedness and independence are per-block; the used-set bookkeeping is
  per-block (the retired identifier stays in the owning summand's `used`).
-- **Addition clause (conditional).** $\operatorname{addStab}_r$ with
- $\operatorname{supp}(r)\subseteq Q_A$ is applicable on $A\oplus B$ iff it is
+- **Addition clause (conditional).** $\mathrm{addStab}_r$ with
+ $\mathrm{supp}(r)\subseteq Q_A$ is applicable on $A\oplus B$ iff it is
  applicable on $A$ (orthogonality and membership split per block because $r$
  annihilates $Z_B$ and cannot meet $X_B$), and then the result is $A'\oplus B$
  **provided the allocation-compatibility premise holds**:
- $\operatorname{mint}(\mathsf{used}_A)\notin\mathsf{used}_B$, equivalently
- $\operatorname{mint}(\mathsf{used}_A\cup
- \mathsf{used}_B)=\operatorname{mint}(\mathsf{used}_A)$, so the sum's mint
+ $\mathrm{mint}(\mathsf{used}_A)\notin\mathsf{used}_B$, equivalently
+ $\mathrm{mint}(\mathsf{used}_A\cup
+ \mathsf{used}_B)=\mathrm{mint}(\mathsf{used}_A)$, so the sum's mint
  equals the summand's mint. Every identifier before
- $\operatorname{mint}(\mathsf{used}_A)$ in the fixed enumeration lies in
+ $\mathrm{mint}(\mathsf{used}_A)$ in the fixed enumeration lies in
  $\mathsf{used}_A$, so under used-set disjointness the premise says that
- $\mathsf{used}_B$ starts strictly after $\operatorname{mint}(\mathsf{used}_A)$.
+ $\mathsf{used}_B$ starts strictly after $\mathrm{mint}(\mathsf{used}_A)$.
  Without the premise the sums are still applicable
  but mint differently: the clause fails, which is why it is a hypothesis, not
  a bug.
@@ -992,13 +992,13 @@ Gate 6.
 **Statement (restated per the disposition).** For a permitted qubit
 relabeling $\sigma$ with $\tilde S=\sigma S\approx S$:
 
-- **Deletions (identifier-stable).** $\operatorname{Eval}(\operatorname{delete}_r,
- S, S')$ iff $\operatorname{Eval}(\operatorname{delete}_r, \tilde S,
+- **Deletions (identifier-stable).** $\mathrm{Eval}(\mathrm{delete}_r,
+ S, S')$ iff $\mathrm{Eval}(\mathrm{delete}_r, \tilde S,
  \widetilde{S'})$, with the same identifier $r$ on both sides: identifiers
  transport with their rows, and displayedness/independence are
  relabeling-invariant.
-- **Additions (support-transported).** $\operatorname{Eval}(\operatorname{addStab}_r,
- S, S')$ iff $\operatorname{Eval}(\operatorname{addStab}_{\sigma r}, \tilde S,
+- **Additions (support-transported).** $\mathrm{Eval}(\mathrm{addStab}_r,
+ S, S')$ iff $\mathrm{Eval}(\mathrm{addStab}_{\sigma r}, \tilde S,
  \widetilde{S'})$, where $\sigma r$ is the transported support vector. The
  transported command **must** be used; minted identifiers agree because
  relabeling leaves `used` unchanged.
@@ -1387,8 +1387,8 @@ unchanged.
 by these landings: they are mechanization progress, not a status upgrade.
 
 
-**Statement.** $\Gamma\vdash \operatorname{Eval}(m,S,S') : R$ implies
-$\operatorname{Eval}(m,S,S')$ and $(S,m,S')\models R$ (the research proposal (see REFERENCES.md)): every
+**Statement.** $\Gamma\vdash \mathrm{Eval}(m,S,S') : R$ implies
+$\mathrm{Eval}(m,S,S')$ and $(S,m,S')\models R$ (the research proposal (see REFERENCES.md)): every
 derivable annotation is true of the denoted command evaluation.
 
 **Hypotheses.** $\Gamma$ contains only well-formedness assumptions of ; the

@@ -257,16 +257,16 @@ reference as provenance only; a nonempty source string is not validation.
  underlying computation.
 
 - **Deletion price $(w_{\mathrm{del}},w_{\mathrm{exp}})$.** Binds to a
- transition $C\xrightarrow{\operatorname{delete}_r}C'$. Asserts
+ transition $C\xrightarrow{\mathrm{delete}_r}C'$. Asserts
  $d(C')=\min(d(C),w_{\mathrm{del}},w_{\mathrm{exp}})$ for the full distance.
- Here $w_{\mathrm{del}}=\min\{\operatorname{wt}(g):g\in S\setminus S'\}$ over
+ Here $w_{\mathrm{del}}=\min\{\mathrm{wt}(g):g\in S\setminus S'\}$ over
  the deleted stabilizer coset and
- $w_{\mathrm{exp}}=\min\{\operatorname{wt}(E):E\in N(S')\setminus N(S)\}$
+ $w_{\mathrm{exp}}=\min\{\mathrm{wt}(E):E\in N(S')\setminus N(S)\}$
  over newly exposed normalizer elements. Sector-specific deletion values
  require separately stated sector prices; no global price is reused.
 
 - **Exposure price $w_{\mathrm{expose}}$.** Binds to a transition
- $C\xrightarrow{\operatorname{E-GRAFT}(q,\tau,\vec r)}C'$ and to the exposed
+ $C\xrightarrow{\mathrm{E-GRAFT}(q,\tau,\vec r)}C'$ and to the exposed
  set in the non-spliced sector $\bar\tau$: the exposed set is the child
  $\sigma$-logicals whose lift touches $q$, with
  $w_{\mathrm{expose},\sigma}=\min\{|z|-1:z\text{ a parent }\sigma\text{-logical with }z_q=1\}$
@@ -277,7 +277,7 @@ reference as provenance only; a nonempty source string is not validation.
 
 - **Sector-aware gauging prices $(w_X, w_Z)$ (added 2026-10-23, ;
  extends this obligation, not discharged).** Binds to a transition
- $C\xrightarrow{\operatorname{addStab}_{r:\tau}}C'$ with a sector-pure added
+ $C\xrightarrow{\mathrm{addStab}_{r:\tau}}C'$ with a sector-pure added
  check. For each supplied sector $\sigma$: asserts
  $d_\sigma(C')=w_\sigma$, where $w_\sigma$ is the minimum weight over the
  surviving $\sigma$-logical classes (the classes that survive the added
@@ -300,7 +300,7 @@ reference as provenance only; a nonempty source string is not validation.
  claimed solved.
 
 - **Strict-improvement enumeration.** Binds to a transition
- $C\xrightarrow{\operatorname{addStab}_{r:\tau}}C'$ and to a state $C$ with
+ $C\xrightarrow{\mathrm{addStab}_{r:\tau}}C'$ and to a state $C$ with
  $d(C)=\text{base\_distance}$: asserts that every weight-$d(C)$ logical in
  $C$ either anticommutes with $r$ (in sector $\bar\tau$) or lies in
  $C_\tau+\langle r\rangle$ (in sector $\tau$). The cell carries
@@ -678,7 +678,7 @@ and the schema cited are recorded here; the cell verdicts and evidence labels of
 | Property | Carrier | Quantity | Update (per primitive) | Schema |
 | --- | --- | --- | --- | --- |
 | $n$ | span | $\lvert Q\rvert$ | $n'=n$ (skip/delete/add/sequence); $n=n_A+n_B$ (direct sum) | derived transfer |
-| $k$ | span | $\lvert Q\rvert - \operatorname{rank}(\mathit{rows})$ | $k'=k$ (skip); $k'=k+1$ (delete); $k'=k-1$ (add); $k=k_A+k_B$ (direct sum); carries (sequence) | derived transfer |
+| $k$ | span | $\lvert Q\rvert - \mathrm{rank}(\mathit{rows})$ | $k'=k$ (skip); $k'=k+1$ (delete); $k'=k-1$ (add); $k=k_A+k_B$ (direct sum); carries (sequence) | derived transfer |
 | $w$ | display | $\max\{\mathrm{wt}(r):r\in\mathit{rows}\}$ | $w'=w$ (skip); $w=\max(w_A,w_B)$ (direct sum); $w'=\max\{\mathrm{wt}(r):r\in\mathit{rows}'\}$ (delete, $\le w$); $w'=\max(w,\mathrm{wt}(r_{\rm new}))$ (add); carries (sequence) | derived transfer + monotonicity |
 | $r$ | display | $\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}\}$ | $r'=r$ (skip); $r=\max(r_A,r_B)$ (direct sum, conditional on honest merged layout); $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ (delete, $\le r$); $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ (add); carries by composition (sequence) | derived transfer + monotonicity |
 | $\kappa$ | display | $\kappa(C)$, the component count of the displayed-row Tanner graph $\Gamma(C)$ | $\kappa'=\kappa$ (skip); $\kappa=\kappa_A+\kappa_B$ (direct sum); $\kappa'\ge\kappa$, recomputed (delete); $\kappa'\le\kappa$ (add); composition (sequence) | derived transfer + monotonicity |

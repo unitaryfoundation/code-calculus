@@ -24,7 +24,7 @@ $$
 
 **The row spaces live in $\mathbb{F}_2^Q$.** $X$ and $Z$ are subspaces of
 $\mathbb{F}_2^Q$, and every displayed row $r$ has
-$\operatorname{supp}(r)\subseteq Q$. This is typing, part of what makes the
+$\mathrm{supp}(r)\subseteq Q$. This is typing, part of what makes the
 state a code on $Q$: without it a row whose support leaves $Q$ satisfies every
 invariant I1–I5 while its row space is not a subspace of $\mathbb{F}_2^Q$.
 
