@@ -177,7 +177,7 @@ and the `discharged-through` values are updated in the same change.
 **Not included in v0.1 (by decision, not omission):** exact-distance
 computation as a calculus move; heuristic search results presented as lower
 bounds; the Lean mechanization of the §4.31 transformers and of `E-GLUE`;
-Gates 2–7 ratification; the v0.2 candidate items (tracked in the  tracker).
+Gates 2–7 ratification; the v0.2 candidate items (tracked in the project tracker).
 
 ## 6. Item-level conventions and owners
 

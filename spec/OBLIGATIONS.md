@@ -118,7 +118,7 @@ operation.
 
 **Hypotheses.**
 
-- The input is a well-formed phase-insensitive presented CSS state  whose
+- The input is a well-formed phase-insensitive presented CSS state whose
  displayed generators are independent per type.
 - $S$ is a finite set of displayed generator identifiers; each deleted row is
  displayed and independent at its deletion step, which is automatic for subsets
@@ -671,7 +671,7 @@ The constructor's **admission** remains a Gate 7 question; this obligation recor
 what would have to be discharged if it is admitted, and is not itself an
 admission.
 
-**Statement (restated per the  disposition).** For each MVP *command*
+**Statement (restated per the disposition).** For each MVP *command*
 (`C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) and every applicable
 transition $\operatorname{Eval}(\mathit{op},S,S')$, and for the expression
 constructor `C-DIRECT-SUM` every applicable two-input judgment
@@ -1261,16 +1261,16 @@ here as obligations rather than left as loose notes.
 identifies the instance a certificate speaks for, and what makes a certificate
 evidencing one instance incapable of supporting an operation-contract claim;
 (ii) *route-scoping* — the obligation a checker must discharge to establish that
-a claim labelled `unavailable` on one route is not derivable on another.  fixed
+a claim labelled `unavailable` on one route is not derivable on another: it is fixed
 that `certificate-checked` attaches to per-state atomic judgments and never to an
 operation contract; that distinction is the typing discipline this obligation
 must make checkable.
 
-**Hypotheses.** The schema-versus-instance typing (the  route-scoping of `unavailable`; the ratified D2 discipline.
+**Hypotheses.** The schema-versus-instance typing (the route-scoping of `unavailable`; the ratified D2 discipline.
 
-**Dependencies.** ; the ratified framework (D1, D2); the
+**Dependencies.** None listed; the ratified framework (D1, D2); the
 `OBL-CERTIFICATE-PATH-KEYING` statement is a Gate 5 input and is **not** a
-prerequisite for –.
+prerequisite for adoption.
 
 **Known edge cases and counterexamples.** None yet recorded — the claim shape
 is `definition`, and the three Gate 5 questions §4.24 defers are recorded
@@ -1285,7 +1285,7 @@ owed at Gate 5:
 
 - What identifies the instance a certificate speaks for, such that a certificate
  evidencing **one** instance can never support an **operation-contract** claim.
-  fixed the schema-versus-instance distinction, and §4.24 writes the keying
+This fixed the schema-versus-instance distinction, and §4.24 writes the keying
  (the instance triple $(C, P, \sigma)$); whether that is the intended keying
  remains a Gate 5 decision.
 - What a checker must discharge to establish that a claim labelled `unavailable`
@@ -1458,8 +1458,7 @@ an archived internal note, grafting qubit 0 through X rows `a1,a2` yields a vali
 $(9,2)$ state under the executable checks. This is one empirical case only and
 does not discharge the obligation.
 
-The challenge fieldnote of 2026-10-19, imported verbatim at
-,
+The challenge fieldnote of 2026-10-19 (imported reference),
 adds a *negative* case: over board parents, `E-GRAFT` produced **no
 survivors** for $n \le 8$, and "grafting did not surface new survivors at the
 sizes where exact witness search is affordable". The fieldnote's own boundary
@@ -1623,8 +1622,7 @@ witnesses that validate as upper bounds; its randomized `distance_not_refuted`
 result is not a lower-bound certificate. The current prototype records exact
 price evidence references without checking the underlying computation.
 
-The challenge fieldnote of 2026-10-19, imported at
-,
+The challenge fieldnote of 2026-10-19 (imported reference),
 sharpens the second half of this. On the parents it tried — negatives bounded
 to $n \le 20$ parents and witness search up to weight 6-8 — no support killed
 every minimum-weight logical class, so the conditional cell "is effectively a

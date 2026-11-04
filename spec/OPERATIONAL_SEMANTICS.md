@@ -1671,7 +1671,7 @@ the induction above. This is a position, not an omission.
 **Conclusion.** The transported-command congruence holds for the MVP kernel
 (skip, direct sum, delete, add, sequence) and extends to the in-scope graft
 by the same argument. Same-command congruence is false for additions; the
-counterexample  is the motivation for the transported form and is not
+counterexample is the motivation for the transported form and is not
 repaired by any rule in the kernel. $\square$
 
 ## 4.26 — `P-REBASE` presentation identity and `OBL-REBASE-GENERATION`

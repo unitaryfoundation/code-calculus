@@ -113,32 +113,29 @@ shape (see review record).
 
 Evidence status is attached to each claim, not just to the operation. For example, an operation may have an equality claim for $k$ with `proved` evidence, a conditional lower-bound claim for distance, and an `unavailable` claim shape for deletion-distance lower bounds and equalities.
 
-**External vocabulary crosswalk.** The mapping between these claim/evidence vocabularies and external certificate-strength vocabularies (witnessed upper bound; `solver` / `proof_log` / `formal`) is recorded in The crosswalk is a reading aid for external evidence; it changes no claim shape, evidence status, or reserved status defined here.
+**External vocabulary crosswalk.** The mapping between these claim/evidence vocabularies and external certificate-strength vocabularies (witnessed upper bound; `solver` / `proof_log` / `formal`) is recorded here. The crosswalk is a reading aid for external evidence; it changes no claim shape, evidence status, or reserved status defined here.
 
-**Reserved future status: `certificate-checked`.** Not currently assigned to any claim. Meaning: a machine-checked certificate — produced by an external search (for example SAT-based distance search) whose translation into the proof assistant is itself verified — has been checked by the mechanized calculus, upgrading the claim without trusting the search program. Candidate trigger: the Lean-QEC verified SAT-distance bridge (arXiv 2605.16523; §5); a second named candidate is the complete branch-and-bound distance search of Okada–Kasai (arXiv 2607.14091v4 §V), whose completed `None` run is a reproducible per-state certificate that $d > W$ ( §1, §6). Adopting it is a Gate 6-candidate decision and an assertion-language-axis release bump (`spec/VERSIONING.md` §4), not a silent edit; until then, no field may carry this status. When adopted it attaches to per-state atomic judgments only: a certificate evidences one instance, never an operation contract, whose claims are schemas over all inputs.
+**Reserved future status: `certificate-checked`.** Not currently assigned to any claim. Meaning: a machine-checked certificate — produced by an external search (for example SAT-based distance search) whose translation into the proof assistant is itself verified — has been checked by the mechanized calculus, upgrading the claim without trusting the search program. Candidate trigger: the Lean-QEC verified SAT-distance bridge (arXiv 2605.16523; §5); a second named candidate is the complete branch-and-bound distance search of Okada–Kasai (arXiv 2607.14091v4 §V), whose completed `None` run is a reproducible per-state certificate that $d > W$ (archived note, §1, §6). Adopting it is a Gate 6-candidate decision and an assertion-language-axis release bump (`spec/VERSIONING.md` §4), not a silent edit; until then, no field may carry this status. When adopted it attaches to per-state atomic judgments only: a certificate evidences one instance, never an operation contract, whose claims are schemas over all inputs.
 
 **Review finding (review pass, 2026-09-26) — dispositioned
 2026-09-26.** A certificate
 establishes the distance of one code instance, while the deletion-distance
 claim of `C-DELETE-CHECK` is a schema over all inputs and all deleted rows: no
 finite set of certificates evidences it. What a checker can admit is a per-state
-atomic judgment — and by , admitting per-state distance atoms makes
-deletion-distance facts about particular states derivable, which the 
-disposition makes sound by scoping `unavailable` to evaluations.
+atomic judgment — and admitting per-state distance atoms makes
+deletion-distance facts about particular states derivable, which the disposition makes sound by scoping `unavailable` to evaluations.
 
 **Disposition.** `certificate-checked`
 attaches to per-state atomic judgments and never to an operation contract; the
 *Reserved future status* paragraph above now says so, and the reclassification
-path under *Outcome vocabulary* is per state. Decided together with  and ;
-see
-,
-finding .
+path under *Outcome vocabulary* is per state. Decided together with the related
+disposition notes; see the review record.
 
 **Note.** The second candidate trigger above is recorded from
 an archived internal note §1 (Okada–Kasai v4 specifics): the
 complete search is sound and complete for fixed CSS lifts with proved pruning
 and cyclic root reduction, so a completed run has exactly the per-state
-certificate shape  defined. Naming it here commits to nothing; adoption
+certificate shape defined. Naming it here commits to nothing; adoption
 remains the Gate 6-candidate decision this paragraph already requires.
 
 ---
@@ -403,7 +400,7 @@ required for the partial inverse and for auditing any later re-add; the
 parent state identifier; the retirement fact is already recorded in `used`.
 
 **Evidence (§12):** §4.7 (well-formedness), §4.9 (partial inverse), §4 and
-the  disposition (non-increase bound); conditional price: Theorem 12.1
+the disposition (non-increase bound); conditional price: Theorem 12.1
 reproduced §4.19 and §2a; carry-table rows, [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2.
 
 ### `C-ADD-CHECK` — Stabilizer/check addition (`add_r`)
@@ -1280,7 +1277,7 @@ An operation may be admitted as a sound formal-calculus transition only when:
 6. logical-sector and distance fields are recorded with separate claim shapes and evidence statuses;
 7. required support, interface, complexity, inverse, and provenance data are listed.
 
-A contract may be `contract-stated` with a property whose evidence status is `open` or whose claim shape is `unavailable`. That does not weaken the requirement that the transition itself be `state-sound` before it is admitted as a sound calculus rule. An operation with only an assigned proof obligation remains a candidate, not an admitted rule.  scopes `E-GRAFT` and its conditional cells into the current design and executable prototype, but does not promote it to `state-sound` or claim it as a proved rule.
+A contract may be `contract-stated` with a property whose evidence status is `open` or whose claim shape is `unavailable`. That does not weaken the requirement that the transition itself be `state-sound` before it is admitted as a sound calculus rule. An operation with only an assigned proof obligation remains a candidate, not an admitted rule. The priced-construction-calculus scope decision scopes `E-GRAFT` and its conditional cells into the current design and executable prototype, but does not promote it to `state-sound` or claim it as a proved rule.
 
 The admission boundary therefore distinguishes:
 
@@ -1355,10 +1352,8 @@ congruence of judgments is unaffected. The row's evidence status was
 **Update:** the hand derivation is recorded at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4, so the row now reads
 `proved` under the contract's definition (established from the operation
-definition and stated hypotheses), with mechanical re-derivation still owed at
- like every §5 derivation. See
-,
-finding .
+definition and stated hypotheses), with mechanical re-derivation still owed,
+like every §5 derivation. See the review record.
 
 **Flagged inconsistency.** The `P-RELABEL`
 taxonomy record (`spec/TAXONOMY.md` §1.1) originally promised transport of
@@ -1376,7 +1371,7 @@ an archived internal note
 definition. Citation retained for the historical record; not a normative
 dependency.)*
 
-See 
+See the note above.
 
 **Note.** A `not-yet-defined` slot is recorded for the
 applicability judgment of the deferred `X-SYMPLECTIC-HALVE` record: whether a
@@ -1446,7 +1441,7 @@ judgment-transport half is recorded at `spec/JUDGMENT_LAYER.md` §4 and
 `spec/OPERATIONAL_SEMANTICS.md` §4.11. Citation retained for the historical
 record; not a normative dependency.)*
 
-**Review finding (review finding, 2026-09-25) — .** **** held that the four labels are
+**Review finding (2026-09-25).** A review held that the four labels are
 not four disjoint semantic outcomes — `unavailable` is a subset of underivable
 and soundness makes `false` underivable too — that `W13` gives no separate
 not-derivable-but-not-unavailable example, and that a new underivability claim
@@ -1459,11 +1454,9 @@ exclusion instead of asserting a semantic partition — which is what the openin
 paragraph above now says. Two further conditions travel with it: every
 `not derivable` label names its scope (rule system plus record date), and no
 bare not-derivable label is recorded until the general derivation system is
-fixed (Gate 5), which is why `W13` contains none. See
-,
-finding , and the matching records at
- and
-an archived internal note `W13`.
+fixed (Gate 5), which is why `W13` contains none. See the review record and the matching records in
+`spec/JUDGMENT_LAYER.md` and `spec/OPERATIONAL_SEMANTICS.md`, and the
+archived internal note `W13`.
 
 an archived internal note `W13` exhibits all four labels on a
 single state, one per claim and each with its scope.

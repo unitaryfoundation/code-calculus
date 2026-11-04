@@ -290,9 +290,7 @@ cannot be checked.
 stabilizer data as the drop in logical dimension attributable to the new seam
 checks; qubit identification and added seam qubits are accounted for in $n'$
 and the check spaces, not in $t$. The **Conditions** row now says so and also
-records that $k'$ is always $k' = n' - \dim X' - \dim Z'$. See
-,
-finding .
+records that $k'$ is always $k' = n' - \dim X' - \dim Z'$. See the review record.
 
 Gluing is not the same as placing two codes near each other. It is a code composition only when the resulting stabilizer structure contains an explicitly defined interface operation.
 
@@ -341,7 +339,7 @@ operation.
 *Physical reading:* Hadamarding a subset of qubits can leave the standard-CSS
 presentation — witness $Q=\{1,2\}$ with X-row `12` and Z-row `12`, whose image
 generates no pure-X or pure-Z element. *Matrix reading:* pairing the $i$-th X
-row with the $i$-th Z row depends on row order, which the makes
+row with the $i$-th Z row depends on row order, which makes them
 semantically absent, and breaks orthogonality when the two row lists are not
 aligned. The report derives the splitting criterion — the image is standard CSS
 exactly when both row spaces split along the conjugated subset — and
@@ -354,9 +352,7 @@ conjugated qubits, and the column swap is read row-wise — each row's entry at
 $q$ moves to the other sector — not by pairing X rows with Z rows. The
 per-qubit move stays in the taxonomy as a conditional CSS-model move, the
 global sector swap being the $T=Q$ case. The former unconditional preservation
-claim is withdrawn; nothing may cite it. See
-,
-finding S1.
+claim is withdrawn; nothing may cite it. See the review record.
 
 Per-qubit conjugation is the only nontrivial single-qubit Clifford effect the phase-insensitive check structure can represent: Paulis act by quotiented phases, and $S$ is not CSS-representable (it maps $\langle X \rangle$ toward $\langle Y \rangle$, which has no pure-sector generator) — hence the name *Hadamard* rather than *local Clifford*. Applying it to every qubit realizes the global $X \leftrightarrow Z$ sector duality. Motivations include rough–smooth boundary changes, twist moves, and the conjugate-copy variants of `A-DOUBLE`. Boundary labels (once defined as proposed in [`STATE_MODEL.md`](STATE_MODEL.md) §1) are where this move's geometric uses would be typed: conjugating along a boundary edge exchanges the sector of the logical representative that edge supports.
 
@@ -426,7 +422,7 @@ normative dependency.)*
  raw output is not a member of the MVP
  well-formedness class (`OBL-WELL-FORMEDNESS-PRESERVATION`).
  **Qualification (review finding, 2026-10-10 — DISPOSITIONED as live repair work; reading (A) applies).** The
- citation "I2/I5 require ... to span the row spaces" repeats the  defect:
+ citation "I2/I5 require ... to span the row spaces" repeats the defect:
  **I2 states displayed independence, I5 is a provenance invariant, and neither
  states spanning** — spanning sits in I1's clause. Under reading (A), where
  I1's span clause is definitional, **the argument below is now false, not merely

@@ -73,7 +73,7 @@ Pointers of the form §4.x refer to `spec/OPERATIONAL_SEMANTICS.md` §4;
 
 **Connectivity (display-relative, `E-GRAFT` included).** The five-column table
 above covers the MVP primitives; `E-GRAFT` is not an MVP primitive and is
-recorded here separately, per :
+recorded here separately:
 
 | Primitive | Tanner connectivity |
 | --- | --- |
@@ -148,7 +148,7 @@ consumer supplies the stated hypothesis; otherwise the corresponding cell is
 | `C-ADD-CHECK` (strict improvement) | $d$ | $d'\ge d+1$ | exact old $d$ and exhaustive minimum-weight-class enumeration, all killed | Proposition 18.3 (external input; see REFERENCES.md); derivation reproduced at `OPERATIONAL_SEMANTICS.md` §4.19; claim remains conditional on the consumer-supplied hypothesis |
 | `C-ADD-CHECK` (sector-aware gauging) | $d_X$, $d_Z$ | the supplied sector's lower endpoint is raised to $w_\sigma$ (never below the carried bound); the unpriced sector keeps its carried lower bound; when both $w_X,w_Z$ are supplied the full-distance lower endpoint may be raised to their minimum ($d=\min(d_X,d_Z)$) | sector minima $w_X,w_Z$ over the surviving logical classes and an evidence reference | Lemma 18.5 (external input; see REFERENCES.md); claim remains conditional on the consumer-supplied hypothesis |
 | `C-ADD-CHECK` (direct-sum extinction) | $d$ | $d'=d_B$ (exact) when $d_B>d_A$ | exact old $d$ ($=d_A$), the trusted factor distance $d_B$ with an evidence reference, and the computed structural side — a two-block disjoint union, the added check inside one block, $k$ of the block containing the added check equal to zero, $k$ of the surviving block at least one, and no carried sector bound exceeding $d_B$ | Proposition 18.6 + Corollary 18.7 (external input; see REFERENCES.md); **stack family only**: the cell is stated for stack parents, and no family other than the source's stack/direct-sum family is licensed; claim remains conditional on the trusted $d_B$; general $k'>0$ remains open and is not claimed solved |
-| `A-CONCAT` towers ($k_{\mathrm{in}}=1$), price provider | deletion/exposure price input | factorization from tower level data | tower structure, class dictionary, outer presentation | Theorems 27.2 / 27.5 (external input; see REFERENCES.md); not a calculus constructor. A $k_{\mathrm{in}}>1$ generalization exists in the source (Theorem 27.8) with a refined class dictionary; it is proved but not sweep-verified here (tracked by ). Its cost tables have size $2^{2k_{\mathrm{in}}}$. |
+| `A-CONCAT` towers ($k_{\mathrm{in}}=1$), price provider | deletion/exposure price input | factorization from tower level data | tower structure, class dictionary, outer presentation | Theorems 27.2 / 27.5 (external input; see REFERENCES.md); not a calculus constructor. A $k_{\mathrm{in}}>1$ generalization exists in the source (Theorem 27.8) with a refined class dictionary; it is proved but not sweep-verified here (tracked in `spec/OBLIGATIONS.md`). Its cost tables have size $2^{2k_{\mathrm{in}}}$. |
 | `E-GRAFT` | $r$ (interaction radius) | exact: $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$; and $r'\le 2r$ | **none** — the radius is exactly computable, so no hypothesis is needed; §2d.2 | derivation [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21 (interaction-radius transport) |
 
 The radius row is listed here because §2a is the conditional-cell table; its
@@ -157,8 +157,7 @@ is needed), and §2d.2 carries the authoritative cell.
 
 **Where the strict-improvement cell is cheap, and where it is not.** The cell
 is conditional, and the condition is rarely satisfiable: the challenge
-fieldnote of 2026-10-19, imported at
-,
+fieldnote of 2026-10-19 (imported reference),
 reports 0 strict improvements out of 736 valid single-check additions for
 $n \le 10$, with its negatives bounded to $n \le 20$ parents and witness
 search up to weight 6-8. The condition is not vacuous: at distance 1 it
@@ -536,8 +535,8 @@ artifact may describe it as aiming at completeness in the MVP.
 
 ## 4. The `W13` half — absence of derivation as the witness
 
-*Dispositioned 2026-10-11 (maintainer). Full analysis in
-EXPRESSIBILITY.md.*
+*Dispositioned 2026-10-11 (maintainer). Full analysis is recorded in the
+review notes.*
 
 The `W13` half — *"a claim referring to a deleted generator is not transported"* —
 needs **no rule whose conclusion is a negative**. Transport is already a
