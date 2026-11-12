@@ -75,6 +75,20 @@ conditional cell or as a recorded input, and the consumer never validates it.
   observations about gauging-as-merge and sequencing non-commutativity.
   Recorded at `spec/OPERATIONAL_SEMANTICS.md` §2.
 
+## External construction references (not normative)
+
+These are construction/protocol references recorded for scope context only.
+They are **not** taken as inputs, proofs, or calculus claims, and the
+calculus does not depend on them.
+
+- **Wang 2026** — Z. Wang, *Commuting-check gauging for fault-tolerant
+  logical measurements*, arXiv:2611.12236v1 (2026). Commuting-check gauging
+  construction with completion qubits, distance preservation \(d(\widehat P_g)=d(P_g)\)
+  under its hypotheses, and fault-tolerant logical measurement by gauging/ungauging.
+  Recorded as the deferred extended-state taxonomy entry `X-GAUGING`
+  (`spec/TAXONOMY.md` §4.5). Not a CSS-model move; circuit-level content is a
+  non-goal of the first phase.
+
 ## Historical provenance
 
 Shorthand citations (`proposal §N`, `code-deformation`, `manuscript`,

@@ -47,6 +47,7 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `L-TANNER` | Local code on a graph / quantum Tanner construction | Lower-level constructor |
 | `L-TILE` | Tile or cellulation construction | Lower-level constructor |
 | `X-GAUGE-FIX` | Gauge fixing | Extended state model |
+| `X-GAUGING` | Gauging / logical measurement by gauging | Extended state model (deferred) |
 | `X-LOCAL-CLIFFORD` | Local/block-Clifford conjugation | Extended state model (deferred) |
 | `X-SUBSYSTEM` | Subsystem-code deformation | Extended state model |
 | `X-SYMPLECTIC-DOUBLE` | Symplectic doubling (general stabilizer → CSS) | Extended state model (deferred) |
@@ -858,6 +859,24 @@ the disposition §2.12 already fixes, and this record does not re-derive it.
 Block Cliffords and shears that do not preserve purity are deferred with the
 rest of the extended-state layer. The record exists so the deferral is
 explicit rather than implicit.
+
+## 4.5 Gauging and logical measurement by gauging
+
+### Record: `X-GAUGING`
+
+| Field | Description |
+| --- | --- |
+| **Status** | Deferred extended-state operation |
+| **Input** | A CSS parent code, typed symmetry data (a Clifford or finite-order symmetry factoring into operations on disjoint matter blocks of bounded size), a connected gauging graph \(G=(V,E)\) on those blocks, and (for Clifford symmetries) completion data: central checks \(\mathsf K_a\), an order on noncommuting pairs, and one completion qubit per conflicting pair |
+| **Output** | A gauged stabilizer code on matter, gauge, and completion qubits, whose checks are the completed Gauss operators, flux operators, modified parent stabilizers, central checks, and pinning checks; together with the data needed for ungauging (gauge qubit \(Z\)-basis readout and a vertex correction). The output is not, in general, an ordinary CSS code: modified parent stabilizers and completion factors are mixed/Clifford checks |
+| **Operation** | Gauge a symmetry of the parent code: introduce gauge qubits on the edges of \(G\), modify the parent stabilizers along chosen paths, and (for Clifford symmetries) add completion qubits so the raw checks commute. Ungauging measures the gauge qubits and applies a vertex correction to return to the parent code space |
+| **Conditions** | The symmetry must preserve the parent code space and factor into block operations of bounded size; the gauging graph must be connected and its paths chosen for the modified parent stabilizers; raw checks must satisfy the commutator relation \(C_i C_j = \mathsf K_{ij} C_j C_i\) with \(\mathsf K_{ij}\in\langle \mathsf K_a\rangle\); completion qubits are pinned in their \(+\) eigenspace on the code space; the resulting full family must be mutually commuting; the output code space and distance must be preserved as stated under the construction hypotheses. The construction also supplies bounded-depth extraction circuits and detection tests for repeated rounds |
+| **Parameter effects** | \(n_{\text{gauged}} = n + |E(G)| + c\) with \(c\) completion qubits; \(n_{\text{meas}} = M_{\text{raw}} + c\) measurement ancillas. Each conflict adds one completion qubit and one pinning-check ancilla. Completion preserves the LDPC property with bounded weight and incidence when the raw family has them. The code-space projection satisfies \(d(\widehat P_g)=d(P_g)\) under the construction's hypotheses (conditional; not an automatic calculus judgment). Clifford raw checks can be measured at level three or below after completion; qudit variants give hierarchy bounds in prime dimensions. The construction is also used for logical measurement of the symmetry with circuit fault distance \(\Omega(d)\) in \(O(d)\) rounds under the stated graph and circuit conditions |
+| **Primitive / derived** | Candidate extended-state constructor / transformation; not a CSS-model move. It is not a measurement procedure in the calculus's sense, but its code construction is recorded here so the deferral is explicit |
+| **Formalization status** | Taxonomy-only. Source: Wang, *Commuting-check gauging for fault-tolerant logical measurements*, arXiv:2611.12236v1 (2026). No grammar production, no typed transition, no obligation, and no claim status beyond this record. Circuit realizations, extraction schedules, gate orders, and fault-response certificates have no field in \(C=(Q,X,Z,\mathsf{pres},\mathsf{used})\) and remain not yet defined here |
+| **Partial inverse** | Ungauging returns to the parent code space under the construction's readout and correction data; generally requires retained graph, path, completion, and measurement data |
+
+This record does not make gauging a calculus operation. The parent is CSS, but the gauged output leaves the ordinary-CSS model, so it joins the deferred extended-state layer alongside `X-GAUGE-FIX`. The paper's fault-tolerance and circuit-distance statements are evidence about the construction, not proofs of calculus claims, and they do not enter the judgment layer without a Gate 6 admission decision and supplied hypotheses. Circuit-level content is a non-goal of the first phase and is recorded here only as scope context.
 
 ---
 
