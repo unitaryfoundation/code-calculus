@@ -9,7 +9,7 @@
 #      carries a `source` that resolves to one spec/ section naming the
 #      operation (scripts/lint_transcription_sources.py);
 #   5. malformed links are reported: a backtick-quoted path used as a link
-#      without brackets (`an archived note`(Y)), doubled opening brackets before a link,
+#      without brackets (`an internal note`(Y)), doubled opening brackets before a link,
 #      and link *text* that names a file which exists nowhere in the repo.
 #
 # ID tokens are extracted as maximal runs of uppercase letters, digits, and
@@ -67,13 +67,13 @@ if ! python3 scripts/lint_transcription_sources.py; then
 fi
 
 # 5. Malformed links, in the live tree only. (a) a backtick-quoted path used as
-#    a link without brackets -- `an archived note`(an archived note) renders as code plus
+#    a link without brackets -- `an internal note`(an internal note) renders as code plus
 #    parentheses, so the reference never becomes clickable; (b) a doubled
 #    opening bracket, the signature of a relabel substitution that ate one
 #    bracket; (c) link *text* that names a file which exists nowhere in the
 #    repository, while the target points at its successor.
 #
-live=$(echo "$files" | grep -v '^\./archive/')
+live=$(echo "$files")
 for f in $live; do
   if grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" >/dev/null; then
     grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" | sed "s|^|$f: |"

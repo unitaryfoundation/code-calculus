@@ -61,7 +61,7 @@ the prose wins and the transcription is fixed.
 ## References and citation keys
 
 Shorthand citations used throughout this directory (`proposal §N`, `code-deformation`,
-`manuscript`, `an archived internal note`) are resolved in
+`manuscript`, `an internal note`) are resolved in
 [`../REFERENCES.md`](../REFERENCES.md). None of those sources is shipped here;
 the calculus is stated so that its normative content does not depend on them.
 

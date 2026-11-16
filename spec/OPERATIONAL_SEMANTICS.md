@@ -217,7 +217,7 @@ span's dimension by one; from a non-spanning independent set it need not, and
 span-of-displayed-rows condition. The two coincide **by construction**, not by
 hypothesis. The review qualification that raised this is kept at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4 and its disposition in
-an archived internal note.
+an internal note.
 
 **Distance non-increase under deletion** ($d_X'\le d_X$, $d_Z'\le d_Z$, and
 $d'\le d$ by `MIN-ORDER` + `TRANSITIVITY`) and **the skip identity** are recorded
@@ -228,7 +228,7 @@ identity is the one obligation discharged to date — `proved`, and **not yet
 
 ## 4. The dated hand derivations
 
-Folded here 2026-10-11 from an archived internal note §5.
+Folded here 2026-10-11 from an internal note §5.
 These are **evidence in this repository, not machine-checked proofs**, and each is to be
 re-derived mechanically. Their qualifications are retained verbatim, per `AGENTS.md`:
 *review findings are dispositions, not silent edits.*
@@ -258,7 +258,7 @@ $k'=k-1$ follow from I1 together with I2 rather than from I2 alone. The
 "conditional" branch — under which these two `established` claims would have
 needed restating — **was not taken**. The qualification is superseded by this
 dated disposition and kept rather than deleted, per `AGENTS.md`. See
-an archived internal note
+an internal note
 for the disposition record and for what survives it (repair work in
 other artifacts, not here).
 
@@ -1940,9 +1940,9 @@ such. The two inequalities would license carrying the selected sector's
 lower endpoint and the opposite sector's upper endpoint; no cell doing so is
 admitted. The priced cells of §4.13 are not affected; no price cell is
 admitted for this move. The two directions are checked on random peels by
-`PeelSectorMonotonicity` in an archived internal note and by
+`PeelSectorMonotonicity` in an internal note and by
 `test_rg11_hand_derivation_counterexamples_glue_and_peel` in
-an archived internal note (empirical aids; they falsify nothing
+an internal note (empirical aids; they falsify nothing
 here and prove nothing).
 
 The regression fixture for the collapse of a parent logical supported on the
@@ -2128,7 +2128,7 @@ that cell by the seam certificate's Theorem 4 / claim 7.4
 (`composition-distance`). The lower-endpoint half (each glued distance is at
 least the minimum of the factor distances) is covered by this section and
 §4.31; the equality half is not. The scalar relation $d=\min(d_A,d_B)$ is
-likewise **not** admitted (obstruction, an archived internal note). Upper
+likewise **not** admitted (obstruction, an internal note). Upper
 endpoints come only from witnesses that revalidate in the child.
 
 **What this does not settle.** The logical-witness field
@@ -2218,7 +2218,7 @@ Let $F_m$ be the transformer named in §2b/§2e for move $m$.
  bullet stated before 2026-10-29, is false: with no seam checks the glued
  code is the direct sum, whose distance is the factor minimum (a free qubit,
  $d=1$, and the $[[4,2,2]]$ code give $d=1<2$; reproducer
- `Section431GlueStep` in an archived internal note). Under an
+ `Section431GlueStep` in an internal note). Under an
  admissible certificate §2e certifies $d_Z(Q)=\min(d_A,d_B)$, and
  $\min(U_A^Z,U_B^Z)$ is an upper bound for that minimum. The X and full
  upper endpoints are justified by witnesses valid in the child.

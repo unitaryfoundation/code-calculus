@@ -1091,7 +1091,7 @@ correction initially declined to choose between them:
 - this entry: on unordered presentations with the disjointness premises, "both
  bracketings and both orders **literally agree** up to the summand embeddings'
  relabeling";
-- an archived internal note
+- an internal note
  §3.2: "Direct sum is associative and commutative up to this explicit
  relabeling equivalence, **not by literal equality of labeled states**."
 
@@ -1454,7 +1454,7 @@ definition; the source's coverage qualification recorded in
 
 
 **Known edge cases and counterexamples.** On the pinned qLDPC case
-an archived internal note, grafting qubit 0 through X rows `a1,a2` yields a valid
+an internal note, grafting qubit 0 through X rows `a1,a2` yields a valid
 $(9,2)$ state under the executable checks. This is one empirical case only and
 does not discharge the obligation.
 
@@ -1655,7 +1655,7 @@ recorded count is the fieldnote's $0$-of-$736$ above.
 
 **Ledger status:** minted 2026-10-22 on as a
 stub, so that the planning note at
-an archived internal note could name
+an internal note could name
 it; `scripts/lint_docs.sh` check 3 requires every `OBL-*` token to be defined
 here. **Statement fixed 2026-10-22** with the wiring that admits the
 interaction radius to the property inventory, and the dated hand derivation
@@ -1701,7 +1701,7 @@ of its own.
 
 **Dependencies.** `OBL-JUDGMENT-TRANSPORT` for the schema-composition
 condition under `C-SEQUENCE`; `OBL-WELL-FORMEDNESS-PRESERVATION` for the
-transitions' state updates; the disposition recorded in the decision log.
+transitions' state updates; the disposition recorded in the decision record.
 
 **Known edge cases and counterexamples.**
 
@@ -1771,7 +1771,7 @@ predicate of the same gate is computed by the consumer but is not carried as a
 spec cell.
 
 **Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION` for the transitions'
-state updates; the disposition recorded in the decision log.
+state updates; the disposition recorded in the decision record.
 
 **Known edge cases and counterexamples.** The deletion witness in
 `machine/test_priced_calculus.py` `ConnectivityCarryTests` (a redundant
@@ -1839,7 +1839,7 @@ rather than a theorem. This ledger is the discharge record for
 `OBL-GATE6-CSS-EXTENSIONS` (evidence status `proved`); the Gate 0
 ratification reading that the soundness obligation remained
 open is superseded by this entry and by the dated maintainer discharge
-recorded in the decision log.
+recorded in the decision record.
 
 | Move | definition | equality | monotonicity |
 | --- | --- | --- | --- |

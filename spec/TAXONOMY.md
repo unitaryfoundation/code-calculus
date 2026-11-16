@@ -112,11 +112,11 @@ These operations change the displayed presentation or the names of objects. They
 Qubit relabeling should be an explicit congruence of the calculus, not an accidental property of matrix layout.
 
 **Flagged dependency.** The transport claim above now carries stabilizer supports only; logical witnesses, interfaces, and certificates are not-yet-defined future-$\Pi$ data and are not transported. The dependency is thereby narrowed rather than resolved, and remains a prerequisite for `OBL-PRESENTATION-CONJUGATION`. The design-level type sketch for the logical-witness field lives in the superseded
-an archived internal note
+an internal note
 §4.1, retained as provenance; no clean successor exists in `spec/` (future-$\Pi$
 data is not MVP state data per [`STATE_MODEL.md`](STATE_MODEL.md) §1).
 
-*(Intentional provenance: an archived internal note is superseded; the type sketch above is a design proposal, not a normative
+*(Intentional provenance: an internal note is superseded; the type sketch above is a design proposal, not a normative
 definition. Citation retained for the historical record; not a normative
 dependency.)*
 
@@ -222,9 +222,9 @@ to `established` evidence.
 
 Cross-check: the qLDPC challenge's shortening entries are instances of this
 transition, not an unnamed move the calculus is missing. `../qldpc-challenge`
-an archived internal note constructs a code by "remove parent qubit 0, shorten the
+an internal note constructs a code by "remove parent qubit 0, shorten the
 X-check row space, and puncture the Z checks" — the §2.7 transition exactly,
-and an archived internal note performs a two-row pivot on qubit 548 using the XOR of
+and an internal note performs a two-row pivot on qubit 548 using the XOR of
 two Z rows, a graft with a chain of length two (read at challenge commit
 `d5a2a7406f92841ae1129c7db228c4d6eac35892`).
 
@@ -297,7 +297,7 @@ Gluing is not the same as placing two codes near each other. It is a code compos
 **Gate 6 prerequisite.** The logical-witness field must be defined before this record can move past `taxonomy-only`: merge and split correctness is stated about logical operators (which representatives survive the seam, which are created or destroyed), and witnesses are currently `not-yet-defined` (future-$\Pi$ data, not MVP state
 data per [`STATE_MODEL.md`](STATE_MODEL.md) §1; the design-level type sketch is in
 the superseded
-an archived internal note
+an internal note
 §4.1, retained as provenance). Boundary/edge labels are the second prerequisite;
 both are recorded in
 
@@ -373,13 +373,13 @@ Per-qubit conjugation is the only nontrivial single-qubit Clifford effect the ph
 A naive tensor product of Hilbert spaces is not by itself a CSS-code operation. The calculus needs the relevant chain-complex or matrix construction.
 
 **Qualification (prior-art sweep, 2026-09-30; **`proposed`, dispositioned
-2026-10-05** — repair (a) adopted).** Source: an archived internal note §1/§6 (arXiv
+2026-10-05** — repair (a) adopted).** Source: an internal note §1/§6 (arXiv
 2609.37231v1, read 2026-09-30), probed as `W20` in
-an archived internal note. This refines a placeholder. It
+an internal note. This refines a placeholder. It
 withdraws no prior claim, mints no operation identifier, and adds no operation:
 the record's status stays *Later extension*.
 
-*(Intentional provenance: an archived internal note is superseded; no
+*(Intentional provenance: an internal note is superseded; no
 clean successor in `spec/` for this worked-example record. The instance is
 retained as later-layer probe `W20` in (per the superseded
 file's successor note). Citation retained for the historical record; not a
@@ -435,7 +435,7 @@ normative dependency.)*
  *rationale* must be rewritten to rest on that rather than on presentation
  counts. **This is the recorded-disposition-was-at-risk case materialising: 
  needs rework.** Action owed, ranked below ; see
- an archived internal note.
+ an internal note.
  **Actioned 2026-10-10 — this finding is now worked, not pending.** The
  rationale above has been rewritten and the citation corrected, both in this
  record. **Scope of what changed, stated so it is not read as a re-disposition:**
@@ -520,8 +520,8 @@ normative dependency.)*
 **Flagged gap — non-CSS inner inputs.** The **Input** row reads
 "an outer code and an inner code" without stating whether "code" there means a
 CSS state. Three qLDPC board entries concatenate a CSS outer with a non-CSS
-stabilizer inner (an archived internal note, an archived internal note,
-an archived internal note, added 2026-10-14; read at challenge commit
+stabilizer inner (an internal note, an internal note,
+an internal note, added 2026-10-14; read at challenge commit
 `6e1e41be3`): the composite is CSS, but the inner input is not representable in
 $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$. Whether `A-CONCAT` admits such
 inputs under a typed interface, or whether those instances sit below the CSS
@@ -545,8 +545,8 @@ weight — and the constructor itself remains `taxonomy-only`
 ([`CLAIMS.md`](CLAIMS.md)). The
 effect is not academic on the qLDPC board, whose cell index is locality class ×
 check weight:
-the three 2026-10-25 board entries (an archived internal note,
-an archived internal note, an archived internal note) choose a sparse outer code for
+the three 2026-10-25 board entries (an internal note,
+an internal note, an internal note) choose a sparse outer code for
 exactly this product — `196-100-4` lifts weight-8 outer checks through
 weight-3 representatives to max check weight 24, under the verifier's 32 cap.
 
@@ -580,10 +580,10 @@ weight-3 representatives to max check weight 24, under the verifier's 32 cap.
 | **Formalization status** | Named in ; transition not specified |
 | **Partial inverse** | Generally none; a projection recovering one copy requires retained wiring data |
 
-A family name alone is not an operation (§3.8), so this record deliberately states the *shape* — a unary code-to-code constructor with $n' = 2n$ — and leaves the mechanism open. Parametric family-level doubling frameworks exist in the prior art (QECLean's BB doubling framework, cover-transfer and deck-homotopy; an archived internal note §5) and must be represented as parameterizations or factorizations of this record rather than as unrelated primitives.
+A family name alone is not an operation (§3.8), so this record deliberately states the *shape* — a unary code-to-code constructor with $n' = 2n$ — and leaves the mechanism open. Parametric family-level doubling frameworks exist in the prior art (QECLean's BB doubling framework, cover-transfer and deck-homotopy; an internal note §5) and must be represented as parameterizations or factorizations of this record rather than as unrelated primitives.
 
 Toward the open factorization question: the qLDPC challenge kit's
-an archived internal note implements the **free-$\mathbb{Z}_2$ BB cover** —
+an internal note implements the **free-$\mathbb{Z}_2$ BB cover** —
 a base BB code on $\mathbb{Z}_l \times \mathbb{Z}_m$ lifted to
 $\mathbb{Z}_{2l} \times \mathbb{Z}_m$ at the same polynomial supports — which
 changes the group-algebra input of the bivariate-bicycle constructor, i.e.
@@ -728,7 +728,7 @@ the family itself: its APM-PP extension (Thm 4) pairs equal *relative affine
 maps* where the CPM construction pairs equal differences, so the general
 typed constructor is "pair-partition over relative permutation maps," with
 CPM-PP and APM-PP as specializations sharing one CSS-orthogonality proof
-shape. See an archived internal note §1 (Okada–Kasai v4
+shape. See an internal note §1 (Okada–Kasai v4
 specifics).
 
 A named family deserves its own operation only when it has at least one of the following:
@@ -797,7 +797,7 @@ whether the two doubling records factor through one another is an explicit open
 question under the §3.8 criteria.
 
 Cross-check: the qLDPC challenge's `[[144,10,16]]` entry in
-an archived internal note does not perform a cover — its parent is a published
+an internal note does not perform a cover — its parent is a published
 cover, and the operation applied to it is the abelian mirror construction, an
 inversion-based instance of symplectic halving (read at challenge commit
 `d5a2a7406f92841ae1129c7db228c4d6eac35892`).
@@ -847,7 +847,7 @@ effects Eq. 20), named 2026-09-29; scoping in
 | **Conditions** | The supplied Clifford must be typed (support, sector action, and any block structure). For a CSS input to remain CSS, each displayed generator must map to a pure $X$ or pure $Z$ operator; otherwise the result leaves the ordinary-CSS model. Whether this purity condition holds is checkable per presented state — the phase-insensitive model represents at most the per-qubit sector swap here, see §2.12's disposition |
 | **Parameter effects** | $n$ and $k$ are preserved by any Clifford conjugation. The Pauli distance is preserved when the Clifford is a qubit permutation or single-qubit Clifford (block size $b=1$); for a block Clifford of block size $b>1$, $\lceil d/b \rceil \le d' \le b\,d$, with the maximum stabilizer weight moving within the same factor. Sector distances $d_X, d_Z$ are not defined for a non-CSS output. (Conditional on the Clifford type; no unconditional distance formula.) |
 | **Primitive / derived** | A **presentation operation** of the extended-state / presentation layer (§7: a conjugation that preserves the code up to the chosen equivalence). The `X-` prefix marks this deferral type: the move leaves the ordinary-CSS state model in general, so it joins the extended-state layer rather than the CSS one. The CSS-preserving single-qubit instance (sector swap) is already `E-LOCAL-HADAMARD` |
-| **Formalization status** | Named 2026-10-23 from the qLDPC challenge's Clifford-image provenance discipline: the `provenance.clifford_relabel_of` field (with the `clifford_block_size` companion) of the challenge's an archived internal note, whose schema text records that such an image has the same $n$, $k$, and code space as its parent, that the verifier tests only the single-qubit case (`is_css_up_to_local_clifford`, in an archived internal note; the schema description names it), and that multi-qubit Clifford equivalence is not tested. Read at challenge commit `d5a2a7406f92841ae1129c7db228c4d6eac35892`; transition not specified |
+| **Formalization status** | Named 2026-10-23 from the qLDPC challenge's Clifford-image provenance discipline: the `provenance.clifford_relabel_of` field (with the `clifford_block_size` companion) of the challenge's an internal note, whose schema text records that such an image has the same $n$, $k$, and code space as its parent, that the verifier tests only the single-qubit case (`is_css_up_to_local_clifford`, in an internal note; the schema description names it), and that multi-qubit Clifford equivalence is not tested. Read at challenge commit `d5a2a7406f92841ae1129c7db228c4d6eac35892`; transition not specified |
 | **Partial inverse** | The inverse Clifford conjugation, with the same typed data |
 
 This record does not make arbitrary local Clifford conjugation a CSS-model

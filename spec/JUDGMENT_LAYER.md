@@ -407,7 +407,7 @@ a 2D plane) and **honest** (§2d.3); otherwise the verdict is
 `unrestricted`, since the caps are 2D-radius constants.
 
 The consumer's class verdict is exact, while the challenge verifier
-(an archived internal note at challenge commit 9d30c66a) compares a
+(an internal note at challenge commit 9d30c66a) compares a
 floating-point `math.dist` radius against `cap + 1e-9`; a radius within
 $10^{-9}$ above a cap can therefore be `in` for the challenge and `out` for
 the consumer. The two are not the same verdict.

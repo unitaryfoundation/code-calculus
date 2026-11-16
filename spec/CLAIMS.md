@@ -132,7 +132,7 @@ path under *Outcome vocabulary* is per state. Decided together with the related
 disposition notes; see the review record.
 
 **Note.** The second candidate trigger above is recorded from
-an archived internal note §1 (Okada–Kasai v4 specifics): the
+an internal note §1 (Okada–Kasai v4 specifics): the
 complete search is sound and complete for fixed CSS lifts with proved pruning
 and cyclic root reduction, so a completed run has exactly the per-state
 certificate shape defined. Naming it here commits to nothing; adoption
@@ -974,7 +974,7 @@ disjoint factor states, mints seam-check rows canonically, preserves I1–I5 by
 the independence premises. **No unary grammar production**: gluing is a binary
 state operation. The §2.10 Gate 6 prerequisite (the logical-witness field) remains
 `not-yet-defined`, so the §2f distance cell and the obstruction row of
-an archived internal note are unchanged: no distance relation beyond the §2e
+an internal note are unchanged: no distance relation beyond the §2e
 conditional cell is admitted.
 
 **Required support and interface data (§8), completed 2026-10-27 (Gate 0):**
@@ -1364,10 +1364,10 @@ remains open, pending definition of the logical-witness field, which is
 future-$\Pi$ data and not MVP state data
 ([`STATE_MODEL.md`](STATE_MODEL.md) §1). The design-level type sketch lives in the
 superseded
-an archived internal note
+an internal note
 §4.1, retained as provenance; no clean successor exists in `spec/`.
 
-*(Intentional provenance: an archived internal note is superseded; the type sketch above is a design proposal, not a normative
+*(Intentional provenance: an internal note is superseded; the type sketch above is a design proposal, not a normative
 definition. Citation retained for the historical record; not a normative
 dependency.)*
 
@@ -1432,9 +1432,9 @@ are settled: `unavailable` attaches to evaluations, not to states , and
 `certificate-checked` attaches to per-state atomic judgments, never to an
 operation contract . The wording above is updated in place; the
 worked-example record is at
-an archived internal note `W13`.
+an internal note `W13`.
 
-*(Intentional provenance: an archived internal note is superseded; no
+*(Intentional provenance: an internal note is superseded; no
 clean successor in `spec/` for this worked-example record. The instance is
 retained as fixture `W13` in `machine/fixtures/mvp_fixtures.json`; the
 judgment-transport half is recorded at `spec/JUDGMENT_LAYER.md` §4 and
@@ -1458,10 +1458,10 @@ fixed (Gate 5), which is why `W13` contains none. See the review record and the 
 `spec/JUDGMENT_LAYER.md` and `spec/OPERATIONAL_SEMANTICS.md`, and the
 archived internal note `W13`.
 
-an archived internal note `W13` exhibits all four labels on a
+an internal note `W13` exhibits all four labels on a
 single state, one per claim and each with its scope.
 
-*(Intentional provenance: see the note above — an archived internal note is
+*(Intentional provenance: see the note above — an internal note is
 superseded and the instance is retained as fixture `W13` in
 `machine/fixtures/mvp_fixtures.json`; the citations above are historical
 record, not normative dependencies.)*

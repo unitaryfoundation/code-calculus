@@ -87,7 +87,7 @@
   "origin": "submission",
   "date": "2026-09-27",
   "model": "Mimo-V2.6-Free",
-  "notes": "Equivalence assessed against the board: no exact stabilizer-group fingerprint match and no Weisfeiler-Leman signature match to any existing entry. Filed as `an archived note`, a lighter-check companion to `an archived note` (same [[10,2,3]], max check weight 4 vs 6)."
+  "notes": "Equivalence assessed against the board: no exact stabilizer-group fingerprint match and no Weisfeiler-Leman signature match to any existing entry. Filed as `an internal note`, a lighter-check companion to `an internal note` (same [[10,2,3]], max check weight 4 vs 6)."
  },
  "family": "topological",
  "locality": {

@@ -30,7 +30,7 @@ The pieces, in dependency order:
 - `Chain` — the chain of states a closed command unfolds through; this is the
   "same closed term" that `TRANSITIVITY` is derivation-wide over.
 - `Derives` — `Γ ⊢ … : R`, the L3 rule inventory of
-  `the archived notes` §3.4 and §3.4.1:
+  `the internal notes` §3.4 and §3.4.1:
   instantiation, `TRANSITIVITY`, `MIN-ORDER`, and the ambient order theory.
 - `Models`, `judgment_soundness` — the models predicate, and the metatheorem.
 
@@ -88,7 +88,7 @@ of atoms at evaluation sites, but it would also add premises to those two rules;
 the absorbing encoding keeps the rules as §3.4.1 states them. A consequence,
 recorded rather than repaired: a sentence true over a chain can become false
 over an extension of it when a `min` argument that did not denote begins to
-(`an archived note`, `rg_optMin_breaks_chain_monotonicity`); the transport
+(`an internal note`, `rg_optMin_breaks_chain_monotonicity`); the transport
 lemmas of `Transport.lean` are stated on `denotes`, not on values, for that
 reason. Second, `sub` is strict in `none` and is used by the graft's `n - 1`
 schema and by the truncated readings of the two `k` cells; `add` is its exact
@@ -457,7 +457,7 @@ theorem measureMonotone_rowCount : MeasureMonotone (fun _ s => s.rows.length) wh
 
 /-- Derivability of an annotation in the derivation of the chain as one closed
     term: the L3 rule inventory of
-    `the archived notes` §3.4/§3.4.1.
+    `the internal notes` §3.4/§3.4.1.
 
 The `inst*` rows are §3.4's instantiation — "at every evaluation of an
 operation, each claim schema that the operation's card records as `included`

@@ -7,7 +7,7 @@
     ],
     "authority": "This file is a faithful transcription for mechanization consumers. Where it disagrees with spec/, the prose wins and this file must be fixed.",
     "generated": "2026-10-27",
-    "representation": "sparse supports over qubit indices; the encoding qldpc-challenge already ships an archived note for its own codes, which this file does not transcribe."
+    "representation": "sparse supports over qubit indices; the encoding qldpc-challenge already ships an internal note for its own codes, which this file does not transcribe."
   },
   "state": {
     "Q": {

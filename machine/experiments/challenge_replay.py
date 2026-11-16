@@ -41,7 +41,7 @@ def exact_distances(state):
     * It returns the **minimum weight** logical in each sector. The scan
       is exhaustive, so the first logical met in integer order is not
       necessarily the lightest: integer order is not weight order. On the
-      pinned ``an archived note`` the first-integer-order reading gives
+      pinned ``an internal note`` the first-integer-order reading gives
       5 where the true distance is 3.
     * It enumerates over the state's own qubit **labels**. Row masks are
       indexed by label, not by position, so a state whose namespace is not
@@ -111,7 +111,7 @@ def find_witness(state, side, max_weight=3):
 def _run_challenge_verifier(challenge_root, document, directory, label):
     path = directory / (label + ".json")
     path.write_text(json.dumps(document, indent=2) + "\n")
-    verifier = Path(challenge_root) / "verify" / "an archived note"
+    verifier = Path(challenge_root) / "verify" / "an internal note"
     result = subprocess.run(
         [sys.executable, str(verifier), str(path)],
         check=False,
@@ -141,7 +141,7 @@ def _run_challenge_verifier(challenge_root, document, directory, label):
 
 
 def run_addition_replay(challenge_root, output_dir):
-    parent_path = Path(challenge_root) / "codes" / "an archived note"
+    parent_path = Path(challenge_root) / "codes" / "an internal note"
     parent = json.loads(parent_path.read_text())
     initial_state = CodeState.from_challenge(parent)
     measured_parent = exact_distances(initial_state)
@@ -168,12 +168,12 @@ def run_addition_replay(challenge_root, output_dir):
     output = export_challenge_entry(
         parent, final_state, ledger,
         "[[10,1,3]] priced-calculus addition",
-        "C-ADD-CHECK X {0,8,9} from challenge an archived note",
+        "C-ADD-CHECK X {0,8,9} from challenge an internal note",
         "2026-10-19",
     )
     verifier = _run_challenge_verifier(challenge_root, output, output_dir, "addition")
     return {
-        "parent": "an archived note",
+        "parent": "an internal note",
         "parent_parameters": {"n": initial_state.n(), "k": initial_state.k()},
         "parent_exact_distance_experiment": measured_parent,
         "operation": operation,
@@ -194,13 +194,13 @@ def run_addition_replay(challenge_root, output_dir):
 def run_strict_improvement_survey(challenge_root):
     """Exhaust every single-check addition to the small challenge parent."""
     parent = json.loads(
-        (Path(challenge_root) / "codes" / "an archived note").read_text()
+        (Path(challenge_root) / "codes" / "an internal note").read_text()
     )
     initial = CodeState.from_challenge(parent)
     old_distance = exact_distances(initial)["d"]
     support_vectors = (1 << initial.n()) - 1
     report = {
-        "parent": "an archived note",
+        "parent": "an internal note",
         "parent_exact_distance_experiment": old_distance,
         "support_vectors_examined_per_sector": support_vectors,
         "exact_distance_oracle": "experiment-only; not called by the consumer; "
@@ -234,9 +234,9 @@ def run_strict_improvement_survey(challenge_root):
 
 
 def run_deletion_replay(challenge_root, output_dir):
-    parent = json.loads((Path(challenge_root) / "codes" / "an archived note").read_text())
-    child1 = json.loads((Path(challenge_root) / "codes" / "an archived note").read_text())
-    child2 = json.loads((Path(challenge_root) / "codes" / "an archived note").read_text())
+    parent = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
+    child1 = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
+    child2 = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
     operations = [
         {"op": "C-DELETE-CHECK", "row_id": "a1",
          "witnesses": {"X": child1["distance"]["X"]["witness"],
@@ -262,8 +262,8 @@ def run_deletion_replay(challenge_root, output_dir):
     verifier = _run_challenge_verifier(challenge_root, directory=output_dir,
                                        document=output, label="deletion")
     return {
-        "parent": "an archived note",
-        "children": ["an archived note", "an archived note"],
+        "parent": "an internal note",
+        "children": ["an internal note", "an internal note"],
         "final_child_parameters": {"n": state.n(), "k": state.k()},
         "consumer_trace": trace,
         "final_interval": ledger.as_json()["d"],
@@ -280,7 +280,7 @@ def run_deletion_replay(challenge_root, output_dir):
 
 def run_graft_replay(challenge_root, output_dir):
     parent = json.loads(
-        (Path(challenge_root) / "codes" / "an archived note").read_text()
+        (Path(challenge_root) / "codes" / "an internal note").read_text()
     )
     initial_state = CodeState.from_challenge(parent)
     operation = {
@@ -324,14 +324,14 @@ def run_graft_replay(challenge_root, output_dir):
     output = export_challenge_entry(
         parent, state, ledger,
         "[n=9,k=2] E-GRAFT witness submission",
-        "E-GRAFT q=0, X chain [a1,a2] from an archived note",
+        "E-GRAFT q=0, X chain [a1,a2] from an internal note",
         "2026-10-19",
     )
     verifier = _run_challenge_verifier(
         challenge_root, output, output_dir, "graft"
     )
     return {
-        "parent": "an archived note",
+        "parent": "an internal note",
         "operation": operation,
         "child_parameters": {"n": state.n(), "k": state.k()},
         "bounded_witness_search_candidates": bounded_search,
