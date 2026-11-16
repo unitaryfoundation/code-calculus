@@ -5,10 +5,10 @@ The qLDPC replay ( 21) established the parent's exact sector distances
 by post-hoc exhaustive enumeration -- an oracle the consumer never calls.
 This script turns the *lower-bound half* of that oracle into a checkable
 artifact: a kill certificate per sector for ``d_sigma >= 3`` on the pinned
-``an archived note`` parent, verified by the checker in
+``an internal note`` parent, verified by the checker in
 `machine/certificates.py`. It records the artifact sizes and the
 kill-criterion assessment required by the first-branch deliverable
-(`an archived note` sections 5 and 8).
+(`an internal note` sections 5 and 8).
 
 The upper-bound half stays where it already was: a logical witness the
 ledger validates by finite-field arithmetic. Nothing here changes a claim
@@ -101,7 +101,7 @@ def build_prototype_artifact():
         "format": "css-sector-distance-lower-bound",
         "format_version": 1,
         "instance": {
-            "source": "unitaryfoundation/qldpc-challenge an archived note",
+            "source": "unitaryfoundation/qldpc-challenge an internal note",
             "pinned_commit": PINNED_COMMIT,
             "fixture": "machine/fixtures/qldpc_10_2_3_b.json",
             "fixture_sha256": hashlib.sha256(fixture_bytes).hexdigest(),
@@ -112,12 +112,12 @@ def build_prototype_artifact():
         "negative_control": negative_control,
         "checker": {
             "module": "machine/certificates.py",
-            "contract": "an archived note section 4",
+            "contract": "an internal note section 4",
             "coverage_enumeration_per_certificate":
                 _ball_entries(state.n(), CERTIFIED_BOUND),
         },
         "kill_criterion": {
-            "statement": "an archived note section 8",
+            "statement": "an internal note section 8",
             "verdict": "passes at this instance",
             "assessment": (
                 "The prototype certifies a non-trivial lower endpoint "

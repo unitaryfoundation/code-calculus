@@ -6,7 +6,7 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-PINNED_SHA256 = "d9a48e3116df21987b953c146f8b15ddefe9d1a05ad8a3bcb070801360827539"
+PINNED_SHA256 = "5078db2ff2a447b9a0f4ea387b8ab28bae0be804daaff1bee75b0a8fc8b275e3"
 REPLAY_PATH = os.path.join(HERE, "experiments", "challenge_replay.json")
 
 

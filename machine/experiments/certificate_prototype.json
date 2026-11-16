@@ -3,10 +3,10 @@
   "format": "css-sector-distance-lower-bound",
   "format_version": 1,
   "instance": {
-    "source": "unitaryfoundation/qldpc-challenge an archived note",
+    "source": "unitaryfoundation/qldpc-challenge an internal note",
     "pinned_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
     "fixture": "machine/fixtures/qldpc_10_2_3_b.json",
-    "fixture_sha256": "84a5366a226544f11fdaae2bd4c434702ceaacf43022df85c0c47b656652fe6f",
+    "fixture_sha256": "e359d01afe8083d53df1e788d4f42165f62271e3f5fd744e94daddf89df3107c",
     "n": 10,
     "k": 2
   },
@@ -37,11 +37,11 @@
   },
   "checker": {
     "module": "machine/certificates.py",
-    "contract": "an archived note section 4",
+    "contract": "an internal note section 4",
     "coverage_enumeration_per_certificate": 56
   },
   "kill_criterion": {
-    "statement": "an archived note section 8",
+    "statement": "an internal note section 8",
     "verdict": "passes at this instance",
     "assessment": "The prototype certifies a non-trivial lower endpoint (d_X >= 3 and d_Z >= 3 on the pinned parent) with 56 kill entries and a few kilobytes per sector, and the checker is total and decidable over a small trusted base. The flat ball format's cost is sum(C(n, w), w < bound) entries; at the challenge's larger boards the same format is impractically large (see scaling_probes), so the next decision is the plan's section 9 question 1 -- search tree or covering certificate -- not a bigger flat artifact.",
     "scaling_probes": [

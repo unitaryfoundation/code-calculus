@@ -24,7 +24,7 @@ what each shorthand denotes and where (if anywhere) it can be obtained.
   repository's own evidence.
 - **manuscript** — synonym for *code-deformation* where the citation names a
   theorem number as it appears in the manuscript (e.g. "manuscript Theorem 7").
-- **an archived internal note** — an internal working note that has been
+- **an internal note** — an internal working note that has been
   superseded by `spec/` and `SCOPE.md`. Citations are retained as historical
   provenance only and are explicitly marked *not a normative dependency*.
   The note is not published.
@@ -38,7 +38,7 @@ what each shorthand denotes and where (if anywhere) it can be obtained.
 
 ## Why these are not in the repository
 
-The proposal and the archived note are internal planning records; the
+The proposal and the internal note are internal planning records; the
 manuscript is a separate (in-preparation) publication. Publishing them here
 would conflate planning history with normative specification. The calculus is
 stated so that its normative content does not depend on reading either.
@@ -78,7 +78,7 @@ conditional cell or as a recorded input, and the consumer never validates it.
 ## Historical provenance
 
 Shorthand citations (`proposal §N`, `code-deformation`, `manuscript`,
-`an archived internal note`) are historical provenance only. The normative
+`an internal note`) are historical provenance only. The normative
 content of `spec/` does not depend on reading any of them, and they are not
 required to understand or use the calculus. Where a result above is reproduced,
 the reproduction in `spec/OPERATIONAL_SEMANTICS.md` §4 is the authoritative

@@ -1,7 +1,7 @@
 {
   "qldpc_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
   "addition": {
-    "parent": "an archived note",
+    "parent": "an internal note",
     "parent_parameters": {
       "n": 10,
       "k": 2
@@ -143,7 +143,7 @@
     "interpretation": "The propagation path used the parent's exhaustive lower bound, C-ADD-CHECK monotonicity, and child logical witnesses. The second exact enumeration was an independent experiment-only check, not part of the consumer path."
   },
   "strict_improvement_survey": {
-    "parent": "an archived note",
+    "parent": "an internal note",
     "parent_exact_distance_experiment": 3,
     "support_vectors_examined_per_sector": 1023,
     "exact_distance_oracle": "experiment-only; not called by the consumer; minimum weight over all logicals in each sector",
@@ -163,7 +163,7 @@
     }
   },
   "graft": {
-    "parent": "an archived note",
+    "parent": "an internal note",
     "operation": {
       "op": "E-GRAFT",
       "qubit": 0,
@@ -291,10 +291,10 @@
     "interpretation": "The consumer prunes target 3 from a valid weight-2 upper witness. Post-hoc exhaustive enumeration finds the child's distance to be 2, so the transported upper bound is exact on this instance, and the spliced sector is unchanged at 3 as the source's sector-wise relation predicts. The randomized verifier's failure to find a lighter logical is consistent with that, and is still not a lower-bound certificate: it is a randomized refutation, and the ledger's lower endpoint remains 0."
   },
   "deletion": {
-    "parent": "an archived note",
+    "parent": "an internal note",
     "children": [
-      "an archived note",
-      "an archived note"
+      "an internal note",
+      "an internal note"
     ],
     "final_child_parameters": {
       "n": 119,

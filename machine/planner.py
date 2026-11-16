@@ -6,7 +6,7 @@ admits (`apply_operation`), transporting the interval ledger through each one,
 and classifying the result as ``certify`` / ``prune`` / ``re-measure`` against
 a target.  It never applies a move, never recomputes a distance, price, or
 witness, and never discharges an obligation: those remain the consumer's and
-the calculus's respectively (see the archived notes).
+the calculus's respectively (see the internal notes).
 
 First milestone: deletion chains (the move that actually pays) plus the
 other single-qubit-removing moves (peel, puncture).  Search control (beam
@@ -14,7 +14,7 @@ width, depth, memoisation) is consumer configuration and lives in the
 caller.
 
  adds the two cheap screens the deletion campaign used before its
-witness search (qldpc-challenge `an archived note`: 28,913 of 88,592
+witness search (qldpc-challenge `an internal note`: 28,913 of 88,592
 essential single-check deletions -- 33% -- discarded as freeing a bare
 qubit, "a structural filter on column weights"; 40 gate-passing candidates
 reduced to 18 by domination before filing):
@@ -26,7 +26,7 @@ reduced to 18 by domination before filing):
   on every axis the ledger exports by another survivor.
 
 Both are consumer configuration, not calculus data; the calculus's
-transport rules are untouched (see the archived notes).
+transport rules are untouched (see the internal notes).
 """
 
 
@@ -96,7 +96,7 @@ def has_bare_qubit(state):
     1; k stays >= 1 because both sectors' row spaces are contained in the
     codimension-1 subspace of vectors that are zero at q, and their
     dimension sum is at most n-1 there (the argument is in
-    the archived notes).  No witness search can put the state
+    the internal notes).  No witness search can put the state
     above distance 1, which is what makes the screen cheap and safe.
     This is a fact about the state the consumer screens on, not a
     calculus claim: the transport rules of `machine/priced_calculus.py`

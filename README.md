@@ -294,7 +294,7 @@ soundness. See `spec/VERSIONING.md`.
 
 Seeded from an earlier proposal draft; this copy is the living document. The
 formal-design packages FD0–FD7 are closed, and their artifacts are superseded by
-`spec/`. The proposal, an archived internal note, and an in-preparation
+`spec/`. The proposal, an internal note, and an in-preparation
 manuscript are not shipped here; the calculus is stated so that its normative
 content does not depend on them (`REFERENCES.md`).
 

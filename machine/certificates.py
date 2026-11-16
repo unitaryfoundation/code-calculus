@@ -1,7 +1,7 @@
 """Certificate format and checker prototype for sector distance lower bounds.
 
 This module is the first branch of the certificate layer explored in
-`the archived notes` (option (ii), opened 2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
+`the internal notes` (option (ii), opened 2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
 same way the upper endpoint already is: an untrusted producer emits a
 self-contained artifact, and a small total checker accepts or rejects it
 without searching.
@@ -23,7 +23,7 @@ If the checker accepts, every low-weight vector is excluded, so
 ``d_sigma >= L`` holds. The checker is the trusted base; the producer is
 arbitrary and untrusted, exactly as for the ledger's logical witnesses.
 
-Checker contract (`the archived notes` section 4):
+Checker contract (`the internal notes` section 4):
 
 1. Total and decidable: a pure predicate over a finite input; it returns
    accept/reject with reasons and never raises on malformed input.

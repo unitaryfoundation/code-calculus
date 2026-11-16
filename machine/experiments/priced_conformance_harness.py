@@ -2,7 +2,7 @@
 
 This harness is the instrument named in .  It generates small random
 CSS states, applies every admitted transition, measures the exact per-sector
-distances with the external oracle in ``an archived note``, and
+distances with the external oracle in ``an internal note``, and
 asserts that every interval emitted by ``machine.priced_calculus`` contains
 the corresponding exact distance.
 

@@ -190,7 +190,7 @@ Declared here; applied where each item is owned.
 
 | Fact | Owner |
 | --- | --- |
-| grammar production introduction | an archived internal note §3.2 |
+| grammar production introduction | an internal note §3.2 |
 | contract admission | [`CLAIMS.md`](CLAIMS.md) |
 | obligation introduction and discharge | [`OBLIGATIONS.md`](OBLIGATIONS.md) |
 

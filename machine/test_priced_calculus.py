@@ -598,7 +598,7 @@ class LayoutTransportTests(unittest.TestCase):
 
     The interaction radius is a function of the check set, so a parent's
     claim cannot be carried into a child whose checks differ. See
-    `the archived notes` and .
+    `the internal notes` and .
     """
 
     def test_radius_is_the_largest_check_diameter(self):
