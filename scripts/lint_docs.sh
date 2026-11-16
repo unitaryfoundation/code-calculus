@@ -73,7 +73,7 @@ fi
 #    bracket; (c) link *text* that names a file which exists nowhere in the
 #    repository, while the target points at its successor.
 #
-live=$(echo "$files" | grep -v '^\./archive/')
+live=$(echo "$files")
 for f in $live; do
   if grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" >/dev/null; then
     grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" | sed "s|^|$f: |"
