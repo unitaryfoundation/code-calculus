@@ -46,6 +46,17 @@
    "consumer_check": "Require a nonnegative integer price and a nonempty evidence reference; do not validate the underlying minimum. The price is indexed to the NON-spliced sector, so it moves that sector's endpoints and the full-distance endpoints. The spliced sector needs no price and gets none.",
    "source": "spec/JUDGMENT_LAYER.md §2c"
   },
+  "peel_price": {
+   "for": "E-PEEL at q in sector tau (OPERATIONAL_SEMANTICS.md section 4.28, 2026-11-10, issue #331). Two sector-aware prices, each optional, at least one present.",
+   "fields": [
+    "w_expose",
+    "w_avoid",
+    "evidence"
+   ],
+   "claimed_rule": "w_expose,sigma(q) = min { |z| - 1 : z a parent opposite-sector logical with z_q = 1 } (+inf if none), the exposure price of section 2c bound to the peel; then d_sigma' = min(d_sigma, w_expose) and the opposite sector's interval becomes [min(L_sigma, w_expose), min(U_sigma, w_expose)]. w_avoid,tau(q) = min { |v| : v a parent selected-sector logical with v_q = 0 }, the avoidance minimum of section 2c; then d_tau' = w_avoid exactly. The full distance is min of the two sector intervals.",
+   "consumer_check": "Require a nonnegative integer w_expose and/or a positive integer w_avoid, and a nonempty evidence reference; do not validate the underlying minima. A w_avoid below the carried selected-sector lower bound contradicts the sound carry and is refused (no derivation), never widened.",
+   "source": "spec/JUDGMENT_LAYER.md \u00a72c"
+  },
   "strict_improvement": {
    "fields": [
     "base_distance",
@@ -79,7 +90,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2c"
   },
   "seam_certificate": {
-   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE has an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31: disjoint factor namespaces plus seam checks); the certificate remains a conditional judgment over factor codes and a seam, and the logical-witness prerequisite for distance claims stays open.",
+   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE has an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31: disjoint factor namespaces plus seam checks); the logical-witness field is defined (STATE_MODEL.md §1, 2026-11-11) and the §2e equality is discharged by extraction of Theorem 4 / claim 7.4 (§4.31, 2026-11-11); the certificate remains a conditional judgment over factor codes and a seam attesting admissibility.",
    "fields": [
     "move_word_A",
     "move_word_B",
@@ -124,11 +135,11 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-PEEL": {
-   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.28: the selected sector's distance cannot decrease and the opposite sector's cannot increase, but no cell carrying either direction is admitted; the reset is a refusal by design, and the full distance is bounded in neither direction). Witnesses are kept only where they revalidate in the child.",
+   "rule": "Admitted 2026-11-06 (issue #295) and sharpened 2026-11-10 (issue #331) on the §4.28 relations d_tau' = w_avoid,tau(q) >= d_tau (selected sector: the lightest parent tau logical avoiding q) and d_sigma' = min(d_sigma, w_expose,sigma(q)) (opposite sector: the graft's exposure relation at m = 1), so d_sigma - 1 <= d_sigma' <= d_sigma. Unpriced: the selected sector's lower endpoint carries and its upper resets to +inf; the opposite sector's lower endpoint carries less one (floored at 0) and its upper endpoint carries; the full distance takes the minimum of the two sector endpoints (d' = min(d_tau', d_sigma')). The comparison d' vs. d is bounded in neither direction (§4.28's witness), but d' >= d - 1. Priced (conditional_inputs.peel_price): w_expose moves the opposite sector's endpoints to [min(L, w), min(U, w)] as the graft price does, and w_avoid pins the selected sector to [w_avoid, w_avoid]; a w_avoid below the carried selected lower bound is refused. The pre-admission refusal (everything resets) remains available as the opt-out mode reset in machine/priced_calculus.py. Witnesses are kept only where they revalidate in the child.",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-PUNCTURE": {
-   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.29): a refusal by design, not an impossibility. The unnamed free-qubit instance (puncturing qubit 2 of Q={0,1,2} with the Z display {0,1}) raises the X distance 1->2, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal <= or >= claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. Hole-punch pricing is blocked on the D2 lower bound : no price cell or fixture enters until it lands. Witnesses are kept only where they revalidate in the child.",
+   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.29): a refusal by design, not an impossibility. The unnamed free-qubit instance (puncturing qubit 2 of Q={0,1,2} with the Z display {0,1}) raises the X distance 1->2, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal <= or >= claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reduction recorded 2026-11-10 (issue #331, §4.29): a puncture is the deletion of every row touching q followed by the removal of the then-free qubit q, so each sector distance of the child is the lightest q-free logical of that intermediate code, min(w_avoid,sigma(q) over the parent's logicals, w_hole,sigma(q) over the operators the deleted rows expose); the increase example (d_X 1 -> 2) and a decrease example (Z rows {0,1},{1,2}, puncture 2: d_X 3 -> 2) refute every unpriced direction. Hole-punch pricing is blocked on the D2 lower bound: no price cell or fixture enters until it lands. Witnesses are kept only where they revalidate in the child.",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-EXTEND": {
@@ -136,7 +147,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-GLUE": {
-   "rule": "Evaluator transition admitted (OPERATIONAL_SEMANTICS.md §4.31); the ledger transport is the §2e/§2f conditional cell. Lower endpoints: in every sector and the full distance, the minimum of the two factor ledgers' lower endpoints (the glued code is the direct sum with seam checks added; the direct sum's sector distances are the factor minima and adding a check never lowers a distance, so each glued distance is at least the minimum of the factor distances, OPERATIONAL_SEMANTICS.md §4.31). Upper endpoints: only the Z sector's, as the minimum of the two factors' Z upper endpoints, and only under an admissible seam certificate (identical move words with an evidence reference, §2e); the X and full upper endpoints are left to witnesses valid in the child. The consumer's ledger transport requires an admissible certificate and otherwise has no derivation, although §2f records the lower endpoints as sound without one. No scalar relation d = min(d_A, d_B) is admitted, and the logical-witness prerequisite (TAXONOMY.md §2.10) stays open.",
+   "rule": "Evaluator transition admitted (OPERATIONAL_SEMANTICS.md §4.31); the ledger transport is the §2e/§2f conditional cell. Lower endpoints: in every sector and the full distance, the minimum of the two factor ledgers' lower endpoints (the glued code is the direct sum with seam checks added; the direct sum's sector distances are the factor minima and adding a check never lowers a distance, so each glued distance is at least the minimum of the factor distances, OPERATIONAL_SEMANTICS.md §4.31). Upper endpoints: only the Z sector's, as the minimum of the two factors' Z upper endpoints, and only under an admissible seam certificate (identical move words with an evidence reference, §2e); the X and full upper endpoints are left to witnesses valid in the child: both factors' witnesses are carried into the glued child and kept only where they revalidate there (a factor witness meeting an opposite-sector seam check in an odd number of qubits, or turned into a stabilizer by a seam row, is dropped), so a surviving minimum-weight Z witness closes the Z interval without the certificate's claim (OPERATIONAL_SEMANTICS.md section 4.31, instance-wise equality, 2026-11-10). The consumer's ledger transport requires an admissible certificate and otherwise has no derivation, although §2f records the lower endpoints as sound without one. No scalar relation d = min(d_A, d_B) is admitted, and the logical-witness and boundary/edge-label fields are defined as future-Pi type sketches (STATE_MODEL.md §1/§1a).",
    "source": "spec/JUDGMENT_LAYER.md §2f"
   }
  },
@@ -158,12 +169,36 @@
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "E-GRAFT": {
-    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= 2r by the triangle inequality on the graft's adjacent products. The naive claim that the graft preserves the radius is FALSE: 198 of 823 applicable grafts over the challenge's board entries with n <= 14 increase it on the pinned checkout 9d30c66a (see the conformance harness).",
+    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= 2r by the triangle inequality on the graft's adjacent products. The naive claim that the graft preserves the radius is FALSE: 198 of 823 applicable grafts over the challenge's board entries with n <= 14 increase it on the pinned checkout 9d30c66a (machine/experiments/layout_graft_survey.json).",
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "C-DIRECT-SUM": {
-    "rule": "r = max(r_A, r_B) over the disjoint union of the two layouts. The radius law needs no hypothesis; the HONESTY of the merged layout does, and this cell is conditional on it. Not exercised by the consumer: run_sequence and radius_squared_in_layout take one document and one layout, so no merged layout is built. A layout-union input is required before this cell can be exercised.",
+    "rule": "r = max(r_A, r_B) over the disjoint union of the two layouts. The radius law needs no hypothesis; the HONESTY of the merged layout does, and this cell is conditional on it. run_sequence and radius_squared_in_layout take one document and one layout, so the consumer paths build no merged layout; the layout-conformance harness (machine/experiments/layout_conformance_harness.py) builds the blockwise merge of two random layouts and checks the radius law and the honesty premise on it.",
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-PEEL": {
+    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= r: every surviving row's support is a subset of a parent row's support (the opposite-sector rows drop q), so no diameter increases and the removed row is dropped.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-PUNCTURE": {
+    "rule": "The layout is restricted to Q \\ {q}; r' = max { diam_lambda'(s) : s in rows' }. Exact, and r' <= r: only q-free rows survive, each unchanged, and the rows containing q are dropped.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-LOCAL-HADAMARD": {
+    "rule": "Q and every support are unchanged (only sector labels swap); r' = r. Exact.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "P-REBASE": {
+    "rule": "Q is unchanged and the layout is unchanged, but the selected sector's rows are replaced by GL(m,2) mixes whose supports are symmetric differences of the old supports; r' = max { diam_lambda(s) : s in rows' }, recomputed, with no guaranteed direction.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-EXTEND": {
+    "rule": "Not inherited: the parent layout covers Q only, so a layout on Q union Delta must be supplied. When it is, r' = max(r, max { diam_lambda'(s) : s in the new rows }), so r' >= r. With Delta = empty the new rows are C-ADD-CHECK rows and the same rule applies.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "E-GLUE": {
+    "rule": "The two factor layouts travel blockwise, as for C-DIRECT-SUM, and a merged layout must be supplied; r = max(r_A, r_B, max { diam(s) : s a seam row }), exact, so r >= max(r_A, r_B). The radius law needs no hypothesis; the honesty of the merged layout does, and the cell is conditional on it (spec/JUDGMENT_LAYER.md section 2d.5).",
+    "source": "spec/JUDGMENT_LAYER.md §2d.5"
    },
    "C-SEQUENCE": {
     "rule": "Run transitions in order and transport the layout after each step; the composition follows the per-step rules.",

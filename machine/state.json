@@ -7,7 +7,7 @@
     ],
     "authority": "This file is a faithful transcription for mechanization consumers. Where it disagrees with spec/, the prose wins and this file must be fixed.",
     "generated": "2026-10-27",
-    "representation": "sparse supports over qubit indices; the encoding qldpc-challenge already ships an internal note for its own codes, which this file does not transcribe."
+    "representation": "sparse supports over qubit indices; the encoding qldpc-challenge already ships schema/code.schema.json for its own codes, which this file does not transcribe."
   },
   "state": {
     "Q": {
@@ -162,6 +162,86 @@
       "ids": "mint one identifier per seam check over the union of the factors' used sets",
       "used": "union of the factors' used sets plus minted seam identifiers",
       "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.31",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-HGP": {
+      "Q": "fresh 0..n-1 with n = n1 n2 + m1 m2",
+      "rows": "the retained independent display of the natural hypergraph-product rows (section 4.34)",
+      "ids": "mint canonically from the empty used set, X-rows first",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-HGP card) and section 4.34",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-LIFTED": {
+      "Q": "fresh 0..n-1 with n = |G| (nA nB + mA mB)",
+      "rows": "the retained independent display of the lifted-product rows (section 4.34)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-LIFTED card) and section 4.34",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-GROUP-ALGEBRA": {
+      "Q": "fresh 0..2|G|-1",
+      "rows": "the retained independent display of the two-block rows (section 4.34)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-GROUP-ALGEBRA card) and section 4.34",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "A-CONCAT": {
+      "Q": "fresh 0..n_in n_out - 1",
+      "rows": "the inner rows on every copy, then the lifted outer rows; nothing dropped (section 4.34)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-CONCAT card) and section 4.34",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "A-PRODUCT": {
+      "Q": "fresh 0..n-1 with n = mZA mXB + nA nB + mXA mZB",
+      "rows": "the retained independent display of the tensor-product rows (section 4.35)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-PRODUCT card) and section 4.35",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "A-DOUBLE": {
+      "Q": "fresh 0..2nC-1",
+      "rows": "the retained independent display of the two lifts of each displayed row (section 4.35)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-DOUBLE card) and section 4.35",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-BALANCED": {
+      "Q": "fresh 0..n-1, one label per orbit",
+      "rows": "the retained independent display of the descended product rows (section 4.35)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-BALANCED card) and section 4.35",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-TANNER": {
+      "Q": "fresh 0..n-1 for the supplied n",
+      "rows": "the retained independent display of the local rows at every vertex (section 4.35)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-TANNER card) and section 4.35",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-TILE": {
+      "Q": "fresh 0..n-1, one label per site class",
+      "rows": "the retained independent display of the placed tile rows (section 4.35)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-TILE card) and section 4.35",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-NESTED-CSS": {
+      "Q": "fresh 0..n-1, one label per column",
+      "rows": "the retained independent display of the rows of the two parity-check matrices (section 4.36)",
+      "ids": "mint canonically from the empty used set, X-rows first",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-NESTED-CSS card) and section 4.36",
       "source": "spec/STATE_MODEL.md \u00a74"
     }
   }

@@ -1,6 +1,14 @@
 name = "CodeCalculus"
-version = "0.1.0"
+version = "0.2.0"
 defaultTargets = ["CodeCalculus"]
 
 [[lean_lib]]
 name = "CodeCalculus"
+
+[[lean_lib]]
+name = "ClosedK"
+srcDir = "extra"
+
+[[lean_lib]]
+name = "Retention"
+srcDir = "extra"

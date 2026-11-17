@@ -9,7 +9,7 @@ Mechanized form of the transport half of `spec/OPERATIONAL_SEMANTICS.md` §4.11
 ("structural judgments compose through valid sequences; a claim that refers to
 a deleted generator is not transported automatically"), on the `Chain`,
 `Derives`, and `Models` machinery of `Soundness.lean`, together with the
-fixed-reference-set invalidation model of §4.15 (review finding disposition) on
+fixed-reference-set invalidation model of §4.15 (red-team R7 disposition) on
 which the obligation's transported-context conclusion rests.
 
 Four pieces.
@@ -24,7 +24,8 @@ Four pieces.
    segment is a derivation over the composed chain unchanged
    (`Derives.weaken`), and one over the second segment is a derivation over the
    composed chain with every atom position shifted past the first segment
-   (`Derives.shift`). The schema-composition condition of §4.11 is, in this
+   (`Derives.shift`, for sentences that are not generator-referencing
+   claims; item 6 covers those). The schema-composition condition of §4.11 is, in this
    encoding, position bookkeeping: a sentence derived over a segment mentions
    chain positions of that segment, and the two renamings are the identity and
    the shift. Across the seam, equalities compose by substitution and
@@ -62,20 +63,39 @@ Four pieces.
    instantiation row that equates distance atoms; `not_derivable_mixed_eq` is
    its instance.
 
-What the slice does not do. The sentence language `Ann` has no claim that
-refers to a generator, so the derivation-level `W13` half ("a claim referring
-to a deleted generator does not transport") has no instance here beyond its
-shape: nothing in `Ann` can mention a generator, deleted or not. Adding such
-claims is an assertion-language extension and a release question
-(`the design notes` §4, Reading II), not this slice's. The
-fixed-reference-set model is mechanized abstractly, over an arbitrary
-certificate type, because the context-update table that would fix `Ref` for
-concrete certificates is future context (R7 disposition at
-`OBL-ORDER-INDEPENDENT-DELETION`), and it is not connected to `Eval`, since
-`spec/` does not specify what a non-deletion command does to a context. Every
-refutation here is relative to the `Derives` inventory of this development: it
-says that no derivation closes, not that none can (F7 disposition, second
-cost).
+5. The derivation-level `W13` half (issue #340). `Ann.gen i r σ S` is the
+   claim that refers to a generator (`spec/JUDGMENT_LAYER.md` §4). It is
+   sourced at the addition that mints the generator and transported through
+   steps under which the generator survives; no row covers the deletion of
+   the referenced generator, and `not_derivable_gen_of_deleted` is the
+   resulting refutation, instantiated at the end of this module.
+
+6. The input display and the graft (issue #368). `Derives.genInput` is the
+   source rule for the rows of the input display: at position 0 the claim of
+   every displayed row is derivable. The graft has two rows. A generator
+   outside the graft's chain survives, an opposite-sector row losing the
+   grafted qubit (`Derives.genGraft`, with the support `graftSupport`), and
+   each minted adjacent-product row is a source (`Derives.genGraftMint`).
+   There is no row for a generator of the chain, which the graft retires,
+   and `not_derivable_gen_of_grafted` is the refutation. The source rule
+   reads the input of the chain it is used over, so a derivation over the
+   second segment of a sequence shifts into the composed chain under a seam
+   condition (`SeamRowsDerived`, `Derives.shift_gen`): the composed chain
+   must derive the claims of the seam state's rows. Sentences that are not
+   generator-referencing claims shift with no condition (`Derives.shift`).
+   `SeamChains.lean` proves the seam condition on chains of kernel and
+   graft steps. The Gate 6 rows for `Ann.gen` — `E-EXTEND`, `E-PEEL`,
+   `E-PUNCTURE`, `E-LOCAL-HADAMARD`, and `P-REBASE` — carry rows and
+   refusals.
+
+What the slice does not do. The fixed-reference-set model is mechanized
+abstractly, over an arbitrary certificate type, because the context-update
+table that would fix `Ref` for concrete certificates is future context (R7
+disposition at `OBL-ORDER-INDEPENDENT-DELETION`), and it is not connected to
+`Eval`, since `spec/` does not specify what a non-deletion command does to a
+context. Every refutation here is relative to the `Derives` inventory of this
+development: it says that no derivation closes, not that none can (F7
+disposition, second cost).
 -/
 
 /-! ## Chains compose through `C-SEQUENCE` -/
@@ -143,6 +163,7 @@ def Ann.shift (k : Nat) : Ann → Ann
   | .le x y => .le (x.shift k) (y.shift k)
   | .eq x y => .eq (x.shift k) (y.shift k)
   | .wf i => .wf (i + k)
+  | .gen i r σ S => .gen (i + k) r σ S
 
 /-- A position of the first segment names the same state in the composed
     chain. -/
@@ -209,6 +230,14 @@ theorem annTrue_shift {dMeasure : Field → CodeState → Nat} {cs ds : List Cod
         exact ⟨s, h, hwf⟩
       · rintro ⟨s, h, hwf⟩
         exact ⟨s, by rw [getElem?_append_shift]; exact h, hwf⟩
+  | gen i r σ S =>
+      simp only [Ann.shift, AnnTrue]
+      constructor
+      · rintro ⟨s, h, hmem⟩
+        rw [getElem?_append_shift] at h
+        exact ⟨s, h, hmem⟩
+      · rintro ⟨s, h, hmem⟩
+        exact ⟨s, by rw [getElem?_append_shift]; exact h, hmem⟩
 
 /-- `optMin` is defined when either argument is. -/
 theorem optMin_eq_some_iff (a b : Option Nat) :
@@ -339,139 +368,347 @@ theorem Derives.weaken {dMeasure : Field → CodeState → Nat} {cs : List CodeS
   | le_refl x hx => exact Derives.le_refl x (denotes_append hx)
   | eq_refl x hx => exact Derives.eq_refl x (denotes_append hx)
   | eq_sym x y _ ih => exact Derives.eq_sym x y ih
+  | genMint i sector support s t hi hj hstep =>
+      exact Derives.genMint i sector support s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | genSkip i r σ S s t hi hj hstep _ ih =>
+      exact Derives.genSkip i r σ S s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genDelete i r r' σ S s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genDelete i r r' σ S s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
+  | genAdd i r σ S sector support s t hi hj hstep _ ih =>
+      exact Derives.genAdd i r σ S sector support s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genInput r σ S s h0 hrow =>
+      exact Derives.genInput r σ S s (getElem?_append_of_some h0) hrow
+  | genGraft i r σ S q sector ids s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genGraft i r σ S q sector ids s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
+  | genGraftMint i q sector ids s t row hi hj hstep hrow =>
+      exact Derives.genGraftMint i q sector ids s t row (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hrow
+  | genExtend i r σ S delta adds s t hi hj hstep _ ih =>
+      exact Derives.genExtend i r σ S delta adds s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genExtendMint i delta adds s t row hi hj hstep hrow =>
+      exact Derives.genExtendMint i delta adds s t row (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hrow
+  | genPeel i r r_id σ S q tau s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genPeel i r r_id σ S q tau s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
+  | genPuncture i r σ S q s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genPuncture i r σ S q s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
+  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+      exact Derives.genHadamard i r σ S T s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genRebase i r σ S sector matrix s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
+  | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
+      exact Derives.genRebaseMint i sector matrix s t row (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hrow
 
-/-- Positive half, second segment: a derivation over a chain is a derivation
-    over any chain that has it as a suffix, with every position shifted past
-    the prefix. -/
-theorem Derives.shift {dMeasure : Field → CodeState → Nat} (cs : List CodeState)
+/-- A sentence is a generator-referencing claim. -/
+def Ann.isGen : Ann → Bool
+  | .gen _ _ _ _ => true
+  | _ => false
+
+/-- The seam condition for generator-referencing claims (issue #368): the
+    composed chain derives, at the seam, the claim of every row the second
+    segment's input displays. The source rule `Derives.genInput` reads the
+    input display of the chain it is used over, and the second segment's
+    input is the seam state of the composed chain, where a claim has to be
+    derived from the composed chain's own sources. -/
+def SeamRowsDerived (dMeasure : Field → CodeState → Nat) (cs ds : List CodeState) : Prop :=
+  ∀ (r : Nat) (σ : Sector) (S : List Nat) (s : CodeState), ds[0]? = some s →
+    ({ id := r, sector := σ, support := S } : Row) ∈ s.rows →
+    Derives dMeasure (cs ++ ds) (Ann.gen cs.length r σ S)
+
+/-- Positive half, second segment, in one statement: a derivation over a
+    chain is a derivation over any chain that has it as a suffix, with every
+    position shifted past the prefix, provided that, when the sentence is a
+    generator-referencing claim, the seam condition holds. -/
+theorem Derives.shift_cond {dMeasure : Field → CodeState → Nat} (cs : List CodeState)
     {ds : List CodeState} {a : Ann} (h : Derives dMeasure ds a) :
+    (a.isGen = true → SeamRowsDerived dMeasure cs ds) →
     Derives dMeasure (cs ++ ds) (a.shift cs.length) := by
   induction h with
   | instSkip i f s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instSkip (i + cs.length) f s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteN i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteN (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddN i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddN (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instGraftN i q sector ids s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instGraftN (i + cs.length) q sector ids s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteK i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteK (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteKSub i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteKSub (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddK i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddK (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddKSub i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddKSub (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instGraftK i q sector ids s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instGraftK (i + cs.length) q sector ids s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instSkipWF i s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instSkipWF (i + cs.length) s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteWF i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteWF (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddWF i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddWF (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instGraftWF i q sector ids s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instGraftWF (i + cs.length) q sector ids s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteDX i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteDX (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteDZ i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteDZ (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instDeleteD i r s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instDeleteD (i + cs.length) r s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddDX i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddDX (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddDZ i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddDZ (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | instAddD i sector support s t hi hj hstep =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.instAddD (i + cs.length) sector support s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep
   | transit_le_le x y z _ _ ih1 ih2 =>
+      intro hsrc
+      have ih1 := ih1 (fun h => absurd h Bool.false_ne_true)
+      have ih2 := ih2 (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift] at ih1 ih2 ⊢
       exact Derives.transit_le_le _ _ _ ih1 ih2
   | transit_le_eq x y z _ _ ih1 ih2 =>
+      intro hsrc
+      have ih1 := ih1 (fun h => absurd h Bool.false_ne_true)
+      have ih2 := ih2 (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift] at ih1 ih2 ⊢
       exact Derives.transit_le_eq _ _ _ ih1 ih2
   | transit_eq_le x y z _ _ ih1 ih2 =>
+      intro hsrc
+      have ih1 := ih1 (fun h => absurd h Bool.false_ne_true)
+      have ih2 := ih2 (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift] at ih1 ih2 ⊢
       exact Derives.transit_eq_le _ _ _ ih1 ih2
   | transit_eq_eq x y z _ _ ih1 ih2 =>
+      intro hsrc
+      have ih1 := ih1 (fun h => absurd h Bool.false_ne_true)
+      have ih2 := ih2 (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift] at ih1 ih2 ⊢
       exact Derives.transit_eq_eq _ _ _ ih1 ih2
   | min_le_left x y hx =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       exact Derives.min_le_left _ _ (denotes_shift.mpr hx)
   | min_le_right x y hy =>
+      intro hsrc
       simp only [Ann.shift, AExpr.shift]
       exact Derives.min_le_right _ _ (denotes_shift.mpr hy)
   | le_min t x y _ _ ih1 ih2 =>
+      intro hsrc
+      have ih1 := ih1 (fun h => absurd h Bool.false_ne_true)
+      have ih2 := ih2 (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift, AExpr.shift] at ih1 ih2 ⊢
       exact Derives.le_min _ _ _ ih1 ih2
   | le_refl x hx =>
+      intro hsrc
       simp only [Ann.shift]
       exact Derives.le_refl _ (denotes_shift.mpr hx)
   | eq_refl x hx =>
+      intro hsrc
       simp only [Ann.shift]
       exact Derives.eq_refl _ (denotes_shift.mpr hx)
   | eq_sym x y _ ih =>
+      intro hsrc
+      have ih := ih (fun h => absurd h Bool.false_ne_true)
       simp only [Ann.shift] at ih ⊢
       exact Derives.eq_sym _ _ ih
+  | genMint i sector support s t hi hj hstep =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genMint (i + cs.length) sector support s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep
+  | genSkip i r σ S s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genSkip (i + cs.length) r σ S s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep ih
+  | genDelete i r r' σ S s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genDelete (i + cs.length) r r' σ S s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
+  | genAdd i r σ S sector support s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genAdd (i + cs.length) r σ S sector support s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep ih
+  | genInput r σ S s h0 hrow =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.zero_add]
+      exact hsrc rfl r σ S s h0 hrow
+  | genGraft i r σ S q sector ids s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genGraft (i + cs.length) r σ S q sector ids s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
+  | genGraftMint i q sector ids s t row hi hj hstep hrow =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genGraftMint (i + cs.length) q sector ids s t row
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hrow
+  | genExtend i r σ S delta adds s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genExtend (i + cs.length) r σ S delta adds s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep ih
+  | genExtendMint i delta adds s t row hi hj hstep hrow =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genExtendMint (i + cs.length) delta adds s t row
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hrow
+  | genPeel i r r_id σ S q tau s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genPeel (i + cs.length) r r_id σ S q tau s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
+  | genPuncture i r σ S q s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genPuncture (i + cs.length) r σ S q s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
+  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genHadamard (i + cs.length) r σ S T s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep ih
+  | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genRebase (i + cs.length) r σ S sector matrix s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
+  | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genRebaseMint (i + cs.length) sector matrix s t row (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hrow
+
+/-- Positive half, second segment: a derivation of a sentence that is not a
+    generator-referencing claim over a chain is a derivation over any chain
+    that has it as a suffix, with every position shifted past the prefix. -/
+theorem Derives.shift {dMeasure : Field → CodeState → Nat} (cs : List CodeState)
+    {ds : List CodeState} {a : Ann} (h : Derives dMeasure ds a)
+    (ha : a.isGen = false := by rfl) :
+    Derives dMeasure (cs ++ ds) (a.shift cs.length) :=
+  h.shift_cond cs (fun hg => absurd (ha.symm.trans hg) Bool.false_ne_true)
+
+/-- Positive half, second segment, for generator-referencing claims: the
+    shift holds under the seam condition. -/
+theorem Derives.shift_gen {dMeasure : Field → CodeState → Nat} (cs : List CodeState)
+    {ds : List CodeState} {a : Ann} (h : Derives dMeasure ds a)
+    (hsrc : SeamRowsDerived dMeasure cs ds) :
+    Derives dMeasure (cs ++ ds) (a.shift cs.length) :=
+  h.shift_cond cs (fun _ => hsrc)
 
 /-- A judgment derived over the first segment of a sequence is derivable over
     the composed chain, unchanged. -/
@@ -484,9 +721,10 @@ theorem transport_left {dMeasure : Field → CodeState → Nat} {cs ds : List Co
 /-- A judgment derived over the second segment of a sequence is derivable over
     the composed chain, its positions shifted past the first segment. -/
 theorem transport_right {dMeasure : Field → CodeState → Nat} (cs : List CodeState)
-    {ds : List CodeState} {s : CodeState} {b : Ann} (h : Derives dMeasure (s :: ds) b) :
+    {ds : List CodeState} {s : CodeState} {b : Ann} (h : Derives dMeasure (s :: ds) b)
+    (hb : b.isGen = false := by rfl) :
     Derives dMeasure (cs ++ s :: ds) (b.shift cs.length) :=
-  h.shift cs
+  h.shift cs hb
 
 /-- The seam state is read at position `cs.length` by the first segment and at
     position `0` by the second; the shift identifies the two readings. -/
@@ -716,6 +954,7 @@ def EqInvariant : Ann → Prop
   | .le _ _ => True
   | .eq x y => x = y ∨ (x.structural ∧ y.structural)
   | .wf _ => True
+  | .gen _ _ _ _ => True
 
 /-- No step of the chain is an identity. The skip row is the only
     instantiation row whose conclusion equates a distance atom at two
@@ -763,6 +1002,20 @@ theorem eqInvariant_of_derives {dMeasure : Field → CodeState → Nat} {cs : Li
       rcases ih with rfl | ⟨hx, hy⟩
       · exact Or.inl rfl
       · exact Or.inr ⟨hy, hx⟩
+  | genMint _ _ _ _ _ _ _ _ => trivial
+  | genSkip _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genDelete _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genAdd _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genInput _ _ _ _ _ _ => trivial
+  | genGraft _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genGraftMint _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genExtend _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genExtendMint _ _ _ _ _ _ _ _ _ _ => trivial
+  | genPeel _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genPuncture _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genHadamard _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genRebase _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genRebaseMint _ _ _ _ _ _ _ _ _ _ => trivial
 
 /-- In a chain with no identity step, no equality between distance atoms at
     two positions is derivable, for any choice of the measure: instantiation
@@ -800,7 +1053,7 @@ theorem independent_added_mixedState :
   | nil => simp [sectorRows, deleteState, twoDeleteState] at hlen
   | cons c0 tl =>
     cases tl with
-    | cons _ _ => simp [sectorRows, deleteState, twoDeleteState] at hlen
+    | cons _ _ => cases hlen
     | nil =>
       cases c0 <;>
         simp [combineRows, xorVec, rowVector, sectorRows, deleteState, twoDeleteState] at hcomb
@@ -821,6 +1074,7 @@ theorem eval_add_mixedState :
       simp [oppositeSector] at hsec)
     independent_added_mixedState
     rfl
+    (by decide)
 
 /-- The delete-then-add chain. -/
 def mixedChain : List CodeState :=
@@ -841,7 +1095,7 @@ theorem independent_2_mixedState : IndependentGenerator 2 mixedState := by
   | cons c0 tl =>
     cases tl with
     | cons _ _ =>
-        simp [mixedState, addState, deleteState, twoDeleteState, canonicalMint_twoDelete] at hlen
+        cases hlen
     | nil =>
       cases c0 <;>
         simp [combineRows, xorVec, rowVector, mixedState, addState, deleteState,
@@ -860,7 +1114,7 @@ theorem independent_added_mixedState' :
   | cons c0 tl =>
     cases tl with
     | cons _ _ =>
-        simp [mixedState, addState, deleteState, twoDeleteState, canonicalMint_twoDelete] at hlen
+        cases hlen
     | nil =>
       cases c0 <;>
         simp [combineRows, xorVec, rowVector, mixedState, addState, deleteState,
@@ -925,7 +1179,7 @@ theorem measureUp_monotone : MeasureMonotone measureUp where
   add_le := fun sector support s t hstep => by
     rw [eval_add_eq hstep]
     simp only [measureUp, addState, List.length_append, List.length_singleton]
-    omega
+    exact ⟨by omega, by omega⟩
 
 /-- `measureDown` satisfies the hypothesis as well. -/
 theorem measureDown_monotone : MeasureMonotone measureDown where
@@ -936,7 +1190,7 @@ theorem measureDown_monotone : MeasureMonotone measureDown where
   add_le := fun sector support s t hstep => by
     rw [eval_add_eq hstep]
     simp only [measureDown, addState, List.length_append, List.length_singleton]
-    omega
+    exact ⟨by omega, by omega⟩
 
 /-- The composite bound `d_X(2) ≤ d_X(0)` has no derivation over the mixed
     chain under `measureUp`, although both one-sided bounds do. -/
@@ -973,5 +1227,341 @@ theorem not_derivable_mixed_ge :
 theorem not_derivable_mixed_eq (dMeasure : Field → CodeState → Nat) :
     ¬ Derives dMeasure mixedChain (Ann.eq (AExpr.atom ⟨2, Field.dX⟩) (AExpr.atom ⟨0, Field.dX⟩)) :=
   not_derivable_distance_eq dMeasure consecutiveDistinct_mixedChain (Or.inl rfl) (by decide)
+
+/-! ## The derivation-level `W13` half (issue #340)
+
+`Ann.gen i r σ S` is the claim that refers to a generator: at position `i`
+the identifier `r` names a displayed generator of sector `σ` with support
+`S`. Its source is the addition that mints the generator (`Derives.genMint`),
+and it transports through a step under which the generator survives
+(`Derives.genSkip`, `Derives.genDelete` with `r ≠ r'`, `Derives.genAdd`),
+which is the positive half's schema condition of §4.11 read on this claim.
+The inventory has no row whose premise is the deletion of the referenced
+generator, so across that step no derivation closes
+(`not_derivable_gen_of_deleted`): the claim is not false of a row, it names
+no row there. Both halves are instantiated on one parent: the minted
+generator's claim transports across the deletion of another row
+(`derives_gen_across_other_deletion`) and does not transport across its own
+(`not_derivable_gen_across_own_deletion`). As everywhere in this module, the
+refutation is relative to the `Derives` inventory. -/
+
+/-- The deleted identifier names no displayed row of the deletion's output. -/
+theorem not_mem_rows_deleteState (s : CodeState) (r : Nat) (σ : Sector) (S : List Nat) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (deleteState s r).rows := by
+  intro hmem
+  have h := (List.mem_filter.mp hmem).2
+  exact absurd rfl (of_decide_eq_true h)
+
+/-- The `W13` half: a claim that refers to a generator is not derivable at
+    the output of the step that deletes it, whatever sector and support it
+    states. -/
+theorem not_derivable_gen_of_deleted (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i r : Nat} {s t : CodeState}
+    (_hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.delete r) s t) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_delete_eq hstep] at hmem
+  exact not_mem_rows_deleteState s r σ S hmem
+
+/-- The identifier minted on the mixed chain's addition. -/
+abbrev mintedId : Nat := canonicalMint (deleteState twoDeleteState 1).used
+
+theorem displayed_2_mixedState : DisplayedGenerator 2 mixedState :=
+  ⟨⟨2, Sector.X, [1]⟩,
+    List.mem_append_left _ (by simp [deleteState, twoDeleteState]), rfl⟩
+
+theorem displayed_minted_mixedState : DisplayedGenerator mintedId mixedState :=
+  ⟨⟨mintedId, Sector.X, [0]⟩, List.mem_append_right _ (List.mem_singleton.mpr rfl), rfl⟩
+
+theorem eval_delete_2_mixedState :
+    Eval (Command.delete 2) mixedState (deleteState mixedState 2) :=
+  Eval.delete displayed_2_mixedState independent_2_mixedState rfl
+
+theorem eval_delete_minted_mixedState :
+    Eval (Command.delete mintedId) mixedState (deleteState mixedState mintedId) :=
+  Eval.delete displayed_minted_mixedState independent_added_mixedState' rfl
+
+/-- Add a generator, then delete another one. -/
+def survivingChain : List CodeState :=
+  [deleteState twoDeleteState 1, mixedState, deleteState mixedState 2]
+
+/-- Add a generator, then delete it. -/
+def deletedChain : List CodeState :=
+  [deleteState twoDeleteState 1, mixedState, deleteState mixedState mintedId]
+
+theorem chain_surviving : Chain survivingChain :=
+  Chain.cons eval_add_mixedState (Chain.cons eval_delete_2_mixedState (Chain.single _))
+
+theorem chain_deleted : Chain deletedChain :=
+  Chain.cons eval_add_mixedState (Chain.cons eval_delete_minted_mixedState (Chain.single _))
+
+theorem wellFormedContext_deletedChain : WellFormedContext deletedChain := by
+  intro s hs
+  simp only [deletedChain, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl | rfl
+  · exact encodingWellFormed_deleteState_1
+  · exact encodingWellFormed_mixedState
+  · exact wf_of_eval (by trivial) eval_delete_minted_mixedState encodingWellFormed_mixedState
+
+/-- Source: the minted generator's claim is derivable at the addition's
+    output, on either chain. -/
+theorem derives_gen_minted (dMeasure : Field → CodeState → Nat) (u : CodeState) :
+    Derives dMeasure [deleteState twoDeleteState 1, mixedState, u]
+      (Ann.gen 1 mintedId Sector.X [0]) :=
+  Derives.genMint 0 Sector.X [0] _ _ rfl rfl eval_add_mixedState
+
+/-- Positive half: the claim transports across the deletion of another
+    generator. -/
+theorem derives_gen_across_other_deletion (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure survivingChain (Ann.gen 2 mintedId Sector.X [0]) :=
+  Derives.genDelete 1 mintedId 2 Sector.X [0] _ _ rfl rfl eval_delete_2_mixedState
+    (by rw [show mintedId = 0 from canonicalMint_twoDelete]; decide)
+    (derives_gen_minted dMeasure _)
+
+/-- `W13` half: the same claim, derivable before the step, has no derivation
+    across the deletion of the generator it refers to. -/
+theorem not_derivable_gen_across_own_deletion (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure deletedChain (Ann.gen 2 mintedId σ S) :=
+  not_derivable_gen_of_deleted dMeasure hmono wellFormedContext_deletedChain chain_deleted
+    (i := 1) rfl rfl eval_delete_minted_mixedState σ S
+
+/-! ## The input display and the graft (issue #368)
+
+`Derives.genInput` sources the claim of a row the input state displays, so
+the `W13` half also holds of a generator that was never minted in the term:
+on `survivingChain` the input row `2` is claimed at position 0, transported
+across the addition, and has no derivation after its deletion.
+
+The graft retires the generators of its chain, shortens the opposite-sector
+rows that contain the grafted qubit, keeps the other rows, and mints the
+adjacent-product rows. `Derives.genGraft` and `Derives.genGraftMint` are the
+rows for the surviving and the minted generators. No row covers a generator
+of the chain, and `not_derivable_gen_of_grafted` is the refutation, by
+soundness: the chain identifiers are displayed in the input, so they are in
+`used`, while the minted identifiers are not, and every other output row
+keeps an identifier outside the chain. All four cases are instantiated on
+the graft of `graftableState`. -/
+
+/-- A generator of the graft's chain names no displayed row of the graft's
+    output. -/
+theorem not_mem_rows_graftState_of_chain {s : CodeState} (hwf : EncodingWellFormed s)
+    {q : Nat} {sector : Sector} {ids : List Nat}
+    (hids : ∀ id ∈ ids, id ∈ (touchingRows s sector q).map Row.id) {r : Nat} (hr : r ∈ ids)
+    (σ : Sector) (S : List Nat) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (graftState s q sector ids).rows := by
+  intro hmem
+  rcases id_of_mem_graftState hmem with hout | hminted
+  · exact hout hr
+  · have hfresh : r ∉ s.used :=
+      mintFresh_not_mem s.used _ r (id_mem_mintFresh_of_minted hminted)
+    obtain ⟨row, hrow, hid⟩ := List.mem_map.mp (hids r hr)
+    have hrow' : row ∈ s.rows := (List.mem_filter.mp hrow).1
+    exact hfresh (hid ▸ ids_subset_used_of_wf hwf row hrow')
+
+/-- The `W13` half for the graft: a claim that refers to a generator of the
+    graft's chain is not derivable at the graft's output, whatever sector
+    and support it states. -/
+theorem not_derivable_gen_of_grafted (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q r : Nat} {sector : Sector}
+    {ids : List Nat} {s t : CodeState}
+    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.graft q sector ids) s t) (hr : r ∈ ids)
+    (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_graft_eq hstep] at hmem
+  have hwf : EncodingWellFormed s := hctxt s (mem_of_getElem? hi)
+  cases hstep with
+  | graft _ _ _ _ _ hids _ _ _ _ =>
+      exact not_mem_rows_graftState_of_chain hwf hids hr σ S hmem
+
+/-- Source for the input display: on `survivingChain` the input row `2` is
+    claimed at position 0 and transported across the addition. -/
+theorem derives_gen_input_across_addition (dMeasure : Field → CodeState → Nat)
+    (u : CodeState) :
+    Derives dMeasure [deleteState twoDeleteState 1, mixedState, u]
+      (Ann.gen 1 2 Sector.X [1]) :=
+  Derives.genAdd 0 2 Sector.X [1] Sector.X [0] _ _ rfl rfl eval_add_mixedState
+    (Derives.genInput 2 Sector.X [1] _ rfl (by simp [deleteState, twoDeleteState]))
+
+theorem wellFormedContext_survivingChain : WellFormedContext survivingChain := by
+  intro s hs
+  simp only [survivingChain, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl | rfl
+  · exact encodingWellFormed_deleteState_1
+  · exact encodingWellFormed_mixedState
+  · exact wf_of_eval (by trivial) eval_delete_2_mixedState encodingWellFormed_mixedState
+
+/-- `W13` half for an input row: the same claim has no derivation across the
+    deletion of the input generator it refers to. -/
+theorem not_derivable_gen_input_across_own_deletion (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure survivingChain (Ann.gen 2 2 σ S) :=
+  not_derivable_gen_of_deleted dMeasure hmono wellFormedContext_survivingChain chain_surviving
+    (i := 1) rfl rfl eval_delete_2_mixedState σ S
+
+/-- The graft of `graftableState` at qubit `0` in the `X` sector along the
+    chain `[1, 2]`. -/
+def graftChainExample : List CodeState :=
+  [graftableState, graftState graftableState 0 Sector.X [1, 2]]
+
+theorem chain_graftChainExample : Chain graftChainExample :=
+  Chain.cons eval_graft_graftable (Chain.single _)
+
+theorem encodingWellFormed_graftableState : EncodingWellFormed graftableState :=
+  (wellFormedBool_iff _).mp (by decide)
+
+theorem wellFormedContext_graftChainExample : WellFormedContext graftChainExample := by
+  intro s hs
+  simp only [graftChainExample, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl
+  · exact encodingWellFormed_graftableState
+  · exact wf_graft_of_eval eval_graft_graftable encodingWellFormed_graftableState
+
+/-- The opposite-sector row `3` contains the grafted qubit and survives
+    without it. -/
+theorem derives_gen_graft_shortened (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure graftChainExample (Ann.gen 1 3 Sector.Z [1, 2]) :=
+  Derives.genGraft 0 3 Sector.Z [0, 1, 2] 0 Sector.X [1, 2] _ _ rfl rfl eval_graft_graftable
+    (by decide) (Derives.genInput 3 Sector.Z [0, 1, 2] _ rfl (by simp [graftableState]))
+
+/-- The opposite-sector row `4` does not contain the grafted qubit and
+    survives unchanged. -/
+theorem derives_gen_graft_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure graftChainExample (Ann.gen 1 4 Sector.Z [3, 4]) :=
+  Derives.genGraft 0 4 Sector.Z [3, 4] 0 Sector.X [1, 2] _ _ rfl rfl eval_graft_graftable
+    (by decide) (Derives.genInput 4 Sector.Z [3, 4] _ rfl (by simp [graftableState]))
+
+/-- The minted adjacent-product row of the chain `[1, 2]`. -/
+theorem derives_gen_graft_minted (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure graftChainExample (Ann.gen 1 0 Sector.X [1, 2, 3, 4]) :=
+  Derives.genGraftMint 0 0 Sector.X [1, 2] _ _ ⟨0, Sector.X, [1, 2, 3, 4]⟩ rfl rfl
+    eval_graft_graftable (by
+      rw [show graftMintedRows graftableState 0 Sector.X [1, 2] =
+        [⟨0, Sector.X, [1, 2, 3, 4]⟩] from by decide]
+      exact List.mem_singleton.mpr rfl)
+
+/-- `W13` half for the graft: neither generator of the chain has a
+    derivable claim at the graft's output. -/
+theorem not_derivable_gen_graft_chain (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure graftChainExample (Ann.gen 1 1 σ S) ∧
+      ¬ Derives dMeasure graftChainExample (Ann.gen 1 2 σ S) :=
+  ⟨not_derivable_gen_of_grafted dMeasure hmono wellFormedContext_graftChainExample
+      chain_graftChainExample (i := 0) rfl rfl eval_graft_graftable (by decide) σ S,
+    not_derivable_gen_of_grafted dMeasure hmono wellFormedContext_graftChainExample
+      chain_graftChainExample (i := 0) rfl rfl eval_graft_graftable (by decide) σ S⟩
+
+
+/-! ## `W13` halves for the Gate 6 commands -/
+
+/-- A peeled row's identifier is not in the peel's output display. -/
+theorem not_mem_rows_peelState_of_peeled {s : CodeState} {q r_id : Nat}
+    {σ : Sector} {S : List Nat} :
+    ({ id := r_id, sector := σ, support := S } : Row) ∉ (peelState s q r_id).rows := by
+  intro hmem
+  rcases List.mem_map.mp hmem with ⟨row, hrow, heq⟩
+  have hsurv : row.id ≠ r_id := of_decide_eq_true (List.mem_filter.mp hrow).2
+  have hid : (shortenRow q row).id = row.id := by
+    unfold shortenRow; split <;> rfl
+  have : row.id = r_id := hid.symm.trans (congrArg Row.id heq)
+  exact hsurv this
+
+/-- A row whose support contains the punctured qubit is not in the puncture's
+    output display. -/
+theorem not_mem_rows_punctureState_of_contains {s : CodeState} {q : Nat}
+    {r : Nat} {σ : Sector} {S : List Nat} (hq : q ∈ S) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (punctureState s q).rows := by
+  intro hmem
+  have hfilt := List.mem_filter.mp hmem
+  have hnot : ¬ ({ id := r, sector := σ, support := S } : Row).support.contains q := of_decide_eq_true hfilt.2
+  have heq : ({ id := r, sector := σ, support := S } : Row).support = S := rfl
+  rw [heq] at hnot
+  exact hnot (List.contains_iff_mem.mpr hq)
+
+/-- A row of the rebased sector (an old row, whose identifier is in
+    `s.used`) is not in the rebase's output display. -/
+theorem not_mem_rows_rebaseState_of_sector {s : CodeState} {sector : Sector}
+    {matrix : List (List Nat)} {r : Nat} {σ : Sector} {S : List Nat}
+    (hr : σ = sector) (hrused : r ∈ s.used) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (rebaseState s sector matrix).rows := by
+  intro hmem
+  rcases List.mem_append.mp hmem with hleft | hright
+  · have hfilt := List.mem_filter.mp hleft
+    have hneq : ({ id := r, sector := σ, support := S } : Row).sector ≠ sector := of_decide_eq_true hfilt.2
+    have hsec : ({ id := r, sector := σ, support := S } : Row).sector = sector := hr
+    exact hneq hsec
+  · rcases List.mem_map.mp hright with ⟨cs_id, hcs, heq⟩
+    have hid : cs_id.2 = r :=
+      congrArg Row.id heq
+    have hfresh : cs_id.2 ∉ s.used := by
+      have hmem' : cs_id.2 ∈ mintFresh s.used matrix.length :=
+        (List.of_mem_zip hcs).2
+      exact mintFresh_not_mem s.used matrix.length cs_id.2 hmem'
+    exact hfresh (hid ▸ hrused)
+
+/-- The `W13` half for the peel: a claim that refers to the peeled row's
+    identifier is not derivable at the peel's output. -/
+theorem not_derivable_gen_of_peeled {τ : Sector} (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q r_id : Nat}
+    {s t : CodeState} {σ : Sector} {S : List Nat}
+    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.peel q τ r_id) s t) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r_id σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_peel_eq hstep] at hmem
+  exact not_mem_rows_peelState_of_peeled (σ := σ) (S := S) hmem
+
+/-- The `W13` half for the puncture: a claim whose support contains the
+    punctured qubit is not derivable at the puncture's output. -/
+theorem not_derivable_gen_of_punctured (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q : Nat}
+    {s t : CodeState} {r : Nat} {σ : Sector} {S : List Nat}
+    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.puncture q) s t) (hq : q ∈ S) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_puncture_eq hstep] at hmem
+  exact not_mem_rows_punctureState_of_contains hq hmem
+
+/-- The `W13` half for the rebase: a claim of a row of the rebased sector
+    (an old row) is not derivable at the rebase's output. -/
+theorem not_derivable_gen_of_rebased (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i : Nat}
+    {sector : Sector} {matrix : List (List Nat)} {s t : CodeState}
+    {r : Nat} {σ : Sector} {S : List Nat}
+    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.rebase sector matrix) s t)
+    (hr : r ∈ (s.rows.filter (fun row => row.sector = sector)).map Row.id)
+    (hσ : σ = sector) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_rebase_eq hstep] at hmem
+  have hwf : EncodingWellFormed s := hctxt s (mem_of_getElem? hi)
+  cases hstep with
+  | rebase _ _ _ _ _ =>
+      have hrused : r ∈ s.used := by
+        rcases List.mem_map.mp hr with ⟨row, hrow, hid⟩
+        have hrow' := List.mem_filter.mp hrow
+        have hrow'' : row ∈ s.rows := hrow'.1
+        exact hid ▸ ids_subset_used_of_wf hwf row hrow''
+      exact not_mem_rows_rebaseState_of_sector hσ hrused hmem
 
 end CodeCalculus

@@ -1,0 +1,184 @@
+{
+  "changed_verdicts": [],
+  "experiment": "reduced-product interval closure",
+  "interpretation": "The simple closure changes no target verdict on the pinned traces. It is not vacuous (the synthetic ledger changes), so the null result is a statement about the current rule set, not about the relation. The disjunctive half of d = min(d_X, d_Z) is not representable by three intervals; testing it needs a relational domain.",
+  "pinned_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
+  "source": "machine/experiments/issue21_challenge_replay.json",
+  "status": "non-normative consumer experiment; not soundness evidence",
+  "synthetic": {
+    "after": "certify",
+    "after_intervals": {
+      "d": {
+        "lower": 5,
+        "upper": 10
+      },
+      "d_X": {
+        "lower": 5,
+        "upper": 10
+      },
+      "d_Z": {
+        "lower": 5,
+        "upper": 10
+      }
+    },
+    "before": "re-measure",
+    "before_intervals": {
+      "d": {
+        "lower": 0,
+        "upper": 10
+      },
+      "d_X": {
+        "lower": 5,
+        "upper": 10
+      },
+      "d_Z": {
+        "lower": 5,
+        "upper": 10
+      }
+    },
+    "note": "Synthetic ledger, not reachable by the current transition rules; it shows the closure is not the identity as a transformer.",
+    "target": 5
+  },
+  "targets_tested": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "trace_steps": 4,
+  "traces": [
+    {
+      "after": {
+        "d": {
+          "lower": 3,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 3,
+          "upper": 3
+        },
+        "d_Z": {
+          "lower": 3,
+          "upper": 3
+        }
+      },
+      "before": {
+        "d": {
+          "lower": 3,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 3,
+          "upper": 3
+        },
+        "d_Z": {
+          "lower": 3,
+          "upper": 3
+        }
+      },
+      "section": "addition",
+      "step": 0
+    },
+    {
+      "after": {
+        "d": {
+          "lower": 0,
+          "upper": 2
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 2
+        }
+      },
+      "before": {
+        "d": {
+          "lower": 0,
+          "upper": 2
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 2
+        }
+      },
+      "section": "graft",
+      "step": 0
+    },
+    {
+      "after": {
+        "d": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 5
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 3
+        }
+      },
+      "before": {
+        "d": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 5
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 3
+        }
+      },
+      "section": "deletion",
+      "step": 0
+    },
+    {
+      "after": {
+        "d": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 5
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 3
+        }
+      },
+      "before": {
+        "d": {
+          "lower": 0,
+          "upper": 3
+        },
+        "d_X": {
+          "lower": 0,
+          "upper": 5
+        },
+        "d_Z": {
+          "lower": 0,
+          "upper": 3
+        }
+      },
+      "section": "deletion",
+      "step": 1
+    }
+  ]
+}

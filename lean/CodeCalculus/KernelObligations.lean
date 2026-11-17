@@ -6,14 +6,14 @@ import CodeCalculus.Eval
 namespace CodeCalculus
 
 /-!
-# Kernel obligation mechanization (slice, )
+# Kernel obligation mechanization (slice, issue #163)
 
 Kernel obligation lemmas for `spec/OPERATIONAL_SEMANTICS.md` §4.8–§4.10:
 primitive determinism, sequence associativity, the direct-sum laws up to list
 permutation, both partial-inverse clauses, both clauses of the frame law (the
-addition clause under its allocation-compatibility premise, ), and
-cross-sector permutation. The later-layer well-formedness instance of  is
-not here ().
+addition clause under its allocation-compatibility premise, issue #181), and
+cross-sector permutation. The later-layer well-formedness instance of #163 is
+not here (issue #180).
 -/
 
 /-- Primitive determinism (OBL-PRIMITIVE-DETERMINISM): a command's evaluation is
@@ -278,7 +278,7 @@ theorem add_add_ne (s : CodeState) (sx sz : Sector) (sxsupp szsupp : List Nat)
     rfl
   exact hsec (congrArg Row.sector hfirst)
 
-/-! ## Frame law, addition clause (OBL-FRAME-LAW, )
+/-! ## Frame law, addition clause (OBL-FRAME-LAW, issue #181)
 
 `spec/OPERATIONAL_SEMANTICS.md` §4.9, addition clause: for a direct sum
 `A ⊕ B` and a candidate row with support inside `Q_A`,
@@ -311,7 +311,7 @@ theorem xorVec_length (a b : List Bool) (h : a.length = b.length) :
   | nil =>
     cases b with
     | nil => rfl
-    | cons _ _ => simp at h
+    | cons _ _ => cases h
   | cons x xs ih =>
     cases b with
     | nil => simp at h
@@ -325,7 +325,7 @@ theorem xorVec_append (a1 b1 a2 b2 : List Bool) (h : a1.length = b1.length) :
   | nil =>
     cases b1 with
     | nil => rfl
-    | cons _ _ => simp at h
+    | cons _ _ => cases h
   | cons x xs ih =>
     cases b1 with
     | nil => simp at h
@@ -389,7 +389,7 @@ theorem combineRows_padLeft (nA nB : Nat) (vs : List (List Bool)) (cs : List Boo
     | cons _ _ => simp at hcs
   | cons v vs ih =>
     cases cs with
-    | nil => simp at hcs
+    | nil => cases hcs
     | cons c cs =>
       have hv' : ∀ v' ∈ vs, v'.length = nB :=
         fun v' h => hv v' (List.mem_cons.mpr (Or.inr h))
@@ -428,7 +428,7 @@ theorem combineRows_split (nA nB : Nat) (vsA vsB : List (List Bool)) (csA csB : 
     | cons _ _ => simp at hcsA
   | cons v vsA ih =>
     cases csA with
-    | nil => simp at hcsA
+    | nil => cases hcsA
     | cons c csA =>
       have hv0 := hvA v (List.mem_cons.mpr (Or.inl rfl))
       have hvA' : ∀ v' ∈ vsA, v'.length = nA :=
@@ -598,8 +598,9 @@ theorem frame_law_add_to_summand (A B : CodeState) (sector : Sector) (support : 
     (h : Eval (Command.addStab sector support) (directSumState A B) s') :
     Eval (Command.addStab sector support) A (addState A sector support) := by
   cases h with
-  | add _ hNodup hSort hComm hSpan _ =>
+  | add _ hNodup hSort hComm hSpan _ hcap =>
     refine Eval.add hloc hNodup hSort ?_ ?_ rfl
+      (Nat.lt_of_le_of_lt (canonicalMint_le_append_left A.used B.used) hcap)
     · intro row hrow hsec
       exact hComm row (List.mem_append_left _ hrow) hsec
     · intro hspanA
@@ -614,12 +615,13 @@ theorem frame_law_add_of_summand (A B : CodeState) (sector : Sector) (support : 
     (hsupA : ∀ row ∈ A.rows, supportSubset row.support A.Q)
     (hsupB : ∀ row ∈ B.rows, supportSubset row.support B.Q)
     (hloc : supportSubset support A.Q)
+    (hcap : canonicalMint (A.used ++ B.used) < totalIdentifiers)
     (h : Eval (Command.addStab sector support) A sA') :
     Eval (Command.addStab sector support) (directSumState A B)
       (addState (directSumState A B) sector support) := by
   cases h with
-  | add _ hNodup hSort hComm hSpan _ =>
-    refine Eval.add ?_ hNodup hSort ?_ ?_ rfl
+  | add _ hNodup hSort hComm hSpan _ _ =>
+    refine Eval.add ?_ hNodup hSort ?_ ?_ rfl hcap
     · intro q hq
       exact List.mem_append_left _ (hloc q hq)
     · intro row hrow hsec
@@ -636,11 +638,12 @@ theorem frame_law_add_applicable_iff (A B : CodeState) (sector : Sector) (suppor
     (hQ : DisjointList A.Q B.Q)
     (hsupA : ∀ row ∈ A.rows, supportSubset row.support A.Q)
     (hsupB : ∀ row ∈ B.rows, supportSubset row.support B.Q)
-    (hloc : supportSubset support A.Q) :
+    (hloc : supportSubset support A.Q)
+    (hcap : canonicalMint (A.used ++ B.used) < totalIdentifiers) :
     (∃ s', Eval (Command.addStab sector support) (directSumState A B) s') ↔
       ∃ s', Eval (Command.addStab sector support) A s' :=
   ⟨fun ⟨s', h⟩ => ⟨_, frame_law_add_to_summand A B sector support s' hQ hsupA hsupB hloc h⟩,
-   fun ⟨sA', h⟩ => ⟨_, frame_law_add_of_summand A B sector support sA' hQ hsupA hsupB hloc h⟩⟩
+   fun ⟨sA', h⟩ => ⟨_, frame_law_add_of_summand A B sector support sA' hQ hsupA hsupB hloc hcap h⟩⟩
 
 /-! ### The allocation-compatibility premise -/
 
@@ -769,12 +772,12 @@ theorem frame_law_add_needs_mint_premise :
   have hmem := (h.2.1 ⟨2, Sector.X, [0]⟩).mp (by decide)
   exact absurd hmem (by decide)
 
-/-! ### The namespace clause of `≡` ()
+/-! ### The namespace clause of `≡` (issue #241)
 
 Before 2026-10-29 the equality read labeled rows and `used` only, so two
 well-formed states that differ in a bare qubit were equal while differing in
 `n`, `k`, and applicability. The witness below is the acceptance condition of
-: the same two states are now distinguished. -/
+issue #241: the same two states are now distinguished. -/
 
 /-- Two qubits, no rows, nothing minted. -/
 def namespaceWitnessA : CodeState := { Q := [0, 1], rows := [], used := [] }
@@ -793,7 +796,7 @@ theorem namespaceWitnessB_wf : EncodingWellFormed namespaceWitnessB := by
   · intro r hr; cases hr
 
 /-- The two states agree on the rows and on `used`, the two clauses the
-    equality read before . -/
+    equality read before issue #241. -/
 theorem namespaceWitness_rows_used_agree :
     (∀ r, namespaceWitnessA.rows.contains r ↔ namespaceWitnessB.rows.contains r) ∧
     (∀ x, namespaceWitnessA.used.contains x ↔ namespaceWitnessB.used.contains x) :=
@@ -872,7 +875,7 @@ theorem pr199_xorVec_append (a b c d : List Bool)
   | nil =>
       cases c with
       | nil => rfl
-      | cons _ _ => simp [List.length] at hab
+      | cons _ _ => cases hab
   | cons x xs ih =>
       cases c with
       | nil => simp [List.length] at hab
@@ -893,7 +896,7 @@ theorem pr199_xorVec_false_left (n : Nat) (v : List Bool) (hv : v.length = n) :
       | cons _ _ => simp [List.length] at hv
   | succ n ih =>
       cases v with
-      | nil => simp [List.length] at hv
+      | nil => cases hv
       | cons x xs =>
           have hxs : xs.length = n := by
             simp only [List.length] at hv
@@ -911,7 +914,7 @@ theorem pr199_xorVec_false_right (n : Nat) (v : List Bool) (hv : v.length = n) :
       | cons _ _ => simp [List.length] at hv
   | succ n ih =>
       cases v with
-      | nil => simp [List.length] at hv
+      | nil => cases hv
       | cons x xs =>
           have hxs : xs.length = n := by
             simp only [List.length] at hv
@@ -930,10 +933,10 @@ theorem pr199_xorVec_length (n : Nat) (a b : List Bool)
       simp [xorVec]
   | succ n ih =>
       cases a with
-      | nil => simp [List.length] at ha
+      | nil => cases ha
       | cons x xs =>
           cases b with
-          | nil => simp [List.length] at hb
+          | nil => cases hb
           | cons y ys =>
               have hxs : xs.length = n := by
                 simp only [List.length] at ha
@@ -988,7 +991,7 @@ theorem pr199_combineRows_block_split (na nb : Nat)
           simp [combineRows]
       | cons y ys ih2 =>
           cases cy with
-          | nil => simp [List.length] at hcy
+          | nil => cases hcy
           | cons c cs =>
               have hcy' : cs.length = ys.length := by
                 simp only [List.length] at hcy
@@ -1008,7 +1011,7 @@ theorem pr199_combineRows_block_split (na nb : Nat)
                   rw [ih2 cs hcy' hys']
   | cons x xs ih =>
       cases cx with
-      | nil => simp [List.length] at hcx
+      | nil => cases hcx
       | cons c cs =>
           have hcx' : cs.length = xs.length := by
             simp only [List.length] at hcx

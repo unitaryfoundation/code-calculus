@@ -1,0 +1,25 @@
+{
+  "args": {
+    "seed": 1,
+    "trials": 500,
+    "n_max": 6,
+    "out": "machine/experiments/direction2_lower_bound_transport_results.json"
+  },
+  "stats": {
+    "parents_tried": 500,
+    "peels_applied": 1338,
+    "peels_skipped_noderivation": 0,
+    "soundness_failures": {
+      "reset": 0,
+      "direction2": 0
+    },
+    "direction2_sound": 1338,
+    "direction2_unsound": 0,
+    "direction2_lower_carried_positive": 1322,
+    "direction2_opposite_upper_carried_finite": 1322,
+    "prune_baseline": 0,
+    "prune_direction2": 1313,
+    "extra_prune_from_direction2": 1313
+  },
+  "n_details": 1338
+}

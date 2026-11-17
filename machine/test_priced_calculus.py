@@ -4,7 +4,7 @@ import unittest
 from decimal import Decimal
 from fractions import Fraction
 
-from machine.experiments.challenge_replay import exact_distances
+from machine.experiments.issue21_challenge_replay import exact_distances
 from machine.priced_calculus import (
     CodeState,
     DistanceLedger,
@@ -598,7 +598,7 @@ class LayoutTransportTests(unittest.TestCase):
 
     The interaction radius is a function of the check set, so a parent's
     claim cannot be carried into a child whose checks differ. See
-    `the internal notes` and .
+    `the archived notes` and issue #63.
     """
 
     def test_radius_is_the_largest_check_diameter(self):
@@ -1046,6 +1046,11 @@ class GraphlikeExposureTests(unittest.TestCase):
         )
         verdict = w_exp_graphlike(state, deleted="b9001")
         self.assertEqual(verdict["status"], "unavailable")
+        # The refusal is by design: the price is NP-hard already at column
+        # weight 3 (design/DERIVED_RELATIONS.md section 3a, issue #326).
+        self.assertTrue(verdict["citation_status"].startswith(
+            "settled (NP-hard at column weight 3"), verdict["citation_status"])
+        self.assertIn("DERIVED_RELATIONS.md section 3a", verdict["citation_status"])
         self.assertFalse(verdict["graphlike"])
         self.assertIsNone(verdict["w_exp"])
         self.assertIn("not graphlike", verdict["reason"])
@@ -1441,8 +1446,8 @@ class Gate6ConditionalCellTests(unittest.TestCase):
         self.assertEqual(ex["X"], 1)
         self.assertEqual(ex["d"], 1)
         ledger = DistanceLedger(
-            Interval(0, ex["d"]),
-            {"X": Interval(0, ex["X"]), "Z": Interval(0, ex["Z"])},
+            Interval(ex["d"], ex["d"]),
+            {"X": Interval(ex["X"], ex["X"]), "Z": Interval(ex["Z"], ex["Z"])},
             witnesses={},
         )
         child = state.puncture(2)
@@ -1459,22 +1464,31 @@ class Gate6ConditionalCellTests(unittest.TestCase):
         self.assertEqual(out.sector["X"], Interval(0, None))
         self.assertEqual(out.full, Interval(0, None))
 
-    def test_peel_ledger_resets_every_interval(self):
+    def test_peel_ledger_carries_selected_lower_and_opposite_upper(self):
         state = self.peelable()
         ex = exact_distances(state)
         ledger = DistanceLedger(
-            Interval(0, ex["d"]),
-            {"X": Interval(0, ex["X"]), "Z": Interval(0, ex["Z"])},
+            Interval(ex["d"], ex["d"]),
+            {"X": Interval(ex["X"], ex["X"]), "Z": Interval(ex["Z"], ex["Z"])},
             witnesses={},
         )
         child = state.peel(0, "Z", "b1")
         out = ledger.propagate({"op": "E-PEEL", "qubit": 0, "sector": "Z"},
                                child, parent_state=state)
-        # §4.28: neither polarity is derivable; everything resets and only
-        # child-valid witnesses supply upper endpoints.
-        self.assertEqual(out.full, Interval(0, None))
-        self.assertEqual(out.sector["X"], Interval(0, None))
-        self.assertEqual(out.sector["Z"], Interval(0, None))
+        # §4.28 (admitted 2026-11-06, issue #295; sharpened 2026-11-10,
+        # issue #331): the selected sector's (Z) lower endpoint carries, the
+        # opposite sector's (X) lower endpoint carries less one and its upper
+        # endpoint carries, and the full distance is the minimum of the two
+        # sector intervals. Here (d_X, d_Z) = (2, 2) goes to (1, 2), so the
+        # X interval [1, 2] and the full interval [1, 2] are tight below.
+        ex_child = exact_distances(child)
+        self.assertEqual((ex_child["X"], ex_child["Z"]), (1, 2))
+        self.assertEqual(out.full.lower, min(ex["Z"], ex["X"] - 1))
+        self.assertEqual(out.full.upper, ex["X"])
+        self.assertEqual(out.sector["Z"].lower, ex["Z"])
+        self.assertIsNone(out.sector["Z"].upper)
+        self.assertEqual(out.sector["X"].lower, ex["X"] - 1)
+        self.assertEqual(out.sector["X"].upper, ex["X"])
         self.assertTrue(any(c["cell"] == "E-PEEL" for c in out.conditions))
 
     def test_peel_refuses_when_the_named_row_is_not_in_the_named_sector(self):
@@ -1616,7 +1630,7 @@ class Gate6ConditionalCellTests(unittest.TestCase):
 
 
 class AmbientContainmentTests(unittest.TestCase):
-    """: every row-introducing transition keeps its rows inside
+    """Issue #236: every row-introducing transition keeps its rows inside
     the ambient space of its (possibly new) qubit namespace."""
 
     def test_extend_rejects_support_outside_union(self):

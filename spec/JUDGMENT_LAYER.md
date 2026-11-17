@@ -51,7 +51,7 @@ in brackets.
 | $k$ | carries, $k'=k$ `[proved]` | carries, $k=k_A+k_B$ `[proved]` | carries, $k'=k+1$ `[proved]` | carries, $k'=k-1$ `[proved]` | carries `[proved]` | derived transfer (§7.2.1); S3 monotone (§9.4) |
 | $w$ (max stabilizer weight) | carries, $w'=w$ `[proved]` | carries, $w=\max(w_A,w_B)$ `[proved]` | carries, $w'=\max\{\mathrm{wt}(r):r\in\mathit{rows}'\}$ `[proved]` (exact; $\le w$) | carries, $w'=\max(w,\mathrm{wt}(r))$ `[proved]` | carries `[proved]` | derived transfer + monotonicity (§7.2.1–2); S3 monotone (§9.4) |
 | Tanner connectivity (displayed rows) | carries, unchanged `[proved]` (§4.22) | always decreases: the direct sum is a disjoint union, so the graph is disconnected; the child certifies a disconnected code, which is why the challenge's `tanner_connected` hard gate rejects it `[proved]` (§4.22) | can decrease: a deleted check may be a cut vertex `[proved]` (§4.22) | cannot decrease: a new check adds a node and edges `[proved]` (§4.22) | carries by composition `[proved]` (§4.22) | monotonicity (§7.2.2); S3 monotone (§9.4); §4.22 |
-| $r$ (interaction radius, relative to a layout) | carries, $r'=r$ `[proved]` | carries, $r=\max(r_A,r_B)$ `[proved]` (conditional on an honest merged layout; §2d.3) | carries, $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ `[proved]` (exact; $\le r$) | carries, $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ `[proved]` | carries by composition `[proved]` | derived transfer + monotonicity (§7.2.1–2); S3 monotone (§9.4); §2d |
+| $r$ (interaction radius, relative to a layout) | carries, $r'=r$ `[proved]` | carries, $r=\max(r_A,r_B)$ `[proved]` (conditional on an honest merged layout; §2d.3) | carries, $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ `[proved]` (exact; $\le r$) | carries, $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ `[proved]` | carries by composition `[proved]` | derived transfer + monotonicity (§7.2.1–2); S3 monotone (§9.4); §2d; one layout cell per transition in §2d.5 |
 | $d_X$ | carries, $d_X'=d_X$ `[proved]` | carries, $d_X=\min(d_X^A,d_X^B)$ `[proved]` | carries **as a bound only**: $d_X'\le d_X$ `[proved]`; exact value remains **`unavailable`** under the current input schema (a sector-specific price would need separate admission) | lower bound `[proved]`; exact value `open` | carries by composition `[open]` | atomic opaque (§7.1, opacity `distance`); S2 transformers (§8.3) + soundness (§8.4); S2 precision (§8.2); S3 (§9.1); §4.13; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
 | $d_Z$ | carries, $d_Z'=d_Z$ `[proved]` | carries, $d_Z=\min(d_Z^A,d_Z^B)$ `[proved]` | carries as a bound only: $d_Z'\le d_Z$ `[proved]`; exact value remains **`unavailable`** under the current input schema (a sector-specific price would need separate admission) | as $d_X$ | carries by composition `[open]` | atomic opaque (§7.1, opacity `distance`); S2 transformers (§8.3) + soundness (§8.4); S2 precision (§8.2); S3 (§9.1); §4.13; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
 | $d$ | carries, $d'=d$ `[proved]` | carries, $d=\min(d^A,d^B)$ `[proved]` | carries **as a bound only**: $d'\le d$ `[proved]`; exact value **`unavailable`** unless $w_{\mathrm{del}},w_{\mathrm{exp}}$ are supplied, in which case $d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$ `[conditional]` | lower bound `[proved]`; exact value `open`; strict improvement `[conditional]` | carries by composition `[open]` | derived from the two atoms by `min` (§7.1); S2 reduced product (§8.8); S2 precision (§8.2); S3 (§9.1); §4.13/§4.19; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
@@ -93,7 +93,7 @@ third is the $d$ row's strict-improvement half above, `conditional`:**
 
 | Claim | Through | Status | Why |
 | --- | --- | --- | --- |
-| a claim referencing a **deleted generator** | `C-SEQUENCE` | **`unavailable`** | claimed **per evaluation, not per state**  — the `W13` half, `OBL-JUDGMENT-TRANSPORT` |
+| a claim referencing a **deleted generator** | `C-SEQUENCE` | **`unavailable`** | claimed **per evaluation, not per state** (S5) — the `W13` half, `OBL-JUDGMENT-TRANSPORT` |
 | a **row-referencing certificate** through the `W7` loop | `C-DELETE-CHECK` → `C-ADD-CHECK` | **`unavailable`** | invalidated at the deletion step even though the final code equals the original — information-losing at the context level |
 | **strict improvement** of distance | `C-ADD-CHECK` | **`conditional`** | carries $d' \ge d+1$ when the consumer supplies the minimum-weight-class hypothesis; otherwise `unavailable` |
 
@@ -125,10 +125,10 @@ therefore `not yet defined` — the same status, and for the same reason, as
 `OBL-REBASE-GENERATION`: no grammar production, so no cases to range over. **The
 absence of such a row is a position, not an oversight.** An equivalence-class axis
 is a Gate 6 decision, out of scope under the stopping point
-(SCOPE.md §4).
+([`GATES.md`](GATES.md) §11).
 
 *(Clarification, 2026-10-13. This states positions already of record in
-[`TAXONOMY.md`](TAXONOMY.md) §1.4, SCOPE.md §4–§5, and
+[`TAXONOMY.md`](TAXONOMY.md) §1.4, [`GATES.md`](GATES.md) §11, and
 `OBL-REBASE-GENERATION`. It takes no new position, changes no cell, mints no
 identifier, and asserts nothing a cited artifact does not already assert.)*
 
@@ -143,12 +143,14 @@ consumer supplies the stated hypothesis; otherwise the corresponding cell is
 
 | Move | Property | Carries when hypothesis supplied | Hypothesis (consumer-supplied) | Source |
 | --- | --- | --- | --- | --- |
-| `E-GRAFT` | $d$ | sector-wise: $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma})$ for the non-spliced sector; the spliced sector carries its lower endpoint and drops its upper; the scalar form $d'=\min(d,w_{\mathrm{expose},\bar\tau})$ is false for this transition (see §4.13) | exposure minimum in the non-spliced sector and the structural coverage condition | Theorem 28.2 (external input; see REFERENCES.md); claim remains conditional on the consumer-supplied hypothesis; derivation at `OPERATIONAL_SEMANTICS.md` §4.13 |
-| `C-DELETE-CHECK` (priced) | $d$ | exact: $d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$ | $w_{\mathrm{del}},w_{\mathrm{exp}}$ minima over the promoted and exposed sets | Theorem 12.1 (external input; see REFERENCES.md); derivation reproduced at `OPERATIONAL_SEMANTICS.md` §4.19; claim remains conditional on the consumer-supplied hypothesis |
-| `C-ADD-CHECK` (strict improvement) | $d$ | $d'\ge d+1$ | exact old $d$ and exhaustive minimum-weight-class enumeration, all killed | Proposition 18.3 (external input; see REFERENCES.md); derivation reproduced at `OPERATIONAL_SEMANTICS.md` §4.19; claim remains conditional on the consumer-supplied hypothesis |
-| `C-ADD-CHECK` (sector-aware gauging) | $d_X$, $d_Z$ | the supplied sector's lower endpoint is raised to $w_\sigma$ (never below the carried bound); the unpriced sector keeps its carried lower bound; when both $w_X,w_Z$ are supplied the full-distance lower endpoint may be raised to their minimum ($d=\min(d_X,d_Z)$) | sector minima $w_X,w_Z$ over the surviving logical classes and an evidence reference | Lemma 18.5 (external input; see REFERENCES.md); claim remains conditional on the consumer-supplied hypothesis |
-| `C-ADD-CHECK` (direct-sum extinction) | $d$ | $d'=d_B$ (exact) when $d_B>d_A$ | exact old $d$ ($=d_A$), the trusted factor distance $d_B$ with an evidence reference, and the computed structural side — a two-block disjoint union, the added check inside one block, $k$ of the block containing the added check equal to zero, $k$ of the surviving block at least one, and no carried sector bound exceeding $d_B$ | Proposition 18.6 + Corollary 18.7 (external input; see REFERENCES.md); **stack family only**: the cell is stated for stack parents, and no family other than the source's stack/direct-sum family is licensed; claim remains conditional on the trusted $d_B$; general $k'>0$ remains open and is not claimed solved |
-| `A-CONCAT` towers ($k_{\mathrm{in}}=1$), price provider | deletion/exposure price input | factorization from tower level data | tower structure, class dictionary, outer presentation | Theorems 27.2 / 27.5 (external input; see REFERENCES.md); not a calculus constructor. A $k_{\mathrm{in}}>1$ generalization exists in the source (Theorem 27.8) with a refined class dictionary; it is proved but not sweep-verified here (tracked in `spec/OBLIGATIONS.md`). Its cost tables have size $2^{2k_{\mathrm{in}}}$. |
+| `E-GRAFT` | $d$ | sector-wise: $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma})$ for the non-spliced sector; the spliced sector carries its lower endpoint and drops its upper; the scalar form $d'=\min(d,w_{\mathrm{expose},\bar\tau})$ is false for this transition (see §4.13) | exposure minimum in the non-spliced sector and the structural coverage condition | Theorem 28.2, *code-deformation* §9.5; claim remains conditional on the consumer-supplied hypothesis; derivation at `OPERATIONAL_SEMANTICS.md` §4.13 |
+| `C-DELETE-CHECK` (priced) | $d$ | exact: $d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$ | $w_{\mathrm{del}},w_{\mathrm{exp}}$ minima over the promoted and exposed sets | Theorem 12.1 (manuscript Theorem 7), *code-deformation* §4.1; derivation reproduced at `OPERATIONAL_SEMANTICS.md` §4.19; claim remains conditional on the consumer-supplied hypothesis |
+| `C-ADD-CHECK` (strict improvement) | $d$ | $d'\ge d+1$ | exact old $d$ and exhaustive minimum-weight-class enumeration, all killed | Proposition 18.3, *code-deformation* §5.2; derivation reproduced at `OPERATIONAL_SEMANTICS.md` §4.19; claim remains conditional on the consumer-supplied hypothesis |
+| `C-ADD-CHECK` (sector-aware gauging) | $d_X$, $d_Z$ | the supplied sector's lower endpoint is raised to $w_\sigma$ (never below the carried bound); the unpriced sector keeps its carried lower bound; when both $w_X,w_Z$ are supplied the full-distance lower endpoint may be raised to their minimum ($d=\min(d_X,d_Z)$) | sector minima $w_X,w_Z$ over the surviving logical classes and an evidence reference | Lemma 18.5, *code-deformation* §5.2; claim remains conditional on the consumer-supplied hypothesis |
+| `C-ADD-CHECK` (direct-sum extinction) | $d$ | $d'=d_B$ (exact) when $d_B>d_A$ | exact old $d$ ($=d_A$), the trusted factor distance $d_B$ with an evidence reference, and the computed structural side — a two-block disjoint union, the added check inside one block, $k$ of the block containing the added check equal to zero, $k$ of the surviving block at least one, and no carried sector bound exceeding $d_B$ | Proposition 18.6 + Corollary 18.7, *code-deformation* §5.2; **stack family only**: the cell is stated for stack parents, and no family other than the source's stack/direct-sum family is licensed; claim remains conditional on the trusted $d_B$; general $k'>0$ remains open and is not claimed solved |
+| `E-PEEL` at $q$ in sector $\tau$ (opposite sector $\sigma$) | $d_\sigma$ | exact: $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma}(q))$; the interval $[L_\sigma,U_\sigma]$ moves to $[\min(L_\sigma,p),\min(U_\sigma,p)]$, as for the graft | the exposure price $w_{\mathrm{expose},\sigma}(q)=\min\{|u|-1:u\text{ a parent }\sigma\text{-logical with }u_q=1\}$ (§2c), bound to the peel | derivation `OPERATIONAL_SEMANTICS.md` §4.28 (2026-11-10, issue #331): the graft's non-spliced relation at $m=1$; claim remains conditional on the consumer-supplied minimum; unpriced corollary $d_\sigma-1\le d'_\sigma\le d_\sigma$ carried by §2b |
+| `E-PEEL` at $q$ in sector $\tau$ (selected sector) | $d_\tau$ | exact: $d'_\tau=w_{\mathrm{avoid},\tau}(q)$; the interval becomes $[w,w]$ | the avoidance minimum $w_{\mathrm{avoid},\tau}(q)=\min\{|v|:v\text{ a parent }\tau\text{-logical with }v_q=0\}$ (§2c) | derivation `OPERATIONAL_SEMANTICS.md` §4.28 (2026-11-10, issue #331); claim remains conditional on the consumer-supplied minimum; a value below the carried lower bound $L_\tau$ contradicts $d'_\tau\ge d_\tau$ and is refused |
+| `A-CONCAT` towers (deleting lifted outer checks, any $k_{\mathrm{in}}$), price provider | deletion/exposure price input | factorization from tower level data | tower structure, class dictionary, outer presentation | Theorems 27.2 / 27.5, *code-deformation* §9.4; not a calculus constructor. A $k_{\mathrm{in}}>1$ generalization exists in the source (Theorem 27.8) with a refined class dictionary; the provider for arbitrary $k_{\mathrm{in}}$ is derived in this repository (`design/DERIVED_RELATIONS.md` §2a, 2026-11-11, issue #327) and sweep-verified for $n_{\mathrm{in}}=4$, $k_{\mathrm{in}}\in\{1,2,3\}$; the source's theorems are cited, not reproduced. Its cost tables have size $2^{2k_{\mathrm{in}}}$ in the source; the derivation here uses two dictionaries of $2^{k_{\mathrm{in}}}$ entries. |
 | `E-GRAFT` | $r$ (interaction radius) | exact: $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$; and $r'\le 2r$ | **none** — the radius is exactly computable, so no hypothesis is needed; §2d.2 | derivation [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21 (interaction-radius transport) |
 
 The radius row is listed here because §2a is the conditional-cell table; its
@@ -177,6 +179,20 @@ to zero. Without a graft price, the admitted graft non-increase cell can carry
 an input upper bound, but no positive lower endpoint is inferred. Without the
 minimum-weight-class enumeration, strict improvement is `unavailable`.
 
+**d=1 discharge (issue #410, 2026-11-13).** At distance 1 the exhaustive
+enumeration is not exponential: the minimum-weight classes are bare
+(singletons), so the scan is $O(n)$.  When the parent carries a
+currently-valid weight-1 witness in sector $\sigma$ and $k > 0$, the
+parent's distance is exact ($d = 1$) with the witness as evidence, and the
+cell discharges on the kill condition that the added opposite-sector check's
+support contains every bare qubit of $\sigma$.  The same-sector absorption
+path ($K = S + \langle a\rangle$) absorbed nothing in the measured
+campaign (a single same-sector check absorbs at most one coset), so it is
+effectively dead weight; opposite-sector anticommutation is the productive
+branch.  The consumer-side screen is `strict_improvement_d1_feasible` /
+`d1_discharge` in `machine/priced_calculus.py`; it does not validate the
+supplied witness beyond shape, and it does not change any calculus axis.
+
 ## 2b. Consumer interval rules
 
 For each of $d,d_X,d_Z$, the consumer keeps $[L,U]$ where $L$ is a sourced
@@ -193,8 +209,8 @@ distance when $k=0$. The ledger is not part of state identity.
 | `E-GRAFT` | full distance: reset to zero unless a supplied exposure price tightens it. Spliced sector: carry the lower endpoint; drop the upper endpoint to $+\infty$ unless a witness valid in the child supplies one. Non-spliced sector: reset to zero | full distance: lower endpoint resets to zero unless priced; upper endpoint is the non-spliced sector's carried bound, tightened by child-valid witnesses. Spliced sector: carries the lower endpoint only; upper endpoint from child-valid witnesses. Non-spliced sector: carry the non-increase bound and tighten from surviving or new witnesses |
 | `P-REBASE` | unchanged (the row spaces are unchanged, so every span-expressible endpoint stays valid for the child) | unchanged (a parent-valid witness is valid for the identical child spans; revalidation is unnecessary and never discriminates) |
 | `E-LOCAL-HADAMARD` ($T=Q$) | swap the two sector lower endpoints (§4.27: $d_X'=d_Z$, $d_Z'=d_X$); the full-distance lower endpoint keeps — $d'=d$ | swap the two sector upper endpoints likewise and *then* revalidate every witness against the child with its side swapped (an old $\sigma$-side witness is checked as a $\bar\sigma$-side witness of the child); the full-distance upper endpoint keeps |
-| `E-PEEL` | reset to zero in every sector and the full distance. The reset is a refusal by design, not an impossibility: §4.28 derives $d_\tau'\ge d_\tau$ for the selected sector and $d_{\bar\tau}'\le d_{\bar\tau}$ for the opposite sector (the $m=1$ instance of §4.13's graft argument), and no cell carrying either direction is admitted; the full distance is bounded in neither direction (§4.28's witness) | only witnesses valid in the child (a parent-valid witness is not automatically a child-valid one: the child's sample space and spans both changed) |
-| `E-PUNCTURE` | reset to zero in every sector and the full distance — a refusal by design, not an impossibility: §4.29's unnamed free-qubit instance (puncturing qubit $2$ of $Q=\{0,1,2\}$ with the $Z$ display $\{0,1\}$) raises the $X$ distance $1\to2$, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal $\le$- or $\ge$-claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reset is sound; full-distance endpoints remain refused unless a separately admitted price supports them | only witnesses valid in the child, as for the peel |
+| `E-PEEL` | selected sector: carry the lower endpoint ($d_\tau'\ge d_\tau$, §4.28); opposite sector: carry the lower endpoint less one, floored at $0$ ($d_{\bar\tau}'\ge d_{\bar\tau}-1$, §4.28, 2026-11-10); full distance: the minimum of the two sector lower endpoints ($d'=\min(d_\tau',d_{\bar\tau}')$, so $d'\ge\min(L_\tau,L_{\bar\tau}-1)\ge d-1$; the comparison with $d$ itself is bounded in neither direction, §4.28's witness). Priced (§2a): the exposure price $p$ moves the opposite sector's lower endpoint to $\min(L_{\bar\tau},p)$ and the avoidance minimum $w$ pins the selected sector to $w$. The selected-sector carry was admitted 2026-11-06 (issue #295); the opposite-sector and full-distance carries and the two price cells 2026-11-10 (issue #331) | selected sector: reset to $+\infty$ (may exceed any prior upper, §4.28) unless the avoidance minimum pins it; opposite sector: carry the upper endpoint ($d_{\bar\tau}'\le d_{\bar\tau}$, §4.28), tightened to $\min(U_{\bar\tau},p)$ by the exposure price; full distance: the minimum of the two sector upper endpoints, tightened by child-valid witnesses |
+| `E-PUNCTURE` | reset to zero in every sector and the full distance, a refusal by design, not an impossibility: §4.29's unnamed free-qubit instance (puncturing qubit $2$ of $Q=\{0,1,2\}$ with the $Z$ display $\{0,1\}$) raises the $X$ distance $1\to2$, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal $\le$- or $\ge$-claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reset is sound; full-distance endpoints remain refused unless a separately admitted price supports them. The reduction is recorded at §4.29 (2026-11-10, issue #331): a puncture is the deletion of every row through $q$ followed by the removal of the then-free qubit, so each child sector distance is the lightest $q$-free logical of that intermediate code, $\min(w_{\mathrm{avoid},\sigma}(q),w_{\mathrm{hole},\sigma}(q))$; the hole price has no unpriced bound in either direction (increase $1\to2$, decrease $3\to2$), and its cell waits on the D2 lower bound | only witnesses valid in the child, as for the peel |
 | `E-EXTEND` | with $\Delta=\varnothing$: every sector carries its lower endpoint (distance cannot decrease under an added check); with $\Delta\neq\varnothing$: every interval's lower endpoint resets to zero | with $\Delta=\varnothing$: every sector rebuilds its upper endpoint from child-valid witnesses only (the pre-change upper endpoint is not a sound bound); with $\Delta\neq\varnothing$: only witnesses revalidating in the child |
 | `C-DIRECT-SUM` | combine corresponding endpoints with `min` | combine corresponding endpoints with `min` |
 | `E-GLUE` | in every sector and the full distance, `min` of the two factor ledgers' lower endpoints (sound without a certificate: the glued code is $C_A\oplus C_B$ with seam checks added, each sector distance of the direct sum is the minimum of the factors', and adding a check never lowers a distance, so each glued distance is at least the factor minimum, §4.31) | only the Z sector's, as `min` of the two factors' Z upper endpoints, and only under an admissible seam certificate (§2e); the X and full upper endpoints are left to witnesses valid in the child |
@@ -273,7 +289,23 @@ reference as provenance only; a nonempty source string is not validation.
  (or $+\infty$ if none), and the relation is
  $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma})$. The spliced sector
  needs no price. No carry rule for the spliced sector's upper endpoint is
- licensed by this hypothesis (see §4.13 and §2b).
+ licensed by this hypothesis (see §4.13 and §2b). The same input, with the
+ same definition over the parent's logicals through $q$, binds to a
+ transition $C\xrightarrow{\mathrm{E-PEEL}(q,\tau,r)}C'$ for the opposite
+ sector $\sigma=\bar\tau$, where §4.28 derives the same relation
+ $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma})$ (added 2026-11-10,
+ issue #331; extends this obligation, not discharged).
+
+- **Avoidance minimum $w_{\mathrm{avoid},\tau}$ (added 2026-11-10, issue
+ #331; extends this obligation, not discharged).** Binds to a transition
+ $C\xrightarrow{\mathrm{E-PEEL}(q,\tau,r)}C'$ and to the selected sector
+ $\tau$: asserts $d'_\tau=w_{\mathrm{avoid},\tau}(q)$, where
+ $w_{\mathrm{avoid},\tau}(q)=\min\{|v|:v\text{ a parent }\tau\text{-logical with }v_q=0\}$
+ is the least weight of a parent $\tau$-logical avoiding the peeled qubit
+ (§4.28: the child's $\tau$-logicals are exactly those). It is at least
+ $d_\tau$; a supplied value below the carried lower bound contradicts the
+ sound carry and is refused rather than widened. The consumer validates the
+ shape (a positive integer and an evidence reference), not the minimization.
 
 - **Sector-aware gauging prices $(w_X, w_Z)$ (added 2026-10-23, ;
  extends this obligation, not discharged).** Binds to a transition
@@ -364,6 +396,11 @@ the radius is recomputed against the child's own display:
 | `C-ADD-CHECK` | $\lambda$ | $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ | $\ge r$ |
 | `E-GRAFT` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$, and $r'\le 2r$ | **may increase** |
 | `C-DIRECT-SUM` | the two summand layouts, blockwise up to isometry (not their set-theoretic union, which need not be a layout) | $r=\max(r_A,r_B)$ | maximum of the summands |
+| `E-PEEL` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$ | $\le r$ |
+| `E-PUNCTURE` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$ | $\le r$ |
+| `E-LOCAL-HADAMARD` ($T=Q$) | $\lambda$ | $r'=r$ | unchanged |
+| `P-REBASE` | $\lambda$ | $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ | recomputed; no guaranteed direction |
+| `E-EXTEND` | not inherited: a layout $\lambda'$ on $Q\cup\Delta$ with $\lambda'\vert_Q=\lambda$ must be supplied (with $\Delta=\emptyset$, $\lambda$ itself) | $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})$ when supplied | $\ge r$ (when supplied) |
 
 The graft's bound is a **factor of two, not a non-increase**. A graft row is
 $a_i\oplus a_{i+1}$ restricted to $Q'$, with $q$ in both rows; two points of
@@ -371,10 +408,10 @@ the new row lying in different parts are at distance at most
 $\mathrm{diam}(a_i)+\mathrm{diam}(a_{i+1})$, and the opposite-sector rows are
 shortened at $q$, which cannot increase a diameter. The derivation is at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21 (interaction-radius transport). The naive claim
-that the graft preserves the radius is **false**, and a survey over the
-challenge's board entries records grafts that increase the radius
-( §5;
-see the survey report for counts).
+that the graft preserves the radius is **false**: over the challenge's board
+entries with $n\le 14$ at the pinned commit 9d30c66a, 198 of 823 applicable
+grafts increase it
+([`machine/experiments/layout_graft_survey.json`](../machine/experiments/layout_graft_survey.json)).
 
 ### 2d.3 The honesty conditions
 
@@ -407,7 +444,7 @@ a 2D plane) and **honest** (§2d.3); otherwise the verdict is
 `unrestricted`, since the caps are 2D-radius constants.
 
 The consumer's class verdict is exact, while the challenge verifier
-(an internal note at challenge commit 9d30c66a) compares a
+(`verify/qldpc_verify.py` at challenge commit 9d30c66a) compares a
 floating-point `math.dist` radius against `cap + 1e-9`; a radius within
 $10^{-9}$ above a cap can therefore be `in` for the challenge and `out` for
 the consumer. The two are not the same verdict.
@@ -417,6 +454,50 @@ deletion can only preserve or improve it, addition can only preserve or
 degrade it, and the graft can degrade it — but only where the parent's radius
 was within a factor of two of the cap, since $r'\le 2r$. Where the cap is at
 least twice the parent's radius, the graft preserves the class outright.
+
+### 2d.5 Layout cells
+
+The transport facts of §2d.2 are judgment cells: one row per transition, with
+the child's layout, the radius cell and its direction, and the honesty cell,
+each with its evidence status in brackets. Throughout, $\lambda$ is the
+parent's layout and $\lambda'$ the child's, $r$ and $r'$ are the parent's and
+the child's interaction radius (§2d.1), $Q$ is the parent's qubit set,
+$\mathit{rows}'$ is the child's display, and, for the two binary transitions,
+$r_A$ and $r_B$ are the factors' radii in their own layouts. "Recomputed"
+means $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$, exact and
+with no hypothesis. The derivations are at
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21 (the
+2026-11-10 addendum for the transitions after `E-GRAFT`), the cells are
+transcribed in [`machine/semantics.json`](../machine/semantics.json) under
+`layout_cells`, and the randomized layout-conformance harness
+(`machine/experiments/layout_conformance_harness.py`) checks every row on
+random states and layouts. A harness run is evidence, never confirmation.
+
+| Transition | Child's layout $\lambda'$ | Radius cell | Direction | Honesty cell |
+| --- | --- | --- | --- | --- |
+| `C-SKIP` | $\lambda$ | carries, $r'=r$ `[proved]` | unchanged | preserved `[proved]` |
+| `C-DELETE-CHECK` | $\lambda$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]` |
+| `C-ADD-CHECK` | $\lambda$ | carries, $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ `[proved]` | $r'\ge r$ | preserved `[proved]` |
+| `C-SEQUENCE` | the layout after the last step | carries by composition of the per-step cells `[proved]` (§4.11) | per step | per step; a merged or supplied layout is owed at the step that needs it |
+| `C-DIRECT-SUM` | the two summand layouts, blockwise up to isometry; a merged layout must be supplied | carries, $r=\max(r_A,r_B)$ `[proved]` | maximum of the summands | **conditional**: the merged layout must be honest (§2d.3); honesty of the summands does not imply it |
+| `E-GRAFT` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | carries, recomputed, and $r'\le 2r$ `[proved]` | may increase; the non-increase $r'\le r$ is **false** | preserved `[proved]`: a restriction of an honest layout is honest |
+| `E-PEEL` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]`: restriction |
+| `E-PUNCTURE` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]`: restriction |
+| `E-LOCAL-HADAMARD` ($T=Q$) | $\lambda$ | carries, $r'=r$ `[proved]` | unchanged | preserved `[proved]` |
+| `P-REBASE` | $\lambda$ | carries, recomputed `[proved]` | none guaranteed: both $r'>r$ and $r'<r$ occur | preserved `[proved]` |
+| `E-EXTEND`, $\Delta\neq\emptyset$ | not inherited: a layout $\lambda'$ on $Q\cup\Delta$ with $\lambda'\vert_Q=\lambda$ must be supplied | carries when supplied, $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})$ `[proved]`; no radius otherwise | $r'\ge r$ when supplied | **conditional**: the supplied layout must be honest; the parent's honesty does not imply it |
+| `E-EXTEND`, $\Delta=\emptyset$ | $\lambda$ | as `C-ADD-CHECK`, once per added row `[proved]` | $r'\ge r$ | preserved `[proved]` |
+| `E-GLUE` | the two factor layouts, blockwise as for `C-DIRECT-SUM`; a merged layout must be supplied | carries, $r=\max(r_A,r_B,\max\{\mathrm{diam}(s):s\ \text{a seam row}\})$ `[proved]` (the direct-sum cell, then one `C-ADD-CHECK` cell per seam check) | $r\ge\max(r_A,r_B)$ | **conditional**: the merged layout must be honest |
+| `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` (constructors, 2026-11-11), `L-NESTED-CSS` (constructor, 2026-11-13) | none inherited: there is no parent; a layout on the constructed qubits must be supplied | recomputed when supplied, $r=\max\{\mathrm{diam}_{\lambda}(s):s\in\mathit{rows}\}$ over the constructed display `[proved]` (exact computation, §2d.1); no radius otherwise | none: no parent to compare with | **conditional**: the supplied layout must be honest (§2d.3) |
+
+Four entries are recorded as non-transfer cases rather than as monotone cells:
+`E-GRAFT`'s factor-of-two bound, `E-EXTEND`'s supplied layout, `P-REBASE`'s
+recomputed radius with no direction, and the honest-merge premise of
+`C-DIRECT-SUM` and `E-GLUE`. A conditional cell's verdict applies only once
+its layout premise is met; the consumer does not build merged or supplied
+layouts, so those premises are inputs, and the radius is never a distance (no
+lower bound, price, or witness enters any row). The locality class follows
+from the direction column as §2d.4 states; it takes no row of its own.
 
 
 ## 2e. Seam certificate for `E-GLUE` (conditional, admitted 2026-10-23)
@@ -441,15 +522,49 @@ edges), which would make the gluing ill-defined.
 insufficient to certify a general merge, so a flat-DEM check that sees only
 factor data and connectivity **must return `inconclusive`** rather than a
 verdict. The seam certificate above is the only licensed route, and it
-requires the full move word, not a summary.
+requires the full move word, not a summary. Scope qualifier: this no-go is
+stated at graph-homology / selected-sector scope only; it does not prove
+that every composition loses distance, nor that no richer certificate can
+work — it says only that a flat check over factor data and connectivity
+cannot certify within that scope.
+
+**Positive composition criteria (issue #446).** The seam certificate above is
+the baseline. Three further conditional criteria grow `E-GLUE` into a family
+of typed, conditional judgments and certificate providers. Each is a
+separate conditional row with its hypothesis attached; none is a universal
+composition rule. Odd-cycle table omission and an incomplete certificate
+producer stay visible (they are not discharged here); circuit preservation
+is empirical where the source says so.
+
+| Criterion | Hypothesis (consumer-supplied) | Verdict when hypothesis holds | Verdict otherwise |
+| --- | --- | --- | --- |
+| Interface classification | the seam interface is classified as a monotone top-to-bottom surface-code seam with compatible move words (the §2e move-word equality) | the interface class is admissible; the seam certificate applies | `inconclusive` — the interface is not licensed |
+| Union-layout immunity | the union layout has no odd cycle in the seam graph (the seam graph is bipartite) | the layout is immune: gluing does not introduce a new logical of weight below the factor minimum | not certified; odd-cycle omission stays visible and the check returns `inconclusive` |
+| Boundary-signature certificates | the boundary signatures of the two factors agree on the shared boundary | a certified bound $d_Z(Q)=\min(d_A,d_B)$ is issued under the agreed signature | no certificate; the check returns `inconclusive` |
+
+Scope and visibility: these rows inherit the §2e scope (monotone top-to-bottom
+seams, surface code / planar). The odd-cycle table may be omitted and the
+certificate producer may be incomplete; both stay visible rather than being
+silently treated as discharged. Circuit-level preservation remains empirical.
+No flat-DEM composition recognition is claimed, and no universal composition
+rule is added.
+
+**Completion (2026-11-14).** The "Done when" criteria of issue #446 are met:
+the baseline seam certificate is already admitted in §2e, and the remaining
+delta (interface classification, union-layout immunity, boundary-signature
+certificates) is admitted here as conditional rows with hypotheses attached,
+with odd-cycle omission, incomplete producer, and empirical circuit
+preservation kept visible.
 
 **Interval transformer (§2b `E-GLUE` row).** Under an admissible seam
 certificate the Z-sector upper endpoint is the minimum of the two factors'
 Z upper endpoints; in every sector and the full distance the lower endpoint
 is the minimum of the two factors' lower endpoints (sound without a
 certificate). The X and full upper endpoints are left to witnesses valid in
-the child. This is the transformer whose soundness is derived at
-`OPERATIONAL_SEMANTICS.md` §4.32.
+the child, the factors' own witnesses among them once revalidated there
+(`OPERATIONAL_SEMANTICS.md` §4.31, instance-wise equality, 2026-11-10). This
+is the transformer whose soundness is derived at `OPERATIONAL_SEMANTICS.md`
+§4.32.
 
 Scope: monotone top-to-bottom seams only (surface code / planar). Perpendicular
 seams, arbitrary removed plaquette checks, and circuit-level preservation are
@@ -465,7 +580,7 @@ calculus gap, and the lower endpoints remain sound regardless.
 ## 2f. Admitted CSS-level extension cells (conditional, admitted 2026-10-23)
 
 The following Gate 6 CSS-level extensions are admitted **as conditional cells**
-under the scope decision recorded in `SCOPE.md`: they are in scope
+under the 2026-10-23 scope decision ([`VERSIONING.md`](VERSIONING.md) §5): they are in scope
 as moves. Some rows carry structural facts with no consumer-supplied
 hypothesis (namespace arithmetic, rank bookkeeping, sector exchange); others
 are conditional on a hypothesis or refuse outright. Otherwise the
@@ -478,8 +593,13 @@ this decision.
 `peel`, `puncture`, `extend`, `hadamard` (admitted for $T=Q$ only), and
 `rebase`. `E-GLUE` has no unary grammar production — gluing is binary — but
 its evaluator transition was admitted 2026-10-27
-(`OPERATIONAL_SEMANTICS.md` §4.31), with the logical-witness prerequisite
-(`TAXONOMY.md` §2.10) still unmet, so its index row stays `taxonomy-only`.
+(`OPERATIONAL_SEMANTICS.md` §4.31); the logical-witness field is now defined
+as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1, 2026-11-11, issue #332)
+and the §2e equality is discharged by extraction of Theorem 4 / claim 7.4 of
+*composition-distance* (§4.31, 2026-11-11), so the index row moves from
+`taxonomy-only` to `transition-defined`, and the boundary/edge-label field is
+also defined as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1/§1a,
+2026-11-12/13, issues #366 and #440), so both Gate 6 prerequisites are met.
 Sound admission is discharged under the stated hypotheses
 (`OBL-GATE6-CSS-EXTENSIONS`, `OPERATIONAL_SEMANTICS.md` §4.32,
 2026-10-28); the cells remain conditional on their hypotheses and `promoted`
@@ -489,13 +609,15 @@ rule's *source* is the named section, not this table alone).
 
 | Move | Property | Carries when hypothesis supplied | Hypothesis (consumer-supplied) | Source | Status |
 | --- | --- | --- | --- | --- | --- |
-| `E-GLUE` | $d_Z$ | $d_Z(Q)=\min(d_A,d_B)$ for an admissible seam; lower endpoints are sound without a certificate (the glued code is the direct sum with seam checks added, so each sector distance is at least the factor minimum: §4.31) | full move word over `{U,D,L,R}^*` with `w(c_A)=w(c_B)` (§2e), **plus** Theorem 4 / claim 7.4 (*composition-distance*) as a hypothesis for the equality $d_Z(Q)=\min(d_A,d_B)$; lower endpoints are sound without it | seam certificate (§2e); Theorem 4 / claim 7.4 (*composition-distance* §6.1) as a **cell hypothesis**, not a theorem of §4.31 | conditional cell admitted; **evaluator transition admitted 2026-10-27** (§4.31); logical-witness prerequisite still open; equality is a cell hypothesis, not a carved-out obligation |
+| `E-GLUE` | $d_Z$ | $d_Z(Q)=\min(d_A,d_B)$ for an admissible seam; lower endpoints are sound without a certificate (the glued code is the direct sum with seam checks added, so each sector distance is at least the factor minimum: §4.31) | full move word over `{U,D,L,R}^*` with `w(c_A)=w(c_B)` (§2e); the equality $d_Z(Q)=\min(d_A,d_B)$ is discharged by extraction of Theorem 4 / claim 7.4 of *composition-distance* (§4.31, 2026-11-11, issue #332), conditioned on survival of a factor representative; lower endpoints are sound without it | seam certificate (§2e); Theorem 4 / claim 7.4 (*composition-distance* §6.1) **discharged by extraction** (§4.31, 2026-11-11), not a hypothesis | conditional cell admitted; **evaluator transition admitted 2026-10-27** (§4.31); logical-witness field defined (STATE_MODEL.md §1, 2026-11-11); equality discharged (2026-11-11); boundary/edge-label field defined (STATE_MODEL.md §1, 2026-11-12, issue #366) |
 | `E-PUNCTURE` | $n$ | $n'=n-1$, exactly | **none** — the namespace arithmetic is the update itself | `OPERATIONAL_SEMANTICS.md` §2, §4.29 | transition defined; cell carried; sound admission discharged (§4.32), conditional on hypotheses |
 | `E-PUNCTURE` | $k$ | $k'=k-1+t_X+t_Z$, exactly ($t_\tau$ = number of displayed $\tau$-rows containing $q$; §4.29) | **none** — the rank bookkeeping is derivable, not supplied | §2, §4.29 | transition defined; cell carried |
-| `E-PUNCTURE` | $d$, $d_X$, $d_Z$ | *(not stated in this scope)* | *(no hypothesis exists for a price: hole-punch pricing is blocked on the D2 lower bound, — no cell, no fixture)* | §2, §4.29 | **nothing carries** (§4.29's unnamed-free-qubit increase: $d_X\;1\!\to\!2$); ledger resets |
+| `E-PUNCTURE` | $d$, $d_X$, $d_Z$ | *(not stated in this scope)* | *(no hypothesis is admitted for a price: the reduction of §4.29, deletions then a free-qubit removal, makes the price a hole price, blocked on the D2 lower bound; no cell, no fixture)* | §2, §4.29 | **nothing carries** (§4.29's unnamed-free-qubit increase $d_X\;1\!\to\!2$ and deleted-row decrease $d_X\;3\!\to\!2$); ledger resets; reduction recorded 2026-11-10 (issue #331) |
 | `E-PEEL` | $n$ | $n'=n-1$, exactly | **none** | §2, §4.28 | transition defined; cell carried |
 | `E-PEEL` | $k$ | $k'=k$, exactly (§4.28's injectivity argument: the opposite sector's restriction never loses rank) | **none** — the rank bookkeeping is derivable, not supplied | §4.28 | transition defined; no price cell |
-| `E-PEEL` | $d$,$d_X$,$d_Z$ | *(not stated in this scope)* | *(none stated)* | §2, §4.28 | **nothing carries**, by design: §4.28 derives $d_\tau'\ge d_\tau$ and $d_{\bar\tau}'\le d_{\bar\tau}$, and no cell carrying either is admitted; ledger resets |
+| `E-PEEL` | $d_\tau$ (selected sector) | lower endpoint carries: $d_\tau'\ge d_\tau$ (§4.28); exact under the avoidance minimum: $d_\tau'=w_{\mathrm{avoid},\tau}(q)$ (§2a, §2c) | **none** for the carry; the avoidance minimum for the exact cell | §2, §4.28 | cell admitted 2026-11-06 (issue #295): selected-sector lower carry; price cell admitted 2026-11-10 (issue #331) |
+| `E-PEEL` | $d_{\bar\tau}$ (opposite sector) | both endpoints carry within one: $d_{\bar\tau}-1\le d_{\bar\tau}'\le d_{\bar\tau}$ (§4.28); exact under the exposure price: $d_{\bar\tau}'=\min(d_{\bar\tau},w_{\mathrm{expose},\bar\tau}(q))$, the graft's relation at $m=1$ (§2a, §2c) | **none** for the carries; the exposure price for the exact cell | §2, §4.28 | upper carry admitted 2026-11-06 (issue #295); lower carry less one and price cell admitted 2026-11-10 (issue #331) |
+| `E-PEEL` | $d$ (full distance) | both endpoints are the minima of the two sector endpoints: $d'=\min(d_\tau',d_{\bar\tau}')\ge\min(d_\tau,d_{\bar\tau}-1)\ge d-1$ (§4.28) | *(none)*; the two sector prices pin it when both are supplied | §2, §4.28 | admitted 2026-11-10 (issue #331); the comparison $d'\;\mathrm{vs.}\;d$ is bounded in neither direction (§4.28's witness) |
 | `E-EXTEND` (patch growth / breeding) | $n$, $k$ | $n'=n+|\Delta|$; $k'=k+|\Delta|-s_X-s_Z$, exactly | **none** — the row-count arithmetic is the update | §2, §4.30 | transition defined; cell carried |
 | `E-EXTEND` (patch growth / breeding) | $d$,$d_X$,$d_Z$ | with $\Delta=\varnothing$: the §2a `C-ADD-CHECK` monotonicity in both sectors (lower endpoints carry; no sector's upper endpoint carries, since an added $X$ row can raise $d_Z$: §4.30); with $\Delta\neq\varnothing$: none | *(no hypothesis is needed for the $\Delta\neq\varnothing$ refusal — no formula is admitted)* | §2, §4.30 | no distance rule for the namespace-growing instance |
 | `E-LOCAL-HADAMARD` | sector swap ($T=Q$) | exact: $d_X'=d_Z$, $d_Z'=d_X$, $d'=d$; $n,k,w$ unchanged | **none** — the $T=Q$ instance needs no consumer input | §2, §4.27 | transition defined; the general split-subset instance has **no** cell and no rule |
@@ -508,7 +630,7 @@ these moves has a source-stated distance formula to reproduce. Sound admission i
 (`OPERATIONAL_SEMANTICS.md` §4.32, 2026-10-28); the cells remain conditional
 on their hypotheses, and `promoted` remains a review disposition.
 
-**Instance reading (2026-10-28).** The extension cells above are among the
+**Instance reading (S4, 2026-10-28).** The extension cells above are among the
 bespoke items S1 §7.3 leaves out of the generic core (the distance atoms, the
 conditional price cells, the seam certificate, and the extension cells whose
 transitions are new); `P-REBASE` and `E-GRAFT` are already recorded in §7.3 as
@@ -517,17 +639,62 @@ these moves, it is cited through the move-monotonicity lemmas of S3 (§9.4)
 only; no transformer of S2 (§8.3) is claimed for a move outside §8.3's scope.
 No cell verdict, evidence label, or qualification changes.
 
+**Disposition (2026-11-10, issues #315 C2/C3/C5).** The following were accepted
+for work in v0.2: sector-aware price cells for `E-PUNCTURE`/`E-PEEL`
+(puncture blocked on the D2 lower bound), promotion of `E-GLUE` from
+conditional lower-bound connector to a licensed connected-code composition with
+seam-certificate equality (conditional on the logical-witness prerequisite),
+and layout-transfer judgment cells. The layout cells landed 2026-11-10 (issue
+#333; §2d.5). Neither of the other two is admitted by the disposition; the
+cells above remain as recorded.
+
+## 2g. Admitted typed constructors (`transition-defined`, 2026-11-11)
+
+The nine constructors admitted on 2026-11-11 (issues #330 and #369;
+`TERM_LANGUAGE.md` §2, `OPERATIONAL_SEMANTICS.md` §2 cards, §4.34, and
+§4.35) build a presented state from finite data. `A-PRODUCT`, `A-DOUBLE`,
+and `A-CONCAT` take presented states among their inputs, and the output is
+still a new state on a fresh namespace: no cell of an input state is
+carried to it. `L-NESTED-CSS` was admitted on the same terms on 2026-11-13
+(issue #445; `OPERATIONAL_SEMANTICS.md` §4.36). So nothing is carried: every
+cell below is computed exactly over the constructed display or starts
+unknown. Distances are the point of the explicit-hypothesis discipline the
+2026-11-10 disposition asked for: no constructor computes or asserts a
+distance, the constructed state's ledger starts at $[0, +\infty)$ in every
+sector and for the full distance, a lower endpoint rises only through a
+supplied bound with a source (recorded as an `input lower bound` condition),
+and an upper endpoint only through a witness validated in the state (§2c).
+The consumer realizes this as `DistanceLedger.for_constructed`.
+
+| Constructor | $n$ | $k$ | $w$, Tanner components, $r$ | $d$, $d_X$, $d_Z$ |
+| --- | --- | --- | --- | --- |
+| `L-HGP` | $n_1 n_2 + m_1 m_2$, exact | $k_1 k_2 + k_1^{T} k_2^{T}$, exact (§4.34) | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | no cell; $[0, +\infty)$ until a sourced bound or a validated witness is supplied; the hypergraph-product distance theorem (Tillich and Zémor 2014) is a source a consumer may name, not a cell |
+| `L-LIFTED` | $|G| (n_A n_B + m_A m_B)$, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
+| `L-GROUP-ALGEBRA` | $2|G|$, exact | $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$, exact (§4.34) | as above | no cell; as above |
+| `A-CONCAT` | $n_{\mathrm{in}} n_{\mathrm{out}}$, exact | $k_O$, exact (§4.34) | as above | no cell; the §2a tower price provider supplies deletion and exposure prices of the constructed state from level data |
+| `A-PRODUCT` | $m_Z^A m_X^B + n_A n_B + m_X^A m_Z^B$, exact | $k_A k_B$, exact (§4.35) | as above | no cell; as above. The distances may depend on the displays of the factors (§4.35) |
+| `A-DOUBLE` | $2 n_C$, exact | rank bookkeeping of the display, exact; $2 k_C$ for the empty wiring (§4.35) | as above | no cell; as above. Nothing is inherited from the input state's ledger |
+| `L-BALANCED` | the number of orbits on the two families of index pairs, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
+| `L-TANNER` | the supplied $n$ | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. No expansion hypothesis is an input |
+| `L-TILE` | the number of site classes, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
+| `L-NESTED-CSS` | the common number of columns, exact | $n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$, exact (§4.36) | as above | no cell; as above. The minimum distance of the code checked by $H_Z$ is a lower bound on $d_X$, and that of the code checked by $H_X$ on $d_Z$ (§4.36): each is a source a consumer may name for a supplied bound, not a cell, and neither is an input |
+
+A supplied bound that contradicts a validated witness is a failed premise
+(`no_derivation`), as everywhere in §2b. For `A-DOUBLE`, `L-TANNER`,
+`L-TILE`, and `L-NESTED-CSS` the cells above are stated for an evaluation: an input whose
+natural rows do not commute has no derivation and no cells.
+
 ## 3. What `unavailable` means, and why it is a position
 `unavailable` is **withheld by design commitment**. It is not ignorance, not a gap
 awaiting closure, and not a synonym for `false`.
 
-Two review passes fixed the boundary and the artifacts respect it:
+Two red-team passes fixed the boundary and the artifacts respect it:
 
-- **Review finding.** The `unavailable` row once covered deletion
+- **S6.** The `unavailable` row once covered deletion
  *distance*, which is true and derivable — $d'\le d$ follows from the two sector
  bounds by `MIN-ORDER` and `TRANSITIVITY`. The row was narrowed to **exact
  post-deletion distance values**, which are genuinely underivable.
-- **Review finding.** `not_derivable` must be labelled for **one
+- **R9.** `not_derivable` must be labelled for **one
  claim in a stated scope**, naming the rule system and the record date.
 
 **Consequence, stated plainly:** the calculus will not be complete, and no
@@ -535,8 +702,8 @@ artifact may describe it as aiming at completeness in the MVP.
 
 ## 4. The `W13` half — absence of derivation as the witness
 
-*Dispositioned 2026-10-11 (maintainer). Full analysis is recorded in the
-review notes.*
+*Dispositioned 2026-10-11 (maintainer). Full analysis in
+EXPRESSIBILITY.md.*
 
 The `W13` half — *"a claim referring to a deleted generator is not transported"* —
 needs **no rule whose conclusion is a negative**. Transport is already a
@@ -558,11 +725,82 @@ means the refutation, not the theorem:**
  later release adding a rule could close a gap today's refutation reports.
 - **Decidability of the search is owed as an argument** for the instance.
 
+**The generator-referencing claim (2026-11-11, issue #340; assertion-language
+extension, candidate release `stdCSS-3`).** For a position $i$ of the
+evaluation chain of a closed term, an identifier $r$, a sector $\sigma$, and
+a support $S \subseteq Q$, the claim $\mathsf{gen}_i(r,\sigma,S)$ reads: the
+state at position $i$ displays a row with identifier $r$, sector $\sigma$,
+and support $S$. It refers to a generator by its identifier, so at a position
+where $r$ is not displayed it has no denotation; the language has no negation,
+and nothing false of a row is asserted there. Its rules are instantiation rows
+of L3, one per transition of the evaluation chain:
+
+| Step from position $i$ to $i+1$ | Rule | Reading |
+| --- | --- | --- |
+| none (position $0$) | concludes $\mathsf{gen}_0(r,\sigma,S)$ for every row $(r,\sigma,S)$ the input state displays | source: the input display is the base expression of the closed term (issue #368) |
+| `C-ADD-CHECK` of $(\sigma,S)$ | concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ for the canonical mint $r$ of the input's `used` | source: the claim originates where its generator is minted |
+| `C-SKIP` | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the state is unchanged |
+| `C-DELETE-CHECK` of $r'$, with $r \ne r'$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives |
+| `C-ADD-CHECK` of any row | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | displayed rows are kept |
+| `C-DELETE-CHECK` of $r$ | **no rule** | the `W13` half |
+| `E-GRAFT` at $q$ in sector $\tau$ along the chain $\vec r$, with $r \notin \vec r$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S')$, where $S' = S \setminus \{q\}$ when $\sigma$ is the sector opposite to $\tau$ and $q \in S$, and $S' = S$ otherwise | the referenced generator survives; an opposite-sector row loses the grafted qubit (issue #368) |
+| `E-GRAFT` at $q$ in sector $\tau$ along $\vec r = (r_1,\ldots,r_m)$ | concludes $\mathsf{gen}_{i+1}(r'_j,\tau,S_j \mathbin{\triangle} S_{j+1})$ for $1 \le j < m$, with $S_j$ the support of $r_j$ at position $i$ and $r'_j$ the $j$-th identifier the graft mints | source: the claim originates where the adjacent-product row is minted (issue #368) |
+| `E-GRAFT` along $\vec r$, with $r \in \vec r$ | **no rule** | the graft retires the chain's generators: the `W13` half for the graft |
+| `E-EXTEND` (any displayed row) | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the displayed rows are kept; the claim follows the identifier |
+| `E-EXTEND` (minted row) | concludes $\mathsf{gen}_{i+1}(r',\sigma,S')$ for each row the command mints, with $r'$ the canonical mint, $\sigma$ the sector of the addition, and $S'$ its sorted support | source: the claim originates where the row is minted |
+| `E-PEEL` at $q$ in sector $\tau$, with $r \ne r_{\mathrm{id}}$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S')$, where $S' = S \setminus \{q\}$ when $\sigma$ is the sector opposite to $\tau$ and $q \in S$, and $S' = S$ otherwise | the referenced generator survives; an opposite-sector row loses the peeled qubit (the claim changes support). The shortening agrees with `peelSupport` because `E-PEEL` requires exactly one row of sector $\tau$ through $q$ |
+| `E-PEEL` at $q$ in sector $\tau$, with $r = r_{\mathrm{id}}$ | **no rule** | the peel retires the named row: the `W13` half for the peel |
+| `E-PUNCTURE` at $q$, with $q \notin S$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives (its support does not contain $q$) |
+| `E-PUNCTURE` at $q$, with $q \in S$ | **no rule** | the puncture deletes every row through $q$: the `W13` half for the puncture |
+| `E-LOCAL-HADAMARD` ($T=Q$) | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma',S)$, with $\sigma' = \overline{\sigma}$ when $T$ is non-empty and $\sigma' = \sigma$ otherwise | the referenced generator survives and keeps its identifier; its sector swaps (design choice, issue #424) |
+| `P-REBASE` at sector $\tau$, with $\sigma \ne \tau$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives (it is of the untouched sector) |
+| `P-REBASE` at sector $\tau$, with $\sigma = \tau$ | **no rule** | the rebase rewrites the sector's display: the `W13` half for the rebase |
+| `P-REBASE` at sector $\tau$ (minted row) | concludes $\mathsf{gen}_{i+1}(r',\tau,S')$ for each row the rebase mints, with $r'$ the canonical mint and $S'$ the $\mathbb{F}_2$ combination of the sector's displayed rows selected by the coefficient row | source: the claim originates where the row is minted |
+
+The side conditions $r \ne r'$ and $r \notin \vec r$ are the
+schema-composition condition of `spec/OPERATIONAL_SEMANTICS.md` §4.11 read
+on this claim. In the minted row, $q$ belongs to both $S_j$ and $S_{j+1}$, so
+the symmetric difference $S_j \mathbin{\triangle} S_{j+1}$ lies in
+$Q \setminus \{q\}$. The graft is the one step under which a transported
+claim changes its support: the claim follows the identifier, and the row
+that identifier names is rewritten.
+
+The input-display rule is a rule about position $0$ of the chain the
+derivation is over. For a sequence $m_1; m_2$, a derivation over the second
+segment may use it at the seam state, which is position $0$ of that segment
+and an interior position of the composed chain. Such a derivation transports
+to the composed chain under a **seam condition**: the composed chain derives
+$\mathsf{gen}(r,\sigma,S)$ at the seam for every row the seam state
+displays. This is the schema-composition condition of the positive half for
+this claim. A row produced by a Gate 6 command can carry a derivation. The
+seam condition is proved on chains whose every step is a kernel primitive,
+the graft, or one of the five Gate 6 commands (§4.11, *Seam condition
+on chains of single steps*), by `derives_gen_of_displayed` and
+`seamRowsDerived_of_stepChain`.
+Sentences that are not generator-referencing claims transport with no seam
+condition, because no rule concludes one of them from a
+generator-referencing claim. Soundness of the rows and both `W13` halves
+are derived at §4.11.
+
 Mechanized shape: `not_derivable_of_false` in
-`lean/CodeCalculus/Transport.lean` is the per-evaluation witness, for the
-slice's sentence language, which has no claim that refers to a generator; the
-`W13` half itself therefore has no instance there, and each refutation is
-relative to that inventory, per the second cost above.
+`lean/CodeCalculus/Transport.lean` is the per-evaluation witness. With the
+generator-referencing claim in the sentence language (`Ann.gen`, rows
+`Derives.genMint`, `genSkip`, `genDelete`, `genAdd`), the `W13` half has its
+derivation-level instance there: `not_derivable_gen_of_deleted`, with
+`derives_gen_across_other_deletion` and
+`not_derivable_gen_across_own_deletion` as the two halves on one parent. The
+input-display rule is `Derives.genInput`, the two graft rows are
+`Derives.genGraft` (with the support `graftSupport`) and
+`Derives.genGraftMint`, the graft's refusal is
+`not_derivable_gen_of_grafted`, and the seam condition is `SeamRowsDerived`
+with `Derives.shift_gen` (issue #368), discharged on every chain of single (non-sequence) steps by
+`seamRowsDerived_of_stepChain` in
+`lean/CodeCalculus/SeamChains.lean` (issue #424). The Gate 6 rows for the
+claim are `Derives.genExtend`, `genExtendMint`, `genPeel`, `genPuncture`,
+`genHadamard`, `genRebase`, and `genRebaseMint`, with refusals
+`not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured`, and
+`not_derivable_gen_of_rebased` (issue #424). Each refutation is relative to that
+inventory, per the second cost above.
 
 ## 5. Transport through sequences
 
@@ -1026,7 +1264,8 @@ axis of $P$:
 | `E-GRAFT` | per-sector: splice carries lower (monotone in $\sqsubseteq^{\mathrm{low}}$), non-splice carries upper (monotone in $\sqsubseteq^{\mathrm{up}}$), full distance resets unless priced (monotone via the $x\mapsto\min(x,p)$ map) | §2b `E-GRAFT` row, §4.13 |
 | `P-REBASE` | identity is monotone | §2b `P-REBASE` row (unchanged) |
 | `E-LOCAL-HADAMARD` ($T=Q$) | the swap $X\leftrightarrow Z$ is monotone | §2b `E-LOCAL-HADAMARD` row |
-| `E-PEEL`, `E-PUNCTURE` | lower reset to $0$ is constant (monotone); upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-PEEL`/`E-PUNCTURE` rows |
+| `E-PEEL` | selected lower carry is monotone in $\sqsubseteq^{\mathrm{low}}$; opposite upper carry and the full-distance upper carry are monotone in $\sqsubseteq^{\mathrm{up}}$; reset lower endpoints are constant | §2b `E-PEEL` row, §4.28 |
+| `E-PUNCTURE` | lower reset to $0$ is constant (monotone); upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-PUNCTURE` row |
 | `E-EXTEND` | $\Delta=\varnothing$: lower carry is monotone in $\sqsubseteq^{\mathrm{low}}$, upper rebuild is monotone in $\sqsubseteq^{\mathrm{up}}$; $\Delta\ne\varnothing$: lower reset to $0$ is constant, upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-EXTEND` row |
 | `E-GLUE` | lower endpoints: $\min$ of the two factor lowers is monotone in $\sqsubseteq^{\mathrm{low}}$; Z upper endpoint: $\min$ of the two factor Z uppers is monotone in $\sqsubseteq^{\mathrm{up}}$ under an admissible certificate; X and full upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-GLUE` row, §2e |
 | `C-DIRECT-SUM` | `min` on endpoints is monotone in $\sqsubseteq$ | §2b `C-DIRECT-SUM` row |
@@ -1075,6 +1314,15 @@ S2's `Interval.lean` (`ExtNat`, `AbsInterval`, `gamma`, `preciseLe`). The Lean
 development is a transcription aid, not a proof assistant result; it does not
 establish soundness, and no cell's evidence status depends on it.
 
+[`lean/CodeCalculus/Gate6Soundness.lean`](../lean/CodeCalculus/Gate6Soundness.lean)
+states the §2b and §2e transformers of the Gate 6 cells (`propagateGate6`,
+`glueLedger`) with the soundness of `OPERATIONAL_SEMANTICS.md` §4.32
+(`gate6_interval_soundness`, `glue_transformer_sound`) and the
+move-monotonicity of §9.4 (`propagateGate6_monotone`, `glueLedger_monotone`),
+conditional on the distance relations of §4.26 to §4.30 as hypotheses
+(issue #311). It is a transcription aid in the same sense and changes no
+cell's evidence status.
+
 ---
 
 ## 6. What this document does not do
@@ -1086,10 +1334,10 @@ they are not `promoted`, which is a human-owned review disposition
 
 It does not admit a claim into the calculus. Admission is the schema rule of
 [`CLAIMS.md`](CLAIMS.md), and its conformance-contract
-half (****) is implemented — the
+half (**D-1**) is implemented — the
 structured premise fields are wired through `machine/fixtures/mvp_fixtures.json`
 and checked by `machine/fixture_conformance.py`. The remaining mechanized
-judgment-layer work is tracked separately, not by .
+judgment-layer work is tracked separately, not by D-1.
 
 The three obligations added for (graft transition, interval transport,
 and price-input trust boundary) are discharged by hand derivation (§4.12,

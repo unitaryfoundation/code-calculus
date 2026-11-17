@@ -1,4 +1,4 @@
-"""Lean <-> Python fixture coverage report (spike for ).
+"""Lean <-> Python fixture coverage report (spike for issue #143).
 
 This is a bounded, reversible conformance *link*, not a refinement theorem.
 It does not execute Lean. It compares the set of pinned fixture states that
@@ -13,14 +13,12 @@ set executed by `machine/fixture_conformance.py`, and reports:
   - a mismatch count (uncovered fixtures).
 
 What it cannot see is stated in the report and in
-`the internal notes`. Since the Lean side
+`the archived notes`. Since issue #246 the Lean side
 replays the single-step and two-step fixtures under `Eval` and `EvalExpr`
 (`lean/CodeCalculus/FixtureEvalReplay.lean`); this report counts
 well-formedness theorems only and does not read those replays. Distances and
 prices are still not computed on the Lean side.
 """
-
-from __future__ import print_function
 
 import json
 import os
@@ -142,7 +140,7 @@ def coverage_report():
 
 def main():
     r = coverage_report()
-    print("Lean <-> Python fixture coverage")
+    print("Lean <-> Python fixture coverage (issue #143 spike)")
     print("  python fixtures:                  %d" % r["python_fixtures"])
     print("  lean state definitions:           %d" % r["lean_state_defs"])
     print("  lean covered fixtures:            %d" % r["lean_covered_fixtures"])
@@ -157,7 +155,7 @@ def main():
     print("What this cannot see:")
     print("  - This report counts well-formedness theorems only. The Eval/EvalExpr")
     print("    replays of the single-step and two-step fixtures (positive and negative)")
-    print("    live in lean/CodeCalculus/FixtureEvalReplay.lean and are")
+    print("    live in lean/CodeCalculus/FixtureEvalReplay.lean (issue #246) and are")
     print("    not counted here.")
     print("  - No distance, price, or interval transport is computed on the Lean side.")
     if "W24" in r["lean_uncovered_fixtures"]:

@@ -1,4 +1,4 @@
-"""Certificate-layer prototype tests.
+"""Certificate-layer prototype tests (issue #142, first branch).
 
 The format and checker live in `machine/certificates.py`; the committed
 instance artifact is `the conformance harness`. No
@@ -42,9 +42,12 @@ def built_certificate(sector):
 class KillCertificateTests(unittest.TestCase):
     """The kill certificate certifies the pinned parent's sector bound."""
 
-    @unittest.skip("pinned replay unavailable")
     def test_both_sector_certificates_are_accepted(self):
-        return
+        with open(
+            os.path.join(HERE, "experiments", "issue21_challenge_replay.json"),
+            encoding="utf-8",
+        ) as fh:
+            replay = json.load(fh)
         parent_exact = replay["addition"]["parent_exact_distance_experiment"]
         for sector in ("X", "Z"):
             certificate = built_certificate(sector)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce the small-code and real-deletion challenge exercises.
+"""Reproduce issue 21's small-code and real-deletion challenge exercises.
 
 The qLDPC verifier is invoked unchanged. Exact enumeration is kept in this
 experiment only: one small parent measurement seeds the interval, and a second
@@ -26,71 +26,13 @@ from machine.priced_calculus import (  # noqa: E402
     export_challenge_entry,
     run_sequence,
     support_mask,
+    in_span,
 )
+
+from machine.oracle import exact_distances  # noqa: E402
 
 
 Q_LDPC_SHA = "9d30c66a43bf7c275196267d369ddab171bfd72f"
-
-
-def exact_distances(state):
-    """External exhaustive oracle for small n; never called by the evaluator.
-
-    Two things this routine has to get right, both of which it got wrong
-    at first.
-
-    * It returns the **minimum weight** logical in each sector. The scan
-      is exhaustive, so the first logical met in integer order is not
-      necessarily the lightest: integer order is not weight order. On the
-      pinned ``an internal note`` the first-integer-order reading gives
-      5 where the true distance is 3.
-    * It enumerates over the state's own qubit **labels**. Row masks are
-      indexed by label, not by position, so a state whose namespace is not
-      ``range(n)`` must be enumerated over its labels. A grafted state has
-      the parent's labels minus the grafted qubit, so enumerating bit
-      positions ``0..n-1`` measures a different object: it drops the
-      highest label and invents the lowest. That mistake reported the
-      graft child of ``10-2-3-b`` as distance 1, where its true distance
-      is 2 and the consumer's weight-2 witness was exact.
-    """
-    same = {
-        "X": [row.mask for row in state.sector_rows("X")],
-        "Z": [row.mask for row in state.sector_rows("Z")],
-    }
-    opposite = {"X": same["Z"], "Z": same["X"]}
-    found = {"X": None, "Z": None}
-    subsets = [(0, 0)]
-    for label in state.Q:
-        bit = 1 << label
-        subsets = subsets + [(mask | bit, weight + 1) for mask, weight in subsets]
-    for index in range(1, len(subsets)):
-        mask, weight = subsets[index]
-        for side in ("X", "Z"):
-            if found[side] is not None and weight >= found[side]:
-                continue
-            if (all(bin(mask & row).count("1") % 2 == 0 for row in opposite[side])
-                    and not _in_span(mask, same[side])):
-                found[side] = weight
-    finite = [value for value in found.values() if value is not None]
-    return {"X": found["X"], "Z": found["Z"],
-            "d": min(finite) if finite else None,
-            "vectors_examined": len(subsets) - 1}
-
-
-def _in_span(vector, rows):
-    basis = {}
-    for row in rows:
-        value = row
-        while value:
-            pivot = value.bit_length() - 1
-            if pivot in basis:
-                value ^= basis[pivot]
-            else:
-                basis[pivot] = value
-                break
-    for pivot in sorted(basis, reverse=True):
-        if (vector >> pivot) & 1:
-            vector ^= basis[pivot]
-    return vector == 0
 
 
 def find_witness(state, side, max_weight=3):
@@ -103,7 +45,7 @@ def find_witness(state, side, max_weight=3):
             same = [row.mask for row in state.sector_rows(side)]
             opposite = [row.mask for row in state.sector_rows("Z" if side == "X" else "X")]
             if (all(bin(vector & row).count("1") % 2 == 0 for row in opposite)
-                    and not _in_span(vector, same)):
+                    and not in_span(vector, same)):
                 return list(support), examined
     raise RuntimeError("no witness through weight %d for side %s" % (max_weight, side))
 
@@ -111,7 +53,7 @@ def find_witness(state, side, max_weight=3):
 def _run_challenge_verifier(challenge_root, document, directory, label):
     path = directory / (label + ".json")
     path.write_text(json.dumps(document, indent=2) + "\n")
-    verifier = Path(challenge_root) / "verify" / "an internal note"
+    verifier = Path(challenge_root) / "verify" / "qldpc_verify.py"
     result = subprocess.run(
         [sys.executable, str(verifier), str(path)],
         check=False,
@@ -141,7 +83,7 @@ def _run_challenge_verifier(challenge_root, document, directory, label):
 
 
 def run_addition_replay(challenge_root, output_dir):
-    parent_path = Path(challenge_root) / "codes" / "an internal note"
+    parent_path = Path(challenge_root) / "codes" / "10-2-3-b.json"
     parent = json.loads(parent_path.read_text())
     initial_state = CodeState.from_challenge(parent)
     measured_parent = exact_distances(initial_state)
@@ -168,12 +110,12 @@ def run_addition_replay(challenge_root, output_dir):
     output = export_challenge_entry(
         parent, final_state, ledger,
         "[[10,1,3]] priced-calculus addition",
-        "C-ADD-CHECK X {0,8,9} from challenge an internal note",
+        "C-ADD-CHECK X {0,8,9} from challenge codes/10-2-3-b.json",
         "2026-10-19",
     )
     verifier = _run_challenge_verifier(challenge_root, output, output_dir, "addition")
     return {
-        "parent": "an internal note",
+        "parent": "codes/10-2-3-b.json",
         "parent_parameters": {"n": initial_state.n(), "k": initial_state.k()},
         "parent_exact_distance_experiment": measured_parent,
         "operation": operation,
@@ -194,13 +136,13 @@ def run_addition_replay(challenge_root, output_dir):
 def run_strict_improvement_survey(challenge_root):
     """Exhaust every single-check addition to the small challenge parent."""
     parent = json.loads(
-        (Path(challenge_root) / "codes" / "an internal note").read_text()
+        (Path(challenge_root) / "codes" / "10-2-3-b.json").read_text()
     )
     initial = CodeState.from_challenge(parent)
     old_distance = exact_distances(initial)["d"]
     support_vectors = (1 << initial.n()) - 1
     report = {
-        "parent": "an internal note",
+        "parent": "codes/10-2-3-b.json",
         "parent_exact_distance_experiment": old_distance,
         "support_vectors_examined_per_sector": support_vectors,
         "exact_distance_oracle": "experiment-only; not called by the consumer; "
@@ -234,9 +176,9 @@ def run_strict_improvement_survey(challenge_root):
 
 
 def run_deletion_replay(challenge_root, output_dir):
-    parent = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
-    child1 = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
-    child2 = json.loads((Path(challenge_root) / "codes" / "an internal note").read_text())
+    parent = json.loads((Path(challenge_root) / "codes" / "119-34-5.json").read_text())
+    child1 = json.loads((Path(challenge_root) / "codes" / "119-35-3.json").read_text())
+    child2 = json.loads((Path(challenge_root) / "codes" / "119-36-3.json").read_text())
     operations = [
         {"op": "C-DELETE-CHECK", "row_id": "a1",
          "witnesses": {"X": child1["distance"]["X"]["witness"],
@@ -262,8 +204,8 @@ def run_deletion_replay(challenge_root, output_dir):
     verifier = _run_challenge_verifier(challenge_root, directory=output_dir,
                                        document=output, label="deletion")
     return {
-        "parent": "an internal note",
-        "children": ["an internal note", "an internal note"],
+        "parent": "codes/119-34-5.json",
+        "children": ["codes/119-35-3.json", "codes/119-36-3.json"],
         "final_child_parameters": {"n": state.n(), "k": state.k()},
         "consumer_trace": trace,
         "final_interval": ledger.as_json()["d"],
@@ -280,7 +222,7 @@ def run_deletion_replay(challenge_root, output_dir):
 
 def run_graft_replay(challenge_root, output_dir):
     parent = json.loads(
-        (Path(challenge_root) / "codes" / "an internal note").read_text()
+        (Path(challenge_root) / "codes" / "10-2-3-b.json").read_text()
     )
     initial_state = CodeState.from_challenge(parent)
     operation = {
@@ -324,14 +266,14 @@ def run_graft_replay(challenge_root, output_dir):
     output = export_challenge_entry(
         parent, state, ledger,
         "[n=9,k=2] E-GRAFT witness submission",
-        "E-GRAFT q=0, X chain [a1,a2] from an internal note",
+        "E-GRAFT q=0, X chain [a1,a2] from codes/10-2-3-b.json",
         "2026-10-19",
     )
     verifier = _run_challenge_verifier(
         challenge_root, output, output_dir, "graft"
     )
     return {
-        "parent": "an internal note",
+        "parent": "codes/10-2-3-b.json",
         "operation": operation,
         "child_parameters": {"n": state.n(), "k": state.k()},
         "bounded_witness_search_candidates": bounded_search,
@@ -363,7 +305,31 @@ def main(argv=None):
     ).strip()
     if sha != Q_LDPC_SHA:
         raise SystemExit("expected pinned qLDPC commit %s, got %s" % (Q_LDPC_SHA, sha))
-    with tempfile.TemporaryDirectory(prefix="challenge-replay-") as temporary:
+    # A modified working tree at the pinned HEAD can execute arbitrary code
+    # while stamping the pinned SHA, so refuse a dirty checkout (RG-23/RC-23).
+    dirty_run = subprocess.run(
+        ["git", "-C", str(challenge_root), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    if dirty_run.returncode != 0:
+        raise SystemExit(
+            "could not check the qLDPC checkout at %s with git status (%s); "
+            "the pinned replay requires a git checkout of the challenge "
+            "repository: %s" % (sha, dirty_run.returncode, dirty_run.stderr.strip())
+        )
+    dirty = dirty_run.stdout
+    if dirty.strip():
+        raise SystemExit(
+            "qLDPC checkout at %s has local modifications; refusing to run the "
+            "verifier:\n%s" % (sha, dirty)
+        )
+    # TODO(2026-10-29, issue #252): design/VALIDATION.md lists
+    # ``verifier_source_hash`` as a required manifest field but records no
+    # pinned hash yet, so there is nothing to compare against here. Once a
+    # hash is recorded there, verify sha256(verify/qldpc_verify.py) against it
+    # before invoking the verifier; do not treat any value as pinned before
+    # that record exists.
+    with tempfile.TemporaryDirectory(prefix="issue21-replay-") as temporary:
         output_dir = Path(temporary)
         report = {
             "qldpc_commit": sha,

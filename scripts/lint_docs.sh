@@ -24,7 +24,7 @@ set -u
 cd "$(dirname "$0")/.." || exit 2
 
 fail=0
-files=$(find . -name '*.md' ! -path './.git/*' | sort)
+files=$(find . \( -path './.git' -o -path './.venv' -o -path './lean/.lake' \) -prune -o -name '*.md' -print | sort)
 
 # 1. Relative markdown link targets resolve.
 for f in $files; do
@@ -94,12 +94,34 @@ badtext=$(grep -ohE '\[`[^]]*`[^]]*\]\([^)]*\)' $live \
   | grep -oE '`[^`]+`' | tr -d '`' \
   | grep -E '\.(md|json|py|lean)$' | sort -u | while read -r name; do
       base=$(basename "$name")
-      if [ -z "$(find . -name "$base" ! -path './.git/*' -print -quit)" ]; then
+      if [ -z "$(find . \( -path './.git' -o -path './.venv' -o -path './lean/.lake' \) -prune -o -name "$base" -print -quit)" ]; then
         echo "$name"
       fi
     done)
 if [ -n "$badtext" ]; then
   echo "$badtext" | sed 's|^|link text names a file that exists nowhere: |'
+  fail=1
+fi
+
+# 6. No unresolved merge-conflict markers anywhere in the tracked tree.
+cm=$(grep -rlE '^(<<<<<<<|=======$|>>>>>>>)' . --exclude-dir=.git --exclude-dir=.venv --exclude-dir=.lake   --include='*.md' --include='*.py' --include='*.lean' --include='*.json'   --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.txt' 2>/dev/null   | grep -v '^./.git/' | grep -v '^./.venv/' | grep -v '^./lean/.lake/' | grep -v '^./machine/requirements' || true)
+if [ -n "$cm" ]; then
+  echo "unresolved conflict markers found:"
+  for f in $cm; do
+    grep -nE '^(<<<<<<<|=======$|>>>>>>>)' "$f" | sed "s|^|$f: |"
+  done
+  fail=1
+fi
+
+# 7. The accepted axiom set in lean/extra/ClosedK.lean is frozen: exactly the
+#    four rank axioms listed in AXIOMS.md. Any change requires updating both.
+axioms_found=$(grep -oE '^axiom [A-Za-z_]+' lean/extra/ClosedK.lean | sort)
+axioms_expected=$(printf '%s\n' 'axiom hgp_rankX' 'axiom hgp_rankZ' 'axiom product_rankX' 'axiom product_rankZ' | sort)
+if [ "$axioms_found" != "$axioms_expected" ]; then
+  echo "axiom set in lean/extra/ClosedK.lean changed:"
+  echo "--- found ---"; echo "$axioms_found"
+  echo "--- expected ---"; echo "$axioms_expected"
+  echo "Update AXIOMS.md and this check together."
   fail=1
 fi
 

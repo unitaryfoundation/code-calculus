@@ -29,7 +29,7 @@ Three reasons:
  on: `[0,4,5,7,8,9]` says *exactly* what the operator is. A bitstring of the
  same row (`1000101111`) says the same thing and is read by nobody.
 2. **It is already validated.** `qldpc-challenge` ships
- an internal note against this encoding and runs GF(2) helpers over
+ `schema/code.schema.json` against this encoding and runs GF(2) helpers over
  it. Adopting it inherits a tested schema instead of inventing one.
 3. **GF(2) arithmetic falls out of it.** Combination is symmetric difference of
  sets; membership and independence are rank questions over the incidence

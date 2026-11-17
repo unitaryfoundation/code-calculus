@@ -2,6 +2,7 @@ import CodeCalculus.State
 import CodeCalculus.Term
 import CodeCalculus.Eval
 import CodeCalculus.Judgment
+import CodeCalculus.Interval
 import CodeCalculus.GraftWellFormedness
 
 namespace CodeCalculus
@@ -39,6 +40,13 @@ def LedgerSound (δ : ExactDist) (L : DistanceLedger) : Prop :=
 structure Hyp where
   deletionPrice : Option (Nat × Nat) := none
   graftPrice : Option Nat := none
+  /-- `E-PEEL` prices (`JUDGMENT_LAYER.md` §2a, §2c; §4.28, issue #331): the
+      opposite sector's exposure price `w_expose` and the selected sector's
+      avoidance minimum `w_avoid`, each optional. Read by `propagateGate6`
+      (`Gate6Soundness.lean`), not by `propagateCmd`, whose peel transport is
+      the widened reset. -/
+  peelExpose : Option Nat := none
+  peelAvoid : Option Nat := none
 
 -- `propagateCmd` is the per-step transport. The `C-SEQUENCE`, `P-REBASE`,
 -- `E-LOCAL-HADAMARD`, `E-PEEL`, `E-PUNCTURE` and `E-EXTEND` cases below are
@@ -46,6 +54,8 @@ structure Hyp where
 -- not exact, because exact transport for a composite step needs the
 -- intermediate state and a price per sub-step. Composition is derived by
 -- applying the per-step rule twice (see `priced_interval_soundness_seq`).
+-- The §4.32 transformers for the five Gate 6 moves are `propagateGate6`
+-- (`Gate6Soundness.lean`), which refines this transport on those moves.
 def propagateCmd (m : Command) (s s' : CodeState) (L : DistanceLedger) (H : Hyp) :
     DistanceLedger :=
   match m with
@@ -112,6 +122,16 @@ def HypTrue (δ : CodeState → ExactDist) (H : Hyp) :
            else (δ s').x = minOpt (δ s).x (some p)))
   | Command.addStab _sector support, _s, _s' =>
       True
+  | Command.peel _q τ _r, s, s' =>
+      -- §4.28 (issue #331): the exposure price pins the opposite sector by
+      -- `d_σ' = min(d_σ, w_expose)`, and the avoidance minimum pins the
+      -- selected sector by `d_τ' = w_avoid`. Both are consumer inputs,
+      -- exposed here as the premises they are.
+      (∀ p, H.peelExpose = some p →
+          (if τ = Sector.X then (δ s').z = minOpt (δ s).z (some p)
+           else (δ s').x = minOpt (δ s).x (some p))) ∧
+      (∀ w, H.peelAvoid = some w →
+          (if τ = Sector.X then (δ s').x = some w else (δ s').z = some w))
   | _, _, _ => True
 
 def directSumLedger (A B : DistanceLedger) : DistanceLedger :=
@@ -164,25 +184,31 @@ theorem leOpt_min (a b c : Option Nat) (hab : leOpt a b) (hac : leOpt a c) :
   cases a <;> cases b <;> cases c <;> simp [leOpt, minOpt] at * <;> (try omega) <;> (try contradiction)
 
 /-!
-Gate 6 soundness (). `priced_interval_soundness` below is the
-interval-transport statement over all admitted commands. For the five Gate 6
-moves that have Lean transitions (`P-REBASE`, `E-PEEL`, `E-PUNCTURE`,
+Gate 6 soundness (issues #218 and #311). `priced_interval_soundness` below
+is the interval-transport statement over all admitted commands. For the five
+Gate 6 moves that have Lean transitions (`P-REBASE`, `E-PEEL`, `E-PUNCTURE`,
 `E-EXTEND`, `E-LOCAL-HADAMARD`) their case in `propagateCmd` is the widened
 `[0, +∞]` reset (the default `_` case), so this theorem proves soundness of
-that reset, not the §4.32 transformers (identity for `P-REBASE`, sector swap
-for `E-LOCAL-HADAMARD`, lower carry for `E-EXTEND` with `Δ = ∅`); those are
-not implemented in Lean. The reset reading is §4.32's only for the three
-refusals. Well-formedness preservation for these five moves is a premise of
-their transitions, not a proof: `wf_of_eval` (`WellFormedness.lean`) returns
-that premise (`hwf'`). `E-GLUE` has no `Eval` transition in Lean (no `glue`
-constructor; `EvalExpr` has only `base` and `directSum`), so neither theorem
-covers it. See `OBL-GATE6-CSS-EXTENSIONS` (`proved`,
-`spec/OBLIGATIONS.md`) and `spec/OPERATIONAL_SEMANTICS.md` §4.32 for the
-hand derivation; `hadamardState_stateK`, `stateK_swap`, and
-`peelEval_Q_length` are facts about the transitions, not a soundness
-discharge.
+that reset. The §4.32 transformers (identity for `P-REBASE`, sector swap for
+`E-LOCAL-HADAMARD`, the issue #295 carries for `E-PEEL`, lower carry for
+`E-EXTEND` with `Δ = ∅`, the reset for `E-PUNCTURE` and for `E-EXTEND` with
+`Δ ≠ ∅`, and the minimum rule for `E-GLUE`) are `propagateGate6` and
+`glueLedger` in `Gate6Soundness.lean`, with `gate6_interval_soundness` and
+`glue_transformer_sound` as their soundness statements; that module reuses
+this theorem for the kernel, graft, and sequence cases and records that its
+transformers refine this reset (`propagateGate6_refines_propagateCmd`).
+Well-formedness preservation for these five moves is a premise of their
+transitions, not a proof: `wf_of_eval` (`WellFormedness.lean`) returns that
+premise (`hwf'`). `E-GLUE` has an `Eval` transition in Lean (the
+`StateExpr.glue` constructor and `EvalExpr.glue` rule), and
+`Gate6Soundness.lean` also reads its state update as the closed term
+`⟨glueCommand seams, directSum (base A) (base B)⟩`. See
+`OBL-GATE6-CSS-EXTENSIONS` (`proved`, `spec/OBLIGATIONS.md`) and
+`spec/OPERATIONAL_SEMANTICS.md` §4.32 for the hand derivation;
+`hadamardState_stateK`, `stateK_swap`, and `peelEval_Q_length` are facts
+about the transitions, not a soundness discharge.
 
-Well-formedness guard (review findings RC-4 and RG-10). The
+Well-formedness guard (issue #246, review findings RC-4 and RG-10). The
 `k = 0` hypothesis `hk0` and the three monotonicity hypotheses range over
 well-formed states only, and the theorem takes `EncodingWellFormed` of the
 input state, which `wf_of_eval_all` carries to the output and along a
@@ -604,8 +630,10 @@ theorem DistanceLedger.refines_trans {a b c : DistanceLedger} (hab : a.refines b
     `E-PUNCTURE`, `E-EXTEND`): they ignore the input ledger and are therefore
     monotone as constants. They are strictly coarser than the §4.32
     transformers for `P-REBASE` (identity), `E-LOCAL-HADAMARD` (sector swap),
-    and `E-EXTEND` with `Δ = ∅` (lower carry); for those, what is proved here
-    is monotonicity of a constant map, not of §4.32's claim. -/
+    `E-PEEL` (selected-sector lower and opposite-sector upper carry), and
+    `E-EXTEND` with `Δ = ∅` (lower carry); for those, what is proved here
+    is monotonicity of a constant map, not of §4.32's claim, which is
+    `propagateGate6_monotone` (`Gate6Soundness.lean`). -/
 theorem propagateCmd_monotone (m : Command) (s s' : CodeState) (H : Hyp)
     (L1 L2 : DistanceLedger) (h : L1.refines L2) :
     (propagateCmd m s s' L1 H).refines (propagateCmd m s s' L2 H) := by
@@ -694,5 +722,20 @@ theorem propagateCmdK_monotone_seq (m1 m2 : Command) (s t u : CodeState) (H : Hy
     (propagateCmdK m2 t u (propagateCmdK m1 s t L1 H) H).refines
       (propagateCmdK m2 t u (propagateCmdK m1 s t L2 H) H) :=
   propagateCmdK_monotone m2 t u H _ _ (propagateCmdK_monotone m1 s t H L1 L2 h)
+
+/-! ### The `Option Nat` reading and the S2 concrete domain (issue #310)
+
+The executable ledger reads a distance as `Option Nat` with `none` for `+∞`;
+the S2 schema (`Interval.lean`) reads it as `ExtNat`. The two are the same
+domain under `ExtNat.ofOption`: the order `leOpt` is the concrete order `≤`
+of `ExtNat`, and `minOpt` is its meet. -/
+
+theorem leOpt_iff_ofOption_le (a b : Option Nat) :
+    leOpt a b ↔ ExtNat.ofOption a ≤ ExtNat.ofOption b := by
+  cases a <;> cases b <;> exact Iff.rfl
+
+theorem ofOption_minOpt (a b : Option Nat) :
+    ExtNat.ofOption (minOpt a b) = ExtNat.min (ExtNat.ofOption a) (ExtNat.ofOption b) := by
+  cases a <;> cases b <;> rfl
 
 end CodeCalculus

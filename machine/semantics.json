@@ -1,9 +1,10 @@
 {
-  "$comment": "Term grammar and the transition relation, transcribed from spec/TERM_LANGUAGE.md and spec/OPERATIONAL_SEMANTICS.md. Prose wins on disagreement.",
+  "$comment": "Term grammar and the transition relation, transcribed from spec/TERM_LANGUAGE.md and spec/OPERATIONAL_SEMANTICS.md. The layout cells of spec/JUDGMENT_LAYER.md section 2d.5 are transcribed under `layout_cells`. Prose wins on disagreement.",
   "_meta": {
     "source_of_truth": [
       "spec/TERM_LANGUAGE.md",
-      "spec/OPERATIONAL_SEMANTICS.md"
+      "spec/OPERATIONAL_SEMANTICS.md",
+      "spec/JUDGMENT_LAYER.md (section 2d.5, the layout cells only)"
     ],
     "authority": "Faithful transcription for mechanization consumers. Where it disagrees with spec/, the prose wins and this file must be fixed.",
     "generated": "2026-10-27",
@@ -19,7 +20,63 @@
         },
         {
           "symbol": "e1 (+) e2",
+          "id": "C-DIRECT-SUM",
           "meaning": "Direct sum. Constructs states, NOT a command."
+        },
+        {
+          "symbol": "glue(e1, e2; u)",
+          "id": "E-GLUE",
+          "meaning": "Binary interface gluing of two state expressions along an ordered seam-addition list u."
+        },
+        {
+          "symbol": "hgp(H1, H2)",
+          "id": "L-HGP",
+          "meaning": "Hypergraph product of two binary parity-check matrices."
+        },
+        {
+          "symbol": "lift(G; B_X, B_Z)",
+          "id": "L-LIFTED",
+          "meaning": "Lifted product over a finite abelian group G."
+        },
+        {
+          "symbol": "twoblock(G; a, b)",
+          "id": "L-GROUP-ALGEBRA",
+          "meaning": "Two-block group-algebra code over a finite abelian group G."
+        },
+        {
+          "symbol": "concat(e_O, e_I; L)",
+          "id": "A-CONCAT",
+          "meaning": "Concatenation of outer and inner CSS states through chosen inner logical representatives L."
+        },
+        {
+          "symbol": "product(e_A, e_B)",
+          "id": "A-PRODUCT",
+          "meaning": "CSS tensor product of two presented CSS states."
+        },
+        {
+          "symbol": "double(e; w, s)",
+          "id": "A-DOUBLE",
+          "meaning": "Two-sheet duplication of a presented CSS state with wiring w and optional sector swap s."
+        },
+        {
+          "symbol": "balanced(G; H1, act1, H2, act2)",
+          "id": "L-BALANCED",
+          "meaning": "Balanced product of two binary matrices equivariant under a finite abelian group G."
+        },
+        {
+          "symbol": "tanner(n; Lambda_X, Lambda_Z, E_X, E_Z)",
+          "id": "L-TANNER",
+          "meaning": "Quantum Tanner construction from local check matrices and local-to-global embeddings."
+        },
+        {
+          "symbol": "tile(n; T, P)",
+          "id": "L-TILE",
+          "meaning": "Tile or cellulation construction from local tiles T and placements P."
+        },
+        {
+          "symbol": "nested(H_X, H_Z)",
+          "id": "L-NESTED-CSS",
+          "meaning": "CSS code from two nested classical codes given by binary parity-check matrices."
         }
       ]
     },
@@ -95,8 +152,8 @@
         "reason": "Admitted as a conditional extension transition (see admitted_extensions), not one of the kernel five."
       },
       {
-        "id": "A-* / L-*",
-        "reason": "Need typed classical, algebraic, graph or cellulation inputs."
+        "id": "A-QUOTIENT",
+        "reason": "Needs typed quotient and embedding inputs; the ten admitted constructors (L-HGP, L-LIFTED, L-GROUP-ALGEBRA, A-CONCAT, L-BALANCED, L-TANNER, L-TILE, A-PRODUCT, A-DOUBLE, L-NESTED-CSS) have expression productions in categories.expression."
       },
       {
         "id": "X-*",
@@ -104,7 +161,7 @@
       },
       {
         "id": "E-* (unadmitted)",
-        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE's binary evaluator transition is listed in admitted_extensions (no unary production; contract-index row taxonomy-only). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
+        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE's binary evaluator transition is listed in admitted_extensions (no unary production; contract-index row transition-defined as of 2026-11-11, issue #332). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
       }
     ],
     "admitted_extensions": [
@@ -140,7 +197,7 @@
       },
       {
         "id": "E-GLUE",
-        "classification": "binary evaluator transition defined (section 4.30, 2026-10-27), no unary production; conditional cell (sections 2e/2f); contract-index row taxonomy-only; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+        "classification": "binary evaluator transition defined (section 4.30, 2026-10-27), no unary production; conditional cell (sections 2e/2f); contract-index row transition-defined (2026-11-11, issue #332); logical-witness field defined and §2e equality discharged (2026-11-11); sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
         "judgment_inputs": "seam certificate (identical move words plus an evidence reference) for the Z-sector upper endpoint; lower endpoints need none"
       }
     ]
@@ -161,7 +218,7 @@
     "shape": "partial big-step",
     "partiality": "No judgment when a command is inapplicable. No residual commands, no half-updated states, no partial results are ever exposed (W10).",
     "construction": "Eval(m >< e, S') when EvalExpr(e, S) and Eval(m, S, S')",
-    "derived_denotation": "Added 2026-10-25 (Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
+    "derived_denotation": "Added 2026-10-25 (issue #140, Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
   },
   "outcomes": {
     "derivable": "A derivation exists and the assertion is included.",
@@ -254,6 +311,10 @@
         {
           "predicate": "same_sector_independence",
           "formula": "X-type: r notin X.    Z-type: r notin Z."
+        },
+        {
+          "predicate": "capacity",
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
         }
       ],
       "inapplicable_when": "Any premise fails. An out-of-namespace row (supp(r) not subseteq Q) has NO derivation: the term is well-typed and the same row applies against a state whose namespace contains its support (fixture W22) - it is no_derivation, not malformed and not false.",
@@ -297,6 +358,10 @@
         {
           "predicate": "opposite_sector_presence",
           "formula": "q belongs to at least one displayed opposite-sector row (the grafted qubit must have an opposite-sector check through it)"
+        },
+        {
+          "predicate": "capacity",
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
         }
       ],
       "update": {
@@ -338,6 +403,10 @@
         {
           "predicate": "nonempty_display",
           "formula": "the sector's display is nonempty (the empty sector has no rebase command)"
+        },
+        {
+          "predicate": "capacity",
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
         }
       ],
       "update": {
@@ -413,7 +482,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "Any applicability premise fails; the output's I1-I5 check is a validity report (\u00a74.28 shows both I1 and I2 automatic under the premises)",
-      "standing": "transition specified; n'=n-1 and k'=k exact (\u00a74.28); no distance rule admitted in either polarity (a refusal by design: section 4.28 derives the selected-sector non-decrease and the opposite-sector non-increase, and no cell carries them)",
+      "standing": "transition specified; n'=n-1 and k'=k exact (\u00a74.28); distance rule admitted 2026-11-06 (issue #295) and sharpened 2026-11-10 (issue #331): d_tau' = w_avoid,tau(q) >= d_tau for the selected sector and d_sigma' = min(d_sigma, w_expose,sigma(q)) for the opposite sector (section 4.28), so unpriced the selected lower carries, the opposite lower carries less one, the opposite upper carries, and the full distance is the minimum of the sector endpoints; the two prices are conditional cells (JUDGMENT_LAYER.md section 2a, 2c); comparison d' vs. d bounded in neither direction, d' >= d - 1)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.28"
     },
     {
@@ -436,7 +505,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "q not in Q; no other premise (I1-I5 hold automatically, \u00a74.29)",
-      "standing": "transition specified (the check-puncturing induced stabilizer update required by TAXONOMY.md \u00a72.8); no distance rule carries, and hole-punch pricing is blocked on the D2 lower bound ()",
+      "standing": "transition specified (the check-puncturing induced stabilizer update required by TAXONOMY.md \u00a72.8); no distance rule carries, and hole-punch pricing is blocked on the D2 lower bound (issue #59)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.29"
     },
     {
@@ -458,6 +527,10 @@
         {
           "predicate": "cumulative_independence_and_communication",
           "formula": "at its own list position, each addition commutes with the opposite sector's rows so far and is outside their same-sector span over F_2^(Q union Delta) (the ambient is the new namespace, the W22 reading)"
+        },
+        {
+          "predicate": "capacity",
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
         }
       ],
       "update": {
@@ -493,6 +566,10 @@
         {
           "predicate": "seam_commutation_and_independence",
           "formula": "each seam check, at its own list position, commutes with every displayed row of the opposite sector and lies outside the span of the displayed rows of its own sector, both read over F_2^(Q_A UNION Q_B) and over the rows accumulated so far (factor rows plus earlier seam checks), so the output display is independent"
+        },
+        {
+          "predicate": "capacity",
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
         }
       ],
       "update": {
@@ -502,10 +579,459 @@
         "steps": "not read"
       },
       "inapplicable_when": "A qubit-namespace or identifier collision, or a seam check failing commutation or independence (no derivation). A seam certificate, when supplied, is consumed for admissibility only (JUDGMENT_LAYER.md section 2e): differing move words, or a certificate without an evidence reference, give no derivation.",
-      "standing": "transition specified (section 4.30, 2026-10-27; maintainer decision to define the transition). Well-formedness of the output follows the C-DIRECT-SUM argument plus the independence premises. No distance relation beyond the section 2e/2f conditional cell; the scalar relation d = min(d_A, d_B) is not admitted; the logical-witness prerequisite (TAXONOMY.md section 2.10) remains open; sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31); the contract-index row stays taxonomy-only.",
+      "standing": "transition specified (section 4.30, 2026-10-27; maintainer decision to define the transition). Well-formedness of the output follows the C-DIRECT-SUM argument plus the independence premises. The §2e equality d_Z(Q)=min(d_A,d_B) is discharged by extraction of Theorem 4 / claim 7.4 (section 4.31, 2026-11-11, issue #332) for admissible seams; the scalar relation d = min(d_A, d_B) is still not admitted; the logical-witness field is defined (STATE_MODEL.md section 1, 2026-11-11); boundary/edge-label field defined (STATE_MODEL.md section 1, 2026-11-12, issue #366); sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31); the contract-index row is transition-defined (2026-11-11); Lean mechanization of the extracted derivation remains follow-up work (issue #366).",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.31"
+    },
+    {
+      "id": "L-HGP",
+      "form": "EvalExpr(hgp(H1, H2), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "H1 and H2 are rectangular binary matrices with at least one row and one column"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace 0..n-1 by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1 with n = n1 n2 + m1 m2; left qubit (i, j) at i n2 + j, right qubit (a, b) at n1 n2 + a m2 + b",
+        "rows": "natural X-row (a, j): row a of H1 on the left qubits (., j) with column j of H2 on the right qubits (a, .); natural Z-row (i, b): row b of H2 on the left qubits (i, .) with column i of H1 on the right qubits (., b); displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers, X-rows first"
+      },
+      "inapplicable_when": "Malformed input only (a matrix that is not binary or not rectangular is malformed at the encoding); every well-typed input evaluates.",
+      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, n = n1 n2 + m1 m2 and k = k1 k2 + k1T k2T derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-HGP"
+    },
+    {
+      "id": "L-LIFTED",
+      "form": "EvalExpr(lift_G(A, B), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "G a finite abelian group given by cyclic orders; A and B rectangular matrices over F_2[G], entries finite sets of exponent tuples"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1 with n = |G| (nA nB + mA mB); left qubit (i, j, g) at (i nB + j)|G| + idx(g), right qubit (a, b, g) at nA nB |G| + (a mB + b)|G| + idx(g)",
+        "rows": "natural X-row (a, j, h): row h of L(A[a][i]) on the left qubits (i, j, .) and row h of L(B[b][j]^*) on the right qubits (a, b, .); natural Z-row (i, b, h): row h of L(B[b][j]) on the left and row h of L(A[a][i]^*) on the right; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Malformed input only; every well-typed input evaluates. The trivial group gives L-HGP.",
+      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed by the commutativity of F_2[G] (section 4.34); n exact, k by rank bookkeeping; no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-LIFTED"
+    },
+    {
+      "id": "L-GROUP-ALGEBRA",
+      "form": "EvalExpr(twoblock_G(a, b), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "G a finite abelian group given by cyclic orders; a and b elements of F_2[G]"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..2|G|-1; left qubit (0, g) at idx(g), right qubit (1, g) at |G| + idx(g)",
+        "rows": "natural X-row h: row h of L(a) on the left and row h of L(b) on the right; natural Z-row h: row h of L(b)^T on the left and row h of L(a)^T on the right, so the check matrices are [L(a) | L(b)] and [L(b)^T | L(a)^T]; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Malformed input only; every well-typed input evaluates. Equal row for row to lift_G((a), (b^*)).",
+      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, k = 2(|G| - rank[L(a) | L(b)]) derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-GROUP-ALGEBRA"
+    },
+    {
+      "id": "A-CONCAT",
+      "form": "EvalExpr(concat(e_O, e_I; blocks), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "the outer and inner factors are well-formed CSS states and the inner code has k_in >= 1"
+        },
+        {
+          "predicate": "block_partition",
+          "formula": "blocks is a list of ordered k_in-tuples of outer labels partitioning the outer qubits"
+        },
+        {
+          "predicate": "level_data",
+          "formula": "the inner level data (dual logical bases) is within its enumeration ceiling; supplied representatives, if any, give k_in masks per sector"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace 0..n_in n_out - 1 by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n_in n_out - 1; copy j of the inner qubits at j n_in + (index of the inner label)",
+        "rows": "every inner row on every copy, then every outer row lifted block by block through the representatives; the natural display is independent and nothing is dropped (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "k_in = 0 gives no derivation; a block list that is not a partition into k_in-tuples is malformed at the encoding; non-CSS inner codes are not inputs.",
+      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, n = n_in n_out and k = k_O derived (section 4.34); no distance rule; the tower price provider (JUDGMENT_LAYER.md section 2a) supplies deletion and exposure prices from level data",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-CONCAT"
+    },
+    {
+      "id": "A-PRODUCT",
+      "form": "EvalExpr(product(e_A, e_B), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "the two factors are well-formed CSS states; the product structure is the CSS tensor product only"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1 with n = mZA mXB + nA nB + mXA mZB; (Z-row of A, X-row of B) pairs, then (qubit, qubit) pairs, then (X-row of A, Z-row of B) pairs",
+        "rows": "natural X-rows by (qubit of A, X-row of B) then (X-row of A, qubit of B); natural Z-rows by (Z-row of A, qubit of B) then (qubit of A, Z-row of B), with the supports of the section 2 card (the middle differentials of the tensor product complex); displayed rows are the retained independent display per sector (section 4.34), repair (a) of TAXONOMY.md section 2.13",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Malformed input only (a factor that is not a well-formed CSS state); every well-typed pair evaluates. The output depends on the two displays, not only on the two codes.",
+      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed, n and k = kA kB derived (section 4.35); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PRODUCT"
+    },
+    {
+      "id": "A-DOUBLE",
+      "form": "EvalExpr(double_{w,s}(e), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_input",
+          "formula": "the input is a well-formed CSS state; w maps displayed row identifiers to subsets of their supports (the twisted incidences); s is absent or conjugate"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the natural rows of the two sectors have pairwise even overlap (for the lifted rows); a failed premise is a no-derivation"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..2nC-1; qubit (q, t) at t nC + (index of q)",
+        "rows": "each displayed row r gives (r, 0) then (r, 1); (r, t) is supported on (q, t) for an untwisted incidence and on (q, 1 - t) for a twisted one; under conjugate the rows of sheet 1 take the opposite sector; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "A wiring whose lifted rows do not commute gives no derivation; a wiring naming an undisplayed row or a qubit outside the row's support is malformed at the encoding.",
+      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed and n = 2 nC (section 4.35); k by rank bookkeeping, 2 kC for the empty wiring; no distance rule; the factorization question of TAXONOMY.md section 2.16 stays open",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-DOUBLE"
+    },
+    {
+      "id": "L-BALANCED",
+      "form": "EvalExpr(balanced_G(H1, alpha1; H2, alpha2), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "G a finite abelian group given by cyclic orders; H1 and H2 rectangular binary matrices; each action gives one row permutation and one column permutation per cyclic generator, commuting, of order dividing the generator's order, with H[g a][g i] = H[a][i]"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, one label per orbit of (x, y) -> (g x, g^-1 y) on the column-index pairs, then on the row-index pairs, each family in the order of the least pair of an orbit",
+        "rows": "one natural X-row per orbit of the pairs (a, j) and one natural Z-row per orbit of the pairs (i, b): the hypergraph-product maps descended to orbits (section 4.35); displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Malformed input only (permutations that do not form an action, or a matrix that is not equivariant); every well-typed input evaluates. The trivial group gives L-HGP row for row.",
+      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed because the product differentials descend to the orbit quotients (section 4.35); n the number of orbits, k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-BALANCED"
+    },
+    {
+      "id": "L-TANNER",
+      "form": "EvalExpr(tanner(n; Lambda_X, Lambda_Z; iota_X, iota_Z), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "n >= 1; Lambda_X and Lambda_Z rectangular binary matrices of local checks; every embedding an ordered list of distinct labels below n, as long as its class's local code"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the natural rows of the two sectors have pairwise even overlap (cross-partition commutation); a failed premise is a no-derivation"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1",
+        "rows": "for each vertex of the X class in list order and each row of Lambda_X, the X-row on the labels at the positions where the local row is 1; then the same for the Z class; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Local checks of the two classes that do not commute give no derivation; an embedding with a repeated or out-of-range label or the wrong length is malformed at the encoding.",
+      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed under the commutation premise (section 4.35, with a sufficient condition for tensor local codes); k by rank bookkeeping; no distance rule and no expansion hypothesis",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-TANNER"
+    },
+    {
+      "id": "L-TILE",
+      "form": "EvalExpr(tile(tiles; placements; boundary rules), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "a nonempty tile set (local qubit count, local X-row and Z-row supports); a nonempty list of placements (a tile with one distinct site per local qubit); identifications pairing placed sites; removed checks naming a placement, a sector, and a local row"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the natural rows of the two sectors have pairwise even overlap (interface orthogonality); a failed premise is a no-derivation"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, one label per site class under the identifications, in the order of the least site",
+        "rows": "placement by placement, the local X-rows then the local Z-rows that are not removed; the support of a row is the set of site classes containing an odd number of the row's sites; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Placed rows of the two sectors that do not commute give no derivation; a placement, identification, or removal that does not name placed data is malformed at the encoding.",
+      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed under the commutation premise and n the number of site classes (section 4.35); k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-TILE"
+    },
+    {
+      "id": "L-NESTED-CSS",
+      "form": "EvalExpr(nested(H_X, H_Z), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "H_X and H_Z rectangular binary matrices, each with at least one row, with the same number n >= 1 of columns"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "every row of H_X has even overlap with every row of H_Z, that is H_X H_Z^T = 0 (the nesting of the two classical codes); a failed premise is a no-derivation"
+        },
+        {
+          "predicate": "ambient_membership",
+          "formula": "every natural row has support in the fresh namespace by construction (W22 reading)"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, one label per column",
+        "rows": "the rows of H_X in order as X-rows, then the rows of H_Z in order as Z-rows, each on the columns where it is 1; displayed rows are the retained independent display per sector (section 4.34)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Matrices with a row of H_X and a row of H_Z in odd overlap give no derivation; matrices with different column counts, no row, or a non-binary entry are malformed at the encoding.",
+      "standing": "transition specified 2026-11-13 (issue #445), transition-defined; output well-formed under the nesting premise and k = n - rank(H_X) - rank(H_Z) (section 4.36); no distance rule and no classical distance input; an instance of the L-TANNER rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-NESTED-CSS"
     }
   ],
+  "layout_cells": {
+    "$comment": "Layout cells (spec/JUDGMENT_LAYER.md section 2d.5, landed 2026-11-10, issue #333): how the layout travels with each transition and the exact interaction-radius and honesty cell it licenses. The radius formulas are also transcribed in consumer.json geometry.carry_rules; this table records the transport side (the child's layout), each cell's direction, its evidence status, and its derivation. `proved` is the evidence status of a dated hand derivation in this repository, never a mechanized result (AGENTS.md, Claim-status discipline). A cell marked conditional needs the named layout premise before its verdict applies.",
+    "source": "spec/JUDGMENT_LAYER.md \u00a72d.5",
+    "conformance": "machine/experiments/layout_conformance_harness.py randomizes small states and layouts, transits every transition below, and checks each direction, formula, and honesty claim exactly; a run with no violation is evidence, never confirmation.",
+    "cells": {
+      "C-SKIP": {
+        "child_layout": "lambda, unchanged",
+        "radius": "r' = r, exact",
+        "direction": "unchanged",
+        "honesty": "preserved: the layout is unchanged, and honesty is a property of the layout alone",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "C-DIRECT-SUM": {
+        "child_layout": "the two summand layouts blockwise, up to isometry (not their set-theoretic union, which need not be a layout); a merged layout must be supplied",
+        "radius": "r = max(r_A, r_B), exact",
+        "direction": "maximum of the summands",
+        "honesty": "not automatic: the merged layout must be honest (conditional cell; merging two honest layouts can place two qubits on one site or two sites closer than 1)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "C-DELETE-CHECK": {
+        "child_layout": "lambda, unchanged",
+        "radius": "r' = max { diam_lambda(s) : s in rows' }, exact",
+        "direction": "r' <= r",
+        "honesty": "preserved: the layout is unchanged",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "C-ADD-CHECK": {
+        "child_layout": "lambda, unchanged",
+        "radius": "r' = max(r, diam_lambda(new row)), exact",
+        "direction": "r' >= r",
+        "honesty": "preserved: the layout is unchanged",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-GRAFT": {
+        "child_layout": "lambda restricted to Q \\ {q}: the parent's coordinates read at the surviving qubits",
+        "radius": "r' = max { diam_lambda'(s) : s in rows' }, exact (recomputed over the child's own display)",
+        "direction": "may increase; r' <= 2r (the non-increase r' <= r is false: machine/experiments/layout_graft_survey.json records 198 of 823 applicable grafts increasing it)",
+        "honesty": "preserved: a restriction of an honest layout is honest (occupancy can only fall, site spacing can only grow)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "C-SEQUENCE": {
+        "child_layout": "transported step by step: the layout after the sequence is the layout after its last step",
+        "radius": "composition of the per-step cells",
+        "direction": "per step",
+        "honesty": "per step; a conditional premise (merged or supplied layout) is owed at the step that needs it",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.11",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "P-REBASE": {
+        "child_layout": "lambda, unchanged",
+        "radius": "r' = max { diam_lambda(s) : s in rows' }, exact (the selected sector's supports are symmetric differences of the old supports)",
+        "direction": "none guaranteed: both r' > r and r' < r occur",
+        "honesty": "preserved: the layout is unchanged",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-LOCAL-HADAMARD": {
+        "child_layout": "lambda, unchanged (T = Q: Q and every support are unchanged; only the sector labels swap)",
+        "radius": "r' = r, exact",
+        "direction": "unchanged",
+        "honesty": "preserved: the layout is unchanged",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-PEEL": {
+        "child_layout": "lambda restricted to Q \\ {q}: the parent's coordinates read at the surviving qubits",
+        "radius": "r' = max { diam_lambda'(s) : s in rows' }, exact (recomputed over the child's own display)",
+        "direction": "r' <= r",
+        "honesty": "preserved: a restriction of an honest layout is honest",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-PUNCTURE": {
+        "child_layout": "lambda restricted to Q \\ {q}: the parent's coordinates read at the surviving qubits",
+        "radius": "r' = max { diam_lambda'(s) : s in rows' }, exact (recomputed over the child's own display)",
+        "direction": "r' <= r",
+        "honesty": "preserved: a restriction of an honest layout is honest",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-EXTEND": {
+        "child_layout": "not inherited when Delta is nonempty: a layout lambda' on Q union Delta that agrees with lambda on Q must be supplied; with Delta = {} the layout is lambda itself",
+        "radius": "r' = max(r, max { diam_lambda'(s) : s an added row }), exact, when such a layout is supplied; without one the child has no radius",
+        "direction": "r' >= r (when a layout is supplied)",
+        "honesty": "not inherited: the supplied layout must be honest (conditional cell); with Delta = {} preserved",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-GLUE": {
+        "child_layout": "the two factor layouts blockwise, as for C-DIRECT-SUM; a merged layout must be supplied",
+        "radius": "r = max(r_A, r_B, max { diam(s) : s a seam row }), exact (the direct-sum cell followed by one C-ADD-CHECK cell per seam check)",
+        "direction": "r >= max(r_A, r_B)",
+        "honesty": "not automatic: the merged layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-HGP": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.34",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-LIFTED": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.34",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-GROUP-ALGEBRA": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.34",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-CONCAT": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.34",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-PRODUCT": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.35",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-DOUBLE": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.35",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-BALANCED": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.35",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-TANNER": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.35",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-TILE": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.35",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-NESTED-CSS": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.36",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      }
+    }
+  },
   "what_the_semantics_does_not_do": [
     "Does not compute exact distance. Conditional deletion and graft prices and exhaustive minimum-weight-class enumerations are consumer judgment inputs, not verified by the state transition.",
     "Does not exhibit a residual. An inapplicable command has no derivation, so nothing says WHERE a sequence got stuck.",
@@ -513,13 +1039,14 @@
     "Does not quotient by presentation. P-RELABEL is a congruence to be proved, not a built-in equality.",
     {
       "id": "E-GLUE",
-      "note": "The evaluator transition (section 4.30, 2026-10-27) defines the state update only. No distance relation is admitted beyond the section 2e/2f conditional cell; the logical-witness prerequisite (TAXONOMY.md section 2.10) remains not-yet-defined, and the scalar relation d = min(d_A, d_B) is not admitted."
+      "note": "The evaluator transition (section 4.31, 2026-10-27) defines the state update only. No distance relation is admitted beyond the section 2e/2f conditional cell; the logical-witness and boundary/edge-label fields are defined as future-Pi type sketches (STATE_MODEL.md section 1/1a), and the scalar relation d = min(d_A, d_B) is not admitted."
     }
   ],
   "standing": {
     "mechanized": false,
     "sound": "not claimed",
     "note": "The hand derivations in spec/OPERATIONAL_SEMANTICS.md section 4 are evidence in this repository, not kernel-checked results. The soundness metatheorem is OBL-JUDGMENT-SOUNDNESS and is `proved` by hand derivation (spec/OPERATIONAL_SEMANTICS.md section 4.11). A partial mechanization exists under lean/; see lean/README.md for its scope.",
-    "conformance": "Each entry in fixtures/mvp_fixtures.json is an acceptance test: evaluating `term` on `initial_state` must produce `expected` exactly, or fail exactly as specified - no derivation, no stuck residual, no partial state."
+    "conformance": "Each entry in fixtures/mvp_fixtures.json is an acceptance test: evaluating `term` on `initial_state` must produce `expected` exactly, or fail exactly as specified - no derivation, no stuck residual, no partial state.",
+    "layout_conformance": "The layout cells are checked by machine/experiments/layout_conformance_harness.py (randomized states and layouts; every transition transited; directions, formulas, and honesty verdicts compared exactly). Evidence only; it discharges nothing."
   }
 }

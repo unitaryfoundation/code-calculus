@@ -25,7 +25,7 @@ Later-layer probes `W17`–`W20` are recorded in the fixture file.
 | `W7` | a row-referencing certificate is invalidated at the deletion step although the final code equals the original — **information-losing at the context level** | `OBL-ROW-REPLACEMENT-FACTOR` |
 | `W8` | one order applies and the other does not: **the moves do not permute**. Conditional permutation cannot be claimed | `OBL-CROSS-SECTOR-PERMUTATION` |
 | `W13` | a claim referring to a deleted generator does not transport; distance values are true of the state but **deliberately underivable** | `OBL-JUDGMENT-TRANSPORT` |
-| `W14` | direct-sum distance law holds, with the equality level corrected to **literal** $\equiv$ — the defect that survived six days and two review dispositions | `OBL-DIRECT-SUM-LAWS` |
+| `W14` | direct-sum distance law holds, with the equality level corrected to **literal** $\equiv$ — the defect that survived six days and two red-team dispositions | `OBL-DIRECT-SUM-LAWS` |
 | `W21` | an implementation checking only **qubit** disjointness is insufficient; `used` sets must also be disjoint | `OBL-FRAME-LAW` |
 | `W22` | an implementation reading the `C-ADD-CHECK` commutation premise as a bare dot product is insufficient; complements are taken inside $\mathbb{F}_2^Q$, so $\mathrm{supp}(r)\subseteq Q$ is required | `OBL-WELL-FORMEDNESS-PRESERVATION` |
 | `W10` | a later command failing after an earlier one succeeds yields **no derivation**, not a stuck residual — the semantics exposes no partial state | `OBL-SEQUENCE-ASSOCIATIVITY` |
@@ -103,9 +103,9 @@ fixed-reference-set hypothesis (annotation-transport part) — hand derivation
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.15, 2026-10-20).
 
-**Intended mechanization status:** Lean theorem in the and slices after
-explicit authorization; feeds Gates 2–3 and the multi-row deletion note in
-[`spec/TAXONOMY.md`](TAXONOMY.md) §2.3.
+**Intended mechanization status:** Lean theorem in the deletion and sequencing
+slices after explicit authorization; feeds Gates 2–3 and the multi-row deletion
+note in [`spec/TAXONOMY.md`](TAXONOMY.md) §2.3.
 
 **Statement.** Let $S$ be a finite set of displayed generator identifiers of a
 well-formed presented CSS state, over either stabilizer type or both. For any two
@@ -206,12 +206,12 @@ contracts; presentation conjugation (for the excluded interleavings).
 `spec/OPERATIONAL_SEMANTICS.md` §4.16, 2026-10-20) and for the generation
 conjunct (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.18, 2026-10-20,
 with the classical citation recorded there), up to canonical identifier
-allocation and `used`-set growth .
+allocation and `used`-set growth (R10).
 
 **Classification:** lemma
 
 **Ledger status:** proved (loop in §4.16; generation conjunct in §4.18),
-up to canonical identifier allocation and `used`-set growth . Worked
+up to canonical identifier allocation and `used`-set growth (R10). Worked
 example `W7` ( §4.2) present and
 re-evidenced 2026-09-26. **Split 2026-10-11.** The entry had three claims of two polarities: two computable over
 
@@ -232,9 +232,10 @@ is between *"core moves generate the basis-change group"* (a statement about
 (a statement about `P-REBASE`, deferred) — not between the loop and the
 generation result.
 
-**Intended mechanization status:** Lean lemma joining the and slices
-after explicit authorization. **No longer an input to the Gate 6 `P-REBASE`
-decision**: that dependency is now carried by `OBL-REBASE-GENERATION`.
+**Intended mechanization status:** Lean lemma joining the deletion and addition
+slices after explicit authorization. **No longer an input to the Gate 6
+`P-REBASE` decision**: that dependency is now carried by
+`OBL-REBASE-GENERATION`.
 
 **Statement.** Let $r$ be a displayed independent generator of one stabilizer
 type in a well-formed presented CSS state, and let $s$ lie in the span of the
@@ -249,7 +250,7 @@ larger `used` set.
 
 **Hypotheses.**
 
-- Well-formed phase-insensitive presented CSS state ; $r$ is displayed,
+- Well-formed phase-insensitive presented CSS state; $r$ is displayed,
  independent, and of known type.
 - $s$ is in the span of the displayed same-type rows other than $r$; $r+s$ is
  the characteristic-two sum.
@@ -321,8 +322,8 @@ claim about the admitted conditional cell.
 **Intended mechanization status:** / rank-preservation slice, tracked by
 . Machine-checked (Lean 4): rank preservation under
 `rebaseMatrix_ok` — `sectorRank_rebaseState` and `stateK_rebaseState` in
-`lean/CodeCalculus/RebaseRankSector.lean` (theorem depends on `propext`,
-`Classical.choice`, `Quot.sound` only; no `sorry`/`native_decide`). The
+`lean/CodeCalculus/RebaseRankSector.lean` (theorem depends on `propext` and
+`Quot.sound` only; no `sorry`/`native_decide`). The
 mechanized result is rank preservation under `rebaseMatrix_ok`, not the
 transformation-set equality stated by this obligation's conjunct 2; that
 equality remains the hand derivation at `spec/OPERATIONAL_SEMANTICS.md`
@@ -349,8 +350,8 @@ holds because the admitted transition's output rows are $V_\tau M$ for
 $M\in\mathrm{GL}(m,2)$, so its transformation set is the basis-change group
 per sector, modulo the canonical mint.
 
-**Dependencies.** The `P-REBASE` contract (`transition-defined`, §4.26);
-`OBL-ROW-REPLACEMENT-FACTOR` for conjunct 1; and .
+**Dependencies.** The `P-REBASE` contract (`transition-defined`, §4.26) and
+`OBL-ROW-REPLACEMENT-FACTOR` for conjunct 1.
 
 **Known edge cases and counterexamples.**
 
@@ -366,7 +367,7 @@ per sector, modulo the canonical mint.
  presentation identity ($A_3\not\equiv A$; `used` grows) — evidence against the
  presentation-level comparison, and nothing about the row-space-level
  identification.
-- **'s `candidate` cap is unaffected.** This obligation is not the
+- **D-6's `candidate` cap is unaffected.** This obligation is not the
  canonicalization transport that lifts the cap; that is
  `OBL-PRESENTATION-CONJUGATION` together with the judgment-transport condition
  in §4.
@@ -383,16 +384,16 @@ reachability tier of §2.
 
 **Claim shape:** metatheorem entry (explicit schema exception — see
 [`CLAIMS.md`](CLAIMS.md) *Claim shape and evidence
-status*.
+status*; red-team R9).
 
 **Evidence status:** `proved` (hand derivation `spec/OPERATIONAL_SEMANTICS.md`
 §4.17, 2026-10-20).
 
 **Classification:** metatheorem
 
-**Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.17, 2026-10-20), scoped to the all-deletions-first route.
+**Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.17, 2026-10-20), scoped to the R10 all-deletions-first route.
 
-**Intended mechanization status:** Lean metatheorem after –; it is the
+**Intended mechanization status:** Lean metatheorem after the kernel slices; it is the
 fixed-namespace reachability tier of §2 and a direct
 input to Gate 7.
 
@@ -400,7 +401,7 @@ input to Gate 7.
 on the same finite qubit namespace. Then $C_1$ is reachable from $C_0$ by a
 finite `C-SEQUENCE` of `C-DELETE-CHECK` and `C-ADD-CHECK` applications,
 starting from any presentation of $C_0$ and reaching the **supports** of any
-presentation of $C_1$ with canonically minted identifiers (disposition:
+presentation of $C_1$ with canonically minted identifiers (R10 disposition:
 scoped to canonical identifier allocation; exact labeled reachability is out of
 scope). At the level of row-space effects, the connecting path can be chosen
 with all deletions first and all additions after.
@@ -410,7 +411,7 @@ with all deletions first and all additions after.
 - Both endpoints are well-formed (each sector's rows lie in the orthogonality
  complement of the other) over the same qubit namespace; the namespace is
  fixed, and `n`-changing moves of the `E-*` layer are out of scope.
-- The phase-insensitive state model of ; the intersection of the $X$- and
+- The phase-insensitive state model of [`STATE_MODEL.md`](STATE_MODEL.md); the intersection of the $X$- and
  $Z$-row spaces need not be trivial (the glossary allows $Y$-type products).
 - Basis adaptation along the path uses the row-replacement loop of
  `OBL-ROW-REPLACEMENT-FACTOR`.
@@ -421,7 +422,7 @@ with all deletions first and all additions after.
 - Connectivity: the well-formed state space at fixed namespace is connected
  under the core row moves — a generation-completeness (reachability) result at
  fixed $n$.
-- Explicit path: **superseded by the all-deletions-first route**
+- Explicit path: **superseded by the R10 all-deletions-first route**
  (delete every displayed row to the zero state, then add all of $C_1$'s rows),
  which passes through the zero row space and needs neither basis adaptation
  nor cross-sector permutation. The earlier contraction-to-intersection path
@@ -429,7 +430,7 @@ with all deletions first and all additions after.
 - Basis transitivity: any target presentation is reachable, since
  row-replacement loops generate all basis changes of a fixed row space over the
  binary field (as in `OBL-ROW-REPLACEMENT-FACTOR`), up to canonical identifier
- allocation (disposition, below).
+ allocation (R10 disposition, below).
 
 **Dependencies.** `OBL-ROW-REPLACEMENT-FACTOR` (basis adaptation); cross-sector
 conditional permutation (applicability of the contraction-first serialization);
@@ -442,13 +443,13 @@ conditional permutation (applicability of the contraction-first serialization);
  to reading this as distance-safe reachability. Distance-safe reachability is a
  strictly harder question, constrained by the hardness of exact distance
  ( §3.1).
- **Correction (review finding — adopted, disposition below):** $k$ is bounded at
+ **Correction (red-team R10 — adopted, disposition below):** $k$ is bounded at
  fixed $n$: since $X\subseteq Z^\perp$ implies $\dim X+\dim Z\le n$, every
  valid intermediate state has $0\le k\le n$. Path length and the number of
  oscillations may be unbounded; $k$ itself is not.
 - When neither endpoint row space contains the other, no $k$-monotone path
  exists; any claim of monotone reachability is false.
- **Correction (review finding — adopted, disposition below):** the original
+ **Correction (red-team R10 — adopted, disposition below):** the original
  parenthetical explanation ("the bridge forces a pass through the
  intersection") is false for arbitrary paths. Witness: on $Q=\{1,2\}$, $Z=0$,
  $X_0=\mathrm{span}\{1\}$, $X_1=\mathrm{span}\{2\}$: add an $X$-row
@@ -470,11 +471,15 @@ conditional permutation (applicability of the contraction-first serialization);
 
  - *Row-space-level reachability (adopted).* The all-deletions-first argument
  is valid: delete all displayed rows, add an independent target $X$ basis,
- then an independent target $Z$ basis; at most $2n$ commands. It requires an
- **infinite identifier enumeration** (recorded as an explicit assumption of
- this entry) with finite used history per path — guaranteed since each
- command mints exactly one identifier and paths are finite, so `used` stays
- finite (disposition).
+ then an independent target $Z$ basis; at most $2n$ commands. It requires
+ **remaining capacity in the finite identifier enumeration** (I3; the H-4
+ decision of 2026-10-31 replaced the earlier infinite-enumeration
+ assumption, and the capacity premise is carried by the minting rules since
+ 2026-11-11, issue #296): the path mints one identifier per addition, at most
+ $n$ in all, so it exists whenever at least $n$ identifiers are unused, and
+ past capacity the add step is inapplicable (§4.17). `used` stays finite along
+ every path, since each command mints finitely many identifiers and paths are
+ finite (R1 disposition).
  - *Endpoint comparison (made explicit).* The constructed path reaches the
  target basis **supports** with canonically minted identifiers — not an
  arbitrary assignment of target identifiers or retirement history. Claims
@@ -511,7 +516,7 @@ evidence status licenses (no available argument yet).
  `OBL-FRAME-LAW`, `OBL-DIRECT-SUM-LAWS`) carry their re-evidence inline.
  **Corrected 2026-10-13.** This bullet previously read *"identical `Q`,
  `rows_*`, `id`, and `sector` fields"* and omitted `used`. That wording is
- fixed 2026-09-23 and **predates the disposition**, which made
+ fixed 2026-09-23 and **predates the R1 disposition**, which made
  `used` semantic and put it inside $\equiv$. It is superseded and kept only for
  provenance; nothing may cite it. No obligation statement changes meaning — the
  rest of this file already read $\equiv$ in the corrected sense, citing `used`
@@ -520,7 +525,7 @@ evidence status licenses (no available argument yet).
  not $\equiv$), and enumerating the `used` set among the unions in
  `OBL-DIRECT-SUM-LAWS`. This bullet was the sole outlier.
 - $\approx$ — presentation equivalence: relabeling transport of qubits,
- displayed rows, identifiers, and sector labels (the research proposal (see REFERENCES.md)).
+ displayed rows, identifiers, and sector labels (proposal §3.2).
 - Fresh identifiers are minted by the canonical rule (I3), so every MVP
  primitive is deterministic; displayed rows are finite unordered sets. The
  determinism claim made in this convention is discharged per primitive by
@@ -542,14 +547,14 @@ entry format above.
 
 **Classification:** metatheorem.
 
-**Ledger status:** added 2026-09-30 (logical-framework panel, §5.3) — statement fixed; proof `open`. **** proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8; evidence status `proved`. The provenance of this entry differs from those
+**Ledger status:** added 2026-09-30 (logical-framework panel, §5.3) — statement fixed; proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8; evidence status `proved`. The provenance of this entry differs from those
 around it: it is **not** from the work plan's *Resolve* list or
 relational-core table. It formalizes a commitment the cards and
 [`STATE_MODEL.md`](STATE_MODEL.md) §3 already make, and
 so does not depend on the pending logical-framework decision.
 
 **Intended mechanization status:** one Lean lemma per primitive across the
-– slices; input to Gates 2–4. The derivation system for the annotation
+kernel slices; input to Gates 2–4. The derivation system for the annotation
 layer is `not-yet-defined` until Gate 5, so no judgment-level form is claimed
 here.
 
@@ -587,14 +592,14 @@ inapplicable command has no output, which is not nondeterminism.
 **Dependencies.** (inventory §2–§3, I3); per-primitive cards;
 `OBL-CROSS-SECTOR-PERMUTATION` (its case 2 is order dependence, not
 nondeterminism — canonical minting removes nondeterminism, not order dependence,
-per the disposition); `OBL-DIRECT-SUM-LAWS` for the direct-sum laws, whose
+per the R2 disposition); `OBL-DIRECT-SUM-LAWS` for the direct-sum laws, whose
 value claim was corrected 2026-09-30 independently of this entry.
 
 **Known edge cases and counterexamples.**
 
 - `C-ADD-CHECK` takes no mint parameter: the fresh identifier is fixed by the
  canonical rule over `used`. Without I3 this obligation **fails** — that was
- review finding, and the disposition is what makes it
+ red-team R1's finding, and the R1 disposition is what makes it
  hold. `Eval` is deterministic outright; there is no fresh-name choice.
 - `C-DIRECT-SUM` is determined for an ordered pair once the qubit- and
  used-set-disjointness premises hold, since no renaming is performed. An
@@ -614,22 +619,38 @@ value claim was corrected 2026-09-30 independently of this entry.
 
 ## `OBL-WELL-FORMEDNESS-PRESERVATION` — Output well-formedness of every primitive
 
-**Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`.
+**Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`;
+constructor instances `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`
+(2026-11-11, issue #330), `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`,
+`A-DOUBLE` (2026-11-11, issue #369), and `L-NESTED-CSS` (2026-11-13, issue
+#445).
 
 **Semantic-contract field:** admission rule item 4 (`state-sound`).
 
 **Claim shape:** `preservation` — **Evidence status:** `proved` (MVP instances:
 `C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-DIRECT-SUM`, `C-SEQUENCE`);
-`open` for the later-layer algebraic constructor instance admitted under
-repair (a) (see above).
+`proved` for the four typed constructors admitted 2026-11-11 (`L-HGP`,
+`L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`; hand derivation
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.34, issue #330:
+the retained display is independent and spans, and the natural rows of each
+constructor have pairwise even overlap); `proved` for the five typed
+constructors admitted the same day by issue #369 (`L-BALANCED`, `L-TANNER`,
+`L-TILE`, `A-PRODUCT`, `A-DOUBLE`; hand derivation §4.35: the overlap is
+derived for `A-PRODUCT` and `L-BALANCED` and is an applicability premise of
+the other three), `A-PRODUCT` under repair (a) (see above); `proved` for
+`L-NESTED-CSS`, admitted 2026-11-13 by issue #445 (hand derivation §4.36:
+the overlap is the applicability premise). The instance is
+`open` for any later-layer constructor not yet admitted.
 
 **Ledger status:** MVP instances proved by dated hand derivation
 `spec/OPERATIONAL_SEMANTICS.md` §4.7; statement fixed against
-the conventions above. The later-layer constructor instance remains `open`.
+the conventions above. The later-layer constructor instance is `proved` for
+the nine constructors admitted 2026-11-11 (§4.34 and §4.35) and for
+`L-NESTED-CSS` (§4.36).
 
-**Intended mechanization status:** one Lean lemma per – slice; input to
+**Intended mechanization status:** one Lean lemma per kernel slice; input to
 Gates 2–4. Machine-checked (Lean 4, `lean/CodeCalculus/WellFormedness.lean`,
-, no `sorry`, no `native_decide`): the `C-SKIP`, `C-DELETE-CHECK`,
+no `sorry`, no `native_decide`): the `C-SKIP`, `C-DELETE-CHECK`,
 `C-ADD-CHECK`, and `C-SEQUENCE` instances, as `wf_deleteState` (any
 deletion), `wf_addState` (under the `C-ADD-CHECK` premises), and `wf_of_eval`
 (every evaluation of a graft-free command: sequencing by induction on the
@@ -637,18 +658,42 @@ evaluation, the Gate 6 cells through the well-formedness premise their
 transitions carry). The `C-DIRECT-SUM` instance is mechanized as
 `directSum_wellFormed`; the
 graft's preservation (§4.12) is mechanized as `wf_graftState` and
-`wf_graft_of_eval` (`lean/CodeCalculus/GraftWellFormedness.lean`, ,
+`wf_graft_of_eval` (`lean/CodeCalculus/GraftWellFormedness.lean`,
 no `sorry`, no `native_decide`) under the transition's premises, with I2
 derived by rank counting from the `k`-preservation premise and the dimension
 bound `ranksFit_of_wf` (`lean/CodeCalculus/RanksFit.lean`);
 `wf_of_eval_all` there lifts preservation to every command. The rebase's
 output well-formedness, which `Eval.rebase` carries as a premise, is derived
 from the parent's well-formedness and the matrix's invertibility by
-`wf_rebaseState` (`lean/CodeCalculus/RebaseWellFormedness.lean`, ,
+`wf_rebaseState` (`lean/CodeCalculus/RebaseWellFormedness.lean`,
 no `sorry`, no `native_decide`), so that premise is redundant for the rebase
 (`eval_rebase_of_wf`); the other four Gate 6 transitions keep theirs as
-premises. The later-layer constructor instance is not mechanized. Evidence
-status unchanged.
+premises. The later-layer constructor instance is mechanized in part for
+the four admitted constructors (issue #370,
+`lean/CodeCalculus/ConstructorWellFormedness.lean` and
+`ConstructorOrthogonality.lean`): the retained display is well-formed when
+the natural rows have pairwise even overlap, and that overlap is proved for
+all four: for `L-HGP` in `ConstructorOrthogonality.lean`, and for
+`L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT` in `ConstructorOverlap.lean`
+(issue #482), so every evaluation of the four yields a well-formed state
+with no hypothesis. Of the closed forms for $k$ (issue #483), those of
+`L-GROUP-ALGEBRA` and of `A-DOUBLE` with the empty wiring are proved
+(`ConstructorRankTyped.lean`, `ConstructorRank.lean`), that of `A-CONCAT`
+is proved together with the retention of every natural row
+(`ConcatRetention.lean`, issue #505), and those of `L-HGP` and `A-PRODUCT`
+are proved modulo the four rank axioms `hgp_rankX`, `hgp_rankZ`,
+`product_rankX`, `product_rankZ` recorded in `lean/extra/ClosedK.lean`
+and in `AXIOMS.md`: these are accepted as `proposed (classical)`
+assumptions, not discharged obligations. The five constructors of issue #369
+have Lean productions since issue #407
+(`lean/CodeCalculus/ConstructorAssembly.lean`): the overlap is proved for
+`A-PRODUCT`, is a premise of the rules of `A-DOUBLE`, `L-TANNER`, and
+`L-TILE`, and is proved for `L-BALANCED` on every typed input
+(`BalancedOverlap.lean`, issue #501), so every evaluation of the five
+yields a well-formed state with no hypothesis.
+`L-NESTED-CSS` (issue #445) has a Lean production whose rule carries the
+overlap as a premise (`evalExpr_nested_wf`).
+Evidence status unchanged.
 
 **Scope widened 2026-10-05).** This obligation was previously scoped to the five MVP primitives only. With
 repair (a) adopted, a later-layer algebraic constructor returning an **independent
@@ -671,7 +716,7 @@ The constructor's **admission** remains a Gate 7 question; this obligation recor
 what would have to be discharged if it is admitted, and is not itself an
 admission.
 
-**Statement (restated per the disposition).** For each MVP *command*
+**Statement (restated per the R9 disposition).** For each MVP *command*
 (`C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) and every applicable
 transition $\mathrm{Eval}(\mathit{op},S,S')$, and for the expression
 constructor `C-DIRECT-SUM` every applicable two-input judgment
@@ -709,17 +754,17 @@ primitive's card ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2) ho
 **Classification:** metatheorem.
 
 **Ledger status:** sharpened 2026-09-23 — statement fixed against the
-conventions above; **proof discharged
+conventions above; **proof discharged** at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4. The evidence status
 moves `open` → `proved` because a derivation is now in this repository
 (`AGENTS.md`, *Claim-status discipline*: `proved` is the evidence status,
 `established` its proposal-side tag). **No promotion occurs here**: `promoted` is
 a review disposition requiring an independent review and maintainer confirmation
 (`AUTHORITY.md` §B1–§B2), and the claim is `proved` and not yet `promoted` — the
-normal state. The derivation is re-derived mechanically in the slice
+normal state. The derivation is re-derived mechanically in Lean
 (*Intended mechanization status*).
 
-**Intended mechanization status:** Lean theorem in the slice; Gate 3 input.
+**Intended mechanization status:** Lean theorem in the sequencing slice; Gate 3 input.
 
 **Statement.** For every command $m$ and well-formed $S$:
 $\mathrm{Eval}(m,S,S')$ holds if and only if
@@ -729,7 +774,7 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 
 **Hypotheses.** $m$ well-typed; $S$ satisfies I1–I5.
 
-**Dependencies.** (`C-SEQUENCE` card).
+**Dependencies.** [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2 (`C-SEQUENCE` card).
 
 **Known edge cases and counterexamples.**
 
@@ -747,12 +792,12 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
-**Intended mechanization status:** Lean theorem in the slice; Gate 3 input.
+**Intended mechanization status:** Lean theorem in the sequencing slice; Gate 3 input.
 
 **Statement.** $(m_1;m_2);m_3\equiv m_1;(m_2;m_3)$ as partial state
 transformers — literally equal, `steps` included, since step-log concatenation
 is associative — and the big-step relation is adequate for the conventional
-left-to-right reading (the research proposal (see REFERENCES.md): associativity and denotational adequacy are
+left-to-right reading (proposal §4: associativity and denotational adequacy are
 proof obligations, not assumed equations).
 
 **Note.** The denotation the adequacy half is stated
@@ -796,7 +841,7 @@ block.
 **Intended mechanization status:** Lean theorem joining the / slices with
 ; input to Gate 5 judgment transport.
 
-**Statement (restated per the disposition).** For commands $m_1, m_2$ whose
+**Statement (restated per the R2 disposition).** For commands $m_1, m_2$ whose
 applicability on any state is order-independent, exactly one of the following
 holds for $m_1;m_2$ and $m_2;m_1$:
 
@@ -820,7 +865,7 @@ over the same well-formed $S$; applicability as in the cards
 
 - `W8` is case 3 (the earlier case (b)): one order applies and the other has
  no derivation. Any candidate $\Pi$ must classify this pair correctly.
-- **Counterexample (review finding) — now the case-2 witness:** $Q=\{1,2\}$, no
+- **Counterexample (red-team R2) — now the case-2 witness:** $Q=\{1,2\}$, no
  displayed rows, no used identifiers; $m_X$ adds an $X$-row on qubit 1 and
  $m_Z$ adds a $Z$-row on qubit 2. Both orders apply; $m_X;m_Z$ allocates
  $(X,1)\mapsto i_0,(Z,2)\mapsto i_1$ and $m_Z;m_X$ the swap. The outputs are
@@ -839,9 +884,9 @@ over the same well-formed $S$; applicability as in the cards
 
 **Classification:** lemma.
 
-**Ledger status:** sharpened 2026-09-23 — statement fixed against the conventions above; proof `open`. **** proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.9; evidence status `proved`.
+**Ledger status:** sharpened 2026-09-23 — statement fixed against the conventions above; proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.9; evidence status `proved`.
 
-**Intended mechanization status:** Lean lemmas joining the and slices;
+**Intended mechanization status:** Lean lemmas joining the deletion and addition slices;
 input to the `C-DELETE-CHECK` partial-inverse contract field.
 
 **Statement.** `C-ADD-CHECK` followed by `C-DELETE-CHECK` on the added row
@@ -852,7 +897,7 @@ a fresh identifier (I3), so it fails
 $\equiv$-identity exactly by the renaming the ratified identifier-visibility
 reading forbids. Multiplicity is recorded.
 
-**Correction (disposition, 2026-09-26).** Under the disposition the
+**Correction (R1 disposition, 2026-09-26).** Under the R1 disposition the
 add-then-delete clause is **not** a state identity: the endpoint's `used` set
 strictly grows (the minted identifier is retired but retained), and $\equiv$
 now requires identical `used`. The clause holds as an identity of displayed
@@ -863,14 +908,14 @@ correction is in force; the statement above has been aligned with it.
 [`STATE_MODEL.md`](STATE_MODEL.md)); identifier
 non-reuse and the canonical mint (I3).
 
-**Dependencies.** ; provenance rules; `OBL-ROW-REPLACEMENT-FACTOR`.
+**Dependencies.** [`STATE_MODEL.md`](STATE_MODEL.md) provenance rules; `OBL-ROW-REPLACEMENT-FACTOR`.
 
 **Known edge cases and counterexamples.**
 
 - The $s=0$ degenerate case of the row-replacement loop (`W7`) is the converse-order case: row space and displayed supports are restored, the state is not.
 - Fresh identifiers make the inverse non-unique: the presentation is not
  recovered without retained data.
-- Identifier history (review finding — RESOLVED, disposition 2026-09-26): the
+- Identifier history (red-team R1 — RESOLVED, disposition 2026-09-26): the
  add-then-delete endpoint is **not** $\equiv$ to the start: retirement is
  recorded semantically in `used` (which strictly grows), and $\equiv$ requires
  identical `used`. The clause is therefore read as an identity of displayed
@@ -890,14 +935,15 @@ non-reuse and the canonical mint (I3).
 **Disposition.** The addition clause is confirmed false as written (additions
 take typed vectors, not live generator identifiers). Adopt the **split** into a
  deletion clause and a conditional addition clause with different hypothesis
-shapes, rather than a weakened uniform statement. The disposition
-supplies what the review observation said was missing: `used` is semantic and
+shapes, rather than a weakened uniform statement. The R1 disposition
+supplies what the red-team observation said was missing: `used` is semantic and
 `C-DIRECT-SUM` disjointness is over complete used-sets, so the historical
 variant below is either rejected at the sum or handled by the
 allocation-compatibility premise. The statement below is restated accordingly;
 the earlier "pending disposition" correction is superseded by this block.
 
-**Intended mechanization status:** Lean lemma joining with –; input to
+**Intended mechanization status:** Lean lemma joining direct sum with the
+deletion and addition slices; input to
  composition judgments. Machine-checked (Lean 4,
 `lean/CodeCalculus/KernelObligations.lean`, no `sorry`, no `native_decide`):
 the deletion clause at the state level, `frame_law_delete_left` and
@@ -919,7 +965,7 @@ $Q_A\sqcup Q_B$, since `addStab` keeps the namespace and the sum unions it, so
 `frame_law_add_equiv` carries the new clause by reflexivity and the status is
 unchanged.
 
-**Statement (restated per the disposition).**
+**Statement (restated per the R3 disposition).**
 
 - **Deletion clause (unconditional).** $\mathrm{delete}_r$ with $r$ a
  displayed row of $A\oplus B$ is applicable iff $r$ is displayed in exactly one
@@ -951,21 +997,21 @@ identifier-disjointness, [`STATE_MODEL.md`](STATE_MODEL.md) §4).
 **Known edge cases and counterexamples.**
 
 - A move naming a row of the other summand must be inapplicable blockwise.
-- **Counterexample (review finding) — retained as the motivation for the
+- **Counterexample (red-team R3) — retained as the motivation for the
  addition clause's hypotheses:** additions accept typed vectors, not live
  generator identifiers. Witness: empty $A$ on $\{1\}$, empty $B$ on $\{2\}$;
  adding an $X$-row on qubit 12 to the sum is applicable but names no displayed
  row of either summand; even a local addition of an $X$-row on qubit 1 to empty
  $A$ applies while naming nothing.
-- **Historical variant (review finding):** $B$ with no live rows but a retired
+- **Historical variant (red-team R3):** $B$ with no live rows but a retired
  $i_0$ makes the right-hand sum either rejected or differently-identified
- under either reading of collision. Under the disposition this variant is
+ under either reading of collision. Under the R1 disposition this variant is
  resolved: used-set disjointness rejects the colliding sum outright, and the
  non-colliding case is governed by the allocation-compatibility premise.
 - The earlier "required correction" bullet (split into deletion and addition
  clauses with support-locality and allocation-compatibility hypotheses) is
  superseded by the disposition above: the split is adopted.
-- **Historical variant (review finding):** $B$ with no live rows but a retired
+- **Historical variant (red-team R3):** $B$ with no live rows but a retired
  $i_0$ makes the right-hand sum either rejected or differently-identified
  under either reading of collision.
 
@@ -986,10 +1032,10 @@ below is restated accordingly; the earlier "pending disposition" correction and
 the separate expression-congruence qualification are superseded by this block
 (the scoping is absorbed into the statement).
 
-**Intended mechanization status:** Lean metatheorem after –; input to
+**Intended mechanization status:** Lean metatheorem after the kernel slices; input to
 Gate 6.
 
-**Statement (restated per the disposition).** For a permitted qubit
+**Statement (restated per the R4 disposition).** For a permitted qubit
 relabeling $\sigma$ with $\tilde S=\sigma S\approx S$:
 
 - **Deletions (identifier-stable).** $\mathrm{Eval}(\mathrm{delete}_r,
@@ -1014,7 +1060,7 @@ relabeling $\sigma$ with $\tilde S=\sigma S\approx S$:
 `P-REBASE` remains deferred in the MVP: its clause cannot be exercised until
 support-sensitive applicability is formalized.
 
-**Hypotheses.** The presentation equivalence of the research proposal (see REFERENCES.md); the
+**Hypotheses.** The presentation equivalence of proposal §3.2; the
 identifier-visibility reading, ratified at the walkthrough.
 
 **Dependencies.** `OBL-DIRECT-SUM-LAWS`; .
@@ -1022,7 +1068,7 @@ identifier-visibility reading, ratified at the walkthrough.
 **Known edge cases and counterexamples.**
 
 - `W11` records the ratified reading and its rejected alternative.
-- **Counterexample (review finding) — retained as the motivation for the
+- **Counterexample (red-team R4) — retained as the motivation for the
  transported-command form:** the congruence with the same command $m$ on both
  sides fails for additions. Witness: $S$ on $\{1,2\}$ has only a $Z$-row on
  qubit 1 with identifier $b$; $\sigma$ swaps qubits 1 and 2;
@@ -1045,7 +1091,7 @@ identifier-visibility reading, ratified at the walkthrough.
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
-**Intended mechanization status:** Lean theorem in the slice; Gate 3 input.
+**Intended mechanization status:** Lean theorem in the sequencing slice; Gate 3 input.
 
 **Re-evidenced 2026-10-29.** The equality now reads $Q$;
 $Q_A\sqcup Q_B$ is a set union, associative and commutative, so both laws
@@ -1067,7 +1113,7 @@ statement about presentation equivalence and not about the direct-sum laws.
 
 **Disposition.**
 This statement previously opened "Direct sum is associative and commutative up to
-$\approx$", citing the research proposal (see REFERENCES.md), which said the laws hold "not by literal equality
+$\approx$", citing proposal §3.2, which said the laws hold "not by literal equality
 of labeled states". The two artifacts disagreed, and this entry also disagreed
 with itself: its next sentence already said both bracketings and both orders
 "literally agree". Resolved in favour of literal equality, on the ground that the
@@ -1091,7 +1137,7 @@ correction initially declined to choose between them:
 - this entry: on unordered presentations with the disjointness premises, "both
  bracketings and both orders **literally agree** up to the summand embeddings'
  relabeling";
-- an internal note
+- CSS_CODE_CALCULUS_PROPOSAL_DRAFT.md
  §3.2: "Direct sum is associative and commutative up to this explicit
  relabeling equivalence, **not by literal equality of labeled states**."
 
@@ -1102,16 +1148,16 @@ whose order does not affect state identity
 ([`STATE_MODEL.md`](STATE_MODEL.md) §3, *Collection
 convention*); the `used`-set union is order-independent (I3); and `W14` checks
 associativity and commutativity at $\equiv$. Evidence the other way: no field is
-named whose presentation could differ. The statement above is left verbatim
-pending a dated . The separately-corrected claim that the
+named whose presentation could differ. The statement above was left verbatim
+pending a dated decision. The separately-corrected claim that the
 value of $C_A\oplus C_B$ for an ordered pair is determined does not depend on
 this question; see [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2,
-`C-DIRECT-SUM`. **Resolution:** the ledger and the research proposal (see REFERENCES.md) are brought into
-agreement with each other and with 's collection convention by the disposition
+`C-DIRECT-SUM`. **Resolution:** the ledger and proposal §3.2 are brought into
+agreement with each other and with [`STATE_MODEL.md`](STATE_MODEL.md)'s collection convention by the disposition
 above, which fixes the laws at $\equiv$.
 
 **Hypotheses.** Qubit- and identifier-disjointness at each $\oplus$
-([`STATE_MODEL.md`](STATE_MODEL.md) §4); 
+([`STATE_MODEL.md`](STATE_MODEL.md) §4);
 presentation equivalence.
 
 **Dependencies.** ; `OBL-WELL-FORMEDNESS-PRESERVATION`.
@@ -1135,13 +1181,13 @@ metatheorem over the transition system.
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
 
 The shape is `preservation` (established judgments survive sequencing), not the
-reserved evidence status `not-applicable` — review finding, dispositioned
+reserved evidence status `not-applicable` — red-team R9, dispositioned
 2026-09-26.
 
-**Intended mechanization status:** Lean metatheorem in the slice; input to
-Gate 5. First slice landed 2026-10-27, 
+**Intended mechanization status:** Lean metatheorem in the sequencing slice; input to
+Gate 5. First slice landed 2026-10-27
 (`lean/CodeCalculus/Transport.lean`; no `sorry`, no `native_decide`;
-`propext`, `Classical.choice`, and `Quot.sound` only). Positive half: two
+`propext` and `Quot.sound` only). Positive half: two
 valid chains sharing their seam state compose to a valid chain
 (`chain_append`); a derivation over either segment is a derivation over the
 composed chain, unchanged for the first segment and with every atom position
@@ -1152,7 +1198,7 @@ bounds of one polarity, `transport_le_eq` and `transport_eq_le` for the mixed
 chains), closed by `judgment_soundness` on the composed chain
 (`transport_models`). The schema-composition condition is, in that encoding,
 position bookkeeping: a sentence derived over a segment mentions chain
-positions of that segment. Fixed-reference-set model (§4.15): over an
+positions of that segment. Fixed-reference-set model (§4.15, R7): over an
 arbitrary certificate type with reference sets, deletion-wise invalidation is
 pairwise commuting and idempotent, and its composition depends only on the
 deleted identifiers as a set (`invalidate_comm`, `invalidate_idem`,
@@ -1165,10 +1211,33 @@ delete-then-add chain the two one-sided distance bounds are derivable and
 neither composite bound is (`not_derivable_mixed_le`,
 `not_derivable_mixed_ge`), and no equality between distance atoms at two
 positions is derivable in a chain without an identity step, for any choice of
-the measure (`not_derivable_distance_eq`). Not mechanized: the
-derivation-level `W13` half proper, because the slice's sentence language has
-no claim that refers to a generator, and adding one is an assertion-language
-extension ( §4, Reading II); and the connection of
+the measure (`not_derivable_distance_eq`). The derivation-level `W13` half
+proper landed 2026-11-11 (issue #340) with the generator-referencing claim
+of `JUDGMENT_LAYER.md` §4 (`Ann.gen`; rows `Derives.genMint`, `genSkip`,
+`genDelete`, `genAdd`, sound in `judgment_soundness`): a claim that refers
+to a generator has no derivation at the output of the step that deletes it
+(`not_derivable_gen_of_deleted`), while it transports across the deletion
+of another generator (`derives_gen_across_other_deletion`,
+`not_derivable_gen_across_own_deletion`). The source rule for the rows of
+the input display and the graft's effect on the claim landed 2026-11-11
+(issue #368): `Derives.genInput`; `Derives.genGraft` for a generator
+outside the graft's chain, with the support `graftSupport`;
+`Derives.genGraftMint` for the minted rows; `not_derivable_gen_of_grafted`
+for the generators the graft retires; and `Derives.shift_gen`, which
+transports a derivation over the second segment under the seam condition
+`SeamRowsDerived`, with `Derives.shift` restated for sentences that are not
+generator-referencing claims. The Gate 6 rows for the claim are
+`Derives.genExtend`, `genExtendMint`, `genPeel`, `genPuncture`,
+`genHadamard`, `genRebase`, and `genRebaseMint`, with refusals
+`not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured`, and
+`not_derivable_gen_of_rebased`. The seam condition is discharged on every
+chain of single (non-sequence) steps (issue #424, issue #489,
+`lean/CodeCalculus/SeamChains.lean`): `derives_gen_of_displayed` derives, at
+every position of such a chain, the claim of every row the state displays,
+`seamRowsDerived_of_stepChain` is the seam condition, and
+`derives_gen_iff_displayed` states that on a well-formed chain of that kind
+the claim is derivable exactly when the row is displayed. Not mechanized:
+the connection of
 the fixed-reference-set model to `Eval`, since no normative artifact fixes
 what a non-deletion command does to a context. Each refutation is relative to
 the slice's `Derives` inventory: no derivation closes, not none can (F7
@@ -1178,16 +1247,16 @@ disposition, second cost).
 that refers to a deleted generator is not transported automatically (proposal
 §4 judgment transport).
 
-*Instance reading (2026-10-28).* The positive half is restated as the
+*Instance reading (S4, 2026-10-28).* The positive half is restated as the
 composition schema (S1, `JUDGMENT_LAYER.md` §7.2.4) and the interval
 composition theorem (S2, §8.5); verdict monotonicity is S3 §9.2. No status
 change.
 
-**Hypotheses.** Persistence conditions on annotations (the research proposal (see REFERENCES.md)); the
+**Hypotheses.** Persistence conditions on annotations (proposal §7.4); the
 annotation-invalidation design of the future context inventory.
 
 **Dependencies.** ; `OBL-SEQUENCE-ASSOCIATIVITY`;
-`OBL-ORDER-INDEPENDENT-DELETION` (annotation-transport part; per the 
+`OBL-ORDER-INDEPENDENT-DELETION` (annotation-transport part; per the R7
 disposition there, proposed 2026-09-26, the transported-context conclusion
 rests on the fixed-reference-set model — pairwise commuting, set-determined
 invalidation — rather than on bare idempotence).
@@ -1197,7 +1266,7 @@ invalidation — rather than on bare idempotence).
 - `W13`: claims about deleted rows are unavailable as transported claims, which
  must not be confused with falsity.
 - **Open question (F7, recorded 2026-10-05) — superseded 2026-10-11** by the
- F7 disposition recorded in ; expressibility settled
+ F7 disposition (`JUDGMENT_LAYER.md` §4); expressibility settled
  there. Kept as a pointer, not deleted, per `AGENTS.md`.
 
 ## `OBL-DERIVED-TERM-FACTORIZATION` — Factorization of derived terms
@@ -1214,10 +1283,10 @@ operations.
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.23, 2026-10-23).
 
-**Intended mechanization status:** Lean metatheorem after –; Gate 6 input.
+**Intended mechanization status:** Lean metatheorem after the kernel slices; Gate 6 input.
 
 **Statement.** Every later derived command must be proved equivalent to its
-sequence of elementary commands before admission (the research proposal (see REFERENCES.md) factorization),
+sequence of elementary commands before admission (proposal §4 factorization),
 where equivalence is $\equiv$ or $\approx$ as the derived signature indicates
 and mints are canonical (I3). Instances already identified: multi-row deletion
 as a batch operation (`spec/TAXONOMY.md` §2.3, via
@@ -1253,24 +1322,25 @@ from the work plan's *Resolve* list or its relational-core table.
 **Provenance.** Carried from the logical-framework panel's *Owed to the next
 reader* item 3: the **certificate-path keying** (§8.2) and the **route-scoping a
 checker would have to enforce** (§8.4) were deferred to Gate 5 rather than
-answered. The 2026-10-05 ratification (
-§9) adopts the framework while deferring these questions, so they are recorded
-here as obligations rather than left as loose notes.
+answered. The 2026-10-05 ratification adopts the framework while deferring these
+questions, so they are recorded here as obligations rather than left as loose
+notes.
 
 **Statement.** For the reserved `certificate-checked` path: (i) *keying* — what
 identifies the instance a certificate speaks for, and what makes a certificate
 evidencing one instance incapable of supporting an operation-contract claim;
 (ii) *route-scoping* — the obligation a checker must discharge to establish that
-a claim labelled `unavailable` on one route is not derivable on another: it is fixed
+a claim labelled `unavailable` on one route is not derivable on another. S7 fixed
 that `certificate-checked` attaches to per-state atomic judgments and never to an
 operation contract; that distinction is the typing discipline this obligation
 must make checkable.
 
-**Hypotheses.** The schema-versus-instance typing (the route-scoping of `unavailable`; the ratified D2 discipline.
+**Hypotheses.** The schema-versus-instance typing (S7, [`CLAIMS.md`](CLAIMS.md));
+the S5 route-scoping of `unavailable`; the ratified D2 discipline.
 
-**Dependencies.** None listed; the ratified framework (D1, D2); the
+**Dependencies.** [`CLAIMS.md`](CLAIMS.md); the ratified framework (D1, D2); the
 `OBL-CERTIFICATE-PATH-KEYING` statement is a Gate 5 input and is **not** a
-prerequisite for adoption.
+prerequisite for the kernel slices.
 
 **Known edge cases and counterexamples.** None yet recorded — the claim shape
 is `definition`, and the three Gate 5 questions §4.24 defers are recorded
@@ -1285,7 +1355,7 @@ owed at Gate 5:
 
 - What identifies the instance a certificate speaks for, such that a certificate
  evidencing **one** instance can never support an **operation-contract** claim.
-This fixed the schema-versus-instance distinction, and §4.24 writes the keying
+ S7 fixed the schema-versus-instance distinction, and §4.24 writes the keying
  (the instance triple $(C, P, \sigma)$); whether that is the intended keying
  remains a Gate 5 decision.
 - What a checker must discharge to establish that a claim labelled `unavailable`
@@ -1300,7 +1370,11 @@ This fixed the schema-versus-instance distinction, and §4.24 writes the keying
 
 **Intended mechanization status:** none at MVP. It is not part of the W0–W16
 acceptance surface, and no `C-*` card carries an `Underivability` entry for it,
-because no MVP operation uses a certificate.
+because no MVP operation uses a certificate. Outside the MVP, the keying is
+the shape of the mechanized checker's theorems (2026-11-11, issue #371):
+`certificate_lower_bound` and `certificate_equality` in
+`lean/CodeCalculus/CertificateChecker.lean` conclude a fact about one state
+term, the sector distance, and one sector. Route-scoping is not mechanized.
 
 ## `OBL-JUDGMENT-SOUNDNESS` — Annotated-judgment soundness
 
@@ -1312,7 +1386,7 @@ rule).
 
 **Claim shape:** metatheorem entry (explicit schema exception — see
 [`CLAIMS.md`](CLAIMS.md) *Claim shape and evidence
-status*; review finding, 
+status*; red-team R9, 
 (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
 
 **Classification:** metatheorem.
@@ -1329,7 +1403,18 @@ derivation, for a well-formed evaluation chain (`Chain cs` and
 the slice proves the `⊨` half under an assumed evaluation; the `Eval` conjunct
 of the statement below is assumed rather than proved, and the chain hypothesis
 cannot be dropped (`le_refl` and the pure order rows are derivable over any
-list of states). Scope of the slice: the instantiation cells proved are skip's
+list of states). The chain is supplied from the evaluation in
+`lean/CodeCalculus/TermSoundness.lean` (issue #425, 2026-11-12):
+`Trace m s cs t` is the list of states the command `m` passes through from
+`s` to `t`, one per primitive step; a command has a trace exactly when it
+evaluates (`eval_iff_trace`), the trace is unique (`Trace.unique`), and it
+is a `Chain` from `s` to `t` (`Trace.chain`, `Trace.getLast`).
+`judgment_soundness_of_eval` and `judgment_soundness_of_term` conclude
+`Models` over that trace from `Eval m s t`, respectively `EvalTerm`, and the
+well-formedness of the input state, with `_exact` forms for the exact
+distance. The well-formedness of the state the term's expression evaluates
+to stays the FD1 hypothesis.
+Scope of the slice: the instantiation cells proved are skip's
 identity (every field of the §4.11 list — input and output state coincide, so
 the identity holds under any reading of the distance fields: `dX` and `dZ` are
 read through a supplied measure parameter the derivation constrains nowhere
@@ -1340,19 +1425,20 @@ adds the `k` cells (deletion, addition, graft) and the distance monotonicity
 and bounds cells (deletion and addition, `d_X`/`d_Z`/`d`) as instantiation
 rows that take the corresponding cell's truth at that evaluation as a premise:
 a derivable `k` or distance annotation then means the cell is assumed at the
-row, not discharged by a per-primitive lemma. The slice of 2026-10-27 (`lean/CodeCalculus/WellFormedness.lean`) adds the output well-formedness
+row, not discharged by a per-primitive lemma. The slice of 2026-10-27 (issue
+#192, `lean/CodeCalculus/WellFormedness.lean`) adds the output well-formedness
 cells as the sentence `Ann.wf`, with rows for skip, deletion, addition, and the
 graft: the first three are discharged by the §4.7 preservation lemmas
 (`wf_deleteState`, `wf_addState`, lifted to every graft-free evaluation by
 `wf_of_eval`), and the graft's is discharged by `wf_graft_of_eval`
-(`lean/CodeCalculus/GraftWellFormedness.lean`, , 2026-10-28). The
+(`lean/CodeCalculus/GraftWellFormedness.lean`, 2026-10-28). The
 same slice discharges the `k` cells of deletion and addition from the
 transition's own independence premise through the rank-decrease lemmas
 (`sectorRank_deleteState_same`, `sectorRank_addState_same`, bridged from the
 vector-level premise to `rankBitmasks` by `inSpanRows_iff_inSpanMasks`), under
 the dimension bound `RanksFit` (`rank X + rank Z ≤ |Q|`), which keeps the
 truncated subtraction in `stateK` exact and which `ranksFit_of_wf`
-(`lean/CodeCalculus/RanksFit.lean`, , 2026-10-28) derives from
+(`lean/CodeCalculus/RanksFit.lean`, 2026-10-28) derives from
 well-formedness, so no row takes it as a premise. `judgment_soundness_of_head`
 derives the chain's well-formedness context from the input state alone on any
 chain. The slice of 2026-10-29 removes the per-row premise from
@@ -1370,30 +1456,40 @@ is the exact sector distance over `F₂` vectors, with `|Q| + 1` standing for
 `+∞`, `spanMonotone_exactMeasure` proves it span-monotone through the same
 set-inclusion argument, and `judgment_soundness_exact` instantiates the
 metatheorem with no measure hypothesis left. The measure parameter of
-`judgment_soundness` itself stays uninterpreted, and the `Nat` reading of
-`+∞` is a stand-in recorded in the module note. The slice of 2026-10-29 states the `k` cells of deletion and addition in the spec's exact
+`judgment_soundness` itself stays uninterpreted. The `Nat` reading of `+∞`
+is the sentinel `|Q| + 1`, kept by decision (issue #310, 2026-11-10) and
+made exact: `exactDistance?` reads the exact distance in `Option Nat` with
+`none` for `+∞`, `exactDistanceExt` in the S2 domain `ExtNat`, the `Nat`
+value is the `Option` reading with the sentinel as default
+(`exactDistance_eq_getD`, `exactDistance_eq_sentinel_iff`), and on a common
+namespace the `Nat` order is the `ExtNat` order (`exactDistance_le_iff_ext`),
+which is the only comparison the distance rows make; the §4.3 and §4.5 laws
+are restated in `ExtNat` (`exactDistanceExt_delete_le`,
+`exactDistanceExt_add_le`). The slice of 2026-10-29 states the `k` cells of deletion and addition in the spec's exact
 additive form (`k' = k + 1` and `k = k' + 1`, rows `instDeleteK` and
 `instAddK`, through a new `add` term constructor) and keeps the truncated
 `Nat` reading as separate rows (`instDeleteKSub`, `instAddKSub`), since
 `TRANSITIVITY` composes two-step `k` chains only through a shared middle
 term; before that slice only the truncated forms were rows, which are weaker
-than the cell at `k' = 0`. The module note records three encoding limits: the
-absorbing `min` under chain extension, the `Nat`-valued measure with no `+∞`
-at `k = 0`, and the inventory's lack of an arithmetic or congruence rule, so
-a two-graft `n` chain is not derivable by `TRANSITIVITY`. Evidence status is
-unchanged.
+than the cell at `k' = 0`. The module note records three encoding notes: the
+absorbing `min` under chain extension, the `Nat`-valued measure kept by
+decision with the `+∞` value carried by `exactDistance?` (the connection of
+`+∞` to `k = 0` for the exact distance is `exactDist_k0` in
+`lean/CodeCalculus/ExactPeel.lean`, 2026-11-11), and the inventory's
+lack of an arithmetic or congruence rule, so a two-graft `n` chain is not
+derivable by `TRANSITIVITY`. Evidence status is unchanged.
 `OBL-JUDGMENT-TRANSPORT` is mechanized in
 `lean/CodeCalculus/Transport.lean`. Evidence status is unchanged
 by these landings: they are mechanization progress, not a status upgrade.
 
 
 **Statement.** $\Gamma\vdash \mathrm{Eval}(m,S,S') : R$ implies
-$\mathrm{Eval}(m,S,S')$ and $(S,m,S')\models R$ (the research proposal (see REFERENCES.md)): every
+$\mathrm{Eval}(m,S,S')$ and $(S,m,S')\models R$ (proposal §5): every
 derivable annotation is true of the denoted command evaluation.
 
-**Hypotheses.** $\Gamma$ contains only well-formedness assumptions of ; the
+**Hypotheses.** $\Gamma$ contains only well-formedness assumptions of [`STATE_MODEL.md`](STATE_MODEL.md); the
 derivation system for $\vdash$ is the L3 rule inventory of
- §3.4 and §3.4.1
+[`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §3.4 and §3.4.1
 (instantiation, `TRANSITIVITY`, `MIN-ORDER`, ambient order theory on
 $\mathbb{N}\cup\{+\infty\}$).
 
@@ -1422,15 +1518,16 @@ coverage guard).
 
 **Introduced in:** `stdCSS-2`.
 
-**Ledger status:** added 2026-10-19 for ; the transition is specified
+**Ledger status:** added 2026-10-19 for `E-GRAFT`; the transition is specified
 and executable, and its derivation under the applicability premises and coverage
 guard is recorded at §4.12.
 
 **Intended mechanization status:** well-formedness of the constructed state is
-machine-checked (Lean 4, `lean/CodeCalculus/GraftWellFormedness.lean`, , 2026-10-28, no `sorry`, no `native_decide`): `wf_graftState` and
+machine-checked (Lean 4, `lean/CodeCalculus/GraftWellFormedness.lean`, issue
+#217, 2026-10-28, no `sorry`, no `native_decide`): `wf_graftState` and
 `wf_graft_of_eval`, under the transition's premises. I2 is derived there by
 rank counting from the `k`-preservation premise and the dimension bound
-(`ranksFit_of_wf`), both output sectors being forced to full rank,
+(`ranksFit_of_wf`, `lean/CodeCalculus/RanksFit.lean`), both output sectors being forced to full rank,
 not by §4.12's lifting argument, and the coverage and opposite-sector guards are not
 used. `n' = n - 1` is the `instGraftN` row of `judgment_soundness`
 (`lean/CodeCalculus/Soundness.lean`); `k' = k` is the transition's own premise.
@@ -1451,10 +1548,11 @@ is an empirical guard in the source model, not a universal theorem.
 
 **Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION`; the `E-GRAFT` transition
 definition; the source's coverage qualification recorded in
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.12.
 
 
 **Known edge cases and counterexamples.** On the pinned qLDPC case
-an internal note, grafting qubit 0 through X rows `a1,a2` yields a valid
+`10-2-3-b.json`, grafting qubit 0 through X rows `a1,a2` yields a valid
 $(9,2)$ state under the executable checks. This is one empirical case only and
 does not discharge the obligation.
 
@@ -1490,15 +1588,16 @@ corrected E-GRAFT rules).
 
 **Introduced in:** `stdCSS-2`.
 
-**Ledger status:** added 2026-10-19 for ; consumer rules are
+**Ledger status:** added 2026-10-19 for the priced consumer; consumer rules are
 transcribed in [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2b and
 `machine/consumer.json`; interval soundness derivation recorded at §4.13 is
 **proved** under the corrected E-GRAFT rules (see §4.13). Mechanization:
-`lean/CodeCalculus/PricedInterval.lean` (`priced_interval_soundness`, ,
+`lean/CodeCalculus/PricedInterval.lean` (`priced_interval_soundness`,
 2026-10-26) mechanizes the interval bookkeeping conditional on the distance
 laws §4.13 derives and on price truth as premises over an uninterpreted
 distance measure, with the `k = 0` hypothesis and the three monotonicity
-hypotheses guarded by well-formedness of the input state since 2026-10-29; witnesses, strict improvement, and `certify`/`prune` remain
+hypotheses guarded by well-formedness of the input state since 2026-10-29; the `k = 0` hypothesis is discharged for the exact distance
+(`exactDist_k0`, `lean/CodeCalculus/ExactPeel.lean`, 2026-11-11); witnesses, strict improvement, and `certify`/`prune` remain
 outside this slice.
 
 **Statement.** If each input ledger interval contains the corresponding exact
@@ -1516,7 +1615,7 @@ their sound admission is tracked by `OBL-GATE6-CSS-EXTENSIONS`, and
 `OPERATIONAL_SEMANTICS.md` §4.13 states the boundary explicitly. No bullet
 is added here, and the obligation's `proved` status is unaffected.
 
-*Instance reading (2026-10-28).* Restates this obligation as an instance of
+*Instance reading (S4, 2026-10-28).* Restates this obligation as an instance of
 the abstract-interpretation schema (transformers §8.3, soundness/monotonicity
 §8.4, composition §8.5, reduced product §8.8, and the `unavailable`-is-not-top
 distinction §8.10); the per-primitive soundness bullets of §4.13 are the
@@ -1533,7 +1632,7 @@ minimum law. Every supplied witness is valid in the state where it is used.
 **Dependencies.** `OBL-JUDGMENT-SOUNDNESS`; `OBL-JUDGMENT-TRANSPORT`;
 `OBL-GRAFT-TRANSITION-SOUNDNESS`; hand derivations at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4; conditional source
-results in .
+results in [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.19.
 
 **Known edge cases and counterexamples.** In the pinned graft replay, an upper
 witness of weight 2 coexists with a post-hoc exact distance of 2: the
@@ -1556,8 +1655,7 @@ supplies one. Both are fixed in the consumer and covered by regression tests;
 both are recorded here because the obligation is stated over the transport
 rules, not over the current implementation.
 
-**Empirical cases from the challenge fieldnote of 2026-10-19**, imported
-verbatim at
+**Empirical cases from the challenge fieldnote of 2026-10-19:**
 
 Over board parents with $n \le 20$ and $d \ge 4$, the fieldnote reports 15
 gate-passing, board-advancing codes, **all** via `C-DELETE-CHECK` (single and
@@ -1568,14 +1666,14 @@ $n \le 8$. Its boundary statement limits these negatives to $n \le 20$
 parents and witness search up to weight 6-8. These are cited as evidence
 about where the moves *pay*, not about the transport rules. The consumer's
 own measurement, on the pinned challenge commit, is in
-the conformance harness:
+`machine/experiments/issue21_challenge_replay.py`:
 the deletion chain prunes target 4 with zero exact-distance remeasurements in
 the consumer path, and the graft's transported upper bound is exact on its
 instance.
 
 **A note on the measuring instrument.** The evidence used against this
 obligation includes a post-hoc exact-distance oracle in
-`the conformance harness`, and that oracle was wrong twice before 2026-10-20: it
+`machine/experiments/issue21_challenge_replay.py`, and that oracle was wrong twice before 2026-10-20: it
 returned the first logical in integer order rather than the minimum-weight
 one, and it enumerated bit positions rather than the state's qubit labels.
 The second error reported a grafted child's distance as 1 where it is 2, and
@@ -1584,6 +1682,13 @@ measured by an instrument is only as good as the instrument; the oracle now
 has regression tests of its own.
 
 ## `OBL-PRICED-INPUT-SEMANTICS` — Meaning and trust boundary of price inputs
+
+**Extended 2026-11-10 (issue #331), not discharged.** The exposure price now
+also binds to `E-PEEL` for the opposite sector, where §4.28 derives the
+graft's relation at $m=1$, and the typed inputs gain the avoidance minimum
+$w_{\mathrm{avoid},\tau}(q)$ for the peel's selected sector
+([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2c). Both are consumer inputs
+whose shape the consumer checks and whose truth it does not.
 
 **Taxonomy IDs:** `C-DELETE-CHECK`, `C-ADD-CHECK`, `E-GRAFT`.
 
@@ -1646,7 +1751,8 @@ recorded count is the fieldnote's $0$-of-$736$ above.
 ## `OBL-LOCALITY-TRANSPORT` — Transport of the interaction radius under the kernel primitives
 
 **Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`,
-`C-SEQUENCE`, `E-GRAFT`.
+`C-SEQUENCE`, `E-GRAFT`; since 2026-11-10 also `E-PEEL`, `E-PUNCTURE`,
+`E-LOCAL-HADAMARD` ($T=Q$), `P-REBASE`, `E-EXTEND`, and `E-GLUE`.
 
 **Claim shape:** `equality` and `upper-bound` — **Evidence status:**
 `proved`.
@@ -1655,7 +1761,7 @@ recorded count is the fieldnote's $0$-of-$736$ above.
 
 **Ledger status:** minted 2026-10-22 on as a
 stub, so that the planning note at
-an internal note could name
+LAYOUT_PARAMETER_PLAN.md could name
 it; `scripts/lint_docs.sh` check 3 requires every `OBL-*` token to be defined
 here. **Statement fixed 2026-10-22** with the wiring that admits the
 interaction radius to the property inventory, and the dated hand derivation
@@ -1665,9 +1771,15 @@ in this repository (`AGENTS.md`, *Claim-status discipline*: `proved` is the
 evidence status, `established` its proposal-side tag). **No promotion occurs
 here**: `promoted` is a review disposition requiring independent review and
 maintainer confirmation (`AUTHORITY.md` §B1–§B2), and the claim is
-`proved` and not yet `promoted` — the normal state.
+`proved` and not yet `promoted`, the normal state. **Extended 2026-11-10
+(issue #333)** to the transitions admitted after `E-GRAFT`: clauses 4 and 5
+below, derived in the dated addendum to
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21, with the cells
+in [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2d.5 and their transcription in
+`machine/semantics.json` (`layout_cells`). Still `proved`, still not
+`promoted`.
 
-**Intended mechanization status:** Lean theorem in the slice.
+**Intended mechanization status:** Lean theorem in the property-transport slice.
 
 **Statement.** Let $\lambda$ be a layout covering every qubit of a state's
 namespace, and let $r(C,\lambda)=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}\}$
@@ -1685,12 +1797,28 @@ be the interaction radius, with $r=0$ for an empty display. Then:
  distinct sites at least $1$ apart — stays honest under `C-SKIP`,
  `C-DELETE-CHECK`, `C-ADD-CHECK` and `E-GRAFT`. It is not automatically
  preserved by `C-DIRECT-SUM`.
+4. *(extension transitions, 2026-11-10)* With $\lambda'=\lambda\vert_{Q'}$ for
+ the child namespace $Q'$: `E-PEEL` and `E-PUNCTURE` give
+ $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}\le r$;
+ `E-LOCAL-HADAMARD` ($T=Q$) gives $r'=r$; `P-REBASE` gives the exact
+ recomputation $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ with
+ no direction (both $r'>r$ and $r'<r$ occur); `E-EXTEND` with a supplied
+ layout $\lambda'$ on $Q\cup\Delta$ agreeing with $\lambda$ on $Q$ gives
+ $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})\ge r$,
+ and with $\Delta=\emptyset$ the `C-ADD-CHECK` value once per added row;
+ `E-GLUE` gives $r=\max(r_A,r_B,\max\{\mathrm{diam}(s):s\ \text{a seam row}\})$
+ in the merged layout, so $r\ge\max(r_A,r_B)$.
+5. *(honesty, extension transitions)* An honest layout stays honest under
+ `E-PEEL`, `E-PUNCTURE`, `E-LOCAL-HADAMARD`, `P-REBASE`, and `E-EXTEND` with
+ $\Delta=\emptyset$. The merged layout of `E-GLUE` and the supplied layout of
+ `E-EXTEND` with $\Delta\neq\emptyset$ are not automatically honest.
 
 **Hypotheses.** The state is well-formed (I1–I5). The layout covers every
 qubit of the state's namespace, and its coordinates are read at the state's
-qubit labels. For the direct-sum cell, the merged layout is honest. No
-hypothesis about distances, weights, prices, or witnesses is needed, and none
-is admitted: the radius is exactly computable.
+qubit labels. For the direct-sum and glue cells, the merged layout is honest;
+for `E-EXTEND` with new qubits, the supplied layout agrees with the parent's
+on $Q$ and is honest. No hypothesis about distances, weights, prices, or
+witnesses is needed, and none is admitted: the radius is exactly computable.
 
 **Conclusion.** The radius is a derived property of the display relative to a
 ledger parameter, carried exactly under every primitive, with the directions
@@ -1701,13 +1829,15 @@ of its own.
 
 **Dependencies.** `OBL-JUDGMENT-TRANSPORT` for the schema-composition
 condition under `C-SEQUENCE`; `OBL-WELL-FORMEDNESS-PRESERVATION` for the
-transitions' state updates; the disposition recorded in the decision record.
+transitions' state updates; the disposition recorded in the decision log.
 
 **Known edge cases and counterexamples.**
 
 - **The naive graft monotonicity is false.** Across the board entries with
- $n \le 14$ carrying a 2D layout, 277 grafts are applicable and 74 of them
- *increase* the radius, with the largest observed ratio $r'/r = 1.6125$. A
+ $n \le 14$ carrying a 2D layout, at the pinned commit 9d30c66a, 823 grafts
+ are applicable and 198 of them *increase* the radius, with the largest
+ observed ratio $r'/r = 1.6125$
+ (`machine/experiments/layout_graft_survey.json`, reproduced 2026-11-10). A
  claim that the graft preserves the interaction radius is therefore refuted
  by example, in the same shape as the refuted graft distance non-increase
  claim ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.13,
@@ -1730,6 +1860,15 @@ transitions' state updates; the disposition recorded in the decision record.
  radius is exactly computable from the display and the layout, and it is not
  an opacity question of the kind `spec/VOCABULARY.md` records for $d_X$ and
  $d_Z$.
+- **Randomized evidence (2026-11-10).**
+ `machine/experiments/layout_conformance_harness.py` transits every
+ transition of clauses 1 to 5 on random small states and layouts, checks each
+ cell's direction, formula, and honesty claim in exact arithmetic, compares
+ the consumer's own layout transport with the cells, and fails unless it has
+ observed a rebase in each direction, a graft that increases the radius, a
+ dishonest blockwise merge of two honest layouts, and a dishonest supplied
+ extension layout. The check is evidence about the cells and discharges
+ nothing.
 
 ## `OBL-TANNER-CONNECTIVITY-TRANSPORT` — Transport of the Tanner components under the kernel primitives
 
@@ -1740,12 +1879,12 @@ transitions' state updates; the disposition recorded in the decision record.
 
 **Classification:** `lemma`.
 
-**Ledger status:** minted 2026-10-23 on ; the
+**Ledger status:** minted 2026-10-23; the
 dated hand derivation is at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.22.
 `proved`, not yet `promoted` — the normal state (`AUTHORITY.md` §B1–§B2).
 
-**Intended mechanization status:** Lean theorem in the slice.
+**Intended mechanization status:** Lean theorem in the property-transport slice.
 
 **Statement.** For a presented state, let $\Gamma(C)$ be the combined X+Z
 Tanner graph of the **displayed** rows and $\kappa(C)$ its number of connected
@@ -1771,7 +1910,7 @@ predicate of the same gate is computed by the consumer but is not carried as a
 spec cell.
 
 **Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION` for the transitions'
-state updates; the disposition recorded in the decision record.
+state updates; the disposition recorded in the decision log.
 
 **Known edge cases and counterexamples.** The deletion witness in
 `machine/test_priced_calculus.py` `ConnectivityCarryTests` (a redundant
@@ -1788,12 +1927,12 @@ was already split.
 `E-LOCAL-HADAMARD`, `P-REBASE`.
 
 **Semantic-contract field:** per-operation contract rows in
-[`CLAIMS.md`](CLAIMS.md) (*Initial contract index*): `taxonomy-only` for
-`E-GLUE` (no unary grammar production; evaluator transition admitted
-2026-10-27, §4.31), `transition-defined` for the other five
-(`P-REBASE` §4.26, `E-PEEL` §4.28, `E-PUNCTURE` §4.29, `E-EXTEND` §4.30,
-`E-LOCAL-HADAMARD` §4.27); the contract index is unchanged by the
-discharge, which does not advance a ladder rung.
+[`CLAIMS.md`](CLAIMS.md) (*Initial contract index*): `transition-defined` for
+all six (`E-GLUE` has no unary grammar production; evaluator transition admitted
+2026-10-27, §4.31, and contract-index row moved to `transition-defined`
+2026-11-11, issue #332; `P-REBASE` §4.26, `E-PEEL` §4.28, `E-PUNCTURE` §4.29,
+`E-EXTEND` §4.30, `E-LOCAL-HADAMARD` §4.27); the contract index is unchanged by
+the §4.32 discharge itself, which does not advance a ladder rung.
 
 **Claim shape:** `definition` / `equality` / `monotonicity` (per move) —
 **Evidence status:** `proved` (hand derivation
@@ -1802,6 +1941,45 @@ Gate 6 cells has a typed transition (§4.26–§4.31), applicability conditions,
 exactly stated state/context update, and a sound, monotone interval
 transformer under its stated hypotheses. The cells remain conditional on
 their hypotheses; discharge is not promotion.
+
+**Intended mechanization status:** machine-checked (Lean 4,
+`lean/CodeCalculus/Gate6Soundness.lean`, issue #311, 2026-11-10): the §4.32
+transformers of the six cells are sound (`gate6_interval_soundness` for the
+five unary moves, `glue_transformer_sound` for `E-GLUE`) and monotone
+(`propagateGate6_monotone`, `glueLedger_monotone`), conditional on the
+§4.26 to §4.30 distance relations as hypotheses, in the shape of
+`priced_interval_soundness`; the §4.26 and §4.27 relations are discharged
+for the exact sector distance (`exactDistance_rebaseState`,
+`exactDistance_swapState`), the §4.30 relation on an unchanged namespace,
+and the §4.28 relations in `lean/CodeCalculus/ExactPeel.lean`
+(`exactDist_peel_relations`, issue #338, 2026-11-11), together with the
+`k = 0` reading `hk0` (`exactDist_k0`). The combined theorem is
+instantiated at the exact distance as `gate6_interval_soundness_exact`
+(`lean/CodeCalculus/Gate6Exact.lean`, issue #339, 2026-11-11). Since
+2026-11-11 (issue #367) it has no hypothesis about a distance: the §4.13
+graft relations are `exactDist_graft_relations` (`ExactGraft.lean`) and the
+$\Delta = \varnothing$ extension law is `exactDist_extend_nil`, through the
+invariance of the exact distance under a reordering of the namespace
+(`ExactPermute.lean`). The same module proves `glueLedger` sound on the
+constructor `StateExpr.glue` (`glue_state_transformer_sound`,
+`glue_expr_sound`, `glue_expr_sound_exact`); the direct-sum law for the
+exact distance is `exactDist_directSumState` (`ExactDirectSum.lean`), on
+well-formed factors with disjoint namespaces, so `glue_expr_sound_exact`
+keeps the seam certificate's equality (the §2e cell hypothesis, by
+decision) and the factors' well-formedness, and the glued state's
+well-formedness stays a premise of `EvalExpr.glue`. The measure-generic
+statements `directSum_sound` and `glue_transformer_sound` keep an
+unconditional direct-sum hypothesis that the exact distance does not
+satisfy; their exact-distance counterparts take the law at the two
+factors. For the closed term these are `glue_transformer_sound_at`,
+`glue_transformer_sound_exact`, and `glue_term_sound_exact` (issue #406),
+which keep the seam certificate's equality as the cell hypothesis and
+have no other hypothesis about a distance. In `Gate6Soundness.lean`
+`E-GLUE` is read as the closed term
+`⟨glueCommand seams, directSum (base A) (base B)⟩` of the existing
+language; no constructor is added, and the seam certificate's equality
+enters as the hypothesis `hcert`. Mechanization progress, not a status
+upgrade.
 
 **Classification:** framework admission obligation (Gate 6).
 
@@ -1839,14 +2017,14 @@ rather than a theorem. This ledger is the discharge record for
 `OBL-GATE6-CSS-EXTENSIONS` (evidence status `proved`); the Gate 0
 ratification reading that the soundness obligation remained
 open is superseded by this entry and by the dated maintainer discharge
-recorded in the decision record.
+recorded in the decision log.
 
 | Move | definition | equality | monotonicity |
 | --- | --- | --- | --- |
 | `P-REBASE` | §4.26 (typed transition, GL-ness) | §4.26 (span/`n`/`k`/distance identity) | §4.32 (identity transformer); `JUDGMENT_LAYER.md` §2b row |
 | `E-LOCAL-HADAMARD` ($T=Q$) | §4.27 | §4.27 (sector distance exchange, $d'=d$) | §4.32 (swap transformer); `JUDGMENT_LAYER.md` §2b |
-| `E-PEEL` | §4.28 (applicability, injectivity) | §4.28 (`n'`, `k'` exact) | §4.32 (reset transformer; no carried endpoint derivable); `JUDGMENT_LAYER.md` §2b reset |
-| `E-PUNCTURE` | §4.29 (applicability, structural effects) | §4.29 (`n'`, `k'` exact) | §4.32 (reset transformer; no carried endpoint derivable); `JUDGMENT_LAYER.md` §2b reset |
+| `E-PEEL` | §4.28 (applicability, injectivity) | §4.28 (`n'`, `k'` exact); the two sector distances exact as $d_\tau'=w_{\mathrm{avoid},\tau}(q)$ and $d_\sigma'=\min(d_\sigma,w_{\mathrm{expose},\sigma}(q))$ (2026-11-10, issue #331), conditional on the consumer-supplied minima as the §2a price cells | §4.32 (selected-sector lower carries, opposite-sector lower carries less one and upper carries, full distance the minima of the sector endpoints; issue #295 and issue #331); `JUDGMENT_LAYER.md` §2b admitted carries and §2a price cells; mechanized `peelLedger`, `peel_transformer_sound` |
+| `E-PUNCTURE` | §4.29 (applicability, structural effects) | §4.29 (`n'`, `k'` exact); the reduction to deletions followed by a free-qubit removal recorded 2026-11-10 (issue #331), whose price is the hole price, not admitted | §4.32 (reset transformer; no carried endpoint derivable, both directions refuted); `JUDGMENT_LAYER.md` §2b reset |
 | `E-EXTEND` | §4.30 (applicability, canonical mint) | §4.30 (`n'`, `k'` exact) | §4.32 (carry/reset under the stated hypotheses); `JUDGMENT_LAYER.md` §2b row |
 | `E-GLUE` | §4.31 (applicability, state update) | conditional — seam certificate hypothesis (Theorem 4 / claim 7.4 for $d_Z(Q)=\min(d_A,d_B)$); lower endpoints sound without it (§4.31) | §4.32 (lower endpoints sound without certificate; upper endpoints from witnesses); `JUDGMENT_LAYER.md` §2b/§2e |
 
@@ -1862,3 +2040,113 @@ addition to the seam-vs-factor commutation premise; see
 `OPERATIONAL_SEMANTICS.md` §4.31. `E-GLUE`'s equality
 $d_Z(Q)=\min(d_A,d_B)$ is recorded above as a hypothesis of the conditional
 cell, not as a theorem of §4.31 or a carved-out obligation.
+
+---
+
+## `OBL-GLUE-RE-EXPOSURE`: no re-exposed class under `E-GLUE`; the glued sector distance from factor class data
+
+**Taxonomy IDs:** `E-GLUE`.
+
+**Semantic-contract field:** none new; `E-GLUE`'s contract-index row stays
+`transition-defined` ([`CLAIMS.md`](CLAIMS.md)). The entry records a derived fact
+about the admitted transition, not a cell.
+
+**Claim shape:** `direction` (the per-sector lower bound without a
+re-exposure term) and `equality` (the class-pair formula). **Evidence
+status:** `proved` (hand derivation
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.33, 2026-11-11,
+issue #328).
+
+**Classification:** `lemma`.
+
+**Ledger status:** minted 2026-11-11 on the discharge of the issue #313 C1
+candidate (re-exposure hardness in constrained splits); `proved`, not
+`promoted` (`AUTHORITY.md` §B1–§B2).
+
+**Introduced-in:** `stdCSS-2` line, dated note 2026-11-11; proof-only, patch
+level ([`VERSIONING.md`](VERSIONING.md) §4.1).
+
+**Intended mechanization status:** not mechanized. A Lean statement would be
+a lemma about `glueCommand` over `directSum` in
+`lean/CodeCalculus/Gate6Soundness.lean`; not scheduled.
+
+**Statement.** For the admitted `E-GLUE` transition (§4.31), factors $C_A$
+and $C_B$ on disjoint qubit sets, glued state $C$, and either sector
+$\sigma$:
+
+1. every $\sigma$-logical of $C$ restricts to a $\sigma$-logical of at least
+   one factor, so the re-exposure minimum $w_{\mathrm{re},\sigma}$ (the least
+   weight of a glued $\sigma$-logical that is a stabilizer on both factors)
+   is $+\infty$, and $d_\sigma(C) \ge \min(d_\sigma(C_A), d_\sigma(C_B))$
+   carries no re-exposure term;
+2. the glued $\sigma$-logical classes are the pairs of factor classes that
+   commute with the opposite-sector seam checks, modulo the class pairs of
+   the same-sector seam checks, and $d_\sigma(C)$ is the least
+   $\mu_A(\alpha) + \mu_B(\beta)$ over the surviving pairs, where $\mu_A$ and
+   $\mu_B$ are the factors' least class weights;
+3. $d_\sigma(C) = \min(d_\sigma(C_A), d_\sigma(C_B))$ iff a pure pair of that
+   weight survives.
+
+**Hypotheses.** Both factors well-formed (I1–I5) with disjoint qubit and
+used sets; the seam checks admissible in the sense of §4.31 (commutation
+with the factor rows and the seam checks of the opposite sector, independence
+from the same-sector span). No price, witness, or certificate is assumed.
+
+**Conclusion.** On the admitted scope the issue #313 C1 question, the
+polynomiality of $w_{\mathrm{re}}$ on monotone seams, is moot: the quantity
+is $+\infty$ on every admitted glue. The NP-hardness of $w_{\mathrm{re}}$
+(Proposition 5.2, *composition-distance*) concerns shared-interface splits,
+which the calculus does not admit; it stays recorded in
+`design/DERIVED_RELATIONS.md` §3 against that setting. The seam
+certificate's equality remains a cell hypothesis; statement 3 is what it
+asserts.
+
+**Dependencies.** §4.31 (applicability and state update of `E-GLUE`);
+`OBL-WELL-FORMEDNESS-PRESERVATION` for the glued state. The direct-sum and
+addition-monotonicity facts behind §4.31's lower-endpoint repair are not
+used; statement 1 is self-contained.
+
+**Known edge cases and counterexamples.** With no seam check the glued
+state is the direct sum and the formula reduces to
+$\min(d_\sigma(C_A), d_\sigma(C_B))$. An $X$ seam check on all four qubits
+of two one-row two-qubit factors (`machine/test_glue_class_pairs.py`) kills
+both weight-one $Z$ classes and gives $d_Z(C) = 2 = d_Z(C_A) + d_Z(C_B)$,
+above both factors; the equality of the `JUDGMENT_LAYER.md` §2e cell fails
+for this seam, which is not a planar seam, so a certificate asserting it
+there would be a false hypothesis that the consumer, by design, does not
+detect. Shared-interface splits (pieces overlapping on qubits) are outside
+the statement; there re-exposed classes exist and the hardness boundary
+applies.
+
+---
+
+## v0.2 candidates dispositioned 2026-11-10 (issues #312–#316)
+
+The candidates below were accepted by the maintainer on 2026-11-10 (see
+`DIARY.md`, 2026-11-10). Each is an **open** obligation until its dated
+derivation, citation, or implementation lands; none is discharged by this
+disposition. Machine-side items create no calculus obligation and are tracked
+in `machine/` and `TODO.md` only.
+
+| Candidate | Status | Tracking |
+| --- | --- | --- |
+| Re-exposure hardness in constrained splits (`E-GLUE`) | landed 2026-11-11 (issue #328): no re-exposed class under the admitted transition, so the quantity is $+\infty$ there; glued sector distance derived from factor class pairs; hardness boundary kept against shared-interface splits, not admitted | `OPERATIONAL_SEMANTICS.md` §4.33; `OBL-GLUE-RE-EXPOSURE`; `machine/experiments/glue_class_pairs.py` |
+| Consumer-side planner search budget | landed 2026-11-11 (issue #347): `bounded_support_search` in `machine/planner.py`, per-child budget and weight ceiling recorded, witnesses enter through the ledger's transport, no lower endpoint raised | `machine/planner.py`, `machine/test_support_search.py`; no calculus obligation |
+| Sector-targeted deletion/peel search | accepted | `machine/planner.py` follow-up; no calculus obligation |
+| Multi-objective candidate ranking | accepted | `machine/planner.py` follow-up; no calculus obligation |
+| Heuristic-result status (machine-side) | landed 2026-11-11 (issue #329): `heuristic_outcome` records on the strict-improvement enumeration fallback and the bounded sector search | `machine/priced_calculus.py`; `machine/planner.py`; `machine/test_heuristic_outcome.py` |
+| Distance-increasing constructor admission (`L-*`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`) | landed 2026-11-11 (issues #330 and #369): `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT` admitted as `transition-defined` expression constructors, their well-formedness instances of `OBL-WELL-FORMEDNESS-PRESERVATION` proved (§4.34), no distance rule; `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` admitted the same way by issue #369 with typed inputs realized as finite objects and their instances proved (§4.35), three of them with a commutation premise | `TERM_LANGUAGE.md` §1, §2; `OPERATIONAL_SEMANTICS.md` §2 cards, §4.34, §4.35; `JUDGMENT_LAYER.md` §2g; typed signatures (`archive/notes/CONSTRUCTOR_SIGNATURES.md`); axis-2 change staged on the `stdCSS-3` candidate (`VERSIONING.md` §5.1) |
+| Puncturing/peeling distance prices (`E-PUNCTURE`/`E-PEEL`) | landed 2026-11-10 (issue #331): peel cells derived and admitted, puncture reduction recorded and refusal kept | `JUDGMENT_LAYER.md` §2a (two `E-PEEL` price cells), §2b, §2c (avoidance minimum), §2f; `OPERATIONAL_SEMANTICS.md` §4.28, §4.29; puncture's priced cell stays blocked on the D2 lower bound |
+| Gluing promotion (`E-GLUE`) | accepted; logical-witness field defined as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1, 2026-11-11, issue #332) and the §2e equality discharged by extraction of Theorem 4 / claim 7.4 of *composition-distance* (`OPERATIONAL_SEMANTICS.md` §4.31, 2026-11-11); boundary/edge-label field defined as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1, 2026-11-12, issue #366), so both Gate 6 prerequisites are met; the move remains `transition-defined` pending the Lean mechanization of the extracted derivation, and is not `contract-stated` until that lands | seam-certificate equality discharged (2026-11-11); boundary/edge labels defined (2026-11-12); the instance-wise equality route, the extracted Theorem 4 / claim 7.4, the survival statement, and the boundary transport are recorded in `OPERATIONAL_SEMANTICS.md` §4.31, and the consumer carries factor witnesses through the seam |
+| Sector-swap exploitation (`E-LOCAL-HADAMARD`, `T=Q`) | landed 2026-11-11 (issue #346): consumer support (`sector_swap_exploitation`, planner `sector_swap`), full-distance invariance recorded; no derived cell needed, conjugation identity in `design/DERIVED_RELATIONS.md` §2b | `machine/priced_calculus.py`, `machine/planner.py`, `machine/test_sector_swap.py`; no calculus obligation |
+| Layout-transfer judgment cells | landed 2026-11-10 (issue #333) | `JUDGMENT_LAYER.md` §2d.5 (one cell per transition); `machine/semantics.json` `layout_cells`; `machine/experiments/layout_conformance_harness.py`; `OBL-LOCALITY-TRANSPORT` clauses 4 and 5 |
+| Weight-3 exposure investigation | landed 2026-11-10 (issue #326): NP-hardness from column weight 3 on, by a column-splitting reduction from the general case; the provider's refusal is by design | `design/DERIVED_RELATIONS.md` §3a; `machine/priced_calculus.py` (`citation_status` of the refusal); `machine/experiments/weight3_split_reduction.py` |
+| Small-`n` exact-distance oracle | landed 2026-11-11 (follow-up to #324) | `machine/oracle.py`; replay re-exports; agreement test; oracle-only with `n` ceiling |
+| Cheap-first strict-improvement check | landed 2026-11-11 (follow-up to #324); hardened 2026-11-11 (issue #342) | cheap witness path + optional bounded enumeration fallback with its own reason (`all_killed_by_enumeration`); admissibility of the added check enforced; randomized tests on well-formed states |
+| Tower sweep (`k_in > 1`) | landed 2026-11-11 (issue #327): level-data provider derived in `design/DERIVED_RELATIONS.md` §2a for arbitrary `k_in`; sweep at `n_in = 4`, `k_in` in 1, 2, 3 | `tower_level_data`, `tower_deletion_prices`, `tower_cost_table_size`; `machine/experiments/tower_sweep.py`; `machine/test_tower_sweep.py` |
+| Complexity-ladder documentation/benchmark | accepted | `design/DERIVED_RELATIONS.md` + `design/benchmark/` |
+| Monomial-quotient specialization of `A-QUOTIENT` | admitted as specialization record | `TAXONOMY.md` §2.15 row; transfer theorem as conditional cell |
+| Dressed-quotient constructor (`X-DRESSED-QUOTIENT`) | admitted to roadmap (extended-state layer) | Gate 6 admission of extended-state layer prerequisite |
+
+No item above is discharged by this disposition; each requires its own dated
+artifact before its `discharged-through` advances.

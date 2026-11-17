@@ -39,3 +39,13 @@ jobs:
         env:
           PRICED_CONFORMANCE_REPORT: "-"
         run: python3 machine/experiments/priced_conformance_harness.py
+
+  lean:
+    name: Lean build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: leanprover/lean-action@ba3fdfe5c4476c925da13bf11a005ddb47e47aee # v1.7.1
+        with:
+          lake-package-directory: lean

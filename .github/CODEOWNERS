@@ -1,0 +1,7 @@
+# Default reviewers for high-stakes areas.
+/spec/        @MathysRennela @vprusso
+/machine/     @MathysRennela @vprusso
+/lean/        @MathysRennela @vprusso
+/scripts/     @MathysRennela @vprusso
+/.github/     @MathysRennela @vprusso
+AGENTS.md     @MathysRennela @vprusso

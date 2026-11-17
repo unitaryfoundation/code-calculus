@@ -1,0 +1,862 @@
+{
+  "schema_version": 1,
+  "title": "Symplectic move set: conformance records (issue #305)",
+  "status": "machine-side companion records; not part of the acceptance surface (mvp_fixtures.json) and not normative",
+  "source_of_truth": [
+    "notes/harness/symplectic_move_set_2026-11-10.md",
+    "machine/symplectic_calculus.py"
+  ],
+  "conventions": {
+    "state": "a symplectic state is {Q, rows: [{id, x, z}], used}; a CSS state is {Q, rows_X, rows_Z, used} with explicit support lists",
+    "distance_oracle": "the exact Pauli distance (CSS full distance for a CSS state) computed by the exhaustive oracle of machine/experiments/symplectic_conformance_harness.py; '+inf' when the code has no logical operator. These values are evidence from an exhaustive search, not hand derivations",
+    "interval": "the ledger interval the harness obtains by seeding the parent at its exact distance and transporting through the operation; 'inf' denotes an infinite endpoint",
+    "outcome": "derivable, no_derivation, or malformed, as in spec/TERM_LANGUAGE.md section 5"
+  },
+  "fixtures": [
+    {
+      "id": "S0",
+      "title": "[[5,1,3]] five-qubit code validates",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": null,
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 5,
+          "k": 1,
+          "w": 4
+        },
+        "distance_oracle": 3
+      }
+    },
+    {
+      "id": "S1",
+      "title": "SYM-DELETE-CHECK retires a generator; the distance falls to 1",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": {
+        "op": "SYM-DELETE-CHECK",
+        "row_id": "a1"
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 5,
+          "k": 2
+        },
+        "distance_oracle": 1,
+        "interval": {
+          "lower": 0,
+          "upper": 3
+        }
+      }
+    },
+    {
+      "id": "S2",
+      "title": "SYM-ADD-CHECK on the Y0Y1 code: X0X1 commutes and is independent; k drops to 0",
+      "initial_state": {
+        "Q": [
+          0,
+          1
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              1
+            ],
+            "z": [
+              0,
+              1
+            ]
+          }
+        ],
+        "used": [
+          "a1"
+        ]
+      },
+      "operation": {
+        "op": "SYM-ADD-CHECK",
+        "x": [
+          0,
+          1
+        ],
+        "z": []
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 2,
+          "k": 0
+        },
+        "distance_oracle": "+inf",
+        "interval": {
+          "lower": 1,
+          "upper": "inf"
+        }
+      }
+    },
+    {
+      "id": "S3",
+      "title": "SYM-ADD-CHECK refused: X0 anticommutes with a4",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": {
+        "op": "SYM-ADD-CHECK",
+        "x": [
+          0
+        ],
+        "z": []
+      },
+      "expected": {
+        "outcome": "no_derivation"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "SYM-ADD-CHECK refused: the row is already displayed",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": {
+        "op": "SYM-ADD-CHECK",
+        "x": [
+          0,
+          3
+        ],
+        "z": [
+          1,
+          2
+        ]
+      },
+      "expected": {
+        "outcome": "no_derivation"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "SYM-DIRECT-SUM with a distance-1 factor",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": {
+        "op": "SYM-DIRECT-SUM",
+        "right_state": {
+          "Q": [
+            5,
+            6
+          ],
+          "rows": [
+            {
+              "id": "b1",
+              "x": [
+                5,
+                6
+              ],
+              "z": []
+            }
+          ],
+          "used": [
+            "b1"
+          ]
+        }
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 7,
+          "k": 2
+        },
+        "distance_oracle": 1,
+        "interval": {
+          "lower": 1,
+          "upper": 1
+        }
+      }
+    },
+    {
+      "id": "S6",
+      "title": "X-SYMPLECTIC-DOUBLE of the five-qubit code is a [[10,2,3]] CSS code; the converted weight-3 witness bounds the double at 4",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "rows": [
+          {
+            "id": "a1",
+            "x": [
+              0,
+              3
+            ],
+            "z": [
+              1,
+              2
+            ]
+          },
+          {
+            "id": "a2",
+            "x": [
+              1,
+              4
+            ],
+            "z": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "a3",
+            "x": [
+              0,
+              2
+            ],
+            "z": [
+              3,
+              4
+            ]
+          },
+          {
+            "id": "a4",
+            "x": [
+              1,
+              3
+            ],
+            "z": [
+              0,
+              4
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4"
+        ]
+      },
+      "operation": {
+        "op": "X-SYMPLECTIC-DOUBLE"
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 10,
+          "k": 2
+        },
+        "distance_oracle": 3,
+        "interval": {
+          "lower": 3,
+          "upper": 4
+        }
+      }
+    },
+    {
+      "id": "S7",
+      "title": "X-SYMPLECTIC-HALVE of the doubled five-qubit code along the copy swap returns a [[5,1,3]] code",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "rows_X": [
+          {
+            "id": "a5",
+            "support": [
+              0,
+              3,
+              6,
+              7
+            ]
+          },
+          {
+            "id": "a6",
+            "support": [
+              1,
+              4,
+              7,
+              8
+            ]
+          },
+          {
+            "id": "a7",
+            "support": [
+              0,
+              2,
+              8,
+              9
+            ]
+          },
+          {
+            "id": "a8",
+            "support": [
+              1,
+              3,
+              5,
+              9
+            ]
+          }
+        ],
+        "rows_Z": [
+          {
+            "id": "a9",
+            "support": [
+              1,
+              2,
+              5,
+              8
+            ]
+          },
+          {
+            "id": "a10",
+            "support": [
+              2,
+              3,
+              6,
+              9
+            ]
+          },
+          {
+            "id": "a11",
+            "support": [
+              3,
+              4,
+              5,
+              7
+            ]
+          },
+          {
+            "id": "a12",
+            "support": [
+              0,
+              4,
+              6,
+              8
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12"
+        ]
+      },
+      "operation": {
+        "op": "X-SYMPLECTIC-HALVE",
+        "pairs": [
+          [
+            0,
+            5
+          ],
+          [
+            1,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            8
+          ],
+          [
+            4,
+            9
+          ]
+        ]
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 5,
+          "k": 1
+        },
+        "distance_oracle": 3,
+        "interval": {
+          "lower": 2,
+          "upper": 3
+        }
+      }
+    },
+    {
+      "id": "S8",
+      "title": "X-SYMPLECTIC-HALVE of the [[4,2,2]] code along (0 1)(2 3) gives the Y0Y2 code of distance 1",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "id": "a1",
+            "support": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "rows_Z": [
+          {
+            "id": "b1",
+            "support": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "b1"
+        ]
+      },
+      "operation": {
+        "op": "X-SYMPLECTIC-HALVE",
+        "pairs": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      },
+      "expected": {
+        "outcome": "derivable",
+        "parameters": {
+          "n": 2,
+          "k": 1
+        },
+        "distance_oracle": 1,
+        "interval": {
+          "lower": 1,
+          "upper": 2
+        }
+      }
+    },
+    {
+      "id": "S9",
+      "title": "X-SYMPLECTIC-HALVE refused: the involution does not exchange the sector row spaces",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "id": "a1",
+            "support": [
+              0,
+              1
+            ]
+          }
+        ],
+        "rows_Z": [
+          {
+            "id": "b1",
+            "support": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "b1"
+        ]
+      },
+      "operation": {
+        "op": "X-SYMPLECTIC-HALVE",
+        "pairs": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      },
+      "expected": {
+        "outcome": "no_derivation"
+      }
+    },
+    {
+      "id": "S10",
+      "title": "X-SYMPLECTIC-HALVE refused: pairs do not cover Q",
+      "initial_state": {
+        "Q": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "rows_X": [
+          {
+            "id": "a1",
+            "support": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "rows_Z": [
+          {
+            "id": "b1",
+            "support": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "used": [
+          "a1",
+          "b1"
+        ]
+      },
+      "operation": {
+        "op": "X-SYMPLECTIC-HALVE",
+        "pairs": [
+          [
+            0,
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "outcome": "no_derivation"
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import CodeCalculus.WellFormedness
 namespace CodeCalculus
 
 /-!
-# The dimension bound `rank X + rank Z ≤ |Q|` ()
+# The dimension bound `rank X + rank Z ≤ |Q|` (issue #216)
 
 `RanksFit` (`WellFormedness.lean`) is the premise the `k` rows of
 `Soundness.lean` take so that the truncated subtraction in `stateK` is exact.
@@ -83,15 +83,20 @@ theorem supportIntersectionSize_eq_count (Q L b : List Nat) (hQ : Q.Nodup) (hL :
     (hsub : ∀ x ∈ L, x ∈ Q) :
     supportIntersectionSize L b = (Q.filter (fun x => L.contains x && b.contains x)).length := by
   rw [supportIntersectionSize_eq_length_filter]
-  apply List.Perm.length_eq
-  rw [List.perm_ext_iff_of_nodup (hL.sublist List.filter_sublist) (hQ.sublist List.filter_sublist)]
-  intro x
-  simp only [List.mem_filter, Bool.and_eq_true, List.contains_iff_mem]
-  constructor
-  · rintro ⟨hx, hb⟩
-    exact ⟨hsub x hx, hx, hb⟩
-  · rintro ⟨_, hx, hb⟩
-    exact ⟨hx, hb⟩
+  have hmem : ∀ x, x ∈ L.filter (fun q => b.contains q) ↔
+      x ∈ Q.filter (fun x => L.contains x && b.contains x) := by
+    intro x
+    simp only [List.mem_filter, Bool.and_eq_true, List.contains_iff_mem]
+    constructor
+    · rintro ⟨hx, hb⟩
+      exact ⟨hsub x hx, hx, hb⟩
+    · rintro ⟨_, hx, hb⟩
+      exact ⟨hx, hb⟩
+  exact Nat.le_antisymm
+    (length_le_of_nodup_subset (hQ.sublist List.filter_sublist) (hL.sublist List.filter_sublist)
+      (fun v hv => (hmem v).mp hv))
+    (length_le_of_nodup_subset (hL.sublist List.filter_sublist) (hQ.sublist List.filter_sublist)
+      (fun v hv => (hmem v).mpr hv))
 
 /-- Reindexing a filter over a list by positions. -/
 theorem length_filter_range_eq_filter {α : Type} (Q : List α) (p : α → Bool) :
@@ -123,7 +128,7 @@ theorem length_filter_range_eq (p : Nat) : ∀ n, p < n →
     by_cases hp : p < n
     · rw [ih hp]
       have hnil : [n].filter (fun i => decide (i = p)) = [] := by
-        rw [List.filter_eq_nil_iff]
+        apply filter_eq_nil_of_forall_not
         intro a ha
         rw [List.mem_singleton] at ha
         subst ha
@@ -134,7 +139,7 @@ theorem length_filter_range_eq (p : Nat) : ∀ n, p < n →
     · have hpn : p = n := by omega
       subst hpn
       have h1 : (List.range p).filter (fun i => decide (i = p)) = [] := by
-        rw [List.filter_eq_nil_iff]
+        apply filter_eq_nil_of_forall_not
         intro a ha
         rw [List.mem_range] at ha
         simp only [decide_eq_true_eq]
@@ -145,7 +150,11 @@ theorem length_filter_range_eq (p : Nat) : ∀ n, p < n →
 theorem length_filter_range_single (n p : Nat) (hp : p < n) (c : Bool) :
     ((List.range n).filter (fun i => decide (i = p) && c)).length = if c then 1 else 0 := by
   cases c
-  · simp
+  · have h : (fun i => decide (i = p) && false) = (fun _ => false) :=
+      funext (fun _ => Bool.and_false _)
+    show ((List.range n).filter (fun i => decide (i = p) && false)).length = 0
+    rw [h, filter_const_false]
+    rfl
   · simp only [Bool.and_true]
     rw [length_filter_range_eq p n hp]
     rfl
@@ -167,7 +176,11 @@ theorem dotCount_comm (n a b : Nat) : dotCount n a b = dotCount n b a := by
   exact Bool.and_comm _ _
 
 theorem dotCount_zero_left (n b : Nat) : dotCount n 0 b = 0 := by
-  simp [dotCount, Nat.zero_testBit]
+  have h : (fun i => (0 : Nat).testBit i && b.testBit i) = (fun _ => false) :=
+    funext (fun i => by rw [Nat.zero_testBit, Bool.false_and])
+  show ((List.range n).filter (fun i => (0 : Nat).testBit i && b.testBit i)).length = 0
+  rw [h, filter_const_false]
+  rfl
 
 theorem dotCount_xor_left (n a b c : Nat) :
     dotCount n (a ^^^ b) c % 2 = (dotCount n a c + dotCount n b c) % 2 := by
@@ -439,7 +452,7 @@ theorem rank_add_rank_le (n : Nat) (mX mZ : List Nat)
     rw [List.map_map]
     apply List.map_congr_left
     intro b _
-    simp [Nat.log2_two_pow]
+    exact log2_two_pow_eq (Nat.log2 b)
   -- every member of span X is orthogonal to every member of BZ
   have horthX : ∀ u, inSpanMasks BX u → ∀ b ∈ BZ, Orth n u b := by
     intro u hu b hb
@@ -470,7 +483,7 @@ theorem rank_add_rank_le (n : Nat) (mX mZ : List Nat)
       have hi' : Nat.log2 b = i := by simpa using hi
       refine ⟨List.mem_map.mpr ⟨b, hb, hi'⟩, ?_⟩
       have hne := hpnot _ he
-      rw [Nat.log2_two_pow] at hne
+      rw [log2_two_pow_eq] at hne
       rw [← hi']
       exact hne
     -- split the combination at the seam
@@ -513,7 +526,7 @@ theorem rank_add_rank_le (n : Nat) (mX mZ : List Nat)
       rw [hu0] at hueq
       exact xor_eq_zero_cancel hueq.symm
     have hvbit : v.testBit (Nat.log2 v) = true := by
-      rw [hv, Nat.log2_two_pow, Nat.testBit_two_pow_self]
+      rw [hv, log2_two_pow_eq, Nat.testBit_two_pow_self]
     have hvbit' : e.testBit (Nat.log2 v) = true := by
       rw [← hve]
       exact hvbit

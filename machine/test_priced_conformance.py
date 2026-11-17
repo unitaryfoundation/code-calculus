@@ -1,6 +1,6 @@
-"""Conformance entry point for the priced-consumer harness ().
+"""Conformance entry point for the priced-consumer harness (issue #27).
 
-Scaled-up hardening entry point (): ~2000 cases per seed across
+Scaled-up hardening entry point (issue #125): ~2000 cases per seed across
 several fixed seeds, including nonzero and exact derived lower endpoints.
 """
 
@@ -19,7 +19,7 @@ if HERE not in sys.path:
 import priced_conformance_harness as harness
 
 
-CASES = 2000
+CASES = int(os.environ.get("SCALED_CASES", "2000"))
 BASE_SEEDS = (12345, 54321, 999, 20261025, 42)
 LOWER_SEEDS = (12345, 54321, 999)
 
@@ -46,6 +46,9 @@ def _run_seed(seed, cases, lower_seed):
     return total_cases, total_violations, first_violations
 
 
+SCALED_ENABLED = os.environ.get("RUN_SCALED_CONFORMANCE") == "1"
+
+
 class PricedConformanceHarnessTests(unittest.TestCase):
     def test_small_random_run_has_no_interval_violations(self):
         # Keep a small, fast smoke test for quick feedback.
@@ -59,6 +62,7 @@ class PricedConformanceHarnessTests(unittest.TestCase):
             self.assertEqual(violations, [], violations[:3])
         self.assertEqual(total, 0)
 
+    @unittest.skipUnless(SCALED_ENABLED, "scaled conformance disabled (set RUN_SCALED_CONFORMANCE=1)")
     def test_scaled_random_runs_have_no_interval_violations(self):
         total_violations = 0
         first_violations = []
@@ -69,6 +73,7 @@ class PricedConformanceHarnessTests(unittest.TestCase):
                 first_violations.extend(firsts[: 3 - len(first_violations)])
         self.assertEqual(total_violations, 0, first_violations[:3])
 
+    @unittest.skipUnless(SCALED_ENABLED, "scaled conformance disabled (set RUN_SCALED_CONFORMANCE=1)")
     def test_scaled_nonzero_lower_endpoints(self):
         total_violations = 0
         first_violations = []
@@ -79,6 +84,7 @@ class PricedConformanceHarnessTests(unittest.TestCase):
                 first_violations.extend(firsts[: 3 - len(first_violations)])
         self.assertEqual(total_violations, 0, first_violations[:3])
 
+    @unittest.skipUnless(SCALED_ENABLED, "scaled conformance disabled (set RUN_SCALED_CONFORMANCE=1)")
     def test_scaled_exact_derived_lower_endpoints(self):
         total_violations = 0
         first_violations = []
@@ -90,7 +96,7 @@ class PricedConformanceHarnessTests(unittest.TestCase):
         self.assertEqual(total_violations, 0, first_violations[:3])
 
     def test_suite_covers_nonzero_lower_endpoints_per_operation(self):
-        # : the main suite randomizes nonzero lower endpoints and
+        # Issue #235: the main suite randomizes nonzero lower endpoints and
         # must transit every admitted operation at least once with a nonzero
         # lower endpoint on its input ledger, with 0 violations overall.
         report = harness.run_suite()

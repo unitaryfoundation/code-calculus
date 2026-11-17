@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Prototype run of the certificate layer on the pinned replay instance.
 
-The qLDPC replay ( 21) established the parent's exact sector distances
+The qLDPC replay (issue 21) established the parent's exact sector distances
 by post-hoc exhaustive enumeration -- an oracle the consumer never calls.
 This script turns the *lower-bound half* of that oracle into a checkable
 artifact: a kill certificate per sector for ``d_sigma >= 3`` on the pinned
-``an internal note`` parent, verified by the checker in
+``codes/10-2-3-b.json`` parent, verified by the checker in
 `machine/certificates.py`. It records the artifact sizes and the
-kill-criterion assessment required by the first-branch deliverable
-(`an internal note` sections 5 and 8).
+kill-criterion assessment required by the issue's first-branch deliverable
+(`archive/notes/CERTIFICATE_LAYER_PLAN.md` sections 5 and 8).
 
 The upper-bound half stays where it already was: a logical witness the
 ledger validates by finite-field arithmetic. Nothing here changes a claim
@@ -33,7 +33,7 @@ from machine.certificates import (  # noqa: E402
 from machine.priced_calculus import CodeState  # noqa: E402
 
 FIXTURE = ROOT / "machine" / "fixtures" / "qldpc_10_2_3_b.json"
-REPLAY_REPORT = ROOT / "machine" / "experiments" / "challenge_replay.json"
+REPLAY_REPORT = ROOT / "machine" / "experiments" / "issue21_challenge_replay.json"
 REPORT_PATH = ROOT / "machine" / "experiments" / "certificate_prototype.json"
 PINNED_COMMIT = "9d30c66a43bf7c275196267d369ddab171bfd72f"
 
@@ -101,7 +101,7 @@ def build_prototype_artifact():
         "format": "css-sector-distance-lower-bound",
         "format_version": 1,
         "instance": {
-            "source": "unitaryfoundation/qldpc-challenge an internal note",
+            "source": "unitaryfoundation/qldpc-challenge codes/10-2-3-b.json",
             "pinned_commit": PINNED_COMMIT,
             "fixture": "machine/fixtures/qldpc_10_2_3_b.json",
             "fixture_sha256": hashlib.sha256(fixture_bytes).hexdigest(),
@@ -112,12 +112,12 @@ def build_prototype_artifact():
         "negative_control": negative_control,
         "checker": {
             "module": "machine/certificates.py",
-            "contract": "an internal note section 4",
+            "contract": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 4",
             "coverage_enumeration_per_certificate":
                 _ball_entries(state.n(), CERTIFIED_BOUND),
         },
         "kill_criterion": {
-            "statement": "an internal note section 8",
+            "statement": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 8",
             "verdict": "passes at this instance",
             "assessment": (
                 "The prototype certifies a non-trivial lower endpoint "

@@ -76,7 +76,7 @@
       "id": "E-GLUE",
       "name": "Interface gluing / merge",
       "layer": "admitted-conditional-css-extension",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "E-SPLIT",
@@ -94,13 +94,13 @@
       "id": "A-PRODUCT",
       "name": "Algebraic product of code-level objects",
       "layer": "later-algebraic-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "A-CONCAT",
       "name": "Concatenation",
       "layer": "later-algebraic-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "A-QUOTIENT",
@@ -112,49 +112,49 @@
       "id": "A-DOUBLE",
       "name": "Duplication (double it) construction",
       "layer": "later-algebraic-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-NESTED-CSS",
       "name": "CSS code from nested classical codes",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-HGP",
       "name": "Hypergraph product",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-LIFTED",
       "name": "Lifted product",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-BALANCED",
       "name": "Balanced product",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-GROUP-ALGEBRA",
       "name": "Group-algebra and two-block constructions",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-TANNER",
       "name": "Local code on a graph / quantum Tanner construction",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "L-TILE",
       "name": "Tile or cellulation construction",
       "layer": "lower-level-constructor",
-      "contract_status": "taxonomy-only"
+      "contract_status": "transition-defined"
     },
     {
       "id": "X-GAUGE-FIX",
@@ -183,6 +183,24 @@
     {
       "id": "X-SYMPLECTIC-HALVE",
       "name": "Symplectic halving (CSS to general stabilizer)",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-DRESSED-QUOTIENT",
+      "name": "Dressed quotient",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-WEIGHT-REDUCTION",
+      "name": "Weight reduction to subsystem codes",
+      "layer": "extended-state-model-deferred",
+      "contract_status": "taxonomy-only"
+    },
+    {
+      "id": "X-GAUGING",
+      "name": "Commuting-check gauging",
       "layer": "extended-state-model-deferred",
       "contract_status": "taxonomy-only"
     }

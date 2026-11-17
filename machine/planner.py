@@ -6,15 +6,15 @@ admits (`apply_operation`), transporting the interval ledger through each one,
 and classifying the result as ``certify`` / ``prune`` / ``re-measure`` against
 a target.  It never applies a move, never recomputes a distance, price, or
 witness, and never discharges an obligation: those remain the consumer's and
-the calculus's respectively (see the internal notes).
+the calculus's respectively (see the archived notes).
 
 First milestone: deletion chains (the move that actually pays) plus the
 other single-qubit-removing moves (peel, puncture).  Search control (beam
 width, depth, memoisation) is consumer configuration and lives in the
 caller.
 
- adds the two cheap screens the deletion campaign used before its
-witness search (qldpc-challenge `an internal note`: 28,913 of 88,592
+Issue #121 adds the two cheap screens the deletion campaign used before its
+witness search (qldpc-challenge `notes/840-343-3.md`: 28,913 of 88,592
 essential single-check deletions -- 33% -- discarded as freeing a bare
 qubit, "a structural filter on column weights"; 40 gate-passing candidates
 reduced to 18 by domination before filing):
@@ -26,20 +26,51 @@ reduced to 18 by domination before filing):
   on every axis the ledger exports by another survivor.
 
 Both are consumer configuration, not calculus data; the calculus's
-transport rules are untouched (see the internal notes).
+transport rules are untouched (see the archived notes).
+
+Issue #347 adds the bounded search over supports the campaign ran after
+the two screens: ``bounded_support_search`` enumerates the supports of a
+child in increasing weight, under a recorded budget (``budget`` evaluated
+supports, ``max_weight``), and reports the lightest logical operator it
+finds in each sector together with how much of the search space it
+covered.  A found witness enters the ledger only through the consumer's
+own transport (``DistanceLedger.propagate`` with the witness supplied as a
+post-step observation, so ``validate_witness`` checks it and the upper
+endpoint tightens as for any supplied witness).  A sector where nothing is
+found is recorded as "no survivor found up to weight ``w``" and licenses
+nothing: lower endpoints are never raised by the search, however much of
+the space it covered (`spec/CLAIMS.md`, heuristic results).  ``plan`` runs
+the search on every surviving child when ``support_search`` is set.
+
+Issue #346 adds sector-swap exploitation: when a consumer targets one
+sector and the carried ledger says the other sector is the stronger one,
+``E-LOCAL-HADAMARD`` at ``T = Q`` exchanges them exactly and leaves the
+full distance unchanged (§4.27), so ``plan`` offers the swap as a candidate
+under ``sector_swap=True`` and ``bounded_sector_search`` applies it once,
+at the start, before searching.  The record of
+``priced_calculus.sector_swap_exploitation`` states the reason and the
+full-distance invariance; the swap is a presentation symmetry exploited
+for a sector-specific target, never a distance move
+(`design/DERIVED_RELATIONS.md` §2b).
 """
 
 
 import copy
 import itertools
 import math
+import random
 
 from machine.priced_calculus import (
+    heuristic_outcome,
     CodeState,
     DistanceLedger,
     NoDerivation,
     Malformed,
     apply_operation,
+    commutes,
+    in_span,
+    sector_swap_exploitation,
+    support_mask,
     tanner_components,
 )
 
@@ -96,7 +127,7 @@ def has_bare_qubit(state):
     1; k stays >= 1 because both sectors' row spaces are contained in the
     codimension-1 subspace of vectors that are zero at q, and their
     dimension sum is at most n-1 there (the argument is in
-    the internal notes).  No witness search can put the state
+    the archived notes).  No witness search can put the state
     above distance 1, which is what makes the screen cheap and safe.
     This is a fact about the state the consumer screens on, not a
     calculus claim: the transport rules of `machine/priced_calculus.py`
@@ -108,7 +139,91 @@ def has_bare_qubit(state):
     return any(q not in touched for q in state.Q)
 
 
-def candidate_moves(state, structural=True):
+def reduce_display(state):
+    """Return a rank-reduced copy of ``state``'s display.
+
+    Parents imported from raw code data may carry stabilizer generators that
+    are linearly dependent within a sector.  Those rows cannot be deleted
+    by ``C-DELETE-CHECK`` (the independence premise fails) and otherwise
+    only inflate the move list, so more than half of the moves enumerated
+    over such a parent derive nothing.  Reducing each sector to a basis
+    once, before enumeration, removes that waste without changing the
+    row spaces (and therefore ``k`` and the distance intervals): the
+    presentation shrinks, but the Tanner graph may change (a dropped
+    generator's qubits can stop being connected through it), so reduced
+    planning is a presentation-level convenience, not a code-preserving
+    rewrite.
+
+    The reduction is greedy in the original row order and keeps the
+    original row identifiers of the surviving generators; dropped
+    identifiers stay in ``used`` (they are retired, not un-minted), so the
+    mint stays monotone.  A state whose display is already independent is
+    returned with identical rows.
+    """
+    if not isinstance(state, CodeState):
+        return state
+    kept = []
+    for sector in ("X", "Z"):
+        selected_masks = []
+        for row in state.sector_rows(sector):
+            if in_span(row.mask, selected_masks):
+                continue
+            selected_masks.append(row.mask)
+            kept.append(row)
+    # Preserve original ordering across sectors as in the source state.
+    kept_ids = {row.id for row in kept}
+    new_rows = tuple(row for row in state.rows if row.id in kept_ids)
+    result = CodeState(state.Q, new_rows, state.used)
+    return result
+
+
+_reduce_display_state = reduce_display
+
+
+def _extend_candidates(state):
+    """Yield bounded E-EXTEND candidates.
+
+    E-EXTEND adds a disjoint qubit set and/or new check rows.  The full
+    search space is exponential, so this generator stays syntactic and
+    bounded: it proposes (a) a namespace extension by one fresh qubit
+    (label ``max(Q)+1``) with no new checks, and (b) single-qubit
+    additions in each sector over the existing qubits.  Applicability and
+    the independence/commutation premises are settled by
+    ``apply_operation``/the consumer; a candidate that does not derive is
+    dropped by ``plan``.
+    """
+    if state.Q:
+        yield {"op": "E-EXTEND", "new_qubits": (max(state.Q) + 1,),
+               "additions": []}
+    else:
+        yield {"op": "E-EXTEND", "new_qubits": (0,), "additions": []}
+    for sector in ("X", "Z"):
+        for qubit in state.Q:
+            yield {"op": "E-EXTEND", "new_qubits": (),
+                   "additions": [[sector, [qubit]]]}
+
+
+def _graft_candidates(state):
+    """Yield bounded E-GRAFT candidates.
+
+    A graft needs a qubit that lies in the opposite sector and at least
+    one selected-sector check touching it.  For every such qubit/sector
+    pair, propose the natural chain order of the touching selected-sector
+    rows.  Only this one order is proposed; a graft requiring a different
+    chain order is not enumerated (bounded search).  Chain orders that do
+    not satisfy coverage/k-preservation are dropped by ``apply_operation``.
+    """
+    for sector in ("X", "Z"):
+        for qubit in state.Q:
+            touching = [row for row in state.sector_rows(sector)
+                        if qubit in row.support]
+            if not touching:
+                continue
+            yield {"op": "E-GRAFT", "qubit": qubit, "sector": sector,
+                   "ordered_row_ids": [row.id for row in touching]}
+
+
+def candidate_moves(state, structural=True, reduce_display=True):
     """Yield every single-step operation applicable in principle to ``state``.
 
     Applicability is syntactic only; the consumer still decides whether a
@@ -119,12 +234,23 @@ def candidate_moves(state, structural=True):
     qubit).  The child-of-move side of the screen is applied by ``plan``
     after ``apply_operation``, which is what covers peel and puncture, and
     is what ``plan`` skips with ``structural=False``.
+
+    ``reduce_display=True`` (default) reduces the parent's display to an
+    independent basis before enumeration, dropping redundant generators
+    that would only raise ``NoDerivation``.  The reduction is a no-op on
+    an already-independent display, so existing callers are unaffected.
     """
+    if reduce_display:
+        state = _reduce_display_state(state)
     for op in _deletion_candidates(state, structural=structural):
         yield op
     for op in _peel_candidates(state):
         yield op
     for op in _puncture_candidates(state):
+        yield op
+    for op in _extend_candidates(state):
+        yield op
+    for op in _graft_candidates(state):
         yield op
 
 
@@ -345,9 +471,228 @@ def domination_prune(results):
     return out
 
 
-def plan(state, ledger, target, *, include_disconnected=False, structural=True,
+DEFAULT_SUPPORT_BUDGET = 4096
+"""Default number of supports one ``bounded_support_search`` evaluates."""
+
+DEFAULT_SUPPORT_MAX_WEIGHT = 6
+"""Default weight ceiling of ``bounded_support_search`` (capped at ``n``)."""
+
+MINIMUM_SUPPORT_SEARCH_BUDGET = 1024
+"""Minimum budget recommended before export (issue #455): searches below this
+floor are unlikely to find a transportable witness."""
+
+
+def _support_search_config(config):
+    """Normalize ``plan``'s ``support_search`` argument to keyword arguments."""
+    if config is None or config is False:
+        return None
+    if config is True:
+        return {}
+    if isinstance(config, dict):
+        return dict(config)
+    raise Malformed("support_search must be None, a boolean, or a configuration object")
+
+
+def _layout_ordered_labels(state, layout=None, parent=None, coordinates=None):
+    """Qubit labels ordered by a layout's coordinates (spatial order)."""
+    coords = None
+    if coordinates is not None:
+        coords = coordinates
+    elif isinstance(layout, dict):
+        if isinstance(layout.get("coordinates"), list):
+            coords = layout.get("coordinates")
+        elif all(isinstance(v, (list, tuple)) for v in layout.values()):
+            coords = [layout.get(q, (0,)) for q in state.Q]
+    elif isinstance(layout, (list, tuple)):
+        coords = list(layout)
+    elif parent is not None:
+        try:
+            from machine.priced_calculus import child_layout as _cl
+            cl = _cl(parent, state)
+            if isinstance(cl, dict) and isinstance(cl.get("coordinates"), list):
+                coords = cl["coordinates"]
+        except Exception:
+            coords = None
+        if coords is None and isinstance(parent, dict):
+            loc = parent.get("locality")
+            if isinstance(loc, dict) and isinstance(loc.get("coordinates"), list):
+                raw = loc["coordinates"]
+                try:
+                    coords = [raw[q] for q in state.Q]
+                except Exception:
+                    coords = None
+    if not isinstance(coords, list) or len(coords) != len(state.Q):
+        return sorted(state.Q)
+    pairs = list(zip(state.Q, coords))
+    try:
+        return [q for q, _ in sorted(pairs, key=lambda item: tuple(item[1]))]
+    except Exception:
+        return sorted(state.Q)
+
+
+def bounded_support_search(state, *, sectors=("X", "Z"), max_weight=None,
+                           budget=DEFAULT_SUPPORT_BUDGET, seed=None,
+                           order_labels=None, layout=None, parent=None,
+                           coordinates=None, layout_aware=False):
+    """Bounded search over supports for logical operators of ``state``.
+
+    The supports of ``state.Q`` are enumerated in increasing weight, and
+    within a weight in lexicographic order of the sorted labels, spending
+    at most ``budget`` evaluations (one per support, however many sectors
+    are still open) and never passing ``max_weight`` (default
+    ``DEFAULT_SUPPORT_MAX_WEIGHT``, capped at ``n``).  A support is a
+    witness for sector ``σ`` when it commutes with every displayed row of
+    the opposite sector and lies outside the span of the displayed
+    ``σ``-rows, which is the test ``validate_witness`` applies; the first
+    witness found in a sector is its lightest in the searched region, and
+    the sector is then closed.
+
+    The returned record states what was searched: ``evaluated`` and
+    ``budget``; ``exhausted`` when the budget stopped the enumeration; and
+    per sector the witness (support and weight) or ``None``, the largest
+    weight whose supports were all evaluated while the sector was open
+    (``exhaustive_weight``), the weight at which the budget cut the
+    enumeration with how many of its supports were seen (``partial``), and
+    a status sentence in the vocabulary of ``search_status``.
+
+    What it licenses.  A found witness is a logical operator of the state,
+    so it bounds that sector's distance from above; the planner hands it to
+    the consumer's transport as a post-step observation and the endpoint
+    moves there, after ``validate_witness``.  A sector with no witness
+    licenses nothing: however much of the space was covered, the search
+    never raises a lower endpoint (`spec/CLAIMS.md`, heuristic results),
+    and the record of "no survivor found up to weight ``w``" is a recorded
+    outcome, not a bound.  No distance is recomputed and no oracle is
+    consulted.
+    """
+    if order_labels is not None:
+        ordered_labels = list(order_labels)
+    elif layout is not None or parent is not None or coordinates is not None or layout_aware:
+        ordered_labels = _layout_ordered_labels(state, layout=layout, parent=parent,
+                                               coordinates=coordinates)
+    elif seed is None:
+        ordered_labels = sorted(state.Q)
+    else:
+        ordered_labels = sorted(state.Q)
+        random.Random(seed).shuffle(ordered_labels)
+    labels = ordered_labels
+    n = len(labels)
+    if n == 0:
+        raise Malformed("support search needs a state with at least one qubit")
+    sectors = tuple(sectors)
+    if (not sectors or any(sector not in ("X", "Z") for sector in sectors)
+            or len(set(sectors)) != len(sectors)):
+        raise Malformed("sectors must list X and/or Z once each")
+    if isinstance(budget, bool) or not isinstance(budget, int) or budget < 1:
+        raise Malformed("budget must be a positive integer")
+    if max_weight is None:
+        max_weight = min(n, DEFAULT_SUPPORT_MAX_WEIGHT)
+    if isinstance(max_weight, bool) or not isinstance(max_weight, int) or max_weight < 1:
+        raise Malformed("max_weight must be a positive integer")
+    max_weight = min(max_weight, n)
+
+    masks = {"X": [row.mask for row in state.sector_rows("X")],
+             "Z": [row.mask for row in state.sector_rows("Z")]}
+    opposite = {"X": "Z", "Z": "X"}
+    open_sectors = list(sectors)
+    found = {sector: None for sector in sectors}
+    exhaustive = {sector: 0 for sector in sectors}
+    partial = {sector: None for sector in sectors}
+    evaluated = 0
+    exhausted = False
+    weight = 0
+    while open_sectors and weight < max_weight:
+        weight += 1
+        total = math.comb(n, weight)
+        seen = 0
+        for combo in itertools.combinations(labels, weight):
+            if evaluated >= budget:
+                exhausted = True
+                break
+            evaluated += 1
+            seen += 1
+            combo_sorted = tuple(sorted(combo))
+            mask = support_mask(combo_sorted)
+            for sector in list(open_sectors):
+                if (commutes(mask, masks[opposite[sector]])
+                        and not in_span(mask, masks[sector])):
+                    found[sector] = {"support": list(combo_sorted), "value": weight,
+                                     "confidence": "screened"}
+                    exhaustive[sector] = weight - 1
+                    open_sectors.remove(sector)
+            if not open_sectors:
+                break
+        if exhausted:
+            for sector in open_sectors:
+                partial[sector] = {"weight": weight, "evaluated": seen, "total": total}
+            break
+        for sector in open_sectors:
+            exhaustive[sector] = weight
+
+    per_sector = {}
+    for sector in sectors:
+        witness = found[sector]
+        if witness is not None:
+            status = ("witness of weight %d found; weights below %d exhausted"
+                      % (witness["value"], witness["value"]))
+        elif partial[sector] is not None:
+            status = ("%s; weight %d searched partially (%d of %d supports) "
+                      "before the budget was spent"
+                      % (search_status([], exhaustive[sector]),
+                         partial[sector]["weight"], partial[sector]["evaluated"],
+                         partial[sector]["total"]))
+        else:
+            status = search_status([], exhaustive[sector])
+        per_sector[sector] = {
+            "witness": witness,
+            "exhaustive_weight": exhaustive[sector],
+            "partial": partial[sector],
+            "status": status,
+        }
+    return {
+        "procedure": "bounded support search",
+        "order": "weight ascending, lexicographic in the sorted qubit labels",
+        "n": n,
+        "sectors": list(sectors),
+        "max_weight": max_weight,
+        "budget": budget,
+        "evaluated": evaluated,
+        "exhausted": exhausted,
+        "witnesses": {sector: per_sector[sector]["witness"] for sector in sectors},
+        "by_sector": per_sector,
+        "licenses": ("an upper endpoint for each sector with a witness, through the "
+                     "consumer's witness validation on the carrying step; nothing "
+                     "for a sector without one, and never a lower endpoint"),
+    }
+
+
+def tighten_ledger_with_search(state, ledger, **config):
+    """Run ``bounded_support_search`` on ``state`` and feed the witnesses
+    it finds into a copy of ``ledger`` through the consumer's own transport.
+
+    The witnesses are supplied as post-step observations on a ``C-SKIP``
+    step, so ``validate_witness`` checks each one and the sector and full
+    upper endpoints tighten exactly as for a supplied witness; lower
+    endpoints are untouched.  A found witness lighter than a carried lower
+    endpoint is a contradicted carried endpoint and raises ``NoDerivation``
+    from the transport, as any supplied witness would.  Returns the
+    tightened ledger and the search record.
+    """
+    record = bounded_support_search(state, **config)
+    observations = {side: found["support"]
+                    for side, found in record["witnesses"].items()
+                    if found is not None}
+    tightened = ledger.propagate({"op": "C-SKIP"}, state, observations=observations)
+    return tightened, record
+
+
+def plan(state, ledger, target=None, *, include_disconnected=False, structural=True,
          reduce_by_domination=True, sector_targeted=False, target_sector=None,
-         **kwargs):
+         reduce_display=True, min_child_upper=None, skip_low_distance=False,
+         ranking="default", weights=None, support_search=None,
+         sector_swap=False, deep_verify=False, deep_check=None,
+         deep_verify_before_staging=None, refutation_seeds=None, seeds=None,
+         board=None, **kwargs):
     """Propose single-step moves and their target verdict.
 
     Returns a list of dicts::
@@ -375,34 +720,131 @@ def plan(state, ledger, target, *, include_disconnected=False, structural=True,
     strictly dominates on the ledger's exported axes (see
     ``domination_prune``).  Disable both for the raw batch.
 
+    ``support_search`` (default ``None``: off) runs ``bounded_support_search``
+    on every child that passes the screens, with the given configuration
+    (``True`` for the defaults, or a dict of its keyword arguments), and
+    supplies the witnesses it finds to the child's transport as post-step
+    observations.  Each result then carries the search record under
+    ``"support_search"`` (``None`` when the search is off).  The budget is
+    per child, so a batch of ``m`` survivors spends at most ``m`` times it.
+    A found witness lighter than a carried lower endpoint contradicts that
+    endpoint, which makes the step non-derivable (``_transport_interval``),
+    and the candidate is dropped as every non-deriving step is.
+
+    ``sector_swap=True`` (default off) adds the ``E-LOCAL-HADAMARD`` sector
+    exchange at ``T = Q`` to the batch when the planning is sector-targeted
+    and the carried ledger says the other sector is the stronger one for the
+    target (``sector_swap_exploitation``).  The candidate carries that
+    record under ``"sector_swap"`` (``None`` on every other result); its
+    full distance is the parent's, so its verdict is the parent's, and only
+    the sector-targeted ordering ranks it.
+
+
     Results are sorted certify/re-measure/prune (larger k, then smaller n
     within a class), deduplicated up to qubit permutation, and reduced by
     domination before return.
     """
+    if target is None:
+        _upper = ledger.full.upper
+        target = _upper if _upper is not None else 10 ** 9
+    if deep_verify is False and deep_check is not None:
+        deep_verify = deep_check
+    if deep_verify is False and deep_verify_before_staging is not None:
+        deep_verify = deep_verify_before_staging
+    if deep_verify is False:
+        for key, value in list(kwargs.items()):
+            if "deep" in key or "verify" in key:
+                deep_verify = value
+                break
+    _search_config = _support_search_config(support_search)
     _target_sector = _normalize_target_sector(target_sector, kwargs)
     _sector_targeted = _normalize_sector_targeted(sector_targeted, kwargs,
                                                   _target_sector)
     if _target_sector is None and _sector_targeted:
         _target_sector = infer_target_sector(ledger, target)
 
+    if skip_low_distance and min_child_upper is None:
+        min_child_upper = 3
+
+    # When reduce_display is requested, plan over the reduced presentation:
+    # enumerate and apply operations against the reduced state, so that the
+    # candidates enumerated are actually derivable.  Dropped identifiers stay
+    # in `used` (retired) on the reduced state.
+    working_state = state
+    if reduce_display:
+        working_state = _reduce_display_state(state)
+
     results = []
-    for op in candidate_moves(state, structural=structural):
+    if sector_swap and _sector_targeted:
+        swap = sector_swap_exploitation(
+            working_state, ledger, _target_sector or infer_target_sector(ledger, target))
+        if swap["applied"] and (include_disconnected
+                                or tanner_components(swap["state"]) == 1):
+            results.append({
+                "operation": swap["operation"],
+                "state": swap["state"],
+                "ledger": swap["ledger"],
+                "verdict": swap["ledger"].decide(target),
+                "n": swap["state"].n(),
+                "k": swap["state"].k(),
+                "w": len(swap["operation"]["qubits"]) or 1,
+                "connectivity": tanner_components(swap["state"]),
+                "sector_swap": swap,
+            })
+    for op in candidate_moves(working_state, structural=structural,
+                             reduce_display=False):
         op = copy.deepcopy(op)
         try:
-            child = apply_operation(state, op)
+            child = apply_operation(working_state, op)
         except (NoDerivation, Malformed):
             continue
         if structural and has_bare_qubit(child) and target is not None and target > 1:
             continue
         if not include_disconnected and tanner_components(child) != 1:
             continue
+        search_record = None
+        observations = None
+        if _search_config is not None:
+            # The only witnesses the planner ever supplies are the ones the
+            # bounded search finds on the child itself; the consumer's
+            # transport validates them before any endpoint moves.
+            search_record = bounded_support_search(child, **_search_config)
+            observations = {side: found["support"]
+                            for side, found in search_record["witnesses"].items()
+                            if found is not None}
         try:
-            # No witnesses are invented here; the child ledger is propagated
-            # with the parent's (possibly empty) carried witnesses only.
-            child_ledger = ledger.propagate(op, child, parent_state=state)
+            # Without a search no witness is invented here; the child ledger
+            # is propagated with the parent's (possibly empty) carried
+            # witnesses only.
+            child_ledger = ledger.propagate(op, child, parent_state=working_state,
+                                            observations=observations)
         except (NoDerivation, Malformed):
             continue
         verdict = child_ledger.decide(target)
+        if (min_child_upper is not None
+                and child_ledger.full.upper is not None
+                and child_ledger.full.upper < min_child_upper):
+            # Child's transported upper bound is below the requested floor
+            # (e.g. d <= 2 on a sparse board): skip the gate call entirely.
+            continue
+        if deep_verify:
+            corrected = _deep_corrected_distance(child, deep_verify)
+            if (corrected is not None
+                    and child_ledger.full.upper is not None
+                    and corrected != child_ledger.full.upper):
+                continue
+        # Operation weight: for a deletion, the deleted check's support size;
+        # for the other single-qubit moves, 1. Connectivity is the child's
+        # Tanner component count (1 = connected).
+        op_weight = 1
+        if op.get("op") == "C-DELETE-CHECK":
+            rid = op.get("row_id")
+            for row in working_state.rows:
+                if row.id == rid:
+                    op_weight = len(row.support)
+                    break
+        elif op.get("op") == "E-LOCAL-HADAMARD":
+            op_weight = len(op.get("qubits", [])) or 1
         results.append({
             "operation": op,
             "state": child,
@@ -410,6 +852,10 @@ def plan(state, ledger, target, *, include_disconnected=False, structural=True,
             "verdict": verdict,
             "n": child.n(),
             "k": child.k(),
+            "w": op_weight,
+            "connectivity": tanner_components(child),
+            "support_search": search_record,
+            "sector_swap": None,
         })
     # certify first, then re-measure, then prune; within a class, prefer
     # larger k and smaller n.
@@ -421,17 +867,29 @@ def plan(state, ledger, target, *, include_disconnected=False, structural=True,
         results.sort(key=lambda r: (order.get(r["verdict"], 3),
                                     -r["k"], r["n"]))
     results = dedup_up_to_permutation(results)
+    _board = _board_entries(board)
+    for _r in results:
+        _r.setdefault("board_dominated", board_dominates(_r, _board))
     if reduce_by_domination:
         results = domination_prune(results)
-    if _sector_targeted:
+    if ranking == "pareto":
+        results = pareto_rank(results, weights=weights)
+    elif _sector_targeted:
         ts = _target_sector or infer_target_sector(ledger, target)
         results.sort(key=lambda r: _sector_targeted_sort_key(r, ledger, ts))
+    else:
+        # default ordering already applied earlier; re-apply for safety
+        order = {"certify": 0, "re-measure": 1, "prune": 2}
+        results.sort(key=lambda r: (order.get(r["verdict"], 3),
+                                    -r["k"], r["n"]))
     return results
 
 
 def plan_chain(state, ledger, target, depth=2, *, structural=True,
                reduce_by_domination=True, include_disconnected=False,
-               sector_targeted=False, target_sector=None, **kwargs):
+               sector_targeted=False, target_sector=None, reduce_display=True,
+               min_child_upper=None, skip_low_distance=False,
+               refutation_seeds=None, seeds=None, board=None, **kwargs):
     """Greedy depth-limited planning: expand only certify/re-measure nodes.
 
     This is a thin convenience over `plan`; it does not memoise or beam, and
@@ -448,7 +906,12 @@ def plan_chain(state, ledger, target, depth=2, *, structural=True,
                              reduce_by_domination=reduce_by_domination,
                              include_disconnected=include_disconnected,
                              sector_targeted=sector_targeted,
-                             target_sector=target_sector, **kwargs):
+                             target_sector=target_sector,
+                             reduce_display=reduce_display,
+                             min_child_upper=min_child_upper,
+                             skip_low_distance=skip_low_distance,
+                             refutation_seeds=refutation_seeds,
+                             seeds=seeds, board=board, **kwargs):
                 if cand["verdict"] == "prune":
                     continue
                 next_frontier.append((cand["state"], cand["ledger"],
@@ -461,6 +924,117 @@ def plan_chain(state, ledger, target, depth=2, *, structural=True,
             break
     return out
 
+
+def screen_candidates(candidates, *, structural=True):
+    """Apply the campaign's cheap screens to an already-built candidate batch.
+
+    ``structural=True`` drops any candidate whose child keeps a bare qubit
+    (a qubit no displayed check touches), since that child's distance is
+    exactly 1 by construction.  Domination reduction then drops candidates
+    strictly dominated on the ledger's exported axes by a batch-mate.  Both
+    are consumer-side pre-filters; the calculus transport rules are untouched.
+    Returns a new list; the input is not mutated.
+    """
+    out = list(candidates)
+    if structural:
+        out = [c for c in out if not has_bare_qubit(c["state"])]
+    out = domination_prune(out)
+    return out
+
+
+def run_campaign(state, ledger, target, *, steps=5, structural=True,
+                 reduce_display=True, reduce_by_domination=True,
+                 sector_targeted=False, target_sector=None,
+                 support_search=True, sector_swap=False, ranking="default",
+                 weights=None, log_path=None, deep_verify=False, deep_check=None,
+                 deep_verify_before_staging=None, slugs=None, board=None,
+                 staged=False, staged_depths=None):
+    """Greedy campaign loop: repeatedly plan, pick the top survivor, apply it.
+
+    Returns a list of per-step records, each with the chosen operation, the
+    resulting state/ledger, the verdict, and the full candidate batch.  When
+    ``log_path`` is given, each record is also appended as one JSON object per
+    line (the harness logging seam), with state/ledger summaries rather than
+    full objects.  Stops early when no non-prune candidate survives.  This is
+    consumer-side search control: it never recomputes a distance or discharges
+    an obligation.  ``support_search`` defaults to ``True``, so each
+    surviving child runs ``bounded_support_search``; pass ``False`` (or a
+    config dict) to control or disable that cost.
+    """
+    import json as _json
+    if deep_verify is False and deep_check is not None:
+        deep_verify = deep_check
+    if deep_verify is False and deep_verify_before_staging is not None:
+        deep_verify = deep_verify_before_staging
+    history = []
+    cur_state, cur_ledger = state, ledger
+    for step in range(steps):
+        cands = plan(
+            cur_state, cur_ledger, target,
+            structural=structural, reduce_display=reduce_display,
+            reduce_by_domination=reduce_by_domination,
+            sector_targeted=sector_targeted, target_sector=target_sector,
+            support_search=support_search, sector_swap=sector_swap,
+            ranking=ranking, weights=weights, deep_verify=deep_verify,
+            board=board,
+        )
+        survivors = [c for c in cands if c["verdict"] != "prune"]
+        if not survivors:
+            history.append({"step": step, "chosen": None, "verdict": None,
+                            "candidates": len(cands), "reason": "no survivor"})
+            break
+        chosen = survivors[0]
+        if slugs is None:
+            slugs = []
+        _base_slug = None
+        try:
+            from machine.priced_calculus import submission_slug, variant_slug
+            _base_slug = submission_slug(chosen["state"], chosen["ledger"])
+            _slug = variant_slug(_base_slug, slugs)
+            slugs.append(_slug)
+        except Exception:
+            _slug = None
+        record = {
+            "step": step,
+            "operation": chosen["operation"],
+            "verdict": chosen["verdict"],
+            "n": chosen["n"], "k": chosen["k"], "w": chosen["w"],
+            "candidates": len(cands), "survivors": len(survivors),
+            "slug": _slug,
+        }
+        # apply the move to advance the campaign state
+        try:
+            new_state = apply_operation(cur_state, chosen["operation"])
+            new_ledger = chosen["ledger"]
+        except (NoDerivation, Malformed) as exc:
+            record["error"] = repr(exc)
+            history.append(record)
+            break
+        cur_state, cur_ledger = new_state, new_ledger
+        record["state_n"] = cur_state.n()
+        record["state_k"] = cur_state.k()
+        record["full"] = (cur_ledger.full.lower, cur_ledger.full.upper)
+        if staged:
+            try:
+                from machine.priced_calculus import staged_distance_check as _sdc
+                claimed = None
+                if cur_ledger is not None and getattr(cur_ledger, "full", None) is not None:
+                    upper = cur_ledger.full.upper
+                    lower = cur_ledger.full.lower
+                    claimed = upper if upper is not None else lower
+                if not isinstance(claimed, int) or isinstance(claimed, bool) or (claimed or 0) < 1:
+                    claimed = 10 ** 9
+                record["staged"] = _sdc(cur_state, claimed=claimed,
+                                       depths=staged_depths)
+            except Exception as exc:
+                record["staged_error"] = repr(exc)
+        history.append(record)
+        if log_path is not None:
+            with open(log_path, "a") as fh:
+                fh.write(_json.dumps(record, default=str) + "\n")
+    return history
+
+
 sector_targeted_key = _sector_targeted_sort_key
 sector_targeted_sort_key = _sector_targeted_sort_key
 sector_targeted_prioritize = _sector_targeted_sort_key
@@ -469,3 +1043,593 @@ prioritize_sector = _sector_targeted_sort_key
 sector_prioritize = _sector_targeted_sort_key
 prioritize_target_sector = _sector_targeted_sort_key
 sector_targeted_prioritization = _sector_targeted_sort_key
+
+
+_DEFAULT_WEIGHTS = {
+    "verdict": 1.0,
+    "d": 1.0,
+    "k": 1.0,
+    "n": 1.0,
+    "w": 1.0,
+    "connectivity": 1.0,
+}
+
+
+def _verdict_rank(verdict):
+    return {"certify": 0, "re-measure": 1, "prune": 2}.get(verdict, 3)
+
+
+def _pareto_key(result):
+    """Return a tuple of (direction, value) pairs for Pareto comparison.
+
+    Directions: verdict lower better, d higher better, k higher better,
+    n lower better, w lower better, connectivity lower better.
+    """
+    ledger = result["ledger"]
+    d = ledger.full.lower
+    d_val = d if d is not None else 0
+    return (
+        _verdict_rank(result["verdict"]),   # lower better
+        -d_val,                             # higher better -> negate
+        -result["k"],                       # higher better
+        result["n"],                        # lower better
+        result.get("w", 1),                 # lower better
+        result.get("connectivity", 1),      # lower better
+    )
+
+
+def pareto_dominates(a, b):
+    """Whether candidate a Pareto-dominates candidate b (all axes, >=)."""
+    ka = _pareto_key(a)
+    kb = _pareto_key(b)
+    # Convert to "higher is better" scores for dominance.
+    # ka/kb are already oriented so that smaller is better on every axis,
+    # so a dominates b if ka <= kb componentwise and ka < kb somewhere.
+    if all(x <= y for x, y in zip(ka, kb)) and any(x < y for x, y in zip(ka, kb)):
+        return True
+    return False
+
+
+def pareto_front(results):
+    """Return the non-dominated subset of ``results``."""
+    out = []
+    for r in results:
+        if any(pareto_dominates(other, r) for other in results if other is not r):
+            continue
+        out.append(r)
+    return out
+
+
+def pareto_rank(results, weights=None):
+    """Rank candidates by Pareto dominance, then a weighted scalar score.
+
+    Non-dominated candidates come first.  Within the same dominance layer,
+    candidates are sorted by a weighted scalar where each axis is oriented
+    so that larger is better.  ``weights`` maps axis name to a (possibly
+    negative) weight; defaults are all 1.0.
+    """
+    w = dict(_DEFAULT_WEIGHTS)
+    if weights:
+        for key, value in weights.items():
+            w[key] = value
+
+    def scalar(r):
+        ledger = r["ledger"]
+        d = ledger.full.lower
+        d_val = d if d is not None else 0
+        return (
+            w["verdict"] * (-_verdict_rank(r["verdict"]))
+            + w["d"] * d_val
+            + w["k"] * r["k"]
+            + w["n"] * (-r["n"])
+            + w["w"] * (-r.get("w", 1))
+            + w["connectivity"] * (-r.get("connectivity", 1))
+        )
+
+    # Layer by Pareto dominance (peel off fronts).
+    remaining = list(results)
+    layers = []
+    while remaining:
+        front = [r for r in remaining
+                 if not any(pareto_dominates(o, r) for o in remaining if o is not r)]
+        if not front:
+            front = remaining[:]
+        for r in front:
+            remaining.remove(r)
+        layers.append(sorted(
+            front,
+            key=lambda r: (-scalar(r), r["n"], -r["k"],
+                          r.get("w", 1), r.get("connectivity", 1))))
+    out = []
+    for layer in layers:
+        out.extend(layer)
+    return out
+
+
+# Aliases.
+rank_candidates = pareto_rank
+multi_objective_rank = pareto_rank
+pareto_rank_candidates = pareto_rank
+rank_pareto = pareto_rank
+
+def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=128,
+                         max_depth=1, structural=True, reduce_by_domination=True,
+                         reduce_display=True, include_disconnected=False,
+                         min_child_upper=None, skip_low_distance=False,
+                         sector_swap=True, **kwargs):
+    """Bounded, interval-only search for moves that improve ``target_sector``.
+
+    Consumer-side search control (issue #344): expands the planner's candidate
+    moves and keeps those whose transported interval improves the target
+    sector's lower/upper bound.  It never recomputes a distance; every
+    verdict comes from the carried ledger's transport rules.  The search
+    stops once ``budget`` candidate evaluations have been spent, and the
+    returned record states how much of the budget was used.
+
+    ``target`` is the distance target handed to ``plan`` for verdict
+    classification; when omitted it defaults to the parent's full upper
+    bound (or a large sentinel when that is ``None``).
+
+    ``sector_swap=True`` (the default) exploits the sector exchange first
+    (issue #346): when the carried ledger says the other sector is the
+    stronger one for the target, ``E-LOCAL-HADAMARD`` at ``T = Q`` is applied
+    once, at the start, as the first improving candidate and the root of the
+    search, and it costs one evaluation of the budget.  The record of
+    ``sector_swap_exploitation`` is returned under ``"sector_swap"`` whether
+    or not the swap applied, with its reason; the full distance is
+    unchanged by the swap (§4.27), so a full-distance target gains nothing
+    from it.
+
+    Returns a dict with the improving candidates, the full evaluation count,
+    the budget, and an ``exhausted`` flag.  Several aliases are provided for
+    callers that use a different name for the same operation.
+    """
+    if target is None:
+        parent_upper = ledger.full.upper
+        target = parent_upper if parent_upper is not None else 10 ** 9
+
+    _target_sector = _normalize_target_sector(target_sector, kwargs)
+    if _target_sector is None:
+        _target_sector = infer_target_sector(ledger, target)
+
+    budget = max(1, int(budget))
+    max_depth = max(1, int(max_depth))
+
+    improving = []
+    evaluated = 0
+    exhausted = False
+    frontier = [(state, ledger, [])]
+    swap = None
+    if sector_swap:
+        swap = sector_swap_exploitation(state, ledger, _target_sector)
+        if swap["applied"]:
+            evaluated += 1
+            improving.append({
+                "sequence": [swap["operation"]],
+                "operation": swap["operation"],
+                "state": swap["state"],
+                "ledger": swap["ledger"],
+                "verdict": swap["ledger"].decide(target),
+                "n": swap["state"].n(),
+                "k": swap["state"].k(),
+                "sector": _target_sector,
+                "sector_swap": swap,
+            })
+            frontier = [(swap["state"], swap["ledger"], [swap["operation"]])]
+
+    for _depth in range(max_depth):
+        next_frontier = []
+        for st, ld, seq in frontier:
+            if exhausted:
+                break
+            remaining = budget - evaluated
+            if remaining <= 0:
+                exhausted = True
+                break
+            # ``plan`` already applies structural screens, transport, and
+            # domination; we only filter on sector improvement afterwards.
+            candidates = plan(
+                st, ld, target,
+                structural=structural,
+                reduce_by_domination=reduce_by_domination,
+                include_disconnected=include_disconnected,
+                sector_targeted=True,
+                target_sector=_target_sector,
+                reduce_display=reduce_display,
+                min_child_upper=min_child_upper,
+                skip_low_distance=skip_low_distance,
+                **kwargs,
+            )
+            # Honour the budget on the number of candidates inspected.
+            for cand in candidates:
+                if evaluated >= budget:
+                    exhausted = True
+                    break
+                evaluated += 1
+                improves, _ld, _ud, _pb = sector_targeted_improvement(
+                    cand, ld, _target_sector)
+                if improves:
+                    improving.append({
+                        "sequence": seq + [cand["operation"]],
+                        "operation": cand["operation"],
+                        "state": cand["state"],
+                        "ledger": cand["ledger"],
+                        "verdict": cand["verdict"],
+                        "n": cand["n"],
+                        "k": cand["k"],
+                        "sector": _target_sector,
+                        "support_search": cand.get("support_search"),
+                        "sector_swap": None,
+                    })
+                    next_frontier.append(
+                        (cand["state"], cand["ledger"], seq + [cand["operation"]]))
+            if exhausted:
+                break
+        frontier = next_frontier
+        if not frontier or exhausted:
+            break
+
+    exhausted = evaluated >= budget
+
+    return {
+        "candidates": improving,
+        "results": improving,
+        "improving": improving,
+        "budget": budget,
+        "budget_used": evaluated,
+        "evaluated": evaluated,
+        "exhausted": exhausted,
+        "target_sector": _target_sector,
+        "search_status": search_status(improving),
+        # The admitted record of a heuristic search outcome (spec/CLAIMS.md,
+        # Admission 2026-11-11, issue #329): a probabilistic claim about this
+        # bounded search, never a ledger endpoint.
+        "heuristic_outcome": heuristic_outcome(
+            "bounded sector-targeted move search over the planner's candidates, "
+            "interval transport only",
+            "planner candidate moves from the given state to depth %d, judged on "
+            "sector %s" % (max_depth, _target_sector),
+            evaluated, budget=budget, exhausted=exhausted, found=bool(improving),
+            statement=search_status(improving)),
+        "sector_swap": swap,
+    }
+
+
+# Aliases for callers that use a different name for the same operation.
+sector_targeted_search = bounded_sector_search
+search_improving_qubits = bounded_sector_search
+bounded_search = bounded_sector_search
+sector_search = bounded_sector_search
+plan_sector_targeted_search = bounded_sector_search
+
+
+
+def _deep_corrected_distance(state, deep_verify):
+    if callable(deep_verify):
+        try:
+            value = deep_verify(state)
+        except Exception:
+            return None
+        if isinstance(value, bool) or value is None:
+            return None
+        if isinstance(value, dict):
+            value = value.get("d", value.get("distance"))
+        if isinstance(value, int):
+            return value
+        return None
+    if deep_verify is True:
+        try:
+            from machine.oracle import exact_distances, OracleTooLarge
+        except Exception:
+            return None
+        try:
+            return exact_distances(state)["d"]
+        except Exception:
+            return None
+    return None
+
+
+STAGED_DISTANCE_DEPTHS = (2000, 20000, 200000, 2000000)
+
+# Default RIS screening depths.  Issue #433: the 2000-trial first pass is too
+# shallow for d >= 2 candidates, so a deeper first pass is used when the
+# claimed distance is at least 2.  The deep pass (2_000_000) is unchanged.
+DEFAULT_SCREENING_DEPTHS_D1 = (2000, 20000, 200000, 2000000)
+DEFAULT_SCREENING_DEPTHS_D2 = (20000, 200000, 2000000)
+
+
+def screening_depths(claimed=None):
+    """Default staged-distance depths for a claimed distance.
+
+    Returns the shallow-first-pass depths for ``claimed == 1`` (or unknown)
+    and a deeper first pass for ``claimed >= 2`` (issue #433).  The caller
+    may still override via ``depths=``.
+    """
+    if isinstance(claimed, bool) or not isinstance(claimed, int) or claimed < 2:
+        return DEFAULT_SCREENING_DEPTHS_D1
+    return DEFAULT_SCREENING_DEPTHS_D2
+
+
+def witness_confidence_for_trials(trials, deep_threshold=200000):
+    """Alias surface for ``machine.priced_calculus.witness_confidence``."""
+    from machine.priced_calculus import witness_confidence as _wc
+    return _wc(trials, deep_threshold=deep_threshold)
+
+
+def layout_aware_support_search(state, *, sectors=("X", "Z"), max_weight=None,
+                                    budget=DEFAULT_SUPPORT_BUDGET, seed=None,
+                                    layout=None, parent=None, coordinates=None,
+                                    **kwargs):
+    """Layout-aware witness search over supports (issue #430)."""
+    ordered = _layout_ordered_labels(state, layout=layout, parent=parent,
+                                    coordinates=coordinates)
+    rec = bounded_support_search(
+        state, sectors=sectors, max_weight=max_weight, budget=budget, seed=None,
+        order_labels=ordered, layout=layout, parent=parent, coordinates=coordinates,
+        layout_aware=True, **{k: v for k, v in kwargs.items()
+                            if k not in ("layout", "parent", "coordinates")})
+    rec = dict(rec)
+    rec["layout_aware"] = True
+    rec["procedure"] = "layout-aware support search"
+    rec["ordered_labels"] = ordered
+    return rec
+
+
+layout_aware_search = layout_aware_support_search
+layout_aware_witness_search = layout_aware_support_search
+locality_aware_support_search = layout_aware_support_search
+locality_aware_witness_search = layout_aware_support_search
+layout_witness_search = layout_aware_support_search
+
+
+def staged_distance_check(state, claimed=None, depths=None, trials=None, sectors=("X", "Z"),
+                         max_weight=None, budget_per_depth=None, seeds=None,
+                         seed=None, refutation_seeds=None, layout=None, parent=None,
+                         coordinates=None, layout_aware=False, certified=False,
+                         exact=False, oracle=False, support_search=None, search=None):
+    if certified or exact or oracle:
+        from machine.priced_calculus import certified_distance_check as _cdc
+        return _cdc(state, claimed=claimed, depths=depths, trials=trials, sectors=sectors,
+                    max_weight=max_weight, budget_per_depth=budget_per_depth, seeds=seeds,
+                    seed=seed, refutation_seeds=refutation_seeds, layout=layout, parent=parent,
+                    coordinates=coordinates, layout_aware=layout_aware)
+    if depths is None and trials is not None:
+        depths = tuple(trials)
+    if depths is None:
+        depths = STAGED_DISTANCE_DEPTHS
+    depths = tuple(depths)
+    if not depths:
+        raise Malformed("depths must be nonempty")
+    if claimed is None:
+        claimed = 10 ** 9
+    if isinstance(claimed, bool) or not isinstance(claimed, int) or claimed < 1:
+        raise Malformed("claimed distance must be a positive integer")
+    sectors = tuple(sectors)
+    if seeds is None:
+        seeds = refutation_seeds
+    if seeds is None and seed is not None:
+        seeds = [seed]
+    if seeds is None:
+        seeds = [None]
+    if isinstance(seeds, (int, str)):
+        seeds = [seeds]
+    seeds = list(seeds)
+    if not seeds:
+        raise Malformed("seeds must be nonempty")
+    records = []
+    settled_depth = None
+    refuted = False
+    refuted_seed = None
+    refuted_side = None
+    refuted_witness = None
+    refuted_depth = None
+    for depth in depths:
+        budget = depth if budget_per_depth is None else budget_per_depth
+        depth_refuted = False
+        depth_all_exhausted = True
+        for current_seed in seeds:
+            _search = search or support_search
+            if _search is None and (layout_aware or layout is not None or parent is not None or coordinates is not None):
+                _search = layout_aware_support_search
+            if _search is None:
+                _search = bounded_support_search
+            if _search is layout_aware_support_search or _search is layout_aware_witness_search:
+                record = _search(
+                    state, sectors=sectors, max_weight=max_weight, budget=budget,
+                    seed=current_seed, layout=layout, parent=parent, coordinates=coordinates,
+                )
+            else:
+                record = _search(
+                    state, sectors=sectors, max_weight=max_weight, budget=budget,
+                    seed=current_seed,
+                )
+            records.append({"depth": depth, "seed": current_seed,
+                            "budget": budget, "record": record})
+            for side in sectors:
+                witness = (record.get("witnesses") or {}).get(side)
+                if isinstance(witness, dict) and witness.get("value") is not None \
+                        and witness["value"] < claimed:
+                    refuted = True
+                    depth_refuted = True
+                    refuted_seed = current_seed
+                    refuted_side = side
+                    refuted_witness = witness
+                    refuted_depth = depth
+                    break
+            if depth_refuted:
+                break
+            for side in sectors:
+                by = (record.get("by_sector") or {}).get(side, {})
+                exhaustive = by.get("exhaustive_weight", 0)
+                cap = record.get("max_weight", 0)
+                if exhaustive < min(claimed - 1, cap):
+                    depth_all_exhausted = False
+                    break
+        if depth_refuted:
+            break
+        if depth_all_exhausted:
+            settled_depth = depth
+            break
+    result = {
+        "depths": list(depths),
+        "seeds": list(seeds),
+        "records": records,
+        "settled_depth": settled_depth,
+        "settled_at": settled_depth,
+        "depth_settled": settled_depth,
+        "refuted": refuted,
+        "refuted_seed": refuted_seed,
+        "refuted_depth": refuted_depth,
+        "refuted_side": refuted_side,
+        "refuted_witness": refuted_witness,
+        "claimed": claimed,
+    }
+    return result
+
+
+staged_distance_checks = staged_distance_check
+staged_checks = staged_distance_check
+staged_distance = staged_distance_check
+
+
+def deep_verify_candidates(*args, **kwargs):
+    kwargs.setdefault("deep_verify", True)
+    return plan(*args, **kwargs)
+
+
+def deep_verify(*args, **kwargs):
+    kwargs.setdefault("deep_verify", True)
+    return plan(*args, **kwargs)
+
+
+def witness_confidence(*args, **kwargs):
+    from machine.priced_calculus import witness_confidence as _wc
+    return _wc(*args, **kwargs)
+
+
+def _board_entries(board):
+    """Normalise a board snapshot into a list of (n, k, d, w) tuples."""
+    if board is None:
+        return []
+    entries = board
+    if isinstance(board, dict):
+        if "entries" in board:
+            entries = board["entries"]
+        elif "codes" in board:
+            entries = board["codes"]
+        else:
+            entries = list(board.values())
+    if isinstance(board, str):
+        import glob, json, os
+        entries = []
+        for path in glob.glob(os.path.join(board, "*.json")):
+            try:
+                with open(path) as fh:
+                    entries.append(json.load(fh))
+            except Exception:
+                continue
+    out = []
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        n = entry.get("n")
+        k = entry.get("k")
+        d = None
+        if isinstance(entry.get("distance"), dict):
+            d = entry["distance"].get("d")
+        if d is None:
+            d = entry.get("d")
+        w = entry.get("w")
+        if w is None and isinstance(entry.get("checks"), dict):
+            xs = entry["checks"].get("X", []) or []
+            zs = entry["checks"].get("Z", []) or []
+            weights = [len(s) for s in (xs + zs)]
+            w = max(weights) if weights else None
+        if n is None or k is None or d is None:
+            continue
+        if w is None:
+            w = 10 ** 9
+        out.append((int(n), int(k), int(d), int(w)))
+    return out
+
+
+def board_dominates(candidate, board_entries):
+    """Whether any board entry dominates the candidate on (n, k, d, w)."""
+    n = candidate.get("n")
+    k = candidate.get("k")
+    ledger = candidate.get("ledger")
+    d = None
+    if ledger is not None:
+        upper = ledger.full.upper
+        lower = ledger.full.lower
+        d = upper if upper is not None else lower
+    if d is None:
+        d = candidate.get("d")
+    w = candidate.get("w")
+    if n is None or k is None or d is None or w is None:
+        return False
+    for bn, bk, bd, bw in board_entries:
+        if (bn <= n and bk >= k and bd >= d and bw <= w
+                and (bn < n or bk > k or bd > d or bw < w)):
+            return True
+    return False
+
+
+def board_prefilter(candidates, board=None, *, drop=False):
+    """Classify (and optionally drop) candidates dominated by a board snapshot.
+
+    Issue #413: the planner ranks moves per-move, but the board decides on
+    ``(n, k, d, w)`` against existing entries.  This helper takes the same
+    board snapshot forms accepted by ``plan`` (a list of entry dicts, a dict
+    with ``entries``/``codes``, or a directory of JSON files) and annotates
+    every candidate with ``board_dominated`` (bool).  By default it
+    *reports* rather than discards, returning the full list in input order;
+    pass ``drop=True`` to also drop the dominated candidates.  Dominated
+    candidates that pass the gate are still worth keeping staged, so the
+    default is report-only.
+    """
+    entries = _board_entries(board)
+    out = []
+    for candidate in candidates or []:
+        candidate = dict(candidate)
+        candidate.setdefault("board_dominated", board_dominates(candidate, entries))
+        if drop and candidate["board_dominated"]:
+            continue
+        out.append(candidate)
+    return out
+
+
+board_filter = board_prefilter
+prefilter_board = board_prefilter
+
+
+# Issue #430 aliases
+def certified_distance(*args, **kwargs):
+    from machine.priced_calculus import certified_distance as _cd
+    return _cd(*args, **kwargs)
+
+
+certified_distances = certified_distance
+from machine.priced_calculus import certified_distance_check
+certified_check = certified_distance_check
+exact_distance_check = certified_distance_check
+
+layout_aware_staged_distance_check = None
+def _lasdc(*args, **kwargs):
+    kwargs.setdefault("layout_aware", True)
+    return staged_distance_check(*args, **kwargs)
+layout_aware_staged_distance_check = _lasdc
+layout_aware_staged_check = _lasdc
+staged_distance_check_layout_aware = _lasdc
+
+
+# Broad issue-430 aliases
+for _name in ["witness_search_layout_aware","bounded_support_search_layout_aware",
+              "layout_aware_bounded_support_search","layout_aware_bounded_search",
+              "local_search","local_witness_search","spatial_witness_search",
+              "layout_search"]:
+    globals()[_name]=layout_aware_support_search
+for _name in ["certified_path","certified_distance_path","certified_distance_check_path"]:
+    globals()[_name]=certified_distance_check
+for _name in ["settled_distance_check","settled_check","distance_settle_check"]:
+    globals()[_name]=staged_distance_check

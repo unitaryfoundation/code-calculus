@@ -1,7 +1,7 @@
 {
   "qldpc_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
   "addition": {
-    "parent": "an internal note",
+    "parent": "codes/10-2-3-b.json",
     "parent_parameters": {
       "n": 10,
       "k": 2
@@ -118,7 +118,9 @@
           }
         },
         "verdict": "certify",
-        "state_changed": true
+        "state_changed": true,
+        "interaction_radius": 3.162278,
+        "locality_class": "local-2d-single"
       }
     ],
     "challenge_verifier": {
@@ -137,13 +139,13 @@
           "tier": "upper_bound"
         }
       },
-      "distance_not_refuted": "no lighter logical in 2900 RIS trials (seed 445500258)",
+      "distance_not_refuted": "no lighter logical in 2900 RIS trials (seed 2041714702)",
       "failed_checks": []
     },
     "interpretation": "The propagation path used the parent's exhaustive lower bound, C-ADD-CHECK monotonicity, and child logical witnesses. The second exact enumeration was an independent experiment-only check, not part of the consumer path."
   },
   "strict_improvement_survey": {
-    "parent": "an internal note",
+    "parent": "codes/10-2-3-b.json",
     "parent_exact_distance_experiment": 3,
     "support_vectors_examined_per_sector": 1023,
     "exact_distance_oracle": "experiment-only; not called by the consumer; minimum weight over all logicals in each sector",
@@ -163,7 +165,7 @@
     }
   },
   "graft": {
-    "parent": "an internal note",
+    "parent": "codes/10-2-3-b.json",
     "operation": {
       "op": "E-GRAFT",
       "qubit": 0,
@@ -246,7 +248,9 @@
           }
         },
         "verdict": "prune",
-        "state_changed": true
+        "state_changed": true,
+        "interaction_radius": 4.0,
+        "locality_class": "local-2d-single"
       }
     ],
     "child_exact_distance_validation_only": {
@@ -285,16 +289,16 @@
           "tier": "upper_bound"
         }
       },
-      "distance_not_refuted": "no lighter logical in 2860 RIS trials (seed 1468587204)",
+      "distance_not_refuted": "no lighter logical in 2860 RIS trials (seed 1771538882)",
       "failed_checks": []
     },
     "interpretation": "The consumer prunes target 3 from a valid weight-2 upper witness. Post-hoc exhaustive enumeration finds the child's distance to be 2, so the transported upper bound is exact on this instance, and the spliced sector is unchanged at 3 as the source's sector-wise relation predicts. The randomized verifier's failure to find a lighter logical is consistent with that, and is still not a lower-bound certificate: it is a randomized refutation, and the ledger's lower endpoint remains 0."
   },
   "deletion": {
-    "parent": "an internal note",
+    "parent": "codes/119-34-5.json",
     "children": [
-      "an internal note",
-      "an internal note"
+      "codes/119-35-3.json",
+      "codes/119-36-3.json"
     ],
     "final_child_parameters": {
       "n": 119,
@@ -370,7 +374,9 @@
           }
         },
         "verdict": "prune",
-        "state_changed": true
+        "state_changed": true,
+        "interaction_radius": 6.082763,
+        "locality_class": "local-2d-bilayer"
       },
       {
         "step": 2,
@@ -450,7 +456,9 @@
           }
         },
         "verdict": "prune",
-        "state_changed": true
+        "state_changed": true,
+        "interaction_radius": 6.082763,
+        "locality_class": "local-2d-bilayer"
       }
     ],
     "final_interval": {
@@ -475,7 +483,7 @@
           "tier": "upper_bound"
         }
       },
-      "distance_not_refuted": "no lighter logical in 7260 RIS trials (seed 486254860)",
+      "distance_not_refuted": "no lighter logical in 7260 RIS trials (seed 1445741082)",
       "failed_checks": []
     },
     "interpretation": "The supplied challenge witnesses tighten the upper bound to 3, so target distance 4 is pruned without an exact distance run. The calculus does not infer a lower bound or claim the exact child distance."

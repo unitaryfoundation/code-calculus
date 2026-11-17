@@ -16,7 +16,8 @@ chain: it takes `Chain cs` and `WellFormedContext cs` as hypotheses and returns
 `Models dMeasure cs a`, whose `evalChain` field is that hypothesis unchanged.
 The `Eval` conjunct of the spec's statement is assumed here, not proved; the
 chain hypothesis cannot be dropped (`le_refl` and the pure order rows are
-derivable over any list of states).
+derivable over any list of states). `TermSoundness.lean` supplies the chain
+as the trace of an evaluation (`judgment_soundness_of_term`, issue #425).
 
 The pieces, in dependency order:
 
@@ -30,7 +31,7 @@ The pieces, in dependency order:
 - `Chain` — the chain of states a closed command unfolds through; this is the
   "same closed term" that `TRANSITIVITY` is derivation-wide over.
 - `Derives` — `Γ ⊢ … : R`, the L3 rule inventory of
-  `the internal notes` §3.4 and §3.4.1:
+  `the archived notes` §3.4 and §3.4.1:
   instantiation, `TRANSITIVITY`, `MIN-ORDER`, and the ambient order theory.
 - `Models`, `judgment_soundness` — the models predicate, and the metatheorem.
 
@@ -47,12 +48,12 @@ deletion, addition, and the graft (the sentence `Ann.wf`). The `k` cells of
 deletion and addition are discharged by the rank-decrease lemmas of
 `WellFormedness.lean` (`stateK_delete_of_eval`, `stateK_add_of_eval`) from the
 transition's own independence premise, under `RanksFit`, the dimension bound
-`rank X + rank Z ≤ |Q|`, which `ranksFit_of_wf` (`RanksFit.lean`, )
+`rank X + rank Z ≤ |Q|`, which `ranksFit_of_wf` (`RanksFit.lean`, issue #216)
 derives from the context's well-formedness. The graft's `k` cell is the
 transition's own premise. The well-formedness cells of skip, deletion, and
 addition are discharged by `wf_of_eval`; the graft's is discharged by
 `wf_graft_of_eval` (`GraftWellFormedness.lean`, §4.12). The distance rows carry
-no premise of their own (): the metatheorem takes, once, the
+no premise of their own (issue #230): the metatheorem takes, once, the
 hypothesis `MeasureMonotone dMeasure`, the §4.3 and §4.5 monotonicity laws
 stated over the uninterpreted measure (deletion does not raise a sector
 distance, addition does not lower one), and discharges the six rows from it.
@@ -62,11 +63,11 @@ the row-space inclusions of §4.3 and §4.5, and
 `measureMonotone_of_spanMonotone` derives the hypothesis from it through the
 inclusions `sectorRows_deleteState_sublist` and `sectorRows_addState_sublist`,
 which are proved here. Discharging the hypothesis for a concrete distance
-measure is `ExactDistance.lean` (): `exactMeasure`, the exact sector
+measure is `ExactDistance.lean` (issue #265): `exactMeasure`, the exact sector
 distance over `F₂` vectors with `|Q| + 1` standing for `+∞`, is span-monotone
 (`spanMonotone_exactMeasure`), and `judgment_soundness_exact` instantiates the
 metatheorem with no measure hypothesis left.
-`OBL-JUDGMENT-TRANSPORT` is mechanized in `Transport.lean` (). The
+`OBL-JUDGMENT-TRANSPORT` is mechanized in `Transport.lean` (issue #158). The
 distance fields `dX` and `dZ` are read through the supplied `dMeasure`, and `d`
 is defined as their minimum, so no cell derived here constrains the measure
 beyond skip's identity and the stated hypothesis; the metatheorem holds for
@@ -78,7 +79,7 @@ chain, `judgment_soundness_of_head` derives that context from the
 well-formedness of the input state alone, through `wf_of_eval_all`, so the
 chain hypothesis reduces to FD1's hypothesis on the input.
 
-Encoding notes (the last three recorded for , review findings RG-10
+Encoding notes (the last three recorded for issue #246, review findings RG-10
 and RC-21). First, an atom whose chain position is beyond the chain
 denotes `none`; `MIN-ORDER`'s first two rules and the reflexivity rows carry an
 explicit denotation side condition, so the metatheorem is honest about that
@@ -88,7 +89,7 @@ of atoms at evaluation sites, but it would also add premises to those two rules;
 the absorbing encoding keeps the rules as §3.4.1 states them. A consequence,
 recorded rather than repaired: a sentence true over a chain can become false
 over an extension of it when a `min` argument that did not denote begins to
-(`an internal note`, `rg_optMin_breaks_chain_monotonicity`); the transport
+(`Review228Gemini.lean`, `rg_optMin_breaks_chain_monotonicity`); the transport
 lemmas of `Transport.lean` are stated on `denotes`, not on values, for that
 reason. Second, `sub` is strict in `none` and is used by the graft's `n - 1`
 schema and by the truncated readings of the two `k` cells; `add` is its exact
@@ -105,26 +106,58 @@ through `k_1 + 1` (`FixtureEvalReplay.lean`, `fixture_W7_k_restored` and
 `addThenDelete_k_restored`); the inventory has no arithmetic or congruence
 rule, so a two-graft `n` chain (`n_2 = n_0 ∸ 2`) is not derivable, a limit of
 §4.11's L3 inventory rather than of this slice. Third, the measure is
-`Nat`-valued, so `+∞` at `k = 0` is not expressible in the sentence language;
-the interval slice (`PricedInterval.lean`) reads distances in `Option Nat` and
-handles `k = 0` through its `hk0` hypothesis, guarded by well-formedness, and
-lifting `dMeasure` to `Option Nat` here is recorded as a limit, not done. One
-further exclusion is deliberate:
+`Nat`-valued, and stays so by decision (issue #310, 2026-11-10). The spec's
+distance domain is `ℕ ∪ {+∞}` (`spec/JUDGMENT_LAYER.md` §8.1), and the
+development carries the `+∞` value where it is read: `exactDistance?`
+(`ExactDistance.lean`) is the exact distance in `Option Nat` with `none` for
+`+∞`, the reading of the interval slice (`PricedInterval.lean`), and
+`exactDistanceExt` is the same in the S2 domain `ExtNat` (`Interval.lean`);
+the `Nat`-valued `exactDistance` is the `Option` reading with the sentinel
+`|Q| + 1` as its default, exact in the sense that it takes the sentinel only
+when there is no logical (`exactDistance_eq_getD`,
+`exactDistance_eq_sentinel_iff`). The sentence language is not lifted,
+for two reasons. Its distance rows (`instDeleteDX` through `instAddD`, and
+skip's identity) relate two states of one namespace, where the `Nat` order of
+the sentinel reading is the `ExtNat` order of the distances
+(`exactDistance_le_iff_ext`), and the remaining rows are order theory valid
+in any total order with a minimum, so no derivable sentence mentions or
+needs a `+∞` value; the §4.3 and §4.5 laws are restated in `ExtNat` for the
+exact distance (`exactDistanceExt_delete_le`, `exactDistanceExt_add_le`). A
+lift would have to distinguish `+∞` from a non-denoting atom, since
+`aexprValue`'s `none` already means that an atom's position is beyond the
+chain, so the atom domain would become `Option ExtNat` with `sub`, `add`,
+and `minOf` redefined over it, a redesign of this slice and of
+`Transport.lean` for no derivable gain. The connection of `+∞` to `k`, that
+a well-formed state with `k = 0` has no logical (the `hk0` hypothesis of
+`priced_interval_soundness`), is proved for the exact distance in
+`ExactPeel.lean` (`exactDist_k0`). One further exclusion is deliberate:
 congruence of `≡` on states reads a state and stays out of the derivation
-system (2026-10-09 decision,  review round 5).
+system (2026-10-09 decision, PR #9 review round 5).
 
-Gate 6 CSS-level soundness () is not a `judgment_soundness` row.
-The five Gate 6 moves that have Lean transitions (`P-REBASE`, `E-PEEL`,
-`E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD`) get only the widened
-`[0, +∞]` reset in `propagateCmd` (PricedInterval.lean), whose soundness
-`priced_interval_soundness` proves; their well-formedness preservation is a
-premise of their transitions, not a proof (`wf_of_eval` returns `hwf'`).
-`E-GLUE` has no `Eval` transition in Lean at all (no `glue` constructor;
-`EvalExpr` has only `base` and `directSum`), so neither theorem covers it.
-The hand derivation is `spec/OPERATIONAL_SEMANTICS.md` §4.32
-(`OBL-GATE6-CSS-EXTENSIONS`, `proved`); `hadamardState_stateK`,
-`stateK_swap`, and `peelEval_Q_length` are facts about the transitions, not a
-soundness discharge. This file (Ann-level soundness) does not duplicate them.
+Gate 6 CSS-level soundness (issues #218 and #311) is not a
+`judgment_soundness` row. The five Gate 6 moves that have Lean transitions
+(`P-REBASE`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD`) get
+only the widened `[0, +∞]` reset in `propagateCmd` (PricedInterval.lean),
+whose soundness `priced_interval_soundness` proves; their well-formedness
+preservation is a premise of their transitions, not a proof (`wf_of_eval`
+returns `hwf'`). For `E-PEEL` the §4.32 transformer now carries endpoints
+(issue #295), so it is strictly finer than the widened reset proved here.
+`E-GLUE` has an `Eval` transition in Lean (the `StateExpr.glue`
+constructor and the `EvalExpr.glue` rule), and is also read as the closed
+term `⟨glueCommand seams, directSum (base A) (base B)⟩` in
+`Gate6Soundness.lean`. The §4.32 interval transformers of the six Gate 6
+cells are mechanized in `Gate6Soundness.lean`: `gate6_interval_soundness`
+for the five moves with `Eval` transitions and `glue_transformer_sound`
+for `E-GLUE`, conditional on the §4.26 to §4.30 distance relations as
+hypotheses; the §4.26 and §4.27 relations are discharged there for the
+exact distance. `priced_interval_soundness` (PricedInterval.lean) proves
+the widened `[0, +∞]` reset those moves get in `propagateCmd`. Their
+well-formedness preservation is a premise of their transitions, not a
+proof (`wf_of_eval` returns `hwf'`). The hand derivation is
+`spec/OPERATIONAL_SEMANTICS.md` §4.32 (`OBL-GATE6-CSS-EXTENSIONS`,
+`proved`); `hadamardState_stateK`, `stateK_swap`, and
+`peelEval_Q_length` are facts about the transitions. This file
+(Ann-level soundness) does not duplicate them.
 -/
 
 /-- One field per carry-table cell family (§4.11). Output well-formedness is
@@ -158,11 +191,16 @@ inductive AExpr : Type where
     not a rule; the equality orientation clause is `Derives.eq_sym`. `wf i`
     is §4.11's output well-formedness cell: the state at chain position `i`
     satisfies I1–I5 (`EncodingWellFormed`); at the evaluation site `(i, i + 1)`
-    the cell is `wf (i + 1)`. -/
+    the cell is `wf (i + 1)`. `gen i r σ S` is the generator-referencing
+    claim (issue #340): at chain position `i` the identifier `r` names a
+    displayed generator of sector `σ` with support `S`. It refers to a
+    generator by its identifier, so it has no denotation at a position where
+    `r` is not displayed. -/
 inductive Ann : Type where
   | le : AExpr → AExpr → Ann
   | eq : AExpr → AExpr → Ann
   | wf : Nat → Ann
+  | gen : Nat → Nat → Sector → List Nat → Ann
   deriving Repr, DecidableEq
 
 /-- The metric of a field. `n` and `k` read the state structurally; `dX` and
@@ -239,6 +277,7 @@ def AnnTrue (dMeasure : Field → CodeState → Nat) (cs : List CodeState) :
       ∃ v w, aexprValue dMeasure cs x = some v ∧ aexprValue dMeasure cs y = some w ∧ v ≤ w
   | .eq x y => ∃ v, aexprValue dMeasure cs x = some v ∧ aexprValue dMeasure cs y = some v
   | .wf i => ∃ s, cs[i]? = some s ∧ EncodingWellFormed s
+  | .gen i r σ S => ∃ s, cs[i]? = some s ∧ ({ id := r, sector := σ, support := S } : Row) ∈ s.rows
 
 /-- A defined term's witness. -/
 theorem exists_aexprValue {dMeasure : Field → CodeState → Nat} {cs : List CodeState}
@@ -365,7 +404,32 @@ theorem eval_graft_eq {q : Nat} {sector : Sector} {ids : List Nat} {s t : CodeSt
   cases h with
   | graft _ _ _ _ _ _ _ _ hst => exact hst
 
-/-! ## The measure-monotonicity hypothesis ()
+theorem eval_peel_eq {q : Nat} {tau : Sector} {r_id : Nat} {s t : CodeState}
+    (h : Eval (Command.peel q tau r_id) s t) : t = peelState s q r_id := by
+  cases h with
+  | peel _ _ _ _ hst _ => exact hst
+
+theorem eval_puncture_eq {q : Nat} {s t : CodeState}
+    (h : Eval (Command.puncture q) s t) : t = punctureState s q := by
+  cases h with
+  | puncture _ hst _ => exact hst
+
+theorem eval_hadamard_eq {T : List Nat} {s t : CodeState}
+    (h : Eval (Command.hadamard T) s t) : t = hadamardState s T := by
+  cases h with
+  | hadamard _ hst _ => exact hst
+
+theorem eval_rebase_eq {sector : Sector} {matrix : List (List Nat)} {s t : CodeState}
+    (h : Eval (Command.rebase sector matrix) s t) : t = rebaseState s sector matrix := by
+  cases h with
+  | rebase _ _ hst _ _ => exact hst
+
+theorem eval_extend_eq {delta : List Nat} {adds : List (Sector × List Nat)} {s t : CodeState}
+    (h : Eval (Command.extend delta adds) s t) : t = extendState s delta adds := by
+  cases h with
+  | extend _ hs' _ _ => exact hs'
+
+/-! ## The measure-monotonicity hypothesis (issue #230)
 
 The distance fields are read through an uninterpreted measure, so the
 soundness of the §4.3 and §4.5 cells (deletion does not raise a sector
@@ -376,7 +440,7 @@ as a property of the measure alone, over the row-space inclusions the two
 transitions produce, and `measureMonotone_of_spanMonotone` connects the two
 through the inclusions proved below. No distance is computed and no measure is
 interpreted (D2); the hypothesis is discharged for the exact sector distance in
-`ExactDistance.lean` (). -/
+`ExactDistance.lean` (issue #265). -/
 
 /-- The F₂-span of `rows₁` over `Q` lies inside the span of `rows₂`. -/
 def SpanLE (Q : List Nat) (rows₁ rows₂ : List Row) : Prop :=
@@ -457,7 +521,7 @@ theorem measureMonotone_rowCount : MeasureMonotone (fun _ s => s.rows.length) wh
 
 /-- Derivability of an annotation in the derivation of the chain as one closed
     term: the L3 rule inventory of
-    `the internal notes` §3.4/§3.4.1.
+    `the archived notes` §3.4/§3.4.1.
 
 The `inst*` rows are §3.4's instantiation — "at every evaluation of an
 operation, each claim schema that the operation's card records as `included`
@@ -474,7 +538,7 @@ well-formedness; the graft's well-formedness row is discharged by
 premise: they are L3's instantiation of the §4.3 and §4.5 cells, and their
 truth is established by `judgment_soundness` from its `MeasureMonotone`
 hypothesis, stated once for the whole derivation rather than at each row
-().
+(issue #230).
 
 The four `transit*` rows are `TRANSITIVITY` with `≲` over `{≤, =}` and the
 mixed chains stated; `eq_sym` is the equality orientation clause. The `min*`
@@ -506,7 +570,7 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
   -- cell has an exact additive row (`k' = k + 1`, `k = k' + 1`, the spec's
   -- form) and a truncated row (`k = k' ∸ 1`, `k' = k ∸ 1`), the latter a
   -- consequence of the former in `Nat`; both are kept because two-step `k`
-  -- compositions by `TRANSITIVITY` need a shared middle term (;
+  -- compositions by `TRANSITIVITY` need a shared middle term (issue #246;
   -- module note).
   | instDeleteK (i r : Nat) (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
@@ -608,6 +672,105 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
       Derives dMeasure cs (Ann.eq x x)
   | eq_sym (x y : AExpr) (h : Derives dMeasure cs (Ann.eq x y)) :
       Derives dMeasure cs (Ann.eq y x)
+  -- generator-referencing claims (issue #340). Source: the addition that
+  -- mints the generator. Transport: one row per kernel step under which the
+  -- referenced generator survives. There is no row for the deletion of the
+  -- referenced generator (the `W13` half) and none for the graft, whose
+  -- update rewrites supports.
+  | genMint (i : Nat) (sector : Sector) (support : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.addStab sector support) s t) :
+      Derives dMeasure cs (Ann.gen (i + 1) (canonicalMint s.used) sector support)
+  | genSkip (i r : Nat) (σ : Sector) (S : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval Command.skip s t)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  | genDelete (i r r' : Nat) (σ : Sector) (S : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.delete r') s t) (hsurvives : r ≠ r')
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  | genAdd (i r : Nat) (σ : Sector) (S : List Nat) (sector : Sector) (support : List Nat)
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.addStab sector support) s t)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  -- issue #368. Source for the rows of the input display: the claim holds at
+  -- position 0 of a row the input state displays. The graft: a generator
+  -- outside the chain survives, an opposite-sector row losing the grafted
+  -- qubit (`graftSupport`); each minted adjacent-product row is a source.
+  -- There is no row for a generator of the chain, which the graft retires.
+  | genInput (r : Nat) (σ : Sector) (S : List Nat) (s : CodeState)
+      (h0 : cs[0]? = some s)
+      (hrow : ({ id := r, sector := σ, support := S } : Row) ∈ s.rows) :
+      Derives dMeasure cs (Ann.gen 0 r σ S)
+  | genGraft (i r : Nat) (σ : Sector) (S : List Nat) (q : Nat) (sector : Sector)
+      (ids : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.graft q sector ids) s t) (hsurvives : r ∉ ids)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ (graftSupport q sector σ S))
+  | genGraftMint (i q : Nat) (sector : Sector) (ids : List Nat) (s t : CodeState) (row : Row)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.graft q sector ids) s t)
+      (hrow : row ∈ graftMintedRows s q sector ids) :
+      Derives dMeasure cs (Ann.gen (i + 1) row.id row.sector row.support)
+  -- issue #424 (Gate 6 `E-EXTEND`): extend keeps every displayed row (appending
+  -- minted rows) and does not change any support. A pre-existing generator is
+  -- transported unchanged; the minted rows are sourced by `genExtendMint`.
+  | genExtend (i r : Nat) (σ : Sector) (S : List Nat) (delta : List Nat) (adds : List (Sector × List Nat))
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.extend delta adds) s t)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  -- issue #424 (Gate 6 `E-PEEL`): peel retires the named row `r_id`; a
+  -- generator with a different id survives with its support shortened at `q`.
+  | genPeel (i r r_id : Nat) (σ : Sector) (S : List Nat) (q : Nat) (tau : Sector)
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.peel q tau r_id) s t) (hsurvives : r ≠ r_id)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ (peelSupport q S))
+  -- issue #424 (Gate 6 `E-PUNCTURE`): puncture deletes rows whose support
+  -- contains `q`; a generator whose support does not contain `q` survives
+  -- unchanged.
+  | genPuncture (i r : Nat) (σ : Sector) (S : List Nat) (q : Nat)
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.puncture q) s t) (hsurvives : ¬ S.contains q)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  -- issue #424 (Gate 6 `E-LOCAL-HADAMARD`, `T=Q`): hadamard keeps every
+  -- displayed row; its sector is swapped when `T` is non-empty.
+  | genHadamard (i r : Nat) (σ : Sector) (S : List Nat) (T : List Nat)
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.hadamard T) s t)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r
+        (if T.isEmpty then σ else oppositeSector σ) S)
+  -- issue #424 (Gate 6 `P-REBASE`): rebase rewrites the named sector's
+  -- display; a generator of the *other* sector survives unchanged. The
+  -- minted rows of the rebased sector are sourced by `genRebaseMint`.
+  | genRebase (i r : Nat) (σ : Sector) (S : List Nat) (sector : Sector)
+      (matrix : List (List Nat)) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.rebase sector matrix) s t) (hsurvives : σ ≠ sector)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  | genRebaseMint (i : Nat) (sector : Sector) (matrix : List (List Nat)) (s t : CodeState) (row : Row)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.rebase sector matrix) s t)
+      (hrow : row ∈ rebaseMintedRows s sector matrix) :
+      Derives dMeasure cs (Ann.gen (i + 1) row.id row.sector row.support)
+  | genExtendMint (i : Nat) (delta : List Nat) (adds : List (Sector × List Nat)) (s t : CodeState) (row : Row)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.extend delta adds) s t)
+      (hrow : row ∈ extendMintedRows s adds) :
+      Derives dMeasure cs (Ann.gen (i + 1) row.id row.sector row.support)
 
 /-- Satisfaction `(S, m, S') ⊨ R` of §4.11, on the chain a closed command
     unfolds through: the chain evaluates and the annotation holds of it. A
@@ -854,6 +1017,93 @@ theorem judgment_soundness (dMeasure : Field → CodeState → Nat)
       obtain ⟨v, hxv, hyv⟩ := ih
       simp only [AnnTrue]
       exact ⟨v, hyv, hxv⟩
+  | genMint i sector support s t hi hj hstep =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_add_eq hstep]
+      exact List.mem_append_right _ (List.mem_singleton.mpr rfl)
+  | genSkip i r σ S s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_skip_eq hstep, ← hs]
+      exact hmem
+  | genDelete i r r' σ S s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_delete_eq hstep, ← hs]
+      exact List.mem_filter.mpr ⟨hmem, decide_eq_true hsurvives⟩
+  | genAdd i r σ S sector support s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_add_eq hstep, ← hs]
+      exact List.mem_append_left _ hmem
+  | genInput r σ S s h0 hrow => exact ⟨s, h0, hrow⟩
+  | genGraft i r σ S q sector ids s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_graft_eq hstep, ← hs]
+      exact mem_graftState_of_survives hmem hsurvives
+  | genGraftMint i q sector ids s t row hi hj hstep hrow =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_graft_eq hstep]
+      exact mem_graftState_of_minted hrow
+  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_hadamard_eq hstep]
+      by_cases hT : T.isEmpty
+      · have ht : hadamardState s T = s := by simp [hadamardState, hT]
+        rw [ht, ← hs]
+        simp [hT]
+        exact hmem
+      · have ht : hadamardState s T = swapState s := by simp [hadamardState, hT]
+        rw [ht]
+        exact List.mem_map.mpr ⟨{ id := r, sector := σ, support := S }, hs ▸ hmem, by simp [swapRow, hT]⟩
+  | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_rebase_eq hstep]
+      exact List.mem_append_left _ (List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩)
+  | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_rebase_eq hstep]
+      exact List.mem_append_right _ hrow
+  | genExtend i r σ S delta adds s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_extend_eq hstep, ← hs]
+      exact List.mem_append_left _ hmem
+  | genExtendMint i delta adds s t row hi hj hstep hrow =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_extend_eq hstep]
+      exact List.mem_append_right _ hrow
+  | genPeel i r r_id σ S q tau s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_peel_eq hstep]
+      have htr : shortenRow q { id := r, sector := σ, support := S } ∈
+          (s.rows.filter (fun row => row.id ≠ r_id)).map (shortenRow q) :=
+        List.mem_map.mpr ⟨{ id := r, sector := σ, support := S },
+          ⟨List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩, rfl⟩⟩
+      have heq : shortenRow q { id := r, sector := σ, support := S } =
+          { id := r, sector := σ, support := peelSupport q S } := by
+        unfold shortenRow peelSupport
+        split <;> rfl
+      rw [heq] at htr
+      exact htr
+  | genPuncture i r σ S q s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_puncture_eq hstep]
+      exact List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩
 
 /-! ## Deriving the context from the input state -/
 
@@ -944,7 +1194,7 @@ theorem independent_1_twoDeleteState : IndependentGenerator 1 twoDeleteState := 
   | nil => simp [twoDeleteState] at hlen
   | cons c0 tl =>
     cases tl with
-    | cons _ _ => simp [twoDeleteState] at hlen
+    | cons _ _ => cases hlen
     | nil =>
       cases c0 <;>
         simp [combineRows, xorVec, rowVector, twoDeleteState] at hcomb
@@ -959,7 +1209,7 @@ theorem independent_2_twoDeleteState : IndependentGenerator 2 twoDeleteState := 
   | nil => simp [twoDeleteState] at hlen
   | cons c0 tl =>
     cases tl with
-    | cons _ _ => simp [twoDeleteState] at hlen
+    | cons _ _ => cases hlen
     | nil =>
       cases c0 <;>
         simp [combineRows, xorVec, rowVector, twoDeleteState] at hcomb

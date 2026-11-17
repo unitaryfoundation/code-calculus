@@ -6,7 +6,7 @@ import CodeCalculus.MixSupport
 namespace CodeCalculus
 
 /-!
-# Well-formedness preservation and rank decrease ()
+# Well-formedness preservation and rank decrease (issue #192)
 
 Two groups of per-primitive lemmas that `Soundness.lean` discharges its
 instantiation rows against.
@@ -22,7 +22,7 @@ instantiation rows against.
    the content of §4.12 and is mechanized in `GraftWellFormedness.lean`
    (`wf_graft_of_eval`), where `wf_of_eval_all` lifts preservation to every
    command. The `C-DIRECT-SUM` instance is a state expression, not a command
-   step, and is the subject of .
+   step, and is the subject of issue #180.
 
 2. Rank decrease: deleting an independent generator lowers its sector's rank
    by exactly one and leaves the other sector's rank unchanged
@@ -61,7 +61,7 @@ theorem xorVec_cancel_left (v w : List Bool) (h : v.length = w.length) :
   | nil =>
     cases w with
     | nil => rfl
-    | cons _ _ => simp at h
+    | cons _ _ => cases h
   | cons x xs ih =>
     cases w with
     | nil => simp at h
@@ -84,8 +84,8 @@ theorem xorVec_assoc (a b c : List Bool) (hab : a.length = b.length)
     | nil =>
       cases c with
       | nil => rfl
-      | cons _ _ => simp at hbc
-    | cons _ _ => simp at hab
+      | cons _ _ => cases hbc
+    | cons _ _ => cases hab
   | cons x xs ih =>
     cases b with
     | nil => simp at hab
@@ -106,8 +106,8 @@ theorem xorVec_left_comm (a b c : List Bool) (hab : a.length = b.length)
     | nil =>
       cases c with
       | nil => rfl
-      | cons _ _ => simp at hbc
-    | cons _ _ => simp at hab
+      | cons _ _ => cases hbc
+    | cons _ _ => cases hab
   | cons x xs ih =>
     cases b with
     | nil => simp at hab
@@ -145,7 +145,7 @@ theorem combineRows_append (n : Nat) (vs1 vs2 : List (List Bool)) (cs1 cs2 : Lis
     | cons _ _ => simp at hcs1
   | cons v vs1 ih =>
     cases cs1 with
-    | nil => simp at hcs1
+    | nil => cases hcs1
     | cons c cs1 =>
       have hv0 := hv1 v (List.mem_cons.mpr (Or.inl rfl))
       have hv1' : ∀ v' ∈ vs1, v'.length = n :=
@@ -186,10 +186,10 @@ theorem combineRows_zipWith_bne (n : Nat) (vs : List (List Bool))
   | cons v vs ih =>
     intro ca cb hca hcb
     cases ca with
-    | nil => simp at hca
+    | nil => cases hca
     | cons a ca =>
       cases cb with
-      | nil => simp at hcb
+      | nil => cases hcb
       | cons b cb =>
         have hv0 := hv v (List.mem_cons.mpr (Or.inl rfl))
         have hv' : ∀ v' ∈ vs, v'.length = n :=
@@ -227,7 +227,7 @@ theorem inSpanRows_of_sublist (Q : List Nat) {l₁ l₂ : List Row} (h : l₁.Su
     intro t hs
     obtain ⟨cs, hlen, heq⟩ := hs
     cases cs with
-    | nil => simp at hlen
+    | nil => cases hlen
     | cons c cs =>
       obtain ⟨cs', hlen', heq'⟩ := ih _ ⟨cs, by simpa using hlen, rfl⟩
       refine ⟨c :: cs', by simp [hlen'], ?_⟩
@@ -333,7 +333,7 @@ theorem bitAt_xorVec (a b : List Bool) (h : a.length = b.length) (i : Nat) :
   | nil =>
     cases b with
     | nil => cases i <;> rfl
-    | cons _ _ => simp at h
+    | cons _ _ => cases h
   | cons x xs ih =>
     cases b with
     | nil => simp at h
@@ -360,7 +360,7 @@ theorem ext_bitAt (a b : List Bool) (hlen : a.length = b.length)
   | nil =>
     cases b with
     | nil => rfl
-    | cons _ _ => simp at hlen
+    | cons _ _ => cases hlen
   | cons x xs ih =>
     cases b with
     | nil => simp at hlen
@@ -458,7 +458,7 @@ theorem bitAt_combineRows (Q : List Nat) (hnd : Q.Nodup) (rows : List Row) (cs :
     | cons _ _ => simp at hlen
   | cons r rs ih =>
     cases cs with
-    | nil => simp at hlen
+    | nil => cases hlen
     | cons c cs =>
       have hlen' : cs.length = rs.length := by simpa using hlen
       cases c with
@@ -589,7 +589,7 @@ theorem filter_id_eq_singleton (rows : List Row) (hnd : (rows.map Row.id).Nodup)
     · subst hrx
       rw [List.filter_cons_of_pos (by simp)]
       have hnil : xs.filter (fun y => y.id = row.id) = [] := by
-        rw [List.filter_eq_nil_iff]
+        apply filter_eq_nil_of_forall_not
         intro y hy hyid
         apply hnd'.1
         have hyid' : y.id = row.id := by simpa using hyid
@@ -817,11 +817,15 @@ theorem supportIntersectionSize_eq_length_filter (a b : List Nat) :
 theorem supportIntersectionSize_comm (a b : List Nat) (ha : a.Nodup) (hb : b.Nodup) :
     supportIntersectionSize a b = supportIntersectionSize b a := by
   rw [supportIntersectionSize_eq_length_filter, supportIntersectionSize_eq_length_filter]
-  apply List.Perm.length_eq
-  rw [List.perm_ext_iff_of_nodup (ha.sublist List.filter_sublist) (hb.sublist List.filter_sublist)]
-  intro x
-  simp only [List.mem_filter, List.contains_iff_mem]
-  exact And.comm
+  have hmem : ∀ x, x ∈ a.filter (fun q => b.contains q) ↔ x ∈ b.filter (fun q => a.contains q) := by
+    intro x
+    simp only [List.mem_filter, List.contains_iff_mem]
+    exact And.comm
+  exact Nat.le_antisymm
+    (length_le_of_nodup_subset (hb.sublist List.filter_sublist) (ha.sublist List.filter_sublist)
+      (fun v hv => (hmem v).mp hv))
+    (length_le_of_nodup_subset (ha.sublist List.filter_sublist) (hb.sublist List.filter_sublist)
+      (fun v hv => (hmem v).mpr hv))
 
 /-- Deleting any row preserves well-formedness (§4.7, `C-DELETE-CHECK`). -/
 theorem wf_deleteState (s : CodeState) (r : Nat) (hwf : EncodingWellFormed s) :

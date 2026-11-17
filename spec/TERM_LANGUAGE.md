@@ -13,6 +13,48 @@ $$
 e \;::=\; S \;\mid\; e_1 \oplus e_2
 $$
 
+and, since 2026-11-11 (issue #330), the four admitted typed constructors
+extend the expressions by
+
+$$
+e ::= \mathrm{hgp}(H_1, H_2) \mid \mathrm{lift}_G(A, B) \mid \mathrm{twoblock}_G(a, b) \mid \mathrm{concat}(e_O, e_I; \vec B)
+$$
+
+where $H_1$ and $H_2$ are binary matrices, $G$ is a finite abelian group given
+by its cyclic orders, $A$ and $B$ are matrices and $a$ and $b$ elements of the
+group algebra $\mathbb{F}_2[G]$, and $\vec B$ is a block partition of the outer
+state's qubits (`OPERATIONAL_SEMANTICS.md` §2 cards).
+
+Since 2026-11-11 (issue #369) the other five accepted constructors extend
+the expressions by
+
+$$
+e ::= \mathrm{product}(e_A, e_B) \mid \mathrm{double}_{w,s}(e) \mid \mathrm{balanced}_G(H_1, \alpha_1; H_2, \alpha_2) \mid \mathrm{tanner}(n; \Lambda_X, \Lambda_Z; \iota_X, \iota_Z) \mid \mathrm{tile}(\tau; \alpha; \beta)
+$$
+
+The typed inputs are finite objects, defined on the cards of
+`OPERATIONAL_SEMANTICS.md` §2. In `product`, $e_A$ and $e_B$ are state
+expressions. In `double`, $w$ is a wiring map from the displayed row
+identifiers of the value of $e$ to subsets of their supports and $s$ is an
+optional sector-duality flag. In `balanced`, $G$ is a finite abelian group
+given by its cyclic orders, $H_1$ and $H_2$ are binary matrices, and
+$\alpha_1$ and $\alpha_2$ are actions of $G$ on their row and column indices
+by permutations. In `tanner`, $n$ is a qubit count, $\Lambda_X$ and
+$\Lambda_Z$ are binary matrices of local checks, and $\iota_X$ and $\iota_Z$
+are lists of vertex embeddings. In `tile`, $\tau$ is a list of tiles,
+$\alpha$ a list of placements on sites, and $\beta$ the boundary rules (site
+identifications and removed checks).
+
+Since 2026-11-13 (issue #445) the expressions also include
+
+$$
+e ::= \mathrm{nested}(H_X, H_Z)
+$$
+
+where $H_X$ and $H_Z$ are binary matrices with the same number of columns,
+the parity-check matrices of two classical codes of one length
+(`OPERATIONAL_SEMANTICS.md` §2 card).
+
 $$
 m \;::=\; \mathrm{skip}
 \;\mid\; \mathrm{delete}_r
@@ -47,6 +89,16 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `E-EXTEND` | command | $m ::= \mathrm{extend}_{\Delta;\vec u}$ | `extend(Δ; [(τ₁,u₁),…])` |
 | `E-LOCAL-HADAMARD` | command | $m ::= \mathrm{hadamard}_T$ | `hadamard(T)` — admitted for $T=Q$ or $T=\varnothing$ |
 | `P-REBASE` | command | $m ::= \mathrm{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
+| `L-HGP` | expression-constructor | $e ::= \mathrm{hgp}(H_1,H_2)$ | `hgp(H₁, H₂)`, two binary matrices (admitted 2026-11-11, issue #330) |
+| `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B)$ | `lift_G(A, B)`, $G$ a finite abelian group by cyclic orders, $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11) |
+| `L-GROUP-ALGEBRA` | expression-constructor | $e ::= \mathrm{twoblock}_G(a,b)$ | `twoblock_G(a, b)`, $a, b \in \mathbb{F}_2[G]$ (admitted 2026-11-11) |
+| `A-CONCAT` | expression-constructor | $e ::= \mathrm{concat}(e_O, e_I; \vec B)$ | `concat(e_O, e_I; blocks)`, CSS outer and inner factors with a block partition (admitted 2026-11-11) |
+| `A-PRODUCT` | expression-constructor | $e ::= \mathrm{product}(e_A, e_B)$ | `product(e_A, e_B)`, the CSS tensor product of two well-formed CSS states (admitted 2026-11-11, issue #369) |
+| `A-DOUBLE` | expression-constructor | $e ::= \mathrm{double}_{w,s}(e)$ | `double(e; wiring[, conjugate])`, the two-sheet cover under a wiring map; no derivation unless the lifted rows commute (admitted 2026-11-11, issue #369) |
+| `L-BALANCED` | expression-constructor | $e ::= \mathrm{balanced}_G(H_1,\alpha_1;H_2,\alpha_2)$ | `balanced_G(H₁, α₁; H₂, α₂)`, binary matrices equivariant under permutation actions of a finite abelian group (admitted 2026-11-11, issue #369) |
+| `L-TANNER` | expression-constructor | $e ::= \mathrm{tanner}(n;\Lambda_X,\Lambda_Z;\iota_X,\iota_Z)$ | `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)`, local checks on the two vertex classes of an incidence structure; no derivation unless the local checks of the two classes commute (admitted 2026-11-11, issue #369) |
+| `L-TILE` | expression-constructor | $e ::= \mathrm{tile}(\tau;\alpha;\beta)$ | `tile(tiles; placements; boundary rules)`; no derivation unless the placed rows of the two sectors commute (admitted 2026-11-11, issue #369) |
+| `L-NESTED-CSS` | expression-constructor | $e ::= \mathrm{nested}(H_X,H_Z)$ | `nested(H_X, H_Z)`, two binary parity-check matrices with equally many columns; no derivation unless every row of the one has even overlap with every row of the other (admitted 2026-11-13, issue #445) |
 | `C-SEQUENCE` | command | $m ::= m_1;m_2$ | `m₁ ; m₂` |
 | `P-RELABEL` | presentation-operation | **none** | — |
 
@@ -74,7 +126,11 @@ name a subset, so there is no reading of it as one.
 `E-GLUE` has **no unary grammar production**: gluing is a binary state
 operation rather than a command over a single presented state, but an evaluator
 transition is now admitted (§4.31) that combines two disjoint factor states and
-consumes the §2e seam certificate. The §2f conditional cell and the
+consumes the §2e seam certificate. The Lean mechanization renders this binary
+transition as a state-expression constructor `glue(e₁, e₂; seams)` beside
+`⊕`, so `EvalExpr` evaluates both factors to presented states first; on
+closed terms this is the same transition as `Eval(glue(C_A, C_B; seam checks), C)`
+(`semantics.json`). The §2f conditional cell and the
 logical-witness prerequisite (`TAXONOMY.md` §2.10, still `not-yet-defined`)
 remain as stated. `P-RELABEL` has **no** grammar production; it is a congruence
 to be proved, not a command.
@@ -99,6 +155,8 @@ inputs, and `X-*` needs an extended state model.
 - $\mathrm{hadamard}_{Q}\triangleright S$
 - $\mathrm{rebase}_{X;M}\triangleright S$ with $M\in\mathrm{GL}(m_X,2)$
 - $\mathrm{skip}\triangleright S$
+- $\mathrm{delete}_a\triangleright \mathrm{hgp}(H_1,H_2)$ (a constructed state in expression position)
+- $m\triangleright \mathrm{concat}(S, T; \vec B)$
 
 ## 4. Malformed — rejected by the grammar alone
 
@@ -109,6 +167,7 @@ inputs, and `X-*` needs an extended state model.
 | $(\mathrm{delete}_a\triangleright S);m$ | a closed term is not a command; `;` composes commands only |
 | $(m\triangleright S)\oplus(m'\triangleright T)$ | $\oplus$ combines state expressions, not terms |
 | $m_1;m_2\triangleright (e_1;e_2)$ | `;` is undefined on state expressions |
+| $\mathrm{hgp}(S, H)$ | a state in matrix position; the constructor's inputs are binary matrices, not expressions |
 
 ## 5. Well-typed but inapplicable is a third thing
 
@@ -138,6 +197,47 @@ derivation, and what state it yields, is
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md). What the calculus can
 *claim* about the resulting state is
 [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md).
+
+**Disposition (2026-11-10, issue #315 C1) and admission (2026-11-11, issue
+#330).** Distance-increasing constructor admission was accepted as a v0.2
+disposition. On 2026-11-11 four of the nine constructors gained expression
+productions (§1, §2): `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT`,
+whose typed inputs are finite constructive data and whose output
+well-formedness is derived at `OPERATIONAL_SEMANTICS.md` §4.34; they are
+`transition-defined` and carry no distance rule (`JUDGMENT_LAYER.md` §2g).
+They are expressions, not commands, because they build a state from data
+rather than transform a presented state.
+
+**Admission of the other five (2026-11-11, issue #369).** `L-BALANCED`,
+`L-TANNER`, `L-TILE`, `A-PRODUCT`, and `A-DOUBLE` gained expression
+productions (§1, §2) once their typed inputs were defined as finite
+objects: permutation actions of a finite abelian group with an
+equivariance condition; local check matrices with vertex embeddings; tiles,
+placements, site identifications, and removed checks; two presented CSS
+states under the CSS tensor product; and a wiring map on the displayed
+incidences with an optional sector-duality flag. They are
+`transition-defined`, their output well-formedness is derived at
+`OPERATIONAL_SEMANTICS.md` §4.35, and they carry no distance rule
+(`JUDGMENT_LAYER.md` §2g). Three of them (`A-DOUBLE`, `L-TANNER`, `L-TILE`)
+have an applicability premise that the natural rows of the two sectors
+commute; a failed premise is a no-derivation, not a malformed input. The
+realizations narrow the signatures of
+`archive/notes/CONSTRUCTOR_SIGNATURES.md`: `A-PRODUCT` admits the CSS
+tensor product only, `L-BALANCED` finite abelian groups only, `L-TANNER`
+one local code per vertex class, and `A-DOUBLE` the two-sheet cover of the
+displayed incidences only.
+
+**Admission of `L-NESTED-CSS` (2026-11-13, issue #445).** `L-NESTED-CSS`
+gained the expression production `nested(H_X, H_Z)` (§1, §2). Its typed
+input is two binary parity-check matrices with equally many columns, and
+its applicability premise is that every row of the one has even overlap
+with every row of the other, which is the nesting of the two classical
+codes; a failed premise is a no-derivation. It is `transition-defined`,
+its output well-formedness is derived at `OPERATIONAL_SEMANTICS.md` §4.36,
+and it carries no distance rule (`JUDGMENT_LAYER.md` §2g). The realization
+narrows the signature of `archive/notes/CONSTRUCTOR_SIGNATURES.md` to
+codes given by parity-check matrices. The production constructs no state
+that `tanner` does not already construct (§4.36).
 
 ## 8. Contexts
 

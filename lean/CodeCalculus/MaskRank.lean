@@ -76,7 +76,7 @@ theorem inSpanMasks_trans {gen pre : List Nat}
       intro v hv
       rcases hv with ⟨cs, hlen, h01, hval⟩
       cases cs with
-      | nil => simp at hlen
+      | nil => cases hlen
       | cons c cs =>
           have hg : inSpanMasks pre g := hgen g (by simp)
           have hgs : ∀ x, x ∈ gs → inSpanMasks pre x := by
@@ -131,7 +131,7 @@ theorem combineMasks_append (xs ys : List Nat) :
   | cons a as ih =>
       intro cs ds hlen
       cases cs with
-      | nil => simp at hlen
+      | nil => cases hlen
       | cons c cs =>
           have hlen' : cs.length = as.length := by simpa using hlen
           rw [List.cons_append, List.cons_append, combineMasks_cons, combineMasks_cons,
@@ -158,10 +158,10 @@ theorem inSpanMasks_swap_fwd (a b : Nat) (l : List Nat) (v : Nat) :
     inSpanMasks (a :: b :: l) v → inSpanMasks (b :: a :: l) v := by
   rintro ⟨cs, hlen, h01, hval⟩
   cases cs with
-  | nil => simp at hlen
+  | nil => cases hlen
   | cons c cs =>
       cases cs with
-      | nil => simp at hlen
+      | nil => cases hlen
       | cons d ds =>
           have hds : ds.length = l.length := by simpa using hlen
           refine ⟨d :: c :: ds, by simp [hds], ?_, ?_⟩
@@ -210,7 +210,7 @@ theorem inSpanMasks_perm {xs ys : List Nat} (p : List.Perm xs ys) :
       constructor
       · rintro ⟨cs, hlen, h01, hval⟩
         cases cs with
-        | nil => simp at hlen
+        | nil => cases hlen
         | cons c cs =>
             have hlen' : cs.length = l1.length := by simpa using hlen
             have hcs01 : ∀ y, y ∈ cs → y = 0 ∨ y = 1 := fun y hy => h01 y (by simp [hy])
@@ -227,7 +227,7 @@ theorem inSpanMasks_perm {xs ys : List Nat} (p : List.Perm xs ys) :
               exact inSpanMasks_cons_zero hrest
       · rintro ⟨cs, hlen, h01, hval⟩
         cases cs with
-        | nil => simp at hlen
+        | nil => cases hlen
         | cons c cs =>
             have hlen' : cs.length = l2.length := by simpa using hlen
             have hcs01 : ∀ y, y ∈ cs → y = 0 ∨ y = 1 := fun y hy => h01 y (by simp [hy])
@@ -341,7 +341,7 @@ theorem reduceStep_pivot_clear {b : Nat} (hb : b ≠ 0) (acc : Nat) :
     have hbit : acc.testBit (Nat.log2 b) = true := by
       rw [Bool.and_eq_true] at h
       simpa using h.2
-    rw [Nat.testBit_xor, Nat.testBit_log2 hb, hbit]
+    rw [Nat.testBit_xor, testBit_log2_eq_true hb, hbit]
     simp
   · rename_i h
     have hbit : acc.testBit (Nat.log2 b) = false := by
@@ -563,7 +563,7 @@ theorem insertBasis_pivotDistinct (basis : List Nat) (x : Nat)
             simpa using this)
       have hclr' := hclr b hb
       rw [hlog] at hclr'
-      rw [Nat.testBit_log2 h] at hclr'
+      rw [testBit_log2_eq_true h] at hclr'
       exact absurd hclr' (by decide)
 
 theorem foldl_insertBasis_pivotDistinct (xs : List Nat) :
@@ -629,7 +629,7 @@ theorem independentMasks_of_pivotSorted : ∀ (bs : List Nat),
               combineMasks_testBit_false bs cs' (Nat.log2 b) (fun x hx =>
                 Nat.testBit_lt_two_pow
                   (lt_two_pow_of_log2_lt (hne x (List.mem_cons_of_mem _ hx)) (hp.1 x hx)))
-            rw [← hbx, Nat.testBit_log2 (hne b (List.mem_cons_self ..))] at hclr
+            rw [← hbx, testBit_log2_eq_true (hne b (List.mem_cons_self ..))] at hclr
             exact absurd hclr (by decide)
           · have hc0 : c = 0 := by
               rcases h01 c (by simp) with h0 | h1
@@ -661,7 +661,7 @@ theorem combineMasks_perm_corr : ∀ {xs ys : List Nat}, List.Perm xs ys →
       rename_i l1 l2
       intro cs hlen h01
       cases cs with
-      | nil => simp at hlen
+      | nil => cases hlen
       | cons c cs' =>
           have hlen' : cs'.length = l1.length := by simpa using hlen
           have h01' : ∀ d ∈ cs', d = 0 ∨ d = 1 := fun d hd => h01 d (by simp [hd])
@@ -686,10 +686,10 @@ theorem combineMasks_perm_corr : ∀ {xs ys : List Nat}, List.Perm xs ys →
   | swap x y l =>
       intro cs hlen h01
       cases cs with
-      | nil => simp at hlen
+      | nil => cases hlen
       | cons c₁ cs' =>
           cases cs' with
-          | nil => simp at hlen
+          | nil => cases hlen
           | cons c₂ cs'' =>
               have hlen'' : cs''.length = l.length := by simpa using hlen
               have h01'' : ∀ d ∈ cs'', d = 0 ∨ d = 1 := fun d hd => h01 d (by simp [hd])
@@ -872,7 +872,7 @@ theorem spanList_iff_inSpanMasks (xs : List Nat) (v : Nat) :
         rcases hv with ⟨cs, hlen, h01, hval⟩
         rw [spanList]
         cases cs with
-        | nil => simp at hlen
+        | nil => cases hlen
         | cons c cs' =>
             have hlen' : cs'.length = xs.length := by simpa using hlen
             have h01' : ∀ d ∈ cs', d = 0 ∨ d = 1 := fun d hd => h01 d (by simp [hd])
@@ -912,15 +912,14 @@ theorem length_le_of_nodup_subset {L l : List Nat}
   | cons a l' ih =>
       rcases List.nodup_cons.mp hl with ⟨ha, hl'⟩
       have haL : a ∈ L := hsub a (by simp)
-      have hsub' : ∀ v ∈ l', v ∈ L.erase a := by
+      have hsub' : ∀ v ∈ l', v ∈ L.filter (fun x => x ≠ a) := by
         intro v hv
-        rw [List.Nodup.mem_erase_iff hL]
-        refine ⟨?_, hsub v (by simp [hv])⟩
-        intro hve
-        exact ha (hve ▸ hv)
-      have hih := ih (L := L.erase a) (List.Nodup.erase a hL) hl' hsub'
+        rw [List.mem_filter]
+        refine ⟨hsub v (by simp [hv]), ?_⟩
+        exact decide_eq_true (fun hva => ha (hva ▸ hv))
+      have hih := ih (L := L.filter (fun x => x ≠ a)) (hL.sublist List.filter_sublist) hl' hsub'
+      rw [length_filter_ne_of_nodup_mem hL haL] at hih
       rw [List.length_cons]
-      rw [List.length_erase_of_mem haL] at hih
       have hLpos : 0 < L.length := List.length_pos_of_mem haL
       omega
 
@@ -1061,14 +1060,18 @@ theorem rebaseMatrix_unit_coeff (matrix : List (List Nat)) (m : Nat)
   have hlt : ∀ v ∈ spanList ((matrix.map matrixRowMask).foldl insertBasis []),
       v < 2 ^ m := fun v hv => lt_two_pow_of_high_bits_false v m (hhigh v hv)
   intro i hi
-  by_cases hin : inSpanMasks ((matrix.map matrixRowMask).foldl insertBasis []) (2 ^ i)
-  · have hgen : inSpanMasks (matrix.map matrixRowMask) (2 ^ i) :=
+  by_cases hmem : 2 ^ i ∈ spanList ((matrix.map matrixRowMask).foldl insertBasis [])
+  · have hin : inSpanMasks ((matrix.map matrixRowMask).foldl insertBasis []) (2 ^ i) :=
+      (spanList_iff_inSpanMasks _ _).mp hmem
+    have hgen : inSpanMasks (matrix.map matrixRowMask) (2 ^ i) :=
       (spanEq_foldl_insertBasis_nil (matrix.map matrixRowMask) (2 ^ i)).mp hin
     obtain ⟨d, hdlen, hd01, hdval⟩ := hgen
     refine ⟨d, ?_, hd01, hdval⟩
     rw [List.length_map, hok.1] at hdlen
     exact hdlen
   · exfalso
+    have hin : ¬ inSpanMasks ((matrix.map matrixRowMask).foldl insertBasis []) (2 ^ i) :=
+      fun h => hmem ((spanList_iff_inSpanMasks _ _).mpr h)
     have hnodL : (((spanList ((matrix.map matrixRowMask).foldl insertBasis [])).map
           (fun v => v ^^^ 2 ^ i)) ++
         spanList ((matrix.map matrixRowMask).foldl insertBasis [])).Nodup := by

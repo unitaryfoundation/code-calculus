@@ -34,6 +34,12 @@ def ExtNat.min : ExtNat -> ExtNat -> ExtNat
   | .inf, .finite b => .finite b
   | .inf, .inf => .inf
 
+/-- The `Option Nat` reading of the concrete domain used by the executable
+    ledger (`Judgment.lean`, `PricedInterval.lean`): `none` is `+∞`. -/
+def ExtNat.ofOption : Option Nat -> ExtNat
+  | none => .inf
+  | some n => .finite n
+
 /-- An interval in the abstract domain. -/
 structure AbsInterval where
   L : ExtNat

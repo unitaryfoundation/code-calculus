@@ -5,7 +5,7 @@ import CodeCalculus.RebaseRankSector
 namespace CodeCalculus
 
 /-!
-# Graft well-formedness preservation ()
+# Graft well-formedness preservation (issue #217)
 
 `EncodingWellFormed` is preserved by the structural graft transition
 (`spec/OPERATIONAL_SEMANTICS.md` §4.12) under the transition's own premises
@@ -31,7 +31,7 @@ graft sector loses one row. The transition's `k`-preservation premise, read
 with the dimension bound `RanksFit` on the input so that the truncated
 subtraction in `stateK` is exact, then forces both output sectors to full
 rank, which is I2. The bound is derived from well-formedness by
-`ranksFit_of_wf` (`RanksFit.lean`, ).
+`ranksFit_of_wf` (`RanksFit.lean`, issue #216).
 
 Statements about these list functions only; no soundness claim for the
 calculus is made here (README *Status*).
@@ -102,7 +102,7 @@ def deleteBit (i m : Nat) : Nat :=
 theorem testBit_deleteBit (i m j : Nat) :
     (deleteBit i m).testBit j = if j < i then m.testBit j else m.testBit (j + 1) := by
   unfold deleteBit
-  rw [Nat.testBit_or, Nat.testBit_and, Nat.testBit_two_pow_sub_one, Nat.testBit_shiftLeft,
+  rw [Nat.testBit_or, Nat.testBit_and, testBit_two_pow_sub_one_eq, Nat.testBit_shiftLeft,
     Nat.testBit_shiftRight]
   by_cases h : j < i
   · have h' : ¬ (j ≥ i) := by omega
@@ -556,6 +556,61 @@ theorem mem_graftState_rows {s : CodeState} {q : Nat} {σ : Sector} {ids : List 
     exact Or.inl ⟨r, hr, rfl⟩
   · exact Or.inr hu
 
+/-! ### The graft's effect on a displayed row (issue #368) -/
+
+/-- The minted rows are displayed by the graft's output. -/
+theorem mem_graftState_of_minted {s : CodeState} {q : Nat} {σ : Sector} {ids : List Nat}
+    {row : Row} (h : row ∈ graftMintedRows s q σ ids) : row ∈ (graftState s q σ ids).rows := by
+  rw [graftState_rows]
+  exact List.mem_append_right _ h
+
+/-- A minted row's identifier is one of the graft's canonical mints. -/
+theorem id_mem_mintFresh_of_minted {s : CodeState} {q : Nat} {σ : Sector} {ids : List Nat}
+    {row : Row} (h : row ∈ graftMintedRows s q σ ids) :
+    row.id ∈ mintFresh s.used (ids.length - 1) := by
+  unfold graftMintedRows at h
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h
+  exact (List.of_mem_zip hp).2
+
+/-- A displayed row whose identifier is not in the graft's chain survives the
+    graft, with the support `graftSupport` gives it. -/
+theorem mem_graftState_of_survives {s : CodeState} {q : Nat} {σ : Sector} {ids : List Nat}
+    {r : Nat} {τ : Sector} {S : List Nat}
+    (hmem : ({ id := r, sector := τ, support := S } : Row) ∈ s.rows) (hr : r ∉ ids) :
+    ({ id := r, sector := τ, support := graftSupport q σ τ S } : Row) ∈
+      (graftState s q σ ids).rows := by
+  rw [graftState_rows]
+  apply List.mem_append_left
+  apply List.mem_map.mpr
+  refine ⟨{ id := r, sector := τ, support := S }, ?_, ?_⟩
+  · unfold graftNonChain
+    apply List.mem_filter.mpr
+    refine ⟨hmem, decide_eq_true ?_⟩
+    intro hc
+    exact hr (List.contains_iff_mem.mp hc)
+  · unfold graftShorten graftSupport
+    rcases Decidable.em (τ = oppositeSector σ ∧ S.contains q = true) with hc | hc
+    · rw [if_pos hc, if_pos hc]
+      unfold shortenRow
+      rw [if_pos hc.2]
+    · rw [if_neg hc, if_neg hc]
+
+/-- A row the graft's output displays is a minted row, or keeps the
+    identifier of an input row outside the chain. -/
+theorem id_of_mem_graftState {s : CodeState} {q : Nat} {σ : Sector} {ids : List Nat}
+    {row : Row} (h : row ∈ (graftState s q σ ids).rows) :
+    row.id ∉ ids ∨ row ∈ graftMintedRows s q σ ids := by
+  rw [graftState_rows] at h
+  rcases List.mem_append.mp h with hs | hm
+  · left
+    obtain ⟨r0, hr0, rfl⟩ := List.mem_map.mp hs
+    unfold graftNonChain at hr0
+    have hnot := of_decide_eq_true (List.mem_filter.mp hr0).2
+    rw [graftShorten_id]
+    intro hc
+    exact hnot (List.contains_iff_mem.mpr hc)
+  · exact Or.inr hm
+
 theorem graftMintedRows_length_le (s : CodeState) (q : Nat) (σ : Sector) (ids : List Nat) :
     (graftMintedRows s q σ ids).length ≤ ids.length - 1 := by
   unfold graftMintedRows
@@ -642,7 +697,7 @@ theorem graft_sectorRows_opp (s : CodeState) (q : Nat) (σ : Sector) (ids : List
   rw [graftState_rows, List.filter_append]
   have hminted : (graftMintedRows s q σ ids).filter
       (fun r => r.sector = oppositeSector σ) = [] := by
-    rw [List.filter_eq_nil_iff]
+    apply filter_eq_nil_of_forall_not
     intro u hu
     obtain ⟨L, R, id, _, _, _, rfl⟩ := mem_graftMintedRows hu
     simp [graftMintedRow, (oppositeSector_ne σ).symm]

@@ -68,10 +68,10 @@ theorem combineMasks_zipWith_xor (xs ca cb : List Nat)
       cases ca <;> cases cb <;> simp [combineMasks]
   | cons x xs ih =>
       cases ca with
-      | nil => simp at hca
+      | nil => cases hca
       | cons a as =>
         cases cb with
-        | nil => simp at hcb
+        | nil => cases hcb
         | cons b bs =>
           have ihs := ih as bs (by simpa using hca) (by simpa using hcb)
               (fun c hc => hca01 c (by simp [hc]))
@@ -289,7 +289,7 @@ theorem getD_zipWith_xor (r : List Nat) :
       intro d hlen k
       cases d with
       | nil => simp
-      | cons b bs => simp at hlen
+      | cons b bs => cases hlen
   | cons a as ih =>
       intro d hlen k
       cases d with
@@ -442,7 +442,7 @@ theorem unitRow_getElem : ∀ (n i j : Nat), i < n → j < n →
               simp [h0]
       | succ i' =>
           cases j with
-          | zero => simp [unitRow]
+          | zero => rw [unitRow, List.getD_cons_zero, ite_eq_right (Ne.symm (Nat.succ_ne_zero i'))]
           | succ j' =>
               rw [unitRow, List.getD_cons_succ, ih i' j' (by omega) (by omega)]
               simp

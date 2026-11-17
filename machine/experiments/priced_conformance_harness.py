@@ -1,15 +1,29 @@
 """Judgment-level conformance harness for the priced consumer.
 
-This harness is the instrument named in .  It generates small random
+This harness is the instrument named in issue #27.  It generates small random
 CSS states, applies every admitted transition, measures the exact per-sector
-distances with the external oracle in ``an internal note``, and
+distances with the external oracle in ``issue21_challenge_replay.py``, and
 asserts that every interval emitted by ``machine.priced_calculus`` contains
 the corresponding exact distance.
 
 It is evidence about the transport rules, never a proof and never a discharge
 of ``OBL-PRICED-INTERVAL-SOUNDNESS``.  A price hypothesis is trusted by
 construction; the harness checks that the *transport rules* are sound given
-the hypothesis, not that the hypothesis is true.
+the hypothesis, not that the hypothesis is true.  A run that reports 0
+violations is a run that failed to falsify, nothing more.
+
+Issue #235: the suite randomizes *nonzero* lower endpoints (and a little
+upper-endpoint slack, i.e. interval width) across the small states, and
+records per-operation coverage so that every admitted operation this harness
+transits is checked under at least one nonzero lower endpoint -- the
+lower-endpoint transport rules ``OBL-PRICED-INTERVAL-SOUNDNESS`` depends on
+are the ones a zero-seeded suite can never exercise.
+
+Report path (issue #235 / TODO item 12): the run must not dirty a tracked
+file, so the JSON report goes to ``priced_conformance_report.json`` in the system temporary directory (see ``DEFAULT_REPORT_PATH``)
+by default; set ``PRICED_CONFORMANCE_REPORT`` to another path to override it,
+or to ``-`` to skip writing a report entirely.  The case count defaults to
+``DEFAULT_CASES`` and may be overridden with ``PRICED_CONFORMANCE_CASES``.
 """
 
 from __future__ import print_function
@@ -18,6 +32,7 @@ import copy
 import itertools
 import json
 import os
+import tempfile
 import random
 import subprocess
 import sys
@@ -29,10 +44,23 @@ for path in (MACHINE, ROOT, HERE):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-import priced_calculus as pc
-from challenge_replay import exact_distances
+from machine import priced_calculus as pc
+from issue21_challenge_replay import exact_distances
 
 SECTORS = ("X", "Z")
+
+# The operations this harness transits (issue #235).  Each one must see at
+# least one case whose *input* ledger carries a nonzero lower endpoint,
+# otherwise the run did not exercise the lower-endpoint transport rules for
+# that operation.  The suite fails if an admitted operation is never
+# transited or never transited with a nonzero lower endpoint.
+ADMITTED_OPERATIONS = ("C-ADD-CHECK", "C-DELETE-CHECK", "C-DIRECT-SUM",
+                       "C-SKIP", "E-GRAFT", "E-PEEL")
+
+DEFAULT_CASES = 200
+DEFAULT_SEED = 20261021
+DEFAULT_REPORT_PATH = os.path.join(tempfile.gettempdir(),
+                                   "priced_conformance_report.json")
 
 
 def _popcount(value):
@@ -120,22 +148,81 @@ def random_state(rng, q_labels, id_prefixes=("a", "b")):
     raise RuntimeError("failed to generate a valid CSS state")
 
 
-def _init_ledger(state, lower=0):
+def _seed_lower(exact, lower_seed):
+    """Derive a safe (<= exact) lower bound from ``lower_seed``."""
+    if isinstance(lower_seed, bool):
+        lower_seed = int(lower_seed)
+    if isinstance(lower_seed, str):
+        mode = lower_seed.strip().lower()
+        if mode in ("exact",):
+            if exact is None:
+                return 0
+            return exact
+        if mode in ("exact-1", "exact_minus_1"):
+            if exact is None:
+                return 0
+            return max(0, exact - 1)
+        if mode in ("zero", "0"):
+            return 0
+        try:
+            lower_seed = int(mode)
+        except ValueError:
+            return 0
+    if lower_seed is None:
+        lower_seed = 0
+    try:
+        lower_seed = int(lower_seed)
+    except (TypeError, ValueError):
+        return 0
+    if lower_seed < 0:
+        lower_seed = 0
+    if exact is None:
+        return lower_seed
+    if lower_seed > exact:
+        return exact
+    return lower_seed
+
+
+def _init_ledger(state, lower=0, lower_seed=None, upper_slack=0):
+    """Seed the ledger from the oracle at ``lower_seed`` (<= exact per cell).
+
+    ``upper_slack`` widens every finite upper endpoint by that many units, so
+    the suite also exercises intervals whose width is not pinned to the exact
+    distance (issue #235).  The oracle still contains the seeded interval,
+    because slack only ever *raises* an upper endpoint.
+    """
+    if lower_seed is None:
+        lower_seed = lower
     ex = exact_distances(state)
-    # full distance
+    sector_lowers = {}
+    for side in SECTORS:
+        sector_lowers[side] = _seed_lower(ex[side], lower_seed)
+    full_candidate = _seed_lower(ex["d"], lower_seed)
+    finite_sector = [v for v in sector_lowers.values() if v is not None]
+    if finite_sector:
+        sector_min = min(finite_sector)
+        if full_candidate is None:
+            full_lower = sector_min
+        else:
+            full_lower = min(full_candidate, sector_min)
+    else:
+        full_lower = 0 if full_candidate is None else full_candidate
+    if full_lower is None:
+        full_lower = 0
     if ex["d"] is None:
-        full = pc.Interval(lower if lower is not None else 0, None)
+        full = pc.Interval(full_lower, None)
     else:
         full = pc.Interval(
-            max(lower if lower is not None else 0, 0),
-            ex["d"],
+            max(full_lower, 0),
+            ex["d"] + upper_slack,
         )
     sector = {}
     for side in SECTORS:
         if ex[side] is None:
-            sector[side] = pc.Interval(0, None)
+            sector[side] = pc.Interval(sector_lowers[side], None)
         else:
-            sector[side] = pc.Interval(0, ex[side])
+            sector[side] = pc.Interval(
+                max(sector_lowers[side], 0), ex[side] + upper_slack)
     ledger = pc.DistanceLedger(full, sector, witnesses=None, conditions=[])
     # carry challenge-style witnesses if present
     for side in SECTORS:
@@ -147,11 +234,38 @@ def _init_ledger(state, lower=0):
     return ledger, ex
 
 
+def _has_nonzero_lower(ledger):
+    """Whether any endpoint of ``ledger``'s lower side is strictly positive."""
+    endpoints = [ledger.full.lower]
+    endpoints.extend(ledger.sector[side].lower for side in SECTORS)
+    return any(endpoint is not None and endpoint > 0 for endpoint in endpoints)
+
+
+def _note_input(coverage, op_name, ledger):
+    """Record one transport of ``op_name`` against its *input* ledger.
+
+    ``coverage`` maps an operation name to transport and nonzero-lower-input
+    counts (issue #235): the suite fails unless every admitted operation has
+    at least one transport whose input ledger carried a nonzero lower
+    endpoint.
+    """
+    if coverage is None:
+        return
+    entry = coverage.setdefault(op_name,
+                                {"transports": 0, "nonzero_lower_inputs": 0})
+    entry["transports"] += 1
+    if _has_nonzero_lower(ledger):
+        entry["nonzero_lower_inputs"] += 1
+
+
 def _contains(interval, exact):
     if exact is None:
         # infinite distance: interval must have no finite upper bound
         return interval.upper is None
-    if interval.lower is not None and exact < interval.lower:
+    # A missing lower endpoint is read as positive infinity, so an interval
+    # with no lower bound cannot contain any finite exact distance.
+    lower = interval.lower if interval.lower is not None else float("inf")
+    if exact < lower:
         return False
     if interval.upper is not None and exact > interval.upper:
         return False
@@ -187,56 +301,128 @@ def _check_decide(ledger, target):
     return (len(reasons) == 0), reasons
 
 
+
+def _check_state_invariants(parent_state, child_state, op_desc):
+    """Post-operation state invariants (issue #125 deliverable 2)."""
+    reasons = []
+    try:
+        child_state.validate()
+    except (pc.Malformed, ValueError, TypeError) as e:
+        reasons.append("validate() failed: %s" % e)
+    # used must not shrink (canonical mint / used = live U retired).
+    if not set(parent_state.used).issubset(set(child_state.used)):
+        reasons.append("used shrank: parent=%s child=%s" % (sorted(parent_state.used), sorted(child_state.used)))
+    # live row identifiers pairwise unique (also in validate, stated here).
+    live_ids = [row.id for row in child_state.rows]
+    if len(live_ids) != len(set(live_ids)):
+        reasons.append("duplicate live row identifiers")
+    # live row identifiers subset of used (also in validate).
+    if not set(live_ids).issubset(set(child_state.used)):
+        reasons.append("live row identifier not in used")
+    return (len(reasons) == 0), reasons
+
+
+def _logical_weights(state, side):
+    """Every ``side`` logical of a small state as (support, weight).
+
+    Exhaustive, so it is an oracle-side aid for building the peel prices a
+    consumer would supply (issue #331); the consumer never computes these.
+    """
+    opposite = "Z" if side == "X" else "X"
+    same = [row.mask for row in state.sector_rows(side)]
+    other = [row.mask for row in state.sector_rows(opposite)]
+    found = []
+    labels = list(state.Q)
+    for weight in range(1, len(labels) + 1):
+        for support in itertools.combinations(labels, weight):
+            mask = pc.support_mask(support)
+            if pc.commutes(mask, other) and not pc.in_span(mask, same):
+                found.append((support, weight))
+    return found
+
+
+def _peel_prices(state, qubit, sector):
+    """The two true peel prices of section 4.28 from the oracle: w_expose for
+    the opposite sector (one less than the lightest logical through q, or
+    None) and w_avoid for the selected sector (the lightest logical avoiding
+    q, or None)."""
+    opposite = "Z" if sector == "X" else "X"
+    expose = [w - 1 for support, w in _logical_weights(state, opposite) if qubit in support]
+    avoid = [w for support, w in _logical_weights(state, sector) if qubit not in support]
+    return (min(expose) if expose else None), (min(avoid) if avoid else None)
+
+
 def _all_minimum_classes_killed(state, added_mask, side, base_distance):
     """Whether every weight-base_distance logical (as vectors) is killed."""
     if base_distance is None:
         return False
-    # The added check lies in `side`; it can kill logicals of the opposite
-    # sector (anticommute) and, conservatively, we only claim a kill when
-    # the anticommutation condition holds.  Logical classes of the opposite
-    # sector commute with the `side` stabilizers and avoid the opposite
-    # sector's own stabilizer span.
-    logical_sector = "Z" if side == "X" else "X"
-    commute_with = [row.mask for row in state.sector_rows(side)]
-    avoid_span = [row.mask for row in state.sector_rows(logical_sector)]
+    same = [row.mask for row in state.sector_rows(side)]
+    opposite = [row.mask for row in state.sector_rows("Z" if side == "X" else "X")]
     # enumerate all vectors of exact weight base_distance
     q_labels = list(state.Q)
     for combo in itertools.combinations(q_labels, base_distance):
         mask = 0
         for q in combo:
             mask |= 1 << q
-        # logical: commutes with the added check's sector, not in the
-        # opposite sector's stabilizer span
-        if not all(_popcount(mask & row) % 2 == 0 for row in commute_with):
+        # logical: commutes with opposite, not in same span
+        if not all(_popcount(mask & row) % 2 == 0 for row in opposite):
             continue
-        if pc.in_span(mask, avoid_span):
+        if pc.in_span(mask, same):
             continue
-        # killed if odd intersection with added_mask
+        # killed if odd intersection with added_mask OR in killed span
         if _popcount(mask & added_mask) % 2 == 0:
-            # not killed by anticommutation (K-membership not trusted here)
+            # not killed by anticommutation; check killed span not implemented
+            # conservatively: not killed
             return False
     return True
 
 
-def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage=None):
+def _all_minimum_classes_absorbed(state, added_mask, side, base_distance):
+    """Whether every weight-base_distance logical in ``side`` is absorbed."""
+    if base_distance is None:
+        return False
+    same = [row.mask for row in state.sector_rows(side)]
+    opposite = [row.mask for row in state.sector_rows("Z" if side == "X" else "X")]
+    q_labels = list(state.Q)
+    for combo in itertools.combinations(q_labels, base_distance):
+        mask = 0
+        for q in combo:
+            mask |= 1 << q
+        if not all(_popcount(mask & row) % 2 == 0 for row in opposite):
+            continue
+        if pc.in_span(mask, same):
+            continue
+        if not pc.in_span(mask ^ added_mask, same):
+            return False
+    return True
+
+
+def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
+             lower=None, hypothesis=None, coverage=None, upper_slack=0):
     """Run one random state through a set of operations; return violations.
 
     When ``hyp_counts`` is provided it is mutated in place with per-hypothesis
-    application counts; the return value is the violation list only, so callers
-    that predate the counting (including the unit test) keep working.
+    application counts; when ``coverage`` is provided it is mutated in place
+    with per-operation transport and nonzero-lower-input counts (issue #235).
+    The return value is the violation list only, so callers that predate the
+    counting (including the unit test) keep working.
     """
     if hyp_counts is None:
         hyp_counts = {}
+    if lower is not None:
+        lower_seed = lower
     violations = []
+
+    def _merge_hyp(hyp):
+        if not hypothesis:
+            return hyp if hyp is not None else {}
+        merged = dict(hypothesis)
+        if hyp:
+            merged.update(hyp)
+        return merged
     # initial ledger
-    _ex_preview = exact_distances(state)
-    if lower_seed == "exact":
-        _lower = _ex_preview["d"] if _ex_preview["d"] is not None else 0
-    elif lower_seed == 1:
-        _lower = 1
-    else:
-        _lower = 0
-    ledger, ex0 = _init_ledger(state, lower=_lower)
+    ledger, ex0 = _init_ledger(state, lower_seed=lower_seed,
+                               upper_slack=upper_slack)
     ok, reasons = _check_ledger(ledger, ex0)
     _dok, _dre = _check_decide(ledger, ex0["d"])
     if not _dok:
@@ -264,6 +450,11 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
                 new_state = current_state.add_check(sector, support)
             except (pc.NoDerivation, pc.Malformed, ValueError):
                 continue
+            _inv_ok, _inv_reasons = _check_state_invariants(
+                current_state, new_state, "C-ADD-CHECK sector=%s" % sector)
+            if not _inv_ok:
+                record_violation("C-ADD-CHECK sector=%s" % sector, new_state, None, None, _inv_reasons)
+                continue
             new_exact = exact_distances(new_state)
             # ledger transport (unpriced)
             hyp = {}
@@ -272,16 +463,17 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
             for q in support:
                 added_mask |= 1 << q
             base = current_exact["d"]
-            opposite_sector = "Z" if sector == "X" else "X"
-            # Strict improvement of the full distance is only possible when
-            # the added check's own sector is not itself the bottleneck:
-            # otherwise a minimum logical in that sector survives.
-            own_distance = current_exact.get(sector)
-            if (base is not None
-                    and current_ledger.full.lower == current_ledger.full.upper == base
-                    and current_exact.get(opposite_sector) == base
-                    and (own_distance is None or own_distance > base)):
-                if _all_minimum_classes_killed(current_state, added_mask, sector, base):
+            if base is not None and current_ledger.full.lower == current_ledger.full.upper == base:
+                tau = sector
+                sigma = "Z" if sector == "X" else "X"
+                improve = True
+                if current_exact.get(sigma) == base:
+                    if not _all_minimum_classes_killed(current_state, added_mask, sigma, base):
+                        improve = False
+                if current_exact.get(tau) == base:
+                    if not _all_minimum_classes_absorbed(current_state, added_mask, tau, base):
+                        improve = False
+                if improve:
                     hyp = {"strict_improvement": {
                         "base_distance": base,
                         "all_minimum_classes_killed": True,
@@ -322,10 +514,11 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
                                         "evidence": "harness",
                                     }}
                                     hyp_counts["direct_sum_extinction"] = hyp_counts.get("direct_sum_extinction", 0) + 1
-                except Exception:
+                except (KeyError, TypeError, ValueError, AttributeError, IndexError):
                     hyp = hyp or {}
             op = {"op": "C-ADD-CHECK"}
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis=hyp, observations={})
+            _note_input(coverage, "C-ADD-CHECK", current_ledger)
+            new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={})
             ok, reasons = _check_ledger(new_ledger, new_exact)
             _dok, _dre = _check_decide(new_ledger, new_exact["d"])
             if not _dok:
@@ -342,32 +535,39 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
         except (pc.NoDerivation, pc.Malformed, ValueError):
             new_state = None
         if new_state is not None:
-            op = {"op": "C-DELETE-CHECK"}
-            # unpriced
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis={}, observations={})
-            new_exact = exact_distances(new_state)
-            ok, reasons = _check_ledger(new_ledger, new_exact)
-            _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-            if not _dok:
-                ok = False
-                reasons = reasons + _dre
-            if not ok:
-                record_violation("C-DELETE-CHECK id=%s (unpriced)" % row.id, new_state, new_ledger, new_exact, reasons)
-            # priced with a true-ish price
-            price = new_exact["d"] if new_exact["d"] is not None else 10
-            hyp = {"deletion_price": {"w_del": price, "w_exp": price, "evidence": "harness"}}
-            hyp_counts["deletion_price"] = hyp_counts.get("deletion_price", 0) + 1
-            try:
-                new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=hyp, observations={})
-                ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
-                _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
-                if not _dok2:
-                    ok2 = False
-                    reasons2 = reasons2 + _dre2
-                if not ok2:
-                    record_violation("C-DELETE-CHECK id=%s (priced)" % row.id, new_state, new_ledger2, new_exact, reasons2)
-            except (pc.NoDerivation, pc.Malformed, ValueError):
-                pass
+            _inv_ok, _inv_reasons = _check_state_invariants(
+                current_state, new_state, "C-DELETE-CHECK id=%s" % row.id)
+            if not _inv_ok:
+                record_violation("C-DELETE-CHECK id=%s" % row.id, new_state, None, None, _inv_reasons)
+            else:
+                op = {"op": "C-DELETE-CHECK"}
+                # unpriced
+                _note_input(coverage, "C-DELETE-CHECK", current_ledger)
+                new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={})
+                new_exact = exact_distances(new_state)
+                ok, reasons = _check_ledger(new_ledger, new_exact)
+                _dok, _dre = _check_decide(new_ledger, new_exact["d"])
+                if not _dok:
+                    ok = False
+                    reasons = reasons + _dre
+                if not ok:
+                    record_violation("C-DELETE-CHECK id=%s (unpriced)" % row.id, new_state, new_ledger, new_exact, reasons)
+                # priced with a true-ish price
+                price = new_exact["d"] if new_exact["d"] is not None else 10
+                hyp = {"deletion_price": {"w_del": price, "w_exp": price, "evidence": "harness"}}
+                hyp_counts["deletion_price"] = hyp_counts.get("deletion_price", 0) + 1
+                try:
+                    _note_input(coverage, "C-DELETE-CHECK", current_ledger)
+                    new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={})
+                    ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
+                    _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
+                    if not _dok2:
+                        ok2 = False
+                        reasons2 = reasons2 + _dre2
+                    if not ok2:
+                        record_violation("C-DELETE-CHECK id=%s (priced)" % row.id, new_state, new_ledger2, new_exact, reasons2)
+                except (pc.NoDerivation, pc.Malformed, ValueError):
+                    pass
 
     # 3. E-GRAFT: try each qubit/sector with a random ordering
     for qubit in list(current_state.Q):
@@ -380,7 +580,7 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
             # grafted qubit is present in the opposite sector; otherwise the
             # selected sector can lose a logical supported on q. Such grafts
             # are outside the relation's domain (see the guard proposed in
-            # the companion E-GRAFT applicability ).
+            # the companion E-GRAFT applicability PR).
             if not any(qubit in r.support for r in current_state.sector_rows(opposite)):
                 continue
             ordered = [r.id for r in touching]
@@ -389,8 +589,14 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
                 new_state = current_state.graft(qubit, sector, ordered)
             except (pc.NoDerivation, pc.Malformed, ValueError):
                 continue
+            _inv_ok, _inv_reasons = _check_state_invariants(
+                current_state, new_state, "E-GRAFT q=%s sector=%s" % (qubit, sector))
+            if not _inv_ok:
+                record_violation("E-GRAFT q=%s sector=%s" % (qubit, sector), new_state, None, None, _inv_reasons)
+                continue
             op = {"op": "E-GRAFT", "sector": sector, "qubit": qubit}
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis={}, observations={})
+            _note_input(coverage, "E-GRAFT", current_ledger)
+            new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={})
             new_exact = exact_distances(new_state)
             ok, reasons = _check_ledger(new_ledger, new_exact)
             _dok, _dre = _check_decide(new_ledger, new_exact["d"])
@@ -406,7 +612,8 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
             hyp = {"graft_price": {"w_expose": price, "evidence": "harness"}}
             hyp_counts["graft_price"] = hyp_counts.get("graft_price", 0) + 1
             try:
-                new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=hyp, observations={})
+                _note_input(coverage, "E-GRAFT", current_ledger)
+                new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={})
                 ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
                 _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
                 if not _dok2:
@@ -416,6 +623,84 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
                     record_violation("E-GRAFT q=%s sector=%s (priced)" % (qubit, sector), new_state, new_ledger2, new_exact, reasons2)
             except (pc.NoDerivation, pc.Malformed, ValueError):
                 pass
+
+    # 3b. E-PEEL (issue #331): every unique-touch peel, unpriced and priced.
+    # Section 4.28: d_tau' = w_avoid,tau(q) for the selected sector and
+    # d_sigma' = min(d_sigma, w_expose,sigma(q)) for the opposite sector,
+    # so the unpriced ledger carries the selected lower, the opposite lower
+    # less one, the opposite upper, and the minimum for the full distance;
+    # the priced ledger pins the sectors. The prices come from the oracle
+    # here, as a consumer's would come from its own enumeration.
+    for qubit in list(current_state.Q):
+        for sector in SECTORS:
+            touching = [r for r in current_state.sector_rows(sector) if qubit in r.support]
+            if len(touching) != 1:
+                continue
+            try:
+                new_state = current_state.peel(qubit, sector, touching[0].id)
+            except (pc.NoDerivation, pc.Malformed, ValueError):
+                continue
+            desc = "E-PEEL q=%s sector=%s" % (qubit, sector)
+            _inv_ok, _inv_reasons = _check_state_invariants(current_state, new_state, desc)
+            if not _inv_ok:
+                record_violation(desc, new_state, None, None, _inv_reasons)
+                continue
+            op = {"op": "E-PEEL", "qubit": qubit, "sector": sector,
+                  "row_id": touching[0].id}
+            new_exact = exact_distances(new_state)
+            _note_input(coverage, "E-PEEL", current_ledger)
+            new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}),
+                                                  observations={})
+            ok, reasons = _check_ledger(new_ledger, new_exact)
+            _dok, _dre = _check_decide(new_ledger, new_exact["d"])
+            if not _dok:
+                ok = False
+                reasons = reasons + _dre
+            if not ok:
+                record_violation(desc + " (unpriced)", new_state, new_ledger, new_exact, reasons)
+            w_expose, w_avoid = _peel_prices(current_state, qubit, sector)
+            price = {"evidence": "harness oracle"}
+            if w_expose is not None:
+                price["w_expose"] = w_expose
+            if w_avoid is not None:
+                price["w_avoid"] = w_avoid
+            if len(price) == 1:
+                continue
+            hyp_counts["peel_price"] = hyp_counts.get("peel_price", 0) + 1
+            try:
+                _note_input(coverage, "E-PEEL", current_ledger)
+                new_ledger2 = current_ledger.propagate(op, new_state,
+                                                       hypothesis=_merge_hyp({"peel_price": price}),
+                                                       observations={})
+            except (pc.NoDerivation, pc.Malformed, ValueError) as exc:
+                record_violation(desc + " (priced)", new_state, None, new_exact,
+                                 ["true prices refused: %s" % exc])
+                continue
+            ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
+            _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
+            if not _dok2:
+                ok2 = False
+                reasons2 = reasons2 + _dre2
+            # The two cells are exact: with both prices supplied the sector
+            # intervals must pin the oracle's values, not merely contain them.
+            opposite = "Z" if sector == "X" else "X"
+            if w_avoid is not None and new_exact[sector] is not None and \
+                    new_ledger2.sector[sector] != pc.Interval(new_exact[sector], new_exact[sector]):
+                ok2 = False
+                reasons2.append("selected sector %s not pinned by w_avoid=%s: %s vs exact %s"
+                                % (sector, w_avoid, new_ledger2.sector[sector].as_json(),
+                                   new_exact[sector]))
+            if (w_expose is not None and new_exact[opposite] is not None
+                    and current_ledger.sector[opposite].lower == current_ledger.sector[opposite].upper
+                    and new_ledger2.sector[opposite] != pc.Interval(new_exact[opposite],
+                                                                    new_exact[opposite])):
+                ok2 = False
+                reasons2.append("opposite sector %s not pinned by w_expose=%s from an exact "
+                                "parent interval: %s vs exact %s"
+                                % (opposite, w_expose, new_ledger2.sector[opposite].as_json(),
+                                   new_exact[opposite]))
+            if not ok2:
+                record_violation(desc + " (priced)", new_state, new_ledger2, new_exact, reasons2)
 
     # 4. C-DIRECT-SUM: combine with a second disjoint state
     try:
@@ -429,9 +714,16 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
         other = pc.CodeState(other_q, other_rows, small_other.used)
         other.validate()
         new_state = pc.CodeState.direct_sum(current_state, other)
+        _inv_ok, _inv_reasons = _check_state_invariants(
+            current_state, new_state, "C-DIRECT-SUM")
+        if not _inv_ok:
+            record_violation("C-DIRECT-SUM", new_state, None, None, _inv_reasons)
+            raise RuntimeError("invariants")
         # ledger direct sum: need a second ledger for other
-        other_ledger, other_exact = _init_ledger(other)
+        other_ledger, other_exact = _init_ledger(
+            other, lower_seed=lower_seed, upper_slack=upper_slack)
         # combine ledgers via DistanceLedger.direct_sum
+        _note_input(coverage, "C-DIRECT-SUM", current_ledger)
         combined_ledger = pc.DistanceLedger.direct_sum(current_ledger, other_ledger)
         new_exact = exact_distances(new_state)
         ok, reasons = _check_ledger(combined_ledger, new_exact)
@@ -448,161 +740,37 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0, coverage
     # (no separate rule beyond composition; skip identity)
     try:
         new_state = current_state.skip()
-        new_ledger = current_ledger.propagate({"op": "C-SKIP"}, new_state, hypothesis={}, observations={})
+        _inv_ok, _inv_reasons = _check_state_invariants(current_state, new_state, "C-SKIP")
+        if not _inv_ok:
+            record_violation("C-SKIP", new_state, None, None, _inv_reasons)
+            raise RuntimeError("invariants")
+        _note_input(coverage, "C-SKIP", current_ledger)
+        new_ledger = current_ledger.propagate({"op": "C-SKIP"}, new_state, hypothesis=_merge_hyp({}), observations={})
         new_exact = exact_distances(new_state)
         ok, reasons = _check_ledger(new_ledger, new_exact)
         if not ok:
             record_violation("C-SKIP", new_state, new_ledger, new_exact, reasons)
-    except (pc.NoDerivation, pc.Malformed, ValueError):
+    except (pc.NoDerivation, pc.Malformed, ValueError, RuntimeError):
         pass
 
-    # 6. Gate 6 CSS conditional cells (2026-10-23): P-REBASE, E-LOCAL-HADAMARD
-    # (T=Q), E-PEEL, E-PUNCTURE, E-EXTEND. Each entrance is
-    # hypothesis-free; the interval rules the consumer licenses for them are
-    # transcribed from spec/OPERATIONAL_SEMANTICS.md §4.25–§4.29 (and this
-    # harness checks only that the transported intervals contain the exact
-    # child distances -- evidence, never a discharge of
-    # OBL-GATE6-CSS-EXTENSIONS).
-
-    # 6a. P-REBASE: an invertible mix of one sector's display.
-    for sector in SECTORS:
-        rows = list(current_state.sector_rows(sector))
-        m = len(rows)
-        if m < 1 or m > 4:
-            continue
-        candidates = [
-            [[1, 0], [0, 1]],
-            [[1, 1], [0, 1]],
-            [[0, 1], [1, 1]],
-            [[1, 1, 0], [0, 1, 1], [1, 0, 1]],
-        ]
-        for matrix in candidates:
-            if len(matrix) != m:
-                continue
-            try:
-                new_state = current_state.rebase(sector, matrix)
-            except (pc.NoDerivation, pc.Malformed, ValueError):
-                continue
-            new_exact = exact_distances(new_state)
-            op = {"op": "P-REBASE", "sector": sector}
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis={},
-                                                  parent_state=current_state)
-            ok, reasons = _check_ledger(new_ledger, new_exact)
-            _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-            if not _dok:
-                ok = False
-                reasons = reasons + _dre
-            if not ok:
-                record_violation("P-REBASE sector=%s" % sector, new_state,
-                                 new_ledger, new_exact, reasons)
-            hyp_counts["rebase"] = hyp_counts.get("rebase", 0) + 1
-
-    # 6b. E-LOCAL-HADAMARD at T=Q.
-    try:
-        new_state = current_state.hadamard_sector_swap()
-        new_exact = exact_distances(new_state)
-        op = {"op": "E-LOCAL-HADAMARD", "qubits": list(current_state.Q)}
-        new_ledger = current_ledger.propagate(op, new_state, hypothesis={},
-                                              parent_state=current_state)
-        ok, reasons = _check_ledger(new_ledger, new_exact)
-        _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-        if not _dok:
-            ok = False
-            reasons = reasons + _dre
-        if not ok:
-            record_violation("E-LOCAL-HADAMARD T=Q", new_state, new_ledger,
-                             new_exact, reasons)
-        hyp_counts["hadamard_sector_swap"] = hyp_counts.get("hadamard_sector_swap", 0) + 1
-    except (pc.NoDerivation, pc.Malformed, ValueError):
-        pass
-
-    # 6c. E-PEEL: unique-touch peels per sector/qubit.
-    for sector in SECTORS:
-        opposite = "Z" if sector == "X" else "X"
-        for q in list(current_state.Q):
-            touching = [r for r in current_state.sector_rows(sector) if q in r.support]
-            if len(touching) != 1:
-                continue
-            try:
-                new_state = current_state.peel(q, sector, touching[0].id)
-            except (pc.NoDerivation, pc.Malformed, ValueError):
-                continue
-            new_exact = exact_distances(new_state)
-            op = {"op": "E-PEEL", "qubit": q, "sector": sector}
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis={},
-                                                  parent_state=current_state)
-            ok, reasons = _check_ledger(new_ledger, new_exact)
-            _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-            if not _dok:
-                ok = False
-                reasons = reasons + _dre
-            if not ok:
-                record_violation("E-PEEL q=%s sector=%s" % (q, sector),
-                                 new_state, new_ledger, new_exact, reasons)
-            hyp_counts["peel"] = hyp_counts.get("peel", 0) + 1
-
-    # 6d. E-PUNCTURE.
-    for q in list(current_state.Q):
-        try:
-            new_state = current_state.puncture(q)
-        except (pc.NoDerivation, pc.Malformed, ValueError):
-            continue
-        new_exact = exact_distances(new_state)
-        op = {"op": "E-PUNCTURE", "qubit": q}
-        new_ledger = current_ledger.propagate(op, new_state, hypothesis={},
-                                              parent_state=current_state)
-        ok, reasons = _check_ledger(new_ledger, new_exact)
-        _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-        if not _dok:
-            ok = False
-            reasons = reasons + _dre
-        if not ok:
-            record_violation("E-PUNCTURE q=%s" % q, new_state, new_ledger,
-                             new_exact, reasons)
-        hyp_counts["puncture"] = hyp_counts.get("puncture", 0) + 1
-
-    # 6e. E-EXTEND: disjoint new qubits + well-typed additions.
-    offset = (max(current_state.Q) if current_state.Q else 0) + 100
-    for sector in SECTORS:
-        support = sorted(rng.sample(list(current_state.Q), rng.randint(1, min(2, len(current_state.Q))))) \
-                  + [offset]
-        try:
-            new_state = current_state.extend_code((offset,), [(sector, tuple(support))])
-        except (pc.NoDerivation, pc.Malformed, ValueError):
-            continue
-        new_exact = exact_distances(new_state)
-        op = {"op": "E-EXTEND", "new_qubits": [offset], "additions": [[sector, list(support)]]}
-        new_ledger = current_ledger.propagate(op, new_state, hypothesis={},
-                                              parent_state=current_state)
-        ok, reasons = _check_ledger(new_ledger, new_exact)
-        _dok, _dre = _check_decide(new_ledger, new_exact["d"])
-        if not _dok:
-            ok = False
-            reasons = reasons + _dre
-        if not ok:
-            record_violation("E-EXTEND sector=%s" % sector, new_state,
-                             new_ledger, new_exact, reasons)
-        hyp_counts["extend"] = hyp_counts.get("extend", 0) + 1
-
-    if coverage is not None:
-        coverage.setdefault("transited", [])
-        coverage["lower_seed"] = lower_seed
-        coverage["had_violations"] = len(violations) > 0
     return violations
 
 
-def seeded_stack_extinction_case(rng, hyp_counts):
+def seeded_stack_extinction_case(rng, hyp_counts, coverage=None):
     """A seeded stack-parent family so direct-sum extinction actually fires."""
     violations = []
     state = pc.CodeState(
         (0, 1, 2, 3, 4, 5),
-        (pc.Row("a1", "X", (0, 1)),
-         pc.Row("a2", "X", (2, 3, 4, 5)),
-         pc.Row("b1", "Z", (2, 3, 4, 5))),
-        frozenset(("a1", "a2", "b1")),
+        (pc.Row("a9001", "X", (0, 1)),
+         pc.Row("a9002", "X", (2, 3, 4, 5)),
+         pc.Row("b9001", "Z", (2, 3, 4, 5))),
+        frozenset(("a9001", "a9002", "b9001")),
     )
     child = state.add_check("Z", (0, 1))
     operation = {"op": "C-ADD-CHECK", "sector": "Z", "support": [0, 1]}
+    _inv_ok, _inv_reasons = _check_state_invariants(state, child, "C-ADD-CHECK (seeded stack extinction)")
+    if not _inv_ok:
+        return [{"operation": "C-ADD-CHECK (seeded stack extinction)", "state_n": len(child.Q), "reasons": _inv_reasons}]
     ex0 = exact_distances(state)
     ledger = pc.DistanceLedger(
         pc.Interval(ex0["d"], ex0["d"]),
@@ -614,6 +782,7 @@ def seeded_stack_extinction_case(rng, hyp_counts):
         "evidence": "harness-seeded",
     }}
     hyp_counts["direct_sum_extinction"] = hyp_counts.get("direct_sum_extinction", 0) + 1
+    _note_input(coverage, "C-ADD-CHECK", ledger)
     try:
         new_ledger = ledger.propagate(operation, child, hypothesis=hyp, parent_state=state)
         new_exact = exact_distances(child)
@@ -625,87 +794,47 @@ def seeded_stack_extinction_case(rng, hyp_counts):
         if not ok:
             violations.append({"operation": "C-ADD-CHECK (seeded stack extinction)",
                                "state_n": len(child.Q), "reasons": reasons})
-    except Exception as e:
+    except (pc.NoDerivation, pc.Malformed, ValueError, TypeError, KeyError) as e:
         violations.append({"operation": "C-ADD-CHECK (seeded stack extinction)",
                            "state_n": len(child.Q), "reasons": [str(e)]})
     return violations
 
 
+def run_suite(cases=DEFAULT_CASES, seed=DEFAULT_SEED):
+    """Run the suite and return its report dict (violations and coverage).
 
-ADMITTED_OPERATIONS = [
-    "C-ADD-CHECK", "C-DELETE-CHECK", "E-GRAFT", "C-DIRECT-SUM",
-    "C-SKIP", "P-REBASE", "E-LOCAL-HADAMARD", "E-PEEL",
-    "E-PUNCTURE", "E-EXTEND",
-]
-
-
-def run_suite():
-    """Run a scaled conformance suite and return a coverage report.
-
-    This aggregates ``run_case`` across several seeds and lower-endpoint modes.
-    It is evidence about the transport rules, not a proof.
+    Exposed separately from ``main`` so tests can assert the per-operation
+    nonzero-lower coverage (issue #235) without writing a report file.
     """
-    total_violations = 0
-    violation_shapes = []
-    transits = {op: 0 for op in ADMITTED_OPERATIONS}
-    nonzero_lower = {op: 0 for op in ADMITTED_OPERATIONS}
-    lower_seed_counts = {}
-    for lower_seed in (0, 1, "exact"):
-        lower_seed_counts[str(lower_seed)] = 0
-        for seed in (12345, 54321):
-            rng = random.Random(seed)
-            cases = 0
-            while cases < 20:
-                n = rng.randint(3, 6)
-                try:
-                    state = random_state(rng, list(range(n)))
-                except RuntimeError:
-                    continue
-                coverage = {}
-                vs = run_case(rng, state, [], lower_seed=lower_seed,
-                              coverage=coverage)
-                total_violations += len(vs)
-                if vs and len(violation_shapes) < 3:
-                    violation_shapes.extend(vs[:3 - len(violation_shapes)])
-                cases += 1
-                lower_seed_counts[str(lower_seed)] += 1
-                for op in ADMITTED_OPERATIONS:
-                    transits[op] += 1
-                    if lower_seed != 0 and lower_seed != "0":
-                        nonzero_lower[op] += 1
-    report = {
-        "total_violations": total_violations,
-        "violation_shapes": violation_shapes,
-        "admitted_operations": list(ADMITTED_OPERATIONS),
-        "admitted_operations_never_transited": [
-            op for op in ADMITTED_OPERATIONS if transits[op] == 0],
-        "admitted_operations_without_nonzero_lower_case": [
-            op for op in ADMITTED_OPERATIONS if nonzero_lower[op] == 0],
-        "lower_seed_counts": lower_seed_counts,
-        "coverage_by_operation": {
-            op: {"nonzero_lower_inputs": nonzero_lower[op]}
-            for op in ADMITTED_OPERATIONS},
-    }
-    return report
-
-
-
-
-def main():
-    rng = random.Random(20261021)
-    cases = 200
+    rng = random.Random(seed)
     total_violations = 0
     violation_shapes = []
     per_op_counts = {}
     hyp_counts = {}
+    coverage = {}
+    lower_seed_counts = {}
+    cases_attempted = 0
     for case_index in range(cases):
+        # Issue #235: seed nonzero lower endpoints, not 0 everywhere.  The
+        # first sixteen cases are forced nonzero so every fast operation sees
+        # one even in a short run; the rest randomize L (and a little
+        # upper-endpoint slack, i.e. interval width) across the small states.
+        if case_index < 16:
+            lower_seed = 1 + (case_index % 3)
+            upper_slack = case_index % 2
+        else:
+            lower_seed = rng.choice((0, 1, 1, 2, 3))
+            upper_slack = rng.choice((0, 0, 1))
+        lower_seed_counts[str(lower_seed)] = lower_seed_counts.get(str(lower_seed), 0) + 1
         n = rng.randint(3, 7)
         q_labels = list(range(n))
         try:
             state = random_state(rng, q_labels)
         except RuntimeError:
             continue
-        vs = run_case(rng, state, [], hyp_counts)
+        cases_attempted += 1
+        vs = run_case(rng, state, [], hyp_counts, lower_seed=lower_seed,
+                      coverage=coverage, upper_slack=upper_slack)
         total_violations += len(vs)
         for v in vs:
             op = v["operation"].split()[0]
@@ -713,7 +842,7 @@ def main():
             if len(violation_shapes) < 20:
                 violation_shapes.append(v)
     # Seeded stack-parent family so the direct-sum-extinction cell fires.
-    vs = seeded_stack_extinction_case(rng, hyp_counts)
+    vs = seeded_stack_extinction_case(rng, hyp_counts, coverage)
     total_violations += len(vs)
     for v in vs:
         op = v["operation"].split()[0]
@@ -721,29 +850,94 @@ def main():
         if len(violation_shapes) < 20:
             violation_shapes.append(v)
 
+    # Issue #235 acceptance: every admitted operation must be transited at
+    # least once with a nonzero lower endpoint on its input ledger.
+    unexercised = [op for op in ADMITTED_OPERATIONS
+                   if coverage.get(op, {}).get("transports", 0) == 0]
+    without_nonzero_lower = [op for op in ADMITTED_OPERATIONS
+                             if coverage.get(op, {}).get("nonzero_lower_inputs", 0) == 0]
+
+    report = {
+        "harness": "priced_conformance_harness",
+        "git_commit": _git_commit(),
+        "cases_attempted": cases_attempted,
+        "total_violations": total_violations,
+        "per_operation_violation_counts": per_op_counts,
+        "hypothesis_application_counts": hyp_counts,
+        "lower_seed_counts": lower_seed_counts,
+        "coverage_by_operation": coverage,
+        "admitted_operations": list(ADMITTED_OPERATIONS),
+        "admitted_operations_never_transited": unexercised,
+        "admitted_operations_without_nonzero_lower_case": without_nonzero_lower,
+        "violation_shapes": violation_shapes,
+        "note": "Evidence only. Does not discharge OBL-PRICED-INTERVAL-SOUNDNESS.",
+    }
+    return report
+
+
+def _git_commit():
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, stderr=subprocess.DEVNULL
         ).decode().strip()
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         commit = "unknown"
-    report = {
-        "harness": "priced_conformance_harness",
-        "git_commit": commit,
-        "cases_attempted": cases,
-        "total_violations": total_violations,
-        "per_operation_violation_counts": per_op_counts,
-        "hypothesis_application_counts": hyp_counts,
-        "violation_shapes": violation_shapes,
-        "note": "Evidence only. Does not discharge OBL-PRICED-INTERVAL-SOUNDNESS.",
-    }
-    out_path = os.path.join(HERE, "priced_conformance_report.json")
-    with open(out_path, "w") as f:
-        json.dump(report, f, indent=2)
-    print(json.dumps({k: report[k] for k in ("cases_attempted", "total_violations", "per_operation_violation_counts")}, indent=2))
-    # fail build on any violation
-    if total_violations:
-        raise SystemExit(1)
+    return commit
+
+
+def _report_path():
+    """Where the JSON report goes; never a tracked repository path."""
+    override = os.environ.get("PRICED_CONFORMANCE_REPORT")
+    if override == "-":
+        return None
+    if override:
+        return override
+    return DEFAULT_REPORT_PATH
+
+
+def main():
+    cases = DEFAULT_CASES
+    raw_cases = os.environ.get("PRICED_CONFORMANCE_CASES")
+    if raw_cases:
+        try:
+            cases = max(1, int(raw_cases))
+        except ValueError:
+            print("ignoring non-integer PRICED_CONFORMANCE_CASES=%r" % raw_cases)
+    report = run_suite(cases=cases)
+    print(json.dumps({k: report[k] for k in (
+        "cases_attempted", "total_violations",
+        "per_operation_violation_counts", "lower_seed_counts",
+        "coverage_by_operation",
+        "admitted_operations_never_transited",
+        "admitted_operations_without_nonzero_lower_case")}, indent=2))
+
+    # Write the report to an untracked path only: a run must never dirty a
+    # tracked file (issue #235, TODO item 12).
+    out_path = _report_path()
+    if out_path:
+        try:
+            parent = os.path.dirname(os.path.abspath(out_path))
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            with open(out_path, "w") as f:
+                json.dump(report, f, indent=2)
+            print("report written to %s" % out_path)
+        except OSError as exc:
+            print("report not written (%s)" % exc)
+
+    failures = []
+    if report["total_violations"]:
+        failures.append("%d interval violations" % report["total_violations"])
+    if report["admitted_operations_never_transited"]:
+        failures.append("admitted operations never transited: %s"
+                        % ", ".join(report["admitted_operations_never_transited"]))
+    if report["admitted_operations_without_nonzero_lower_case"]:
+        failures.append(
+            "admitted operations without a nonzero-lower-endpoint case: %s"
+            % ", ".join(report["admitted_operations_without_nonzero_lower_case"]))
+    # fail build on any violation or coverage gap
+    if failures:
+        raise SystemExit("; ".join(failures))
 
 
 if __name__ == "__main__":

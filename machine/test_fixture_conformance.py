@@ -1,4 +1,4 @@
-"""Conformance entry point for the MVP fixture evaluator."""
+"""Conformance entry point for the MVP fixture evaluator (TODO item 2)."""
 
 import os
 import sys
@@ -25,7 +25,7 @@ class FixtureConformanceTests(unittest.TestCase):
         self.assertEqual(mismatches, 0)
 
     def test_refusal_probes_are_supplementary_and_execute(self):
-        # : the four refusal probes exist, stay off the acceptance
+        # Issue #237: the four refusal probes exist, stay off the acceptance
         # surface, and carry the guard each was minted for; the W0-W16
         # acceptance surface keeps acceptance_surface: true throughout.
         data = fixture_conformance._load_fixtures()

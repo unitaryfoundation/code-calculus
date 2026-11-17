@@ -3,6 +3,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# Generated reports
+the conformance harness*_report.json
+the conformance harness
+
 # Build output
 *.pdf
 

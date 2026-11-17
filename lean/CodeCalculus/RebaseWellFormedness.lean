@@ -6,11 +6,11 @@ import CodeCalculus.RebaseRankSector
 import CodeCalculus.GraftWellFormedness
 
 /-!
-# Well-formedness of the rebase update (WP6)
+# Well-formedness of the rebase update (issue #246, WP6)
 
 `Eval.rebase` carries `EncodingWellFormed s'` as a premise, mirroring the
 consumer's validity report on the output (`spec/OPERATIONAL_SEMANTICS.md`
-§4.25). Review finding RG-17 of  observed that nothing in the
+§4.25). Review finding RG-17 of issue #228 observed that nothing in the
 development derived that premise. This module does: a well-formed parent and
 an invertible 0/1 matrix give a well-formed rebased state (`wf_rebaseState`),
 so the premise is discharged by the constructor's other premises
@@ -131,8 +131,8 @@ theorem mem_rebaseNewRows {s : CodeState} {sector : Sector} {M : List (List Nat)
 theorem map_snd_zip_of_length_eq {α β : Type} :
     ∀ (xs : List α) (ys : List β), xs.length = ys.length → (xs.zip ys).map Prod.snd = ys
   | [], [], _ => rfl
-  | [], _ :: _, h => by simp at h
-  | _ :: _, [], h => by simp at h
+  | [], _ :: _, h => nomatch h
+  | _ :: _, [], h => nomatch h
   | x :: xs, y :: ys, h => by
       rw [List.zip_cons_cons, List.map_cons]
       simp only [List.length_cons, Nat.add_right_cancel_iff] at h
@@ -303,8 +303,9 @@ theorem wf_rebaseState (s : CodeState) (sector : Sector) (M : List (List Nat))
     invertible matrix evaluates. -/
 theorem eval_rebase_of_wf (s : CodeState) (sector : Sector) (M : List (List Nat))
     (hwf : EncodingWellFormed s) (hne : sectorRows s sector ≠ [])
-    (hok : rebaseMatrix_ok M (sectorRows s sector).length) :
+    (hok : rebaseMatrix_ok M (sectorRows s sector).length)
+    (hcap : MintsWithinCapacity s.used M.length) :
     Eval (Command.rebase sector M) s (rebaseState s sector M) :=
-  Eval.rebase hne hok rfl (wf_rebaseState s sector M hwf hok)
+  Eval.rebase hne hok rfl (wf_rebaseState s sector M hwf hok) hcap
 
 end CodeCalculus

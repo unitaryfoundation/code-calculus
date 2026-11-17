@@ -1,13 +1,5 @@
 # Specification (normative)
 
-> **New here?** Read `REPRESENTATION.md` → `STATE_MODEL.md` → `TERM_LANGUAGE.md`
-> → `OPERATIONAL_SEMANTICS.md` → `JUDGMENT_LAYER.md` first; the rest are
-> reference material. Every section is authoritative on its own topic, so you
-> do not need to read the whole directory. Internal citation keys
-> (`proposal §N`, `code-deformation`, etc.) are resolved in
-> [`../REFERENCES.md`](../REFERENCES.md).
-
-
 This directory holds the normative calculus: **one authority per topic**. Where
 `machine/` or `lean/` disagree with a file here, this
 directory wins and the other artifact is fixed (`AGENTS.md` *Precedence*).
@@ -57,13 +49,6 @@ the prose wins and the transcription is fixed.
   (link resolution, taxonomy-ID definitions, obligation-name definitions, and
   transcription `source` resolution).
 - Cross-reference by relative link and section name, not by line number.
-
-## References and citation keys
-
-Shorthand citations used throughout this directory (`proposal §N`, `code-deformation`,
-`manuscript`, `an internal note`) are resolved in
-[`../REFERENCES.md`](../REFERENCES.md). None of those sources is shipped here;
-the calculus is stated so that its normative content does not depend on them.
 
 ## What is *not* here
 

@@ -1,11 +1,46 @@
+import CodeCalculus.ChoiceFree
 import CodeCalculus.State
 import CodeCalculus.Term
+import CodeCalculus.Constructors
+import CodeCalculus.WellFormedBool
 
 namespace CodeCalculus
 
 /-- Disjointness of two lists. -/
 def DisjointList {α : Type} [DecidableEq α] (xs ys : List α) : Prop :=
   ∀ x, x ∈ xs → x ∉ ys
+
+/-- `DisjointList` is a bounded universal over the first list. -/
+instance (xs ys : List Nat) : Decidable (DisjointList xs ys) :=
+  inferInstanceAs (Decidable (∀ x, x ∈ xs → x ∉ ys))
+
+def mintFresh (used : List Nat) : Nat → List Nat
+  | 0 => []
+  | n + 1 => canonicalMint used :: mintFresh (used ++ [canonicalMint used]) n
+
+/-- Capacity premise (H-4, decided 2026-10-31; issue #296): every identifier
+    the canonical mint produces for `n` fresh rows over `used` lies in the
+    finite enumeration of `spec/STATE_MODEL.md` I3 (`totalIdentifiers` names).
+    A transition that would mint past the enumeration has no derivation,
+    matching the Python consumer's refusal at exhaustion. -/
+def MintsWithinCapacity (used : List Nat) (n : Nat) : Prop :=
+  ∀ id ∈ mintFresh used n, id < totalIdentifiers
+
+instance (used : List Nat) (n : Nat) : Decidable (MintsWithinCapacity used n) :=
+  inferInstanceAs (Decidable (∀ id ∈ mintFresh used n, id < totalIdentifiers))
+
+/-- The state produced by `E-GLUE`: disjoint factor rows followed by one
+    canonically minted seam-check row per supplied seam, over the union of the
+    factors' namespaces and used sets. -/
+def glueState (a b : CodeState) (seams : List (Sector × List Nat)) : CodeState :=
+  let used0 := a.used ++ b.used
+  let ids := mintFresh used0 seams.length
+  let seamRows := (seams.zip ids).map (fun (si, id) =>
+    ({ id := id, sector := si.1, support := si.2 } : Row))
+  { Q := a.Q ++ b.Q
+  , rows := a.rows ++ b.rows ++ seamRows
+  , used := used0 ++ ids }
+
 
 /-- The state produced by a direct sum, once its disjointness premises hold. -/
 def directSumState (a b : CodeState) : CodeState :=
@@ -21,6 +56,95 @@ inductive EvalExpr : StateExpr → CodeState → Prop where
       (hU : @DisjointList Nat _ s1.used s2.used) :
       EvalExpr e1 s1 → EvalExpr e2 s2 →
       EvalExpr (StateExpr.directSum e1 e2) (directSumState s1 s2)
+  /-- `E-GLUE`: binary transition combining two disjoint factor states with
+      seam checks; well-formedness of the glued state is the joint premise. -/
+  | glue {e1 e2 : StateExpr} {s1 s2 : CodeState}
+      {seams : List (Sector × List Nat)}
+      (hQ : @DisjointList Nat _ s1.Q s2.Q)
+      (hU : @DisjointList Nat _ s1.used s2.used)
+      (hwf : EncodingWellFormed (glueState s1 s2 seams))
+      (hcap : MintsWithinCapacity (s1.used ++ s2.used) seams.length) :
+      EvalExpr e1 s1 → EvalExpr e2 s2 →
+      EvalExpr (StateExpr.glue e1 e2 seams) (glueState s1 s2 seams)
+  /-- `L-HGP`: every well-typed pair of binary matrices evaluates; the
+      capacity premise bounds the identifiers minted from the empty used set. -/
+  | hgp {H1 H2 : List (List Bool)}
+      (h1 : binaryMatrixTyped H1 = true) (h2 : binaryMatrixTyped H2 = true)
+      (hcap : MintsWithinCapacity [] (hgpState H1 H2).rows.length) :
+      EvalExpr (StateExpr.hgp H1 H2) (hgpState H1 H2)
+  /-- `L-LIFTED`. -/
+  | lift {orders : List Nat} {A B : List (List (List (List Nat)))}
+      (hG : groupTyped orders = true)
+      (hA : algMatrixTyped orders A = true) (hB : algMatrixTyped orders B = true)
+      (hcap : MintsWithinCapacity [] (liftState orders A B).rows.length) :
+      EvalExpr (StateExpr.lift orders A B) (liftState orders A B)
+  /-- `L-GROUP-ALGEBRA`. -/
+  | twoblock {orders : List Nat} {a b : List (List Nat)}
+      (hG : groupTyped orders = true)
+      (ha : algElementTyped orders a = true) (hb : algElementTyped orders b = true)
+      (hcap : MintsWithinCapacity [] (twoblockState orders a b).rows.length) :
+      EvalExpr (StateExpr.twoblock orders a b) (twoblockState orders a b)
+  /-- `A-CONCAT`: both factors evaluate to well-formed states, and the block
+      list and the representatives are typed against them (`concatTyped`). -/
+  | concat {eO eI : StateExpr} {sO sI : CodeState} {blocks repsX repsZ : List (List Nat)}
+      (hO : EncodingWellFormed sO) (hI : EncodingWellFormed sI)
+      (hty : concatTyped sO sI blocks repsX repsZ = true)
+      (hcap : MintsWithinCapacity [] (concatState sO sI blocks repsX repsZ).rows.length) :
+      EvalExpr eO sO → EvalExpr eI sI →
+      EvalExpr (StateExpr.concat eO eI blocks repsX repsZ)
+        (concatState sO sI blocks repsX repsZ)
+  /-- `A-PRODUCT`: every pair of well-formed factors evaluates. -/
+  | product {eA eB : StateExpr} {sA sB : CodeState}
+      (hA : EncodingWellFormed sA) (hB : EncodingWellFormed sB)
+      (hcap : MintsWithinCapacity [] (productState sA sB).rows.length) :
+      EvalExpr eA sA → EvalExpr eB sB →
+      EvalExpr (StateExpr.product eA eB) (productState sA sB)
+  /-- `A-DOUBLE`: a well-formed factor, a typed wiring, and natural rows of
+      the two sectors with pairwise even overlap. -/
+  | double {e : StateExpr} {sC : CodeState} {wiring : List (Nat × List Nat)} {conj : Bool}
+      (hC : EncodingWellFormed sC)
+      (hty : doubleTyped sC wiring = true)
+      (hcomm : naturalCommuteBool (naturalRows (doubleQubits sC)
+        (doubleVectors sC wiring conj)) = true)
+      (hcap : MintsWithinCapacity [] (doubleState sC wiring conj).rows.length) :
+      EvalExpr e sC →
+      EvalExpr (StateExpr.double e wiring conj) (doubleState sC wiring conj)
+  /-- `L-BALANCED`: every well-typed input evaluates. -/
+  | balanced {orders : List Nat} {H1 H2 : List (List Bool)}
+      {rows1 cols1 rows2 cols2 : List (List Nat)}
+      (hty : balancedTyped orders H1 rows1 cols1 H2 rows2 cols2 = true)
+      (hcap : MintsWithinCapacity []
+        (balancedState orders H1 rows1 cols1 H2 rows2 cols2).rows.length) :
+      EvalExpr (StateExpr.balanced orders H1 rows1 cols1 H2 rows2 cols2)
+        (balancedState orders H1 rows1 cols1 H2 rows2 cols2)
+  /-- `L-TANNER`: well-typed inputs whose natural rows of the two sectors
+      have pairwise even overlap. -/
+  | tanner {n : Nat} {LX LZ : List (List Bool)} {viewsX viewsZ : List (List Nat)}
+      (hty : tannerTyped n LX LZ viewsX viewsZ = true)
+      (hcomm : naturalCommuteBool (naturalRows n
+        (tannerVectors n LX LZ viewsX viewsZ)) = true)
+      (hcap : MintsWithinCapacity [] (tannerState n LX LZ viewsX viewsZ).rows.length) :
+      EvalExpr (StateExpr.tanner n LX LZ viewsX viewsZ) (tannerState n LX LZ viewsX viewsZ)
+  /-- `L-TILE`: a well-typed assembly whose natural rows of the two sectors
+      have pairwise even overlap. -/
+  | tile {tiles : List (Nat × List (List Nat) × List (List Nat))}
+      {placements : List (Nat × List Nat)} {idents : List (Nat × Nat)}
+      {removed : List (Nat × Sector × Nat)}
+      (hty : tileTyped tiles placements idents removed = true)
+      (hcomm : naturalCommuteBool (naturalRows (tileQubits placements idents)
+        (tileVectors tiles placements idents removed)) = true)
+      (hcap : MintsWithinCapacity []
+        (tileState tiles placements idents removed).rows.length) :
+      EvalExpr (StateExpr.tile tiles placements idents removed)
+        (tileState tiles placements idents removed)
+  /-- `L-NESTED-CSS`: two parity-check matrices with equally many columns
+      whose rows have pairwise even overlap across the two matrices. -/
+  | nested {HX HZ : List (List Bool)}
+      (hty : nestedTyped HX HZ = true)
+      (hcomm : naturalCommuteBool (naturalRows (matCols HX)
+        (nestedVectors HX HZ)) = true)
+      (hcap : MintsWithinCapacity [] (nestedState HX HZ).rows.length) :
+      EvalExpr (StateExpr.nested HX HZ) (nestedState HX HZ)
 
 /-- A displayed generator is one whose identifier names a live row. -/
 def DisplayedGenerator (r : Nat) (s : CodeState) : Prop :=
@@ -104,20 +228,18 @@ def sectorRank (Q : List Nat) (rows : List Row) (sector : Sector) : Nat :=
 def stateK (s : CodeState) : Nat :=
   s.Q.length - sectorRank s.Q s.rows Sector.X - sectorRank s.Q s.rows Sector.Z
 
-/-- Mint a list of fresh identifiers, sequentially, from a used set. -/
-def mintFresh (used : List Nat) : Nat → List Nat
-  | 0 => []
-  | n + 1 => canonicalMint used :: mintFresh (used ++ [canonicalMint used]) n
-
 /-- Rows of `s` in `sector` that touch `qubit`. -/
 def touchingRows (s : CodeState) (sector : Sector) (qubit : Nat) : List Row :=
   s.rows.filter (fun r => r.sector = sector ∧ r.support.contains qubit)
 
-/-- Shorten an opposite-sector row at the grafted qubit. -/
+/-- Remove the grafted qubit from a row's support if it is present; otherwise leave the row unchanged. -/
 def shortenRow (qubit : Nat) (r : Row) : Row :=
   if r.support.contains qubit then
     { id := r.id, sector := r.sector, support := r.support.filter (fun q => q ≠ qubit) }
   else r
+
+def peelSupport (qubit : Nat) (S : List Nat) : List Nat :=
+  if S.contains qubit then S.filter (fun q => q ≠ qubit) else S
 
 /-- Coverage: every remaining qubit appears in both sectors. -/
 abbrev coverage (s : CodeState) : Prop :=
@@ -176,17 +298,21 @@ def rebaseMatrix_ok (matrix : List (List Nat)) (m : Nat) : Prop :=
   (∀ cs, cs ∈ matrix → cs.length = m ∧ ∀ c, c ∈ cs → c = 0 ∨ c = 1) ∧
   rankBitmasks (matrix.map matrixRowMask) = m
 
+/-- The rows minted by `P-REBASE`, shared by the state update and the
+    transport row. -/
+def rebaseMintedRows (s : CodeState) (sector : Sector) (matrix : List (List Nat)) : List Row :=
+  let ordered := sectorRows s sector
+  (matrix.zip (mintFresh s.used matrix.length)).map (fun cs_id =>
+    ⟨cs_id.2, sector, mixSupport ordered cs_id.1⟩)
+
 /-- The rebase state update: each coefficient row (its F_2 combination of the
     sector's displayed rows, symmetric difference of supports, sorted) becomes
     a canonically minted row of the same sector; the *other* sector's display
     is retained. -/
 def rebaseState (s : CodeState) (sector : Sector) (matrix : List (List Nat)) : CodeState :=
-  let ordered := sectorRows s sector
   let ids := mintFresh s.used matrix.length
-  let newRows := (matrix.zip ids).map (fun cs_id =>
-    ⟨cs_id.2, sector, mixSupport ordered cs_id.1⟩)
   { Q := s.Q
-  , rows := (s.rows.filter (fun r => r.sector ≠ sector)) ++ newRows
+  , rows := (s.rows.filter (fun r => r.sector ≠ sector)) ++ rebaseMintedRows s sector matrix
   , used := s.used ++ ids }
 
 /-- The peel's state update: remove the named row (its identifier stays in
@@ -317,6 +443,12 @@ def extend_ok (s : CodeState) (delta : List Nat)
    | Except.ok _ => True
    | Except.error _ => False)
 
+/-- The rows minted by `E-EXTEND`, shared by the state update and the
+    transport row. -/
+def extendMintedRows (s : CodeState) (adds : List (Sector × List Nat)) : List Row :=
+  (adds.zip (mintFresh s.used adds.length)).map (fun rec_id =>
+    ⟨rec_id.2, rec_id.1.1, sortNat rec_id.1.2⟩)
+
 /-- The row-added extension's state update: namespace `Q ∪ Δ`, the retained
     display, and the additions appended in list order with canonically minted
     identifiers and sorted supports. -/
@@ -324,10 +456,8 @@ def extendState (s : CodeState) (delta : List Nat)
     (adds : List (Sector × List Nat)) : CodeState :=
   let q' := sortNat ((s.Q ++ delta).eraseDups)
   let ids := mintFresh s.used adds.length
-  let newRows := (adds.zip ids).map (fun rec_id =>
-    ⟨rec_id.2, rec_id.1.1, sortNat rec_id.1.2⟩)
   { Q := q'
-  , rows := s.rows ++ newRows
+  , rows := s.rows ++ extendMintedRows s adds
   , used := s.used ++ ids }
 
 /-- The `hadamard` state update: `T=Q` swaps every displayed row's sector;
@@ -361,6 +491,12 @@ def graftState (s : CodeState) (qubit : Nat) (sector : Sector)
   , rows := shortened ++ mintedRows
   , used := s.used ++ mintedIds }
 
+/-- The support a surviving row has after a graft at `qubit` in `sector`: an
+    opposite-sector row that contains the grafted qubit loses it, and every
+    other row keeps its support. -/
+def graftSupport (qubit : Nat) (sector σ : Sector) (S : List Nat) : List Nat :=
+  if σ = oppositeSector sector ∧ S.contains qubit then S.filter (fun q => q ≠ qubit) else S
+
 /-- Evaluation of commands. WP1 covers skip, sequencing, deletion, addition,
     the structural graft transition, and the five admitted Gate 6 conditional
     cells (rebase, peel, puncture, extend, hadamard). The add rule carries the row
@@ -389,6 +525,7 @@ inductive Eval : Command → CodeState → CodeState → Prop where
       ¬ inSpanRows s.Q (sectorRows s sector)
           (rowVector s.Q ⟨canonicalMint s.used, sector, support⟩) →
       s' = addState s sector support →
+      canonicalMint s.used < totalIdentifiers →
       Eval (Command.addStab sector support) s s'
   | graft {qubit : Nat} {sector : Sector} {orderedIds : List Nat}
       {s s' : CodeState} :
@@ -402,12 +539,14 @@ inductive Eval : Command → CodeState → CodeState → Prop where
       coverage (graftState s qubit sector orderedIds) →
       stateK (graftState s qubit sector orderedIds) = stateK s →
       s' = graftState s qubit sector orderedIds →
+      MintsWithinCapacity s.used (orderedIds.length - 1) →
       Eval (Command.graft qubit sector orderedIds) s s'
   | rebase {sector : Sector} {matrix : List (List Nat)} {s s' : CodeState} :
       (sectorRows s sector ≠ []) →
       rebaseMatrix_ok matrix (sectorRows s sector).length →
       s' = rebaseState s sector matrix →
       EncodingWellFormed s' →
+      MintsWithinCapacity s.used matrix.length →
       Eval (Command.rebase sector matrix) s s'
   | hadamard {T : List Nat} {s s' : CodeState} :
       (T.Perm s.Q ∨ T = []) →
@@ -433,6 +572,7 @@ inductive Eval : Command → CodeState → CodeState → Prop where
       extend_ok s delta adds →
       s' = extendState s delta adds →
       EncodingWellFormed s' →
+      MintsWithinCapacity s.used adds.length →
       Eval (Command.extend delta adds) s s'
 
 /-- Evaluation of a closed construction term. -/
@@ -441,7 +581,7 @@ inductive EvalTerm : ClosedTerm → CodeState → Prop where
       EvalExpr e s → Eval m s s' →
       EvalTerm { command := m, expr := e } s'
 
-/-! ### The derived denotation (2026-10-25, )
+/-! ### The derived denotation (2026-10-25, issue #140)
 
 `spec/OPERATIONAL_SEMANTICS.md` §1a fixes the reading after the authority
 reconciliation: the partial big-step relation `Eval` is **primary**, and the
@@ -463,6 +603,84 @@ noncomputable def denoteExpr : StateExpr → Option CodeState
             some (directSumState s1 s2)
           else none
       | _, _ => none
+  | StateExpr.glue e1 e2 seams =>
+      match denoteExpr e1, denoteExpr e2 with
+      | some s1, some s2 =>
+          if DisjointList s1.Q s2.Q ∧ DisjointList s1.used s2.used ∧
+             EncodingWellFormed (glueState s1 s2 seams) ∧
+             MintsWithinCapacity (s1.used ++ s2.used) seams.length then
+            some (glueState s1 s2 seams)
+          else none
+      | _, _ => none
+  | StateExpr.hgp H1 H2 =>
+      if binaryMatrixTyped H1 = true ∧ binaryMatrixTyped H2 = true ∧
+         MintsWithinCapacity [] (hgpState H1 H2).rows.length then
+        some (hgpState H1 H2)
+      else none
+  | StateExpr.lift orders A B =>
+      if groupTyped orders = true ∧ algMatrixTyped orders A = true ∧
+         algMatrixTyped orders B = true ∧
+         MintsWithinCapacity [] (liftState orders A B).rows.length then
+        some (liftState orders A B)
+      else none
+  | StateExpr.twoblock orders a b =>
+      if groupTyped orders = true ∧ algElementTyped orders a = true ∧
+         algElementTyped orders b = true ∧
+         MintsWithinCapacity [] (twoblockState orders a b).rows.length then
+        some (twoblockState orders a b)
+      else none
+  | StateExpr.concat eO eI blocks repsX repsZ =>
+      match denoteExpr eO, denoteExpr eI with
+      | some sO, some sI =>
+          if EncodingWellFormed sO ∧ EncodingWellFormed sI ∧
+             concatTyped sO sI blocks repsX repsZ = true ∧
+             MintsWithinCapacity [] (concatState sO sI blocks repsX repsZ).rows.length then
+            some (concatState sO sI blocks repsX repsZ)
+          else none
+      | _, _ => none
+  | StateExpr.product eA eB =>
+      match denoteExpr eA, denoteExpr eB with
+      | some sA, some sB =>
+          if EncodingWellFormed sA ∧ EncodingWellFormed sB ∧
+             MintsWithinCapacity [] (productState sA sB).rows.length then
+            some (productState sA sB)
+          else none
+      | _, _ => none
+  | StateExpr.double e wiring conj =>
+      match denoteExpr e with
+      | some sC =>
+          if EncodingWellFormed sC ∧ doubleTyped sC wiring = true ∧
+             naturalCommuteBool (naturalRows (doubleQubits sC)
+               (doubleVectors sC wiring conj)) = true ∧
+             MintsWithinCapacity [] (doubleState sC wiring conj).rows.length then
+            some (doubleState sC wiring conj)
+          else none
+      | none => none
+  | StateExpr.balanced orders H1 rows1 cols1 H2 rows2 cols2 =>
+      if balancedTyped orders H1 rows1 cols1 H2 rows2 cols2 = true ∧
+         MintsWithinCapacity []
+           (balancedState orders H1 rows1 cols1 H2 rows2 cols2).rows.length then
+        some (balancedState orders H1 rows1 cols1 H2 rows2 cols2)
+      else none
+  | StateExpr.tanner n LX LZ viewsX viewsZ =>
+      if tannerTyped n LX LZ viewsX viewsZ = true ∧
+         naturalCommuteBool (naturalRows n (tannerVectors n LX LZ viewsX viewsZ)) = true ∧
+         MintsWithinCapacity [] (tannerState n LX LZ viewsX viewsZ).rows.length then
+        some (tannerState n LX LZ viewsX viewsZ)
+      else none
+  | StateExpr.tile tiles placements idents removed =>
+      if tileTyped tiles placements idents removed = true ∧
+         naturalCommuteBool (naturalRows (tileQubits placements idents)
+           (tileVectors tiles placements idents removed)) = true ∧
+         MintsWithinCapacity [] (tileState tiles placements idents removed).rows.length then
+        some (tileState tiles placements idents removed)
+      else none
+  | StateExpr.nested HX HZ =>
+      if nestedTyped HX HZ = true ∧
+         naturalCommuteBool (naturalRows (matCols HX) (nestedVectors HX HZ)) = true ∧
+         MintsWithinCapacity [] (nestedState HX HZ).rows.length then
+        some (nestedState HX HZ)
+      else none
 
 open Classical in
 /-- The derived denotation of a command. -/
@@ -483,7 +701,8 @@ noncomputable def denote : Command → CodeState → Option CodeState
           ∧ (∀ row ∈ s.rows, row.sector = oppositeSector sector →
               supportIntersectionSize support row.support % 2 = 0)
           ∧ ¬ inSpanRows s.Q (sectorRows s sector)
-              (rowVector s.Q ⟨canonicalMint s.used, sector, support⟩) then
+              (rowVector s.Q ⟨canonicalMint s.used, sector, support⟩)
+          ∧ canonicalMint s.used < totalIdentifiers then
         some (addState s sector support)
       else none
   | Command.graft qubit sector orderedIds, s =>
@@ -495,13 +714,15 @@ noncomputable def denote : Command → CodeState → Option CodeState
           ∧ orderedIds.Nodup
           ∧ (∀ id ∈ orderedIds, id ∈ (touchingRows s sector qubit).map Row.id)
           ∧ coverage (graftState s qubit sector orderedIds)
-          ∧ stateK (graftState s qubit sector orderedIds) = stateK s then
+          ∧ stateK (graftState s qubit sector orderedIds) = stateK s
+          ∧ MintsWithinCapacity s.used (orderedIds.length - 1) then
         some (graftState s qubit sector orderedIds)
       else none
   | Command.rebase sector matrix, s =>
       if sectorRows s sector ≠ []
           ∧ rebaseMatrix_ok matrix (sectorRows s sector).length
-          ∧ EncodingWellFormed (rebaseState s sector matrix) then
+          ∧ EncodingWellFormed (rebaseState s sector matrix)
+          ∧ MintsWithinCapacity s.used matrix.length then
         some (rebaseState s sector matrix)
       else none
   | Command.hadamard T, s =>
@@ -524,7 +745,8 @@ noncomputable def denote : Command → CodeState → Option CodeState
       else none
   | Command.extend delta adds, s =>
       if extend_ok s delta adds
-          ∧ EncodingWellFormed (extendState s delta adds) then
+          ∧ EncodingWellFormed (extendState s delta adds)
+          ∧ MintsWithinCapacity s.used adds.length then
         some (extendState s delta adds)
       else none
 
@@ -539,6 +761,72 @@ theorem eval_denoteExpr {e : StateExpr} {s : CodeState}
       · rfl
       · rename_i hNot
         exact absurd (And.intro hQ hU) hNot
+  | glue hQ hU hwf hcap _ _ ih1 ih2 =>
+      simp only [denoteExpr, ih1, ih2]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd (And.intro hQ (And.intro hU (And.intro hwf hcap))) hNot
+  | hgp h1 h2 hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨h1, h2, hcap⟩ hNot
+  | lift hG hA hB hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hG, hA, hB, hcap⟩ hNot
+  | twoblock hG ha hb hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hG, ha, hb, hcap⟩ hNot
+  | concat hO hI hty hcap _ _ ih1 ih2 =>
+      simp only [denoteExpr, ih1, ih2]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hO, hI, hty, hcap⟩ hNot
+  | product hA hB hcap _ _ ih1 ih2 =>
+      simp only [denoteExpr, ih1, ih2]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hA, hB, hcap⟩ hNot
+  | double hC hty hcomm hcap _ ih =>
+      simp only [denoteExpr, ih]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hC, hty, hcomm, hcap⟩ hNot
+  | balanced hty hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcap⟩ hNot
+  | tanner hty hcomm hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcomm, hcap⟩ hNot
+  | tile hty hcomm hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcomm, hcap⟩ hNot
+  | nested hty hcomm hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcomm, hcap⟩ hNot
 
 /-- The denotation's `some` branch has a derivation (spec §1a). -/
 theorem denoteExpr_some_eval : ∀ (e : StateExpr) (s : CodeState),
@@ -568,6 +856,137 @@ theorem denoteExpr_some_eval : ∀ (e : StateExpr) (s : CodeState),
             cases hEq
             exact EvalExpr.directSum hQ hU (ih1 s1 h1) (ih2 s2 h2)
           · exact absurd hEq (by simp)
+  | glue e1 e2 seams ih1 ih2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr e1
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i s1
+        cases h2 : denoteExpr e2
+        · simp only [h1, h2] at hEq
+          exact absurd hEq (by simp)
+        · rename_i s2
+          simp only [h1, h2] at hEq
+          split at hEq
+          · rename_i hDisj
+            obtain ⟨hQ, hU, hwf, hcap⟩ := hDisj
+            cases hEq
+            exact EvalExpr.glue hQ hU hwf hcap (ih1 s1 h1) (ih2 s2 h2)
+          · exact absurd hEq (by simp)
+  | hgp H1 H2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨h1, h2, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.hgp h1 h2 hcap
+      · exact absurd hEq (by simp)
+  | lift orders A B =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hG, hA, hB, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.lift hG hA hB hcap
+      · exact absurd hEq (by simp)
+  | twoblock orders a b =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hG, ha, hb, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.twoblock hG ha hb hcap
+      · exact absurd hEq (by simp)
+  | concat eO eI blocks repsX repsZ ih1 ih2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr eO
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i sO
+        cases h2 : denoteExpr eI
+        · simp only [h1, h2] at hEq
+          exact absurd hEq (by simp)
+        · rename_i sI
+          simp only [h1, h2] at hEq
+          split at hEq
+          · rename_i hP
+            obtain ⟨hO, hI, hty, hcap⟩ := hP
+            cases hEq
+            exact EvalExpr.concat hO hI hty hcap (ih1 sO h1) (ih2 sI h2)
+          · exact absurd hEq (by simp)
+  | product eA eB ih1 ih2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr eA
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i sA
+        cases h2 : denoteExpr eB
+        · simp only [h1, h2] at hEq
+          exact absurd hEq (by simp)
+        · rename_i sB
+          simp only [h1, h2] at hEq
+          split at hEq
+          · rename_i hP
+            obtain ⟨hA, hB, hcap⟩ := hP
+            cases hEq
+            exact EvalExpr.product hA hB hcap (ih1 sA h1) (ih2 sB h2)
+          · exact absurd hEq (by simp)
+  | double e wiring conj ih =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr e
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i sC
+        simp only [h1] at hEq
+        split at hEq
+        · rename_i hP
+          obtain ⟨hC, hty, hcomm, hcap⟩ := hP
+          cases hEq
+          exact EvalExpr.double hC hty hcomm hcap (ih sC h1)
+        · exact absurd hEq (by simp)
+  | balanced orders H1 rows1 cols1 H2 rows2 cols2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.balanced hty hcap
+      · exact absurd hEq (by simp)
+  | tanner n LX LZ viewsX viewsZ =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcomm, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.tanner hty hcomm hcap
+      · exact absurd hEq (by simp)
+  | tile tiles placements idents removed =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcomm, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.tile hty hcomm hcap
+      · exact absurd hEq (by simp)
+  | nested HX HZ =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcomm, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.nested hty hcomm hcap
+      · exact absurd hEq (by simp)
 
 /-- The derived denotation is adequate for the expression relation. -/
 theorem denoteExpr_eval {e : StateExpr} {s : CodeState} :
@@ -586,25 +1005,25 @@ theorem eval_denote {m : Command} {s s' : CodeState}
       · rw [hs']
       · rename_i hNot
         exact absurd (And.intro hgen hind) hNot
-  | add hSub hNodup hSort hComm hSpan hs' =>
+  | add hSub hNodup hSort hComm hSpan hs' hcap =>
       simp only [denote]
       split
       · rw [hs']
       · rename_i hNot
-        exact absurd (⟨hSub, hNodup, hSort, hComm, hSpan⟩) hNot
-  | graft hq hopp htouch hlen hnodup hids hcov hk hs' =>
+        exact absurd (⟨hSub, hNodup, hSort, hComm, hSpan, hcap⟩) hNot
+  | graft hq hopp htouch hlen hnodup hids hcov hk hs' hcap =>
       simp only [denote]
       split
       · rw [hs']
       · rename_i hNot
-        exact absurd (⟨hq, hopp, htouch, hlen, hnodup, hids, hcov, hk⟩) hNot
-  | rebase hne hok hs' hwf =>
+        exact absurd (⟨hq, hopp, htouch, hlen, hnodup, hids, hcov, hk, hcap⟩) hNot
+  | rebase hne hok hs' hwf hcap =>
       simp only [denote]
       split
       · rw [hs']
       · rename_i hNot
         rw [← hs'] at hNot
-        exact absurd (⟨hne, hok, hwf⟩) hNot
+        exact absurd (⟨hne, hok, hwf, hcap⟩) hNot
   | hadamard hperm hs' hwf =>
       simp only [denote]
       split
@@ -626,13 +1045,13 @@ theorem eval_denote {m : Command} {s s' : CodeState}
       · rename_i hNot
         rw [← hs'] at hNot
         exact absurd (⟨hq, hwf⟩) hNot
-  | extend hok hs' hwf =>
+  | extend hok hs' hwf hcap =>
       simp only [denote]
       split
       · rw [hs']
       · rename_i hNot
         rw [← hs'] at hNot
-        exact absurd (⟨hok, hwf⟩) hNot
+        exact absurd (⟨hok, hwf, hcap⟩) hNot
 
 /-- The denotation's `some` branch has a derivation (spec §1a). -/
 theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
@@ -667,27 +1086,27 @@ theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
       simp only [denote] at hEq
       split at hEq
       · rename_i hPre
-        obtain ⟨hSub, hNodup, hSort, hComm, hSpan⟩ := hPre
+        obtain ⟨hSub, hNodup, hSort, hComm, hSpan, hcap⟩ := hPre
         cases hEq
-        exact Eval.add hSub hNodup hSort hComm hSpan rfl
+        exact Eval.add hSub hNodup hSort hComm hSpan rfl hcap
       · exact absurd hEq (by simp)
   | graft qubit sector orderedIds =>
       intro s s' hEq
       simp only [denote] at hEq
       split at hEq
       · rename_i hPre
-        obtain ⟨hq, hopp, htouch, hlen, hnodup, hids, hcov, hk⟩ := hPre
+        obtain ⟨hq, hopp, htouch, hlen, hnodup, hids, hcov, hk, hcap⟩ := hPre
         cases hEq
-        exact Eval.graft hq hopp htouch hlen hnodup hids hcov hk rfl
+        exact Eval.graft hq hopp htouch hlen hnodup hids hcov hk rfl hcap
       · exact absurd hEq (by simp)
   | rebase sector matrix =>
       intro s s' hEq
       simp only [denote] at hEq
       split at hEq
       · rename_i hPre
-        obtain ⟨hne, hok, hwf⟩ := hPre
+        obtain ⟨hne, hok, hwf, hcap⟩ := hPre
         cases hEq
-        exact Eval.rebase hne hok rfl hwf
+        exact Eval.rebase hne hok rfl hwf hcap
       · exact absurd hEq (by simp)
   | hadamard T =>
       intro s s' hEq
@@ -721,9 +1140,9 @@ theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
       simp only [denote] at hEq
       split at hEq
       · rename_i hPre
-        obtain ⟨hok, hwf⟩ := hPre
+        obtain ⟨hok, hwf, hcap⟩ := hPre
         cases hEq
-        exact Eval.extend hok rfl hwf
+        exact Eval.extend hok rfl hwf hcap
       · exact absurd hEq (by simp)
 
 /-- The derived denotation is adequate for the command relation:
@@ -735,13 +1154,43 @@ theorem denote_eval {m : Command} {s s' : CodeState} :
 /-- Determinism of `Eval`: a command has at most one output state. This is the
     single-valuation property that makes the derived denotation well-posed
     (spec §1a; `OBL-PRIMITIVE-DETERMINISM` asks for one lemma per primitive,
-    and this covers every command at once via `denote_eval`). -/
+    and this covers every command at once). Proved by induction on the
+    derivation rather than through `denote_eval`, so that it does not inherit
+    the denotation's `Classical.choice` footprint. -/
 theorem eval_unique {m : Command} {s s1 s2 : CodeState}
     (h1 : Eval m s s1) (h2 : Eval m s s2) : s1 = s2 := by
-  have hd1 : denote m s = some s1 := eval_denote h1
-  have hd2 : denote m s = some s2 := eval_denote h2
-  have hEq : some s1 = some s2 := hd1.symm.trans hd2
-  injection hEq
+  induction h1 generalizing s2 with
+  | skip => cases h2; rfl
+  | seq _ _ ih1 ih2 =>
+      cases h2 with
+      | seq h2a h2b =>
+          have hmid := ih1 h2a
+          subst hmid
+          exact ih2 h2b
+  | delete _ _ heq1 =>
+      cases h2 with
+      | delete _ _ heq2 => rw [heq1, heq2]
+  | add _ _ _ _ _ heq1 =>
+      cases h2 with
+      | add _ _ _ _ _ heq2 => rw [heq1, heq2]
+  | graft _ _ _ _ _ _ _ _ heq1 =>
+      cases h2 with
+      | graft _ _ _ _ _ _ _ _ heq2 => rw [heq1, heq2]
+  | rebase _ _ heq1 _ =>
+      cases h2 with
+      | rebase _ _ heq2 _ => rw [heq1, heq2]
+  | hadamard _ heq1 _ =>
+      cases h2 with
+      | hadamard _ heq2 _ => rw [heq1, heq2]
+  | peel _ _ _ _ heq1 _ =>
+      cases h2 with
+      | peel _ _ _ _ heq2 _ => rw [heq1, heq2]
+  | puncture _ heq1 _ =>
+      cases h2 with
+      | puncture _ heq2 _ => rw [heq1, heq2]
+  | extend _ heq1 _ =>
+      cases h2 with
+      | extend _ heq2 _ => rw [heq1, heq2]
 
 /-- Sequencing associates in the derived denotation (spec §1a;
     `OBL-SEQUENCE-ASSOCIATIVITY` WP4 slice). -/
@@ -786,7 +1235,7 @@ def emptyTwoQubits : CodeState :=
 theorem eval_add_empty :
     Eval (Command.addStab Sector.Z [0]) emptyTwoQubits
         (addState emptyTwoQubits Sector.Z [0]) := by
-  refine @Eval.add _ _ _ _ ?_ ?_ ?_ ?_ ?_ ?_
+  refine @Eval.add _ _ _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · intro q hq
     rcases List.mem_cons.mp hq with rfl | h
     · simp [emptyTwoQubits]
@@ -806,6 +1255,7 @@ theorem eval_add_empty :
     | cons _ _ =>
         simp [sectorRows, emptyTwoQubits] at hlen
   · rfl
+  · decide
 
 /-- One displayed X row on qubit 0 over two qubits. -/
 def anticommuteState : CodeState :=
@@ -874,6 +1324,7 @@ theorem eval_graft_graftable :
   · decide
   · decide
   · rfl
+  · decide
 
 /-- A state with no opposite-sector row touching the grafted qubit. -/
 def noOppositeState : CodeState :=
@@ -1151,7 +1602,7 @@ theorem not_eval_hadamard_subset :
   cases h with
   | hadamard h1 _ _ =>
       rcases h1 with hfl | hn
-      · exact absurd hfl (by decide)
+      · exact absurd hfl.length_eq (by decide)
       · exact absurd hn (by decide)
 
 /-- Puncturing a qubit outside the namespace is refused (`q ∈ s.Q` fails). -/
@@ -1236,11 +1687,8 @@ theorem inSpanMasks_nil (v : Nat) : inSpanMasks [] v ↔ v = 0 := by
 /-- Namespace decrease for peel: the peeled qubit leaves `Q`. -/
 theorem peelState_Q_length {s : CodeState} {q r_id : Nat}
     (hq : q ∈ s.Q) (hnd : s.Q.Nodup) :
-    (peelState s q r_id).Q.length = s.Q.length - 1 := by
-  have h : (peelState s q r_id).Q = s.Q.erase q := by
-    rw [hnd.erase_eq_filter q]; rfl
-  rw [h]
-  exact List.length_erase_of_mem hq
+    (peelState s q r_id).Q.length = s.Q.length - 1 :=
+  length_filter_ne_of_nodup_mem hnd hq
 
 /-- The peel evaluation decreases the namespace length by one. -/
 theorem peelEval_Q_length {q : Nat} {tau : Sector} {r_id : Nat}
@@ -1251,5 +1699,126 @@ theorem peelEval_Q_length {q : Nat} {tau : Sector} {r_id : Nat}
   | peel hq _ _ _ hs' _ =>
       rw [hs']
       exact peelState_Q_length hq hWF.1
+
+/-- Example states for the `E-GLUE` positive instance (PR #303 review). -/
+def glueExampleA : CodeState :=
+  { Q := [0, 1]
+  , rows := [⟨1, Sector.X, [0, 1]⟩]
+  , used := [1] }
+
+/-- Example states for the `E-GLUE` positive instance (PR #303 review). -/
+def glueExampleB : CodeState :=
+  { Q := [2, 3]
+  , rows := [⟨2, Sector.X, [2, 3]⟩]
+  , used := [2] }
+
+/-- Seam checks for the positive instance: one Z check spanning the union. -/
+def glueExampleSeams : List (Sector × List Nat) :=
+  [(Sector.Z, [0, 1, 2, 3])]
+
+/-- Seam checks for the refusal instance: a Z check on `[1, 2]` that
+    anticommutes with both factor rows. -/
+def glueExampleRefusalSeams : List (Sector × List Nat) :=
+  [(Sector.Z, [1, 2])]
+
+/-- Positive instance: gluing two disjoint factor states with one seam check
+    is derivable. -/
+theorem evalExpr_glue_example :
+    EvalExpr (StateExpr.glue (StateExpr.base glueExampleA) (StateExpr.base glueExampleB) glueExampleSeams)
+      (glueState glueExampleA glueExampleB glueExampleSeams) :=
+  EvalExpr.glue (by decide) (by decide) ((wellFormedBool_iff _).mp (by decide)) (by decide)
+    (EvalExpr.base _) (EvalExpr.base _)
+
+/-- Refusal: a seam check that anticommutes with the factor rows is refused,
+    since `EncodingWellFormed` of the glued state is false. -/
+theorem glue_example_refusal_not_well_formed :
+    wellFormedBool (glueState glueExampleA glueExampleB glueExampleRefusalSeams) = false := by
+  decide
+
+theorem not_encodingWellFormed_glue_example :
+    ¬ EncodingWellFormed (glueState glueExampleA glueExampleB glueExampleRefusalSeams) :=
+  not_encodingWellFormed_of_bool glue_example_refusal_not_well_formed
+
+/-- Refusal: a seam check that anticommutes with the factor rows is refused,
+    since `EncodingWellFormed` of the glued state is false. -/
+theorem glue_example_refusal_not_wellFormed :
+    ¬ EncodingWellFormed (glueState glueExampleA glueExampleB glueExampleRefusalSeams) :=
+  not_encodingWellFormed_glue_example
+
+/-- An `EvalExpr.glue` proof carries `EncodingWellFormed` of its result. -/
+theorem evalExpr_glue_implies_wf {e1 e2 : StateExpr}
+    {seams : List (Sector × List Nat)} {s : CodeState}
+    (h : EvalExpr (StateExpr.glue e1 e2 seams) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | glue hQ hU hwf _ _ _ => exact hwf
+
+/-- Refusal at the `EvalExpr` level: the glued state is not well-formed. -/
+theorem not_evalExpr_glue_example :
+    ¬ EvalExpr (StateExpr.glue (StateExpr.base glueExampleA) (StateExpr.base glueExampleB) glueExampleRefusalSeams)
+      (glueState glueExampleA glueExampleB glueExampleRefusalSeams) := by
+  intro h
+  exact glue_example_refusal_not_wellFormed (evalExpr_glue_implies_wf h)
+
+/-! ## Capacity alignment (H-4, issue #296)
+
+The five minting rules carry a capacity premise, so no derivation mints an
+identifier at or beyond `totalIdentifiers`: a history inside the finite
+enumeration stays inside it under every evaluation. -/
+
+theorem eval_used_within_capacity {m : Command} {s s' : CodeState}
+    (h : Eval m s s') (hs : ∀ id ∈ s.used, id < totalIdentifiers) :
+    ∀ id ∈ s'.used, id < totalIdentifiers := by
+  induction h with
+  | skip _ => exact hs
+  | seq _ _ ih1 ih2 => exact ih2 (ih1 hs)
+  | delete _ _ heq =>
+      rw [heq]
+      intro id hid
+      exact hs id hid
+  | add _ _ _ _ _ heq hcap =>
+      rw [heq]
+      intro id hid
+      simp only [addState, List.mem_append, List.mem_singleton] at hid
+      rcases hid with h1 | h2
+      · exact hs id h1
+      · rw [h2]; exact hcap
+  | graft _ _ _ _ _ _ _ _ heq hcap =>
+      rw [heq]
+      intro id hid
+      simp only [graftState, List.mem_append] at hid
+      rcases hid with h1 | h2
+      · exact hs id h1
+      · exact hcap id h2
+  | rebase _ _ heq _ hcap =>
+      rw [heq]
+      intro id hid
+      simp only [rebaseState, List.mem_append] at hid
+      rcases hid with h1 | h2
+      · exact hs id h1
+      · exact hcap id h2
+  | hadamard _ heq _ =>
+      rw [heq]
+      intro id hid
+      unfold hadamardState at hid
+      split at hid
+      · exact hs id hid
+      · simp only [swapState] at hid
+        exact hs id hid
+  | peel _ _ _ _ heq _ =>
+      rw [heq]
+      intro id hid
+      exact hs id hid
+  | puncture _ heq _ =>
+      rw [heq]
+      intro id hid
+      exact hs id hid
+  | extend _ heq _ hcap =>
+      rw [heq]
+      intro id hid
+      simp only [extendState, List.mem_append] at hid
+      rcases hid with h1 | h2
+      · exact hs id h1
+      · exact hcap id h2
 
 end CodeCalculus

@@ -9,8 +9,6 @@ executable, not that any claim is proved. A mismatch is a finding against
 the spec, never patched silently.
 """
 
-from __future__ import print_function
-
 import json
 import os
 import re
@@ -262,12 +260,12 @@ def evaluate_fixture(f, fixtures_by_id, cache):
         # if right is a note-only state (W15), it may have rows_X? W15 right has no rows, just Q note. Mark inapplicable.
         try:
             left_state = state_from_dict(left_dict, fixtures_by_id, cache)
-        except Exception as e:
+        except (pc.Malformed, ValueError, KeyError, TypeError) as e:
             left_state = None
             left_err = e
         try:
             right_state = state_from_dict(right_dict, fixtures_by_id, cache)
-        except Exception as e:
+        except (pc.Malformed, ValueError, KeyError, TypeError) as e:
             right_state = None
             right_err = e
         if left_state is not None and right_state is not None:
@@ -356,7 +354,7 @@ def evaluate_fixture(f, fixtures_by_id, cache):
         if result["actual_outcome"] != exp_outcome:
             result["mismatches"].append("outcome %s != %s" % (result["actual_outcome"], exp_outcome))
         return result
-    except Exception as e:
+    except (pc.Malformed, ValueError, KeyError, TypeError) as e:
         result["actual_outcome"] = "no_derivation"
         result["mismatches"].append("state construction failed: %s" % e)
         if result["actual_outcome"] != exp_outcome:
@@ -401,10 +399,10 @@ def evaluate_fixture(f, fixtures_by_id, cache):
         actual_outcome = "no_derivation"
     except pc.Malformed as e:
         actual_outcome = "malformed"
-    except Exception as e:
+    except (pc.NoDerivation, pc.Malformed, ValueError, TypeError, KeyError) as e:
         actual_outcome = "no_derivation"
 
-    # W25 (): the judgment under test is not the term -- delete_{a1}
+    # W25 (issue #237): the judgment under test is not the term -- delete_{a1}
     # derives -- but whether a sector lower-bound certificate minted for the
     # pre-deletion state can be inherited by the child. The certificate is
     # checked and accepted (it is true of the parent); what refuses the
@@ -420,7 +418,7 @@ def evaluate_fixture(f, fixtures_by_id, cache):
             certificate_state_block,
             check_sector_lower_bound_certificate,
         )
-        from machine.experiments.challenge_replay import exact_distances
+        from issue21_challenge_replay import exact_distances
         spec = expected.get("certificate") or {}
         try:
             certificate = build_sector_lower_bound_certificate(
@@ -468,7 +466,7 @@ def evaluate_fixture(f, fixtures_by_id, cache):
 
     # distances_hand compare (best effort)
     if actual_outcome == "derivable" and expected.get("distances_hand") and actual_state is not None:
-        from machine.experiments.challenge_replay import exact_distances
+        from issue21_challenge_replay import exact_distances
         ex = exact_distances(actual_state)
         dh = expected["distances_hand"]
         # W12 structure

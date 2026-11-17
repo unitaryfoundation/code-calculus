@@ -6,13 +6,14 @@ first.
 
 ## Before you start
 
-- Read `README.md`, `SCOPE.md`, and `spec/VERSIONING.md`. The stopping
-  point in `SCOPE.md` is the canonical statement of scope; work outside it
-  should be proposed as a design note first.
-- `spec/` is normative and wins every disagreement. `machine/` is a derived
-  transcription; where it disagrees with `spec/`, `spec/` wins and the
+- Read `README.md`, `spec/GATES.md`, and `spec/VERSIONING.md`. Work outside the
+  admitted scope in `spec/GATES.md` §11 and `spec/VERSIONING.md` should be
+  discussed in an issue first.
+- `spec/` is normative and wins every disagreement. `machine/` and `lean/` are
+  derived transcriptions; where they disagree with `spec/`, `spec/` wins and the
   transcription is fixed.
-- Decisions are recorded in the pull request or release notes, not in the artifact they concern.
+- Decisions are recorded in the pull request or release notes (`CHANGELOG.md`),
+  not accreted into the artifact they concern.
 
 ## How to contribute
 

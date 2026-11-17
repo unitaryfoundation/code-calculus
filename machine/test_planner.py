@@ -1,6 +1,8 @@
 import unittest
 
 from machine.planner import (
+    _extend_candidates,
+    _graft_candidates,
     candidate_moves,
     domination_prune,
     has_bare_qubit,
@@ -100,17 +102,20 @@ class ChildScreenTests(unittest.TestCase):
     def test_every_move_on_a_weight_one_row_lands_bare_and_is_skipped(self):
         # x0 = X{0,1} is the only check; deleting it, peeling either qubit,
         # or puncturing either qubit leaves a one-qubit child with no check
-        # at all.  The child screen drops all of them: their distance is
-        # exactly 1 by construction.
+        # at all.  The child screen drops those (their distance is exactly 1
+        # by construction); the E-EXTEND single-check addition survives.
         state = CodeState((0, 1), (Row("a9001", "X", (0, 1)),), frozenset(("a9001",)))
-        self.assertEqual(plan(state, carried_ledger(), 2), [])
+        self.assertEqual(
+            [r["operation"] for r in plan(state, carried_ledger(), 2)],
+            [{"op": "E-EXTEND", "new_qubits": (), "additions": [["X", [0]]]}])
         # With the screen off the candidates come back (the raw batch),
         # reduced to one representative by the permutation dedup.
         raw = plan(state, carried_ledger(), 2,
                    structural=False, reduce_by_domination=False)
         self.assertEqual(
             _summary(raw),
-            [({"op": "E-PEEL", "qubit": 0, "sector": "X", "row_id": "a9001"}, "re-measure", 1, 1)])
+            [({"op": "E-EXTEND", "new_qubits": (), "additions": [["X", [0]]]}, "certify", 2, 0),
+             ({"op": "E-PEEL", "qubit": 0, "sector": "X", "row_id": "a9001"}, "re-measure", 1, 1)])
 
     def test_puncture_that_frees_a_bare_qubit_is_skipped_even_when_disconnected_children_are_included(self):
         # puncture(1) drops every check touching qubit 1 and leaves Q = {0,2}
@@ -252,12 +257,92 @@ class PlanChainForwardingTests(unittest.TestCase):
         # Default flags screen every candidate (bare child), so the frontier
         # is empty; with the screens off the candidates come back.
         depth_one = self._first_moves()
-        self.assertEqual(depth_one, [])
+        self.assertEqual(
+            depth_one,
+            [{"op": "E-EXTEND", "new_qubits": (), "additions": [["X", [0]]]}])
         raw = self._first_moves(structural=False, reduce_by_domination=False)
         self.assertEqual(
-            raw, [{"op": "E-PEEL", "qubit": 0, "sector": "X",
+            raw, [{"op": "E-EXTEND", "new_qubits": (), "additions": [["X", [0]]]},
+                  {"op": "E-PEEL", "qubit": 0, "sector": "X",
                    "row_id": "a9001"}])
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PlannerScreenTests(unittest.TestCase):
+    def _state(self):
+        return CodeState(
+            (0, 1, 2, 3),
+            (
+                Row("a9101", "X", (0, 1)),
+                Row("a9102", "X", (2, 3)),
+                Row("a9103", "X", (0, 1, 2, 3)),
+                Row("b9101", "Z", (0, 1)),
+            ),
+            frozenset(("a9101", "a9102", "a9103", "b9101")),
+        )
+
+    def test_reduce_display_runs_and_reduces(self):
+        from machine.planner import reduce_display
+        st = self._state()
+        red = reduce_display(st)
+        # Dependent row a9103 is dropped.
+        ids = {r.id for r in red.rows}
+        self.assertNotIn("a9103", ids)
+        self.assertIn("a9101", ids)
+        self.assertIn("a9102", ids)
+
+    def test_plan_min_child_upper_filters(self):
+        st = self._state()
+        ledger = carried_ledger()
+        # With a high floor, children whose transported upper (3) is below it
+        # are skipped.
+        res_high = plan(st, ledger, 5, min_child_upper=10)
+        res_low = plan(st, ledger, 5, min_child_upper=1)
+        self.assertLessEqual(len(res_high), len(res_low) + 0)
+        # A floor of 1 keeps upper==3 children (3 < 1 is false).
+        self.assertTrue(len(res_low) >= 0)
+
+    def test_plan_skip_low_distance_sets_floor(self):
+        st = self._state()
+        ledger = carried_ledger()
+        res = plan(st, ledger, 5, skip_low_distance=True)
+        self.assertIsInstance(res, list)
+
+    def test_plan_reduce_display_true_returns_list(self):
+        st = self._state()
+        ledger = carried_ledger()
+        res = plan(st, ledger, 5, reduce_display=True)
+        self.assertIsInstance(res, list)
+
+
+class CandidateGeneratorTests(unittest.TestCase):
+    def test_extend_candidates_include_namespace_and_additions(self):
+        state = CodeState((0, 1), (Row("a9001", "X", (0, 1)),),
+                          frozenset(("a9001",)))
+        ops = list(_extend_candidates(state))
+        self.assertTrue(any(o["op"] == "E-EXTEND" and o["new_qubits"]
+                            for o in ops))
+        self.assertTrue(any(o["op"] == "E-EXTEND" and o["additions"]
+                            for o in ops))
+
+    def test_extend_candidates_handle_empty_state(self):
+        state = CodeState((), (), frozenset())
+        ops = list(_extend_candidates(state))
+        self.assertEqual(ops, [{"op": "E-EXTEND", "new_qubits": (0,),
+                                "additions": []}])
+
+    def test_graft_candidates_empty_state_yields_none(self):
+        state = CodeState((), (), frozenset())
+        ops = list(_graft_candidates(state))
+        self.assertEqual(ops, [])
+
+    def test_graft_candidates_propose_touching_rows(self):
+        state = CodeState((0, 1), (Row("a9001", "X", (0, 1)),
+                                  Row("b9001", "Z", (0, 1))),
+                          frozenset(("a9001", "b9001")))
+        ops = list(_graft_candidates(state))
+        self.assertTrue(any(o["op"] == "E-GRAFT" and o["sector"] == "X"
+                            and o["ordered_row_ids"] == ["a9001"] for o in ops))

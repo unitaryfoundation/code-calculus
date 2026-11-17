@@ -1,7 +1,8 @@
 """Certificate format and checker prototype for sector distance lower bounds.
 
 This module is the first branch of the certificate layer explored in
-`the internal notes` (option (ii), opened 2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
+`the archived notes` (option (ii), opened on issue #142,
+2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
 same way the upper endpoint already is: an untrusted producer emits a
 self-contained artifact, and a small total checker accepts or rejects it
 without searching.
@@ -23,7 +24,7 @@ If the checker accepts, every low-weight vector is excluded, so
 ``d_sigma >= L`` holds. The checker is the trusted base; the producer is
 arbitrary and untrusted, exactly as for the ledger's logical witnesses.
 
-Checker contract (`the internal notes` section 4):
+Checker contract (`the archived notes` section 4):
 
 1. Total and decidable: a pure predicate over a finite input; it returns
    accept/reject with reasons and never raises on malformed input.
@@ -43,16 +44,22 @@ Checker contract (`the internal notes` section 4):
 5. Per-state scope: one certificate certifies one fact about one state. It
    never certifies an operation contract (second-pass S7).
 
-Status discipline: nothing here changes a claim status. Every fact a
-certificate supports stays ``conditional`` exactly as before, and the
-reserved ``certificate-checked`` status (`spec/CLAIMS.md`) is untouched --
-adopting it is a later release decision (plan section 5, step 3).
+Status discipline: nothing this module's checker accepts changes a claim
+status. It is the prototype, and every fact it supports stays
+``conditional``. The mechanized checker is
+`lean/CodeCalculus/CertificateChecker.lean` (issue #371), whose acceptance is
+proved to imply the certified fact for the exact sector distance. The
+``lean_*`` functions at the end of this module translate a state and a
+certificate into Lean source for that checker. The translation is untrusted:
+the status ``certificate-checked`` (`spec/CLAIMS.md`, *Admission*) attaches
+to the theorem the Lean kernel accepts, which is a statement about the Lean
+state term in the emitted source, and to nothing this module returns.
 """
 
 import itertools
 import json
 
-from machine.priced_calculus import support_mask
+from machine.priced_calculus import identifier_rank, in_span, support_mask
 
 SECTOR_LOWER_BOUND_KIND = "css-sector-distance-lower-bound"
 CERTIFICATE_FORMAT_VERSION = 1
@@ -152,7 +159,7 @@ def build_sector_lower_bound_certificate(state, sector, bound):
             vector = support_mask(support)
             reason = None
             for row_mask, row_support in opposite_masks:
-                if bin(vector & row_mask).count("1") % 2 == 1:
+                if (vector & row_mask).bit_count() % 2 == 1:
                     reason = {
                         "kind": "odd_overlap",
                         "row_sector": opposite,
@@ -271,7 +278,7 @@ def _check_kill_reason(kill, sector, vector, row_masks, opposite_rows,
                          "%s-sector row" % (label, row_support,
                                             reason.get("row_sector")))
         row_mask = support_mask(sorted(row_support))
-        if bin(vector & row_mask).count("1") % 2 != 1:
+        if (vector & row_mask).bit_count() % 2 != 1:
             return _fail(failures, "%s: overlap with the named row is even"
                          % label)
         return True
@@ -320,7 +327,7 @@ def check_sector_lower_bound_certificate(certificate):
     # certificate is self-contained.
     for x_index, x_mask in enumerate(row_masks["X"]):
         for z_index, z_mask in enumerate(row_masks["Z"]):
-            if bin(x_mask & z_mask).count("1") % 2 != 0:
+            if (x_mask & z_mask).bit_count() % 2 != 0:
                 failures.append(
                     "state is not CSS: X row %d and Z row %d anticommute"
                     % (x_index, z_index))
@@ -360,3 +367,159 @@ def check_sector_lower_bound_certificate(certificate):
         failures.append("%d kill entries cover no vector of weight < %d"
                         % (len(kills), bound))
     return not failures, failures
+
+# ---------------------------------------------------------------------------
+# Translation to the mechanized checker (issue #371)
+# ---------------------------------------------------------------------------
+
+LEAN_SECTOR = {"X": "Sector.X", "Z": "Sector.Z"}
+
+
+def _lean_nat_list(values):
+    return "[%s]" % ", ".join(str(value) for value in values)
+
+
+def _lean_bool_list(bits):
+    return "[%s]" % ", ".join("true" if bit else "false" for bit in bits)
+
+
+def lean_state_term(state):
+    """A Lean ``CodeState`` literal for ``state``.
+
+    Qubits in the state's order, rows in display order with sorted
+    supports, and identifiers as their ranks in the fixed enumeration, the
+    transcription `lean/CodeCalculus/Fixtures.lean` uses.
+    """
+    rows = ",\n".join(
+        "    { id := %d, sector := %s, support := %s }"
+        % (identifier_rank(row.id), LEAN_SECTOR[row.sector],
+           _lean_nat_list(sorted(row.support)))
+        for row in state.rows)
+    used = _lean_nat_list(sorted(identifier_rank(i) for i in state.used))
+    return ("{\n  Q := %s,\n  rows := [\n%s\n  ],\n  used := %s\n}"
+            % (_lean_nat_list(state.Q), rows, used))
+
+
+def lean_certificate_term(certificate):
+    """A Lean ``SectorCertificate`` literal for a kill certificate."""
+    kills = []
+    for kill in certificate["kills"]:
+        reason = kill["reason"]
+        if reason["kind"] == "odd_overlap":
+            rendered = "KillReason.oddOverlap %s" % _lean_nat_list(
+                sorted(reason["row"]))
+        elif reason["kind"] == "in_span":
+            rendered = "KillReason.inSpan %s" % _lean_bool_list(
+                reason["coeffs"])
+        else:
+            raise ValueError("unknown kill reason kind: %r" % (reason["kind"],))
+        kills.append("    { support := %s, reason := %s }"
+                     % (_lean_nat_list(sorted(kill["support"])), rendered))
+    return ("{\n  sector := %s,\n  bound := %d,\n  kills := [\n%s\n  ]\n}"
+            % (LEAN_SECTOR[certificate["sector"]], certificate["bound"],
+               ",\n".join(kills)))
+
+
+def _witness_failure(state, sector, bound, witness):
+    """Why ``witness`` is not a weight-``bound`` sector logical, or ``None``."""
+    support = tuple(sorted(witness))
+    if len(set(support)) != len(support) or not set(support) <= set(state.Q):
+        return "witness is not a repeat-free support over the state's qubits"
+    if len(support) != bound:
+        return "witness weight %d is not the bound %d" % (len(support), bound)
+    vector = support_mask(support)
+    opposite = "Z" if sector == "X" else "X"
+    if any((vector & row.mask).bit_count() % 2
+           for row in state.sector_rows(opposite)):
+        return "witness anticommutes with a displayed %s row" % opposite
+    if in_span(vector, [row.mask for row in state.sector_rows(sector)]):
+        return "witness lies in the displayed %s-sector span" % sector
+    return None
+
+
+def lean_instance_block(name, state, certificate, witness=None):
+    """Lean source for one per-state instance of the mechanized checker.
+
+    Emits the state, the certificate, and the theorem
+    ``<name>_<sector>_lower_bound`` that the checker's acceptance implies
+    ``bound <= d_sector``. With ``witness`` (a support of weight ``bound``)
+    it also emits ``<name>_<sector>_exact``. The acceptance premises are
+    ``by decide``, so the kernel evaluates the checker; nothing emitted
+    here is trusted.
+
+    Raises ``ValueError`` when the certificate does not carry ``state``,
+    when the prototype checker rejects it, or when the witness is not a
+    logical of weight ``bound``. These refusals only fail early: an emitted
+    module that should not have been emitted does not build.
+    """
+    if certificate.get("state") != certificate_state_block(state):
+        raise ValueError("certificate does not carry the given state")
+    accepted, failures = check_sector_lower_bound_certificate(certificate)
+    if not accepted:
+        raise ValueError("certificate rejected: %s" % "; ".join(failures))
+    sector = certificate["sector"]
+    bound = certificate["bound"]
+    stem = "%s_%s" % (name, sector)
+    lines = [
+        "def %s_certificate : SectorCertificate := %s"
+        % (stem, lean_certificate_term(certificate)),
+        "",
+        "theorem %s_lower_bound :" % stem,
+        "    ExtNat.finite %d ≤ exactDistanceExt %s %s :="
+        % (bound, LEAN_SECTOR[sector], name),
+        "  certificate_lower_bound_ext %s %s_certificate (by decide)"
+        % (name, stem),
+    ]
+    if witness is not None:
+        failure = _witness_failure(state, sector, bound, witness)
+        if failure is not None:
+            raise ValueError(failure)
+        vector = _lean_bool_list(q in set(witness) for q in state.Q)
+        lines += [
+            "",
+            "theorem %s_exact :" % stem,
+            "    exactDistance? %s %s = some %d :="
+            % (LEAN_SECTOR[sector], name, bound),
+            "  certificate_equality %s %s_certificate (by decide)"
+            % (name, stem),
+            "    %s (by decide)" % vector,
+        ]
+    return "\n".join(lines)
+
+
+def lean_instance_module(header, states, blocks, same_as=None,
+                         namespace="CertificateInstances"):
+    """A Lean module from state definitions and instance blocks.
+
+    ``states`` maps a Lean name to a ``CodeState``; ``blocks`` are the
+    strings `lean_instance_block` returns for those names. Each state gets
+    a theorem ``<name>_wellFormed`` that the Lean term is a well-formed
+    state, by kernel evaluation of ``wellFormedBool``. ``same_as`` maps a
+    state name to an existing Lean constant the term must equal.
+    """
+    parts = [
+        "import CodeCalculus.CertificateChecker",
+        "import CodeCalculus.WellFormedBool",
+        "",
+        "/-!\n%s\n-/" % header.strip(),
+        "",
+        "namespace CodeCalculus.%s" % namespace,
+    ]
+    for name, state in states.items():
+        parts += [
+            "",
+            "def %s : CodeState := %s" % (name, lean_state_term(state)),
+            "",
+            "theorem %s_wellFormed : EncodingWellFormed %s :=" % (name, name),
+            "  encodingWellFormed_of_bool (by decide)",
+        ]
+        if same_as and name in same_as:
+            parts += [
+                "",
+                "theorem %s_eq_%s : %s = %s := by decide"
+                % (name, same_as[name], name, same_as[name]),
+            ]
+    for block in blocks:
+        parts += ["", block]
+    parts += ["", "end CodeCalculus.%s" % namespace, ""]
+    return "\n".join(parts)

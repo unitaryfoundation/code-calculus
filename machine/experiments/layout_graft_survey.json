@@ -1,0 +1,21 @@
+{
+  "challenge_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
+  "max_n": 14,
+  "entries_with_layout_scanned": 21,
+  "applicable_grafts": 823,
+  "grafts_that_increase_the_radius": 198,
+  "max_observed_ratio": 1.6125,
+  "worst_case": {
+    "code": "12-2-3.json",
+    "qubit": 1,
+    "sector": "X",
+    "order": [
+      "a3",
+      "a4"
+    ],
+    "parent_radius": 2.2361,
+    "child_radius": 3.6056,
+    "ratio": 1.6125
+  },
+  "bound_violations_r_gt_2r": []
+}

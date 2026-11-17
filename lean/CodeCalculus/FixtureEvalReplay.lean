@@ -5,12 +5,12 @@ import CodeCalculus.WellFormedBool
 import CodeCalculus.Soundness
 
 /-!
-# Fixture replays under `Eval` and `EvalExpr` (WP6)
+# Fixture replays under `Eval` and `EvalExpr` (issue #246, WP6)
 
 `FixtureReplay.lean` decides `wellFormedBool` of the hand-typed fixture
 states and nothing else, so a mistyped result state went unnoticed (the W5
 and W7 results carried hard-coded identifiers instead of the minted rank;
-review findings RG-8 and RC-3 of ). This module replays the
+review findings RG-8 and RC-3 of issue #228). This module replays the
 transitions themselves against `machine/fixtures/mvp_fixtures.json`:
 
 - every `derivable` single-step or two-step fixture has a positive theorem
@@ -116,10 +116,6 @@ instance (r : Nat) (s : CodeState) : Decidable (DisplayedGenerator r s) :=
 instance (support Q : List Nat) : Decidable (supportSubset support Q) :=
   inferInstanceAs (Decidable (∀ q, q ∈ support → q ∈ Q))
 
-/-- `DisjointList` is a bounded universal over the first list. -/
-instance (xs ys : List Nat) : Decidable (DisjointList xs ys) :=
-  inferInstanceAs (Decidable (∀ x, x ∈ xs → x ∉ ys))
-
 /-- The addition premise `¬ inSpanRows …`, from the Boolean test. -/
 theorem not_inSpanRows_of_bool {Q : List Nat} {rows : List Row} {v : List Bool}
     (h : inSpanRowsBool Q rows v = false) : ¬ inSpanRows Q rows v := by
@@ -149,7 +145,7 @@ theorem fixture_W3_eval :
 theorem fixture_W5_eval :
     Eval (Command.addStab Sector.Z [1]) fixture_W5_initial fixture_W5_result :=
   Eval.add (by decide) (by decide) (by decide) (by decide)
-    (not_inSpanRows_of_bool (by decide)) (by decide)
+    (not_inSpanRows_of_bool (by decide)) (by decide) (by decide)
 
 /-- W7, first step: `delete_{a1}` on W0. -/
 theorem fixture_W7_step1 :
@@ -161,7 +157,7 @@ theorem fixture_W7_step2 :
     Eval (Command.addStab Sector.X [1, 3]) (deleteState fixture_W7_initial 0)
       fixture_W7_result :=
   Eval.add (by decide) (by decide) (by decide) (by decide)
-    (not_inSpanRows_of_bool (by decide)) (by decide)
+    (not_inSpanRows_of_bool (by decide)) (by decide) (by decide)
 
 /-- W7: the row-replacement loop `delete_{a1}; addStab X {1,3}` on W0. -/
 theorem fixture_W7_eval :
@@ -249,7 +245,7 @@ theorem fixture_W8_other_order_eval :
   Eval.seq
     (Eval.delete (by decide) (independentGenerator_of_bool (by decide)) rfl)
     (Eval.add (by decide) (by decide) (by decide) (by decide)
-      (not_inSpanRows_of_bool (by decide)) (by decide))
+      (not_inSpanRows_of_bool (by decide)) (by decide) (by decide))
 
 /-- W10: `delete_{a1}; delete_{a1}` fails at the second step, against the
     intermediate state. -/
@@ -278,7 +274,7 @@ theorem fixture_W7_chain :
     Chain [fixture_W7_initial, deleteState fixture_W7_initial 0, fixture_W7_result] :=
   Chain.cons fixture_W7_step1 (Chain.cons fixture_W7_step2 (Chain.single _))
 
-/-! ## Two-step `k` compositions by `TRANSITIVITY` alone ()
+/-! ## Two-step `k` compositions by `TRANSITIVITY` alone (issue #246)
 
 The `k` cells of deletion and addition are stated in an exact additive form
 and in a truncated form (`Soundness.lean`, module note). `TRANSITIVITY`

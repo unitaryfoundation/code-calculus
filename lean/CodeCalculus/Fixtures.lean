@@ -3,7 +3,7 @@ import CodeCalculus.Invariants
 
 namespace CodeCalculus
 
--- Pinned fixture states selected from machine/fixtures/mvp_fixtures.json (). Definitions only; the replay of these states lives in FixtureReplay.lean, on kernel `decide` since 2026-10-29 ().
+-- Pinned fixture states selected from machine/fixtures/mvp_fixtures.json (issue #83). Definitions only; the replay of these states lives in FixtureReplay.lean, on kernel `decide` since 2026-10-29 (issue #252).
 def fixture_W0_initial : CodeState := {
   Q := [1, 2, 3],
   rows := [
@@ -54,7 +54,7 @@ def fixture_W5_initial : CodeState := {
 
 -- W5's result: the JSON names the new row `c1`, a metavariable for the next
 -- canonical mint (caveat R5). Over `used = {a1, a2, b1}` that mint is rank 2
--- (`a3`), and the row is appended as `addState` appends it. Before 
+-- (`a3`), and the row is appended as `addState` appends it. Before issue #246
 -- (2026-10-29) this definition hard-coded rank 20000 and was not the
 -- transition's output (review findings RG-8, RC-3).
 def fixture_W5_result : CodeState := {
@@ -87,7 +87,7 @@ def fixture_W7_initial : CodeState := {
 }
 
 -- W7's result: the loop mints rank 2 (`a3`) for the JSON's `c2`, appended
--- after the surviving rows. Before  this definition hard-coded rank
+-- after the surviving rows. Before issue #246 this definition hard-coded rank
 -- 20001 (RG-8, RC-3).
 def fixture_W7_result : CodeState := {
   Q := [1, 2, 3],
@@ -119,7 +119,7 @@ def fixture_W9_initial : CodeState := {
   used := [0, 1, 10000]
 }
 
--- W9's result (): both X rows deleted, `used` unchanged.
+-- W9's result (issue #246): both X rows deleted, `used` unchanged.
 def fixture_W9_result : CodeState := {
   Q := [1, 2, 3],
   rows := [
@@ -186,7 +186,7 @@ def fixture_W16_initial : CodeState := {
   used := [0, 1, 10000]
 }
 
--- W16's result (): one row of each sector deleted, `used` unchanged.
+-- W16's result (issue #246): one row of each sector deleted, `used` unchanged.
 def fixture_W16_result : CodeState := {
   Q := [1, 2, 3],
   rows := [

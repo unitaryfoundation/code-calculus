@@ -1,13 +1,13 @@
 import CodeCalculus.State
 
 /-!
-# The Bool/Prop bridge for well-formedness (WP6)
+# The Bool/Prop bridge for well-formedness (issue #246, WP6)
 
 `State.lean` carries two readings of well-formedness: the predicate
 `EncodingWellFormed` the theorems quantify over, and the computable test
 `wellFormedBool` the fixture replay decides. Until this module nothing
 connected the two, so a replayed `wellFormedBool s = true` said nothing about
-`EncodingWellFormed s` (review finding RC-3 of ). The bridge is
+`EncodingWellFormed s` (review finding RC-3 of issue #228). The bridge is
 proved here clause by clause: span membership, the independence test, the
 commutation test, and the conjunction.
 -/
@@ -28,7 +28,7 @@ theorem mem_allBoolLists : ∀ (n : Nat) (cs : List Bool),
         rcases h with rfl | rfl <;> simp [hlen]
       · intro h
         cases cs with
-        | nil => simp at h
+        | nil => cases h
         | cons b bs =>
             refine ⟨bs, (mem_allBoolLists n bs).mpr (by simpa using h), ?_⟩
             cases b <;> simp

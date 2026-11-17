@@ -39,12 +39,12 @@ theorem sectorRows_rebaseState (s : CodeState) (sector : Sector)
       = (matrix.zip (mintFresh s.used matrix.length)).map
           (fun cs_id =>
             ⟨cs_id.2, sector, mixSupport (sectorRows s sector) cs_id.1⟩) := by
-  unfold sectorRows rebaseState
+  unfold sectorRows rebaseState rebaseMintedRows
   simp only [List.filter_append, List.filter_map, List.filter_filter]
   have hnil : List.filter
       (fun x => decide (x.sector = sector) && decide (x.sector ≠ sector))
       s.rows = [] := by
-    apply List.filter_eq_nil_iff.mpr
+    apply filter_eq_nil_of_forall_not
     intro x _
     by_cases hx : x.sector = sector <;> simp [hx]
   rw [hnil, List.nil_append]
@@ -82,7 +82,7 @@ theorem map_zip_left {α β γ : Type} (f : α → γ) :
   | cons a as ih =>
       intro l₂ h
       cases l₂ with
-      | nil => simp at h
+      | nil => cases h
       | cons b bs =>
           simp only [List.zip_cons_cons, List.map_cons]
           rw [ih bs (by simpa using h)]
@@ -95,13 +95,13 @@ theorem sectorRows_rebaseState_other (s : CodeState) (sector : Sector)
     (matrix : List (List Nat)) :
     sectorRows (rebaseState s sector matrix) (oppositeSector sector)
       = sectorRows s (oppositeSector sector) := by
-  unfold sectorRows rebaseState
+  unfold sectorRows rebaseState rebaseMintedRows
   simp only [List.filter_append, List.filter_filter]
   have hnil : List.filter (fun x => decide (x.sector = oppositeSector sector))
       ((matrix.zip (mintFresh s.used matrix.length)).map
         (fun cs_id => (⟨cs_id.2, sector, mixSupport (sectorRows s sector) cs_id.1⟩ : Row)))
       = [] := by
-    apply List.filter_eq_nil_iff.mpr
+    apply filter_eq_nil_of_forall_not
     intro x hx
     have hxs : x.sector = sector := by
       obtain ⟨p, _, hp⟩ := List.mem_map.mp hx
@@ -125,27 +125,20 @@ theorem rebaseMatrix_unit_rows (matrix : List (List Nat)) (m : Nat)
     ∃ drows : List (List Nat), drows.length = m ∧
       (∀ d ∈ drows, d.length = m ∧ (∀ c ∈ d, c = 0 ∨ c = 1)) ∧
       (∀ i, i < m → combineMasks (matrix.map matrixRowMask) (drows.getD i []) = 2 ^ i) := by
-  have htot : ∀ i : Nat, ∃ d : List Nat, i < m →
-      (d.length = m ∧ (∀ c ∈ d, c = 0 ∨ c = 1) ∧
-        combineMasks (matrix.map matrixRowMask) d = 2 ^ i) := by
-    intro i
-    by_cases hi : i < m
-    · have h := rebaseMatrix_unit_coeff matrix m hok i hi
-      exact ⟨Classical.choose h, fun _ => Classical.choose_spec h⟩
-    · exact ⟨[], fun h => absurd h hi⟩
-  let d : Nat → List Nat := fun i => Classical.choose (htot i)
-  refine ⟨(List.range m).map d, ?_, ?_, ?_⟩
-  · rw [List.length_map, List.length_range]
-  · intro dd hdd
-    obtain ⟨i, hi, hie⟩ := List.mem_map.mp hdd
-    subst hie
-    have him : i < m := List.mem_range.mp hi
-    have hch := Classical.choose_spec (htot i) him
-    exact ⟨hch.1, hch.2.1⟩
-  · intro i hi
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi]
-    show combineMasks (matrix.map matrixRowMask) (d i) = 2 ^ i
-    exact (Classical.choose_spec (htot i) hi).2.2
+  obtain ⟨drows, hlen, hprop⟩ := exists_list_getD ([] : List Nat)
+    (P := fun i d => d.length = m ∧ (∀ c ∈ d, c = 0 ∨ c = 1) ∧
+      combineMasks (matrix.map matrixRowMask) d = 2 ^ i)
+    m (rebaseMatrix_unit_coeff matrix m hok)
+  refine ⟨drows, hlen, ?_, fun i hi => (hprop i hi).2.2⟩
+  intro d hd
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hd
+  have hilt : i < m := by
+    rw [← hlen]
+    exact (List.getElem?_eq_some_iff.mp hi).1
+  have hget : drows.getD i [] = d := by
+    rw [List.getD_eq_getElem?_getD, hi, Option.getD_some]
+  rw [← hget]
+  exact ⟨(hprop i hilt).1, (hprop i hilt).2.1⟩
 
 /-- Rank depends on the displayed rows only through the sector filter. -/
 theorem sectorRank_congr_rows (Q : List Nat) {rows₁ rows₂ : List Row} (sec : Sector)
@@ -153,19 +146,13 @@ theorem sectorRank_congr_rows (Q : List Nat) {rows₁ rows₂ : List Row} (sec :
     sectorRank Q rows₁ sec = sectorRank Q rows₂ sec := by
   rw [sectorRank, sectorRank, h]
 
-/-- Rebase preserves the displayed-sector rank, from `rebaseMatrix_ok`
-    alone — no hypothesis on the source state. -/
-theorem sectorRank_rebaseState (s : CodeState) (sector : Sector) (M : List (List Nat))
-    (hok : rebaseMatrix_ok M (sectorRows s sector).length) :
-    sectorRank s.Q (rebaseState s sector M).rows sector
-      = sectorRank s.Q s.rows sector := by
-  have hmatlen : M.length = (sectorRows s sector).length := hok.1
-  have h01 : ∀ row ∈ M, ∀ c ∈ row, c = 0 ∨ c = 1 := fun row hr => (hok.2.1 row hr).2
-  have hrowlen : ∀ row ∈ M, row.length = (sectorRows s sector).length :=
-    fun row hr => (hok.2.1 row hr).1
-  have hmlen : ((sectorRows s sector).map (rowBitmask s.Q)).length
-      = (sectorRows s sector).length := List.length_map _
-  -- the rebased sector's masks are the old masks combined by the matrix rows
+/-- The rebased sector's masks are the old sector's masks combined by the
+    matrix's coefficient rows (`rowBitmask_mixSupport`); no hypothesis on the
+    matrix or the state is needed. -/
+theorem rebaseState_sector_masks (s : CodeState) (sector : Sector) (M : List (List Nat)) :
+    (sectorRows (rebaseState s sector M) sector).map (rowBitmask s.Q)
+      = M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))) := by
+  rw [sectorRows_rebaseState s sector M]
   have hstep1 : ((M.zip (mintFresh s.used M.length)).map
         (fun cs_id => (⟨cs_id.2, sector, mixSupport (sectorRows s sector) cs_id.1⟩ : Row))).map
       (rowBitmask s.Q)
@@ -177,109 +164,130 @@ theorem sectorRank_rebaseState (s : CodeState) (sector : Sector) (M : List (List
     intro p hp
     obtain ⟨cs, id⟩ := p
     exact rowBitmask_mixSupport s.Q (sectorRows s sector) cs id sector
-  have hstep2 : (M.zip (mintFresh s.used M.length)).map
-        (fun p : List Nat × Nat =>
-          combineMasks ((sectorRows s sector).map (rowBitmask s.Q)) p.1)
-      = M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))) := by
-    rw [map_zip_left (fun cs =>
-      combineMasks ((sectorRows s sector).map (rowBitmask s.Q)) cs)
-      M (mintFresh s.used M.length) (by rw [mintFresh_length])]
-  have hnew : ((M.zip (mintFresh s.used M.length)).map
-        (fun cs_id => (⟨cs_id.2, sector, mixSupport (sectorRows s sector) cs_id.1⟩ : Row))).map
-      (rowBitmask s.Q)
-      = M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))) :=
-    hstep1.trans hstep2
-  -- span inclusions, both ways
-  have hspanNewOld : ∀ v,
-      inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v →
-      inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v := by
-    intro v hv
-    refine inSpanMasks_trans (fun g hg => ?_) hv
-    obtain ⟨row, hrow, hge⟩ := List.mem_map.mp hg
-    subst hge
-    exact ⟨row, (hrowlen row hrow).trans hmlen.symm, h01 row hrow, rfl⟩
-  have hspanOldNew : ∀ v,
-      inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v →
-      inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v := by
-    intro v hv
-    obtain ⟨cs, hcslen, hcs01, hcsval⟩ := hv
-    obtain ⟨drows, hdrl, hdrmem, hdri⟩ :=
-      rebaseMatrix_unit_rows M (sectorRows s sector).length hok
-    have hd01 : ∀ d ∈ drows, ∀ c ∈ d, c = 0 ∨ c = 1 := fun d hd => (hdrmem d hd).2
-    have hdlen : ∀ d ∈ drows, d.length = (sectorRows s sector).length :=
-      fun d hd => (hdrmem d hd).1
-    have hpoint : ∀ i, i < (sectorRows s sector).length →
-        combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
-            (drows.getD i [])
-          = ((sectorRows s sector).map (rowBitmask s.Q)).getD i 0 := by
-      intro i hi
-      rw [combineMasks_combineCoeffRowsM _ _ M h01 hrowlen hmlen.symm]
-      have hE := combineCoeffRowsM_testBit_matrixRowMask (sectorRows s sector).length M
-        h01 hrowlen (drows.getD i [])
-      have hi' : i < ((sectorRows s sector).map (rowBitmask s.Q)).length := by
-        rw [hmlen]; exact hi
-      have heq : combineCoeffRowsM (sectorRows s sector).length M (drows.getD i [])
-          = unitRow ((sectorRows s sector).map (rowBitmask s.Q)).length i := by
-        refine List.ext_getElem ?_ ?_
-        · rw [combineCoeffRowsM_length _ M hrowlen, unitRow_length, hmlen]
-        · intro j hj
-          have hj' : j < ((sectorRows s sector).map (rowBitmask s.Q)).length := by
-            have htmp := hj
-            rw [combineCoeffRowsM_length _ M hrowlen, ← hmlen] at htmp
-            exact htmp
-          simp only [List.getElem_eq_getD (fallback := 0)]
-          rw [unitRow_getElem _ i j hi' hj']
-          rw [hE j, hdri i hi, Nat.testBit_two_pow]
-          intro _
-          by_cases hij : j = i
-          · simp [hij]
-          · have hij' : ¬i = j := fun h => hij h.symm
-            simp [hij, hij']
-      rw [heq, combineMasks_unitRow _ i hi']
-    have hmapd : drows.map
-        (combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))))
-      = (sectorRows s sector).map (rowBitmask s.Q) := by
+  rw [hstep1]
+  exact map_zip_left (fun cs =>
+    combineMasks ((sectorRows s sector).map (rowBitmask s.Q)) cs)
+    M (mintFresh s.used M.length) (by rw [mintFresh_length])
+
+/-- Every rebased mask lies in the span of the old sector's masks: the
+    coefficient rows of `rebaseMatrix_ok` are 0/1 and of the display's
+    length. -/
+theorem rebaseState_spanMasks_sub (s : CodeState) (sector : Sector) (M : List (List Nat))
+    (hok : rebaseMatrix_ok M (sectorRows s sector).length) (v : Nat)
+    (hv : inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v) :
+    inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v := by
+  have h01 : ∀ row ∈ M, ∀ c ∈ row, c = 0 ∨ c = 1 := fun row hr => (hok.2.1 row hr).2
+  have hrowlen : ∀ row ∈ M, row.length = (sectorRows s sector).length :=
+    fun row hr => (hok.2.1 row hr).1
+  have hmlen : ((sectorRows s sector).map (rowBitmask s.Q)).length
+      = (sectorRows s sector).length := List.length_map _
+  refine inSpanMasks_trans (fun g hg => ?_) hv
+  obtain ⟨row, hrow, hge⟩ := List.mem_map.mp hg
+  subst hge
+  exact ⟨row, (hrowlen row hrow).trans hmlen.symm, h01 row hrow, rfl⟩
+
+/-- Every old mask lies in the span of the rebased masks: the rank clause of
+    `rebaseMatrix_ok` makes every unit vector a 0/1 combination of the
+    matrix's column-position row masks (`rebaseMatrix_unit_rows`), and the
+    composition lemma transports that through `combineCoeffRowsM`. -/
+theorem rebaseState_spanMasks_sup (s : CodeState) (sector : Sector) (M : List (List Nat))
+    (hok : rebaseMatrix_ok M (sectorRows s sector).length) (v : Nat)
+    (hv : inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v) :
+    inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v := by
+  have hmatlen : M.length = (sectorRows s sector).length := hok.1
+  have h01 : ∀ row ∈ M, ∀ c ∈ row, c = 0 ∨ c = 1 := fun row hr => (hok.2.1 row hr).2
+  have hrowlen : ∀ row ∈ M, row.length = (sectorRows s sector).length :=
+    fun row hr => (hok.2.1 row hr).1
+  have hmlen : ((sectorRows s sector).map (rowBitmask s.Q)).length
+      = (sectorRows s sector).length := List.length_map _
+  obtain ⟨cs, hcslen, hcs01, hcsval⟩ := hv
+  obtain ⟨drows, hdrl, hdrmem, hdri⟩ :=
+    rebaseMatrix_unit_rows M (sectorRows s sector).length hok
+  have hd01 : ∀ d ∈ drows, ∀ c ∈ d, c = 0 ∨ c = 1 := fun d hd => (hdrmem d hd).2
+  have hdlen : ∀ d ∈ drows, d.length = (sectorRows s sector).length :=
+    fun d hd => (hdrmem d hd).1
+  have hpoint : ∀ i, i < (sectorRows s sector).length →
+      combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
+          (drows.getD i [])
+        = ((sectorRows s sector).map (rowBitmask s.Q)).getD i 0 := by
+    intro i hi
+    rw [combineMasks_combineCoeffRowsM _ _ M h01 hrowlen hmlen.symm]
+    have hE := combineCoeffRowsM_testBit_matrixRowMask (sectorRows s sector).length M
+      h01 hrowlen (drows.getD i [])
+    have hi' : i < ((sectorRows s sector).map (rowBitmask s.Q)).length := by
+      rw [hmlen]; exact hi
+    have heq : combineCoeffRowsM (sectorRows s sector).length M (drows.getD i [])
+        = unitRow ((sectorRows s sector).map (rowBitmask s.Q)).length i := by
       refine List.ext_getElem ?_ ?_
-      · rw [List.length_map, hdrl, hmlen]
+      · rw [combineCoeffRowsM_length _ M hrowlen, unitRow_length, hmlen]
       · intro j hj
-        rw [List.length_map] at hj
         have hj' : j < ((sectorRows s sector).map (rowBitmask s.Q)).length := by
           have htmp := hj
-          rw [hdrl, ← hmlen] at htmp
+          rw [combineCoeffRowsM_length _ M hrowlen, ← hmlen] at htmp
           exact htmp
-        rw [List.getElem_map]
-        simp only [List.getElem_eq_getD (fallback := []),
-          List.getElem_eq_getD (fallback := 0)]
+        simp only [List.getElem_eq_getD (fallback := 0)]
+        rw [unitRow_getElem _ i j hi' hj']
+        rw [hE j, hdri i hi, Nat.testBit_two_pow]
         intro _
-        exact hpoint j (by rw [hdrl] at hj; exact hj)
-    have hdcomblen : (combineCoeffRowsM (sectorRows s sector).length drows cs).length
-        = (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))).length := by
-      rw [combineCoeffRowsM_length _ drows hdlen cs, List.length_map, ← hmatlen]
-    refine ⟨combineCoeffRowsM (sectorRows s sector).length drows cs, hdcomblen,
-      combineCoeffRowsM_01 _ drows hd01 cs, ?_⟩
-    calc combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
-          (combineCoeffRowsM (sectorRows s sector).length drows cs)
-        = combineMasks (drows.map
-            (combineMasks (M.map (combineMasks
-              ((sectorRows s sector).map (rowBitmask s.Q))))))
-          cs := by
-            rw [← combineMasks_combineCoeffRowsM
-              (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
-              (sectorRows s sector).length drows hd01 hdlen
-              ((combineCoeffRowsM_length _ drows hdlen cs).symm.trans hdcomblen) cs]
-      _ = combineMasks ((sectorRows s sector).map (rowBitmask s.Q)) cs := by rw [hmapd]
-      _ = v := hcsval
-  have hspanEq : ∀ v,
-      inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v ↔
-        inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v :=
-    fun v => ⟨hspanOldNew v, hspanNewOld v⟩
-  have hrankEq : rankBitmasks ((sectorRows s sector).map (rowBitmask s.Q))
-      = rankBitmasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) :=
-    rankBitmasks_eq_of_span_eq hspanEq
+        by_cases hij : j = i
+        · simp [hij]
+        · have hij' : ¬i = j := fun h => hij h.symm
+          simp [hij, hij']
+    rw [heq, combineMasks_unitRow _ i hi']
+  have hmapd : drows.map
+      (combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))))
+    = (sectorRows s sector).map (rowBitmask s.Q) := by
+    refine List.ext_getElem ?_ ?_
+    · rw [List.length_map, hdrl, hmlen]
+    · intro j hj
+      rw [List.length_map] at hj
+      have hj' : j < ((sectorRows s sector).map (rowBitmask s.Q)).length := by
+        have htmp := hj
+        rw [hdrl, ← hmlen] at htmp
+        exact htmp
+      rw [List.getElem_map]
+      simp only [List.getElem_eq_getD (fallback := []),
+        List.getElem_eq_getD (fallback := 0)]
+      intro _
+      exact hpoint j (by rw [hdrl] at hj; exact hj)
+  have hdcomblen : (combineCoeffRowsM (sectorRows s sector).length drows cs).length
+      = (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))).length := by
+    rw [combineCoeffRowsM_length _ drows hdlen cs, List.length_map, ← hmatlen]
+  refine ⟨combineCoeffRowsM (sectorRows s sector).length drows cs, hdcomblen,
+    combineCoeffRowsM_01 _ drows hd01 cs, ?_⟩
+  calc combineMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
+        (combineCoeffRowsM (sectorRows s sector).length drows cs)
+      = combineMasks (drows.map
+          (combineMasks (M.map (combineMasks
+            ((sectorRows s sector).map (rowBitmask s.Q))))))
+        cs := by
+          rw [← combineMasks_combineCoeffRowsM
+            (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q))))
+            (sectorRows s sector).length drows hd01 hdlen
+            ((combineCoeffRowsM_length _ drows hdlen cs).symm.trans hdcomblen) cs]
+    _ = combineMasks ((sectorRows s sector).map (rowBitmask s.Q)) cs := by rw [hmapd]
+    _ = v := hcsval
+
+/-- The F₂ span of the displayed sector is unchanged by a rebase, at the
+    mask level. -/
+theorem rebaseState_spanMasks_iff (s : CodeState) (sector : Sector) (M : List (List Nat))
+    (hok : rebaseMatrix_ok M (sectorRows s sector).length) (v : Nat) :
+    inSpanMasks ((sectorRows s sector).map (rowBitmask s.Q)) v ↔
+      inSpanMasks (M.map (combineMasks ((sectorRows s sector).map (rowBitmask s.Q)))) v :=
+  ⟨rebaseState_spanMasks_sup s sector M hok v, rebaseState_spanMasks_sub s sector M hok v⟩
+
+/-- Rebase preserves the displayed-sector rank, from `rebaseMatrix_ok`
+    alone, with no hypothesis on the source state: the greedy rank is
+    determined by the span (`rankBitmasks_eq_of_span_eq`). -/
+theorem sectorRank_rebaseState (s : CodeState) (sector : Sector) (M : List (List Nat))
+    (hok : rebaseMatrix_ok M (sectorRows s sector).length) :
+    sectorRank s.Q (rebaseState s sector M).rows sector
+      = sectorRank s.Q s.rows sector := by
   show rankBitmasks
       ((sectorRows (rebaseState s sector M) sector).map (rowBitmask s.Q))
     = rankBitmasks ((sectorRows s sector).map (rowBitmask s.Q))
-  rw [sectorRows_rebaseState s sector M, hnew, hrankEq]
+  rw [rebaseState_sector_masks s sector M]
+  exact (rankBitmasks_eq_of_span_eq (rebaseState_spanMasks_iff s sector M hok)).symm
 
 /-- `stateK` is preserved by a rebase. -/
 theorem stateK_rebaseState (s : CodeState) (sector : Sector) (M : List (List Nat))

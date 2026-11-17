@@ -91,6 +91,17 @@ theorem canonicalMint_least (used : List Nat) (n : Nat)
     (h : n < canonicalMint used) : used.contains n = true :=
   go_least used 0 (bound used) (fun m hm => absurd hm (Nat.not_lt_zero m)) n h
 
+/-- The canonical mint is monotone in the history: a longer `used` list never
+    mints an earlier identifier (issue #296, capacity premise). -/
+theorem canonicalMint_le_append_left (used extra : List Nat) :
+    canonicalMint used ≤ canonicalMint (used ++ extra) := by
+  rcases Nat.lt_or_ge (canonicalMint (used ++ extra)) (canonicalMint used) with hlt | hge
+  · exact absurd
+      (List.contains_iff_mem.mpr (List.mem_append_left extra
+        (List.contains_iff_mem.mp (canonicalMint_least used _ hlt))))
+      (canonicalMint_fresh (used ++ extra))
+  · exact hge
+
 /-- The pinned identifier enumeration, in canonical order.
 
 `spec/STATE_MODEL.md` I3 mints fresh identifiers as "the first element of a
@@ -107,8 +118,15 @@ The `p` and `q` blocks carry the identifiers the acceptance surface uses
 The Lean identifier type is the **rank**: the index of an identifier in this
 enumeration. `Row.id` and `CodeState.used` carry ranks, and the rank order
 is the enumeration order, so "the least rank not in `used`" is the spec's
-"first element of the enumeration not in `used`". -/
-def identifierPrefixes : List String := ["a", "b", "c", "d", "e", "p", "q"]
+"first element of the enumeration not in `used`".
+
+Names are rendered and parsed as character lists (`List Char`), not as
+`String`: on the pinned toolchain every `String` inspection (`String.toList`,
+`String.startsWith`, `String.toNat?`) depends on `Classical.choice` through
+UTF-8 decoding, and the development confines that axiom to the noncomputable
+denotation (`AxiomAudit.lean`). `identifierAt?` gives the `String` view for
+readers; nothing parses it. -/
+def identifierPrefixChars : List Char := ['a', 'b', 'c', 'd', 'e', 'p', 'q']
 
 /-- Identifiers per block of the enumeration. -/
 def identifiersPerBlock : Nat := 10000
@@ -119,49 +137,71 @@ def identifierBlock (rank : Nat) : Nat := rank / identifiersPerBlock
 /-- The 1-based position of `rank` inside its block. -/
 def identifierIndex (rank : Nat) : Nat := rank % identifiersPerBlock + 1
 
-/-- The identifier at enumeration position `rank`; `none` past the end of
-    the enumeration. -/
-def identifierAt? (rank : Nat) : Option String :=
-  match identifierPrefixes[identifierBlock rank]? with
-  | some block => some (block ++ toString (identifierIndex rank))
+/-- The identifier at enumeration position `rank`, as a character list; `none`
+    past the end of the enumeration. -/
+def identifierCharsAt? (rank : Nat) : Option (List Char) :=
+  match identifierPrefixChars[identifierBlock rank]? with
+  | some p => some (p :: Nat.toDigits 10 (identifierIndex rank))
   | none => none
+
+/-- The identifier at enumeration position `rank`, as a string, for display. -/
+def identifierAt? (rank : Nat) : Option String :=
+  (identifierCharsAt? rank).map String.ofList
 
 /-- Total number of identifiers in the pinned enumeration. -/
-def totalIdentifiers : Nat := identifierPrefixes.length * identifiersPerBlock
+def totalIdentifiers : Nat := identifierPrefixChars.length * identifiersPerBlock
 
-/-- Parse the rank of an identifier string, if it names a valid enumeration
-    entry. -/
-def rankOfString? (id : String) : Option Nat :=
-  match identifierPrefixes.findIdx? (fun p => id.startsWith p) with
-  | none => none
-  | some block =>
-      let rest := (id.drop (identifierPrefixes[block]!).length).toString
-      match rest.toNat? with
+/-- The value of a nonempty list of decimal digits; `none` otherwise. -/
+def digitsToNat? (cs : List Char) : Option Nat :=
+  if cs ≠ [] ∧ cs.all Char.isDigit then
+    some (cs.foldl (fun n c => 10 * n + (c.toNat - '0'.toNat)) 0)
+  else none
+
+/-- Parse the rank of an identifier, if the character list names a valid
+    enumeration entry: a block prefix followed by the canonical decimal form
+    of an index between `1` and `identifiersPerBlock` (so `a01` is rejected). -/
+def rankOfChars? : List Char → Option Nat
+  | [] => none
+  | p :: rest =>
+      match identifierPrefixChars.findIdx? (· == p) with
       | none => none
-      | some idx =>
-          if rest = toString idx ∧ 1 ≤ idx ∧ idx ≤ identifiersPerBlock then
-            some (block * identifiersPerBlock + (idx - 1))
-          else none
+      | some block =>
+          match digitsToNat? rest with
+          | none => none
+          | some idx =>
+              if rest = Nat.toDigits 10 idx ∧ 1 ≤ idx ∧ idx ≤ identifiersPerBlock then
+                some (block * identifiersPerBlock + (idx - 1))
+              else none
 
-/-- `rankOf?` accepts the `Option String` produced by `identifierAt?`, so the
-    round-trip equation can be written exactly as `rankOf? (identifierAt? r)`. -/
-def rankOf? : Option String → Option Nat
+/-- `rankOf?` accepts the `Option (List Char)` produced by `identifierCharsAt?`,
+    so the round-trip equation can be written exactly as
+    `rankOf? (identifierCharsAt? r)`. -/
+def rankOf? : Option (List Char) → Option Nat
   | none => none
-  | some s => rankOfString? s
+  | some cs => rankOfChars? cs
 
-/-- The round trip: every valid rank renders to a string that parses back to
+theorem identifierCharsAt?_zero : identifierCharsAt? 0 = some ['a', '1'] := by decide
+
+theorem identifierCharsAt?_last :
+    identifierCharsAt? 69999 = some ['q', '1', '0', '0', '0', '0'] := by decide
+
+theorem identifierCharsAt?_past : identifierCharsAt? totalIdentifiers = none := by decide
+
+theorem rankOfChars?_rejects_leading_zero : rankOfChars? ['a', '0', '1'] = none := by decide
+
+/-- The round trip: every valid rank renders to a name that parses back to
     the same rank. Proved by `native_decide`, so the theorem depends on the
     per-theorem `native_decide` axiom
     (`rankOf_identifierAt._native.native_decide.ax_1_1`) in addition to
-    `propext` and `Quot.sound`: the statement is checked by the Lean compiler,
-    not by the kernel. -/
+    `propext`: the statement is checked by the Lean compiler, not by the
+    kernel. -/
 theorem rankOf_identifierAt :
-    ∀ r, r < totalIdentifiers → rankOf? (identifierAt? r) = some r := by
+    ∀ r, r < totalIdentifiers → rankOf? (identifierCharsAt? r) = some r := by
   native_decide
 
 /-- Pointwise form of `rankOf_identifierAt`. -/
 theorem rankOf_identifierAt_of_lt (r : Nat) (hr : r < totalIdentifiers) :
-    rankOf? (identifierAt? r) = some r :=
+    rankOf? (identifierCharsAt? r) = some r :=
   rankOf_identifierAt r hr
 
 /-- The rank of the identifier at (block, index). -/
@@ -189,7 +229,7 @@ theorem identifierBlock_index_ne_of_lt {r s : Nat} (h : r < s) :
 
 /-- Presentation equality ≡: identical qubit namespace (as a set), identical
     labeled rows (as a set), and identical used-identifier set
-    (`spec/STATE_MODEL.md` §2; the namespace clause was added by ,
+    (`spec/STATE_MODEL.md` §2; the namespace clause was added by issue #241,
     since two well-formed states with the same rows and `used` on different
     namespaces differ in `n`, `k`, and applicability). Read on well-formed
     states, where `Q` and supports are without repeats and sorted, list
@@ -274,7 +314,7 @@ def I2 (s : CodeState) : Prop :=
   ∀ r ∈ s.rows, IndependentGenerator r.id s
 
 /-- Well-formedness predicate. List-level conditions plus I1 and I2.
-    I3–I5 are added as standalone predicates by the follow-up slice ();
+    I3–I5 are added as standalone predicates by the follow-up slice (PR #77);
     they are not folded into this predicate. -/
 def EncodingWellFormed (s : CodeState) : Prop :=
   s.Q.Nodup ∧
@@ -324,16 +364,16 @@ def wellFormedBool (s : CodeState) : Bool :=
   s.rows.all (fun r => independentGeneratorBool r.id s)
 
 -- Identifiers are Nat here, and that Nat is the **rank** of an identifier in
--- the pinned enumeration (`identifierPrefixes`, `identifierAt?`). The
+-- the pinned enumeration (`identifierPrefixChars`, `identifierCharsAt?`). The
 -- enumeration contains the identifiers the acceptance surface uses (`p1`,
 -- `q1`), so the Lean identifier type and the machine's enumeration are in
--- step. The string-level round trip is now proved by `rankOf_identifierAt`
+-- step. The character-level round trip is now proved by `rankOf_identifierAt`
 -- (and its pointwise form `rankOf_identifierAt_of_lt`): every valid rank
--- renders to a string that parses back to the same rank. The proof is by
+-- renders to a name that parses back to the same rank. The proof is by
 -- `native_decide`, which carries the per-theorem
 -- `rankOf_identifierAt._native.native_decide.ax_1_1` axiom in addition to
--- `propext` and `Quot.sound`; the statement is checked by the Lean compiler,
--- not by the kernel. This discharges `the  tracker` item 8 and the 2026-10-22
+-- `propext`; the statement is checked by the Lean compiler, not by the
+-- kernel. This discharges `the issue tracker` item 8 and the 2026-10-22
 -- diary gate on fixture conformance.
 
 end CodeCalculus

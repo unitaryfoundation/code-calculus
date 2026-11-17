@@ -3,7 +3,6 @@
 [![Supported By-Unitary Foundation](https://img.shields.io/badge/Supported%20By-Unitary%20Foundation-FFFF00.svg)](https://unitary.foundation)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/unitaryfoundation/code-calculus/blob/main/LICENSE)
 [![Validation](https://img.shields.io/badge/validation-workflow-lightgrey.svg)](https://github.com/unitaryfoundation/code-calculus/actions/workflows/ci.yml)
-[![Lean](https://img.shields.io/badge/Lean-workflow-lightgrey.svg)](https://github.com/unitaryfoundation/code-calculus/actions/workflows/lean_action_ci.yml)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://github.com/unitaryfoundation/code-calculus/blob/main/CODE_OF_CONDUCT.md)
 
 > A formal calculus of transformations on CSS quantum error-correcting codes.
@@ -30,7 +29,7 @@ does not establish the calculus's soundness theorem.
 calculus is intended to be sound and deliberately incomplete. No soundness
 claim is machine-proved in full: the named obligations have dated hand
 derivations in `spec/OPERATIONAL_SEMANTICS.md` §4, and the Lean development
-under `lean/` is partial. See `SCOPE.md` and `spec/GATES.md`.
+under `lean/` is partial. See `spec/GATES.md` and `spec/VERSIONING.md`.
 
 ---
 
@@ -90,8 +89,13 @@ A state is a presented CSS code:
 A transformation is a term, not a procedure. The grammar has two categories:
 
 ```
-e ::= S | e₁ ⊕ e₂            (state expressions)
-m ::= skip | delete_r | addStab_r | graft(q, τ; [r₁,…]) | … | m₁ ; m₂
+e ::= S | e₁ ⊕ e₂ | glue(e₁, e₂; u)
+    | hgp(H₁, H₂) | lift(G; B_X, B_Z) | twoblock(G; a, b) | concat(e_O, e_I; L)
+    | product(e_A, e_B) | double(e; w, s) | balanced(G; H₁, act₁, H₂, act₂)
+    | tanner(n; Λ_X, Λ_Z, E_X, E_Z) | tile(n; T, P) | nested(H_X, H_Z)
+m ::= skip | delete_r | addStab_r | graft(q, τ; [r₁,…])
+    | peel(q, τ; r) | puncture_q | extend(Δ; u) | hadamard_T | rebase(τ; M)
+    | m₁ ; m₂
 ```
 
 A **closed construction term** is `m ▷ e`: evaluate the state expression `e`,
@@ -101,9 +105,11 @@ then execute command `m`. For example
 (delete_a ; addStab_b) ▷ S
 ```
 
-deletes generator `a` and then adds generator `b`. `C-DIRECT-SUM` (`⊕`) is an
-expression constructor, not a command: it combines two already-formed codes on
-disjoint qubit namespaces.
+deletes generator `a` and then adds generator `b`. `C-DIRECT-SUM` (`⊕`),
+`E-GLUE` (`glue`), and the ten `stdCSS-3` constructors (`L-HGP`, `L-LIFTED`,
+`L-GROUP-ALGEBRA`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`,
+`L-TANNER`, `L-TILE`, `L-NESTED-CSS`) are expression constructors, not commands
+over an existing state.
 
 Three outcomes are kept distinct, and the fixture suite keeps them distinct:
 
@@ -189,15 +195,18 @@ carry only when the consumer supplies a stated hypothesis:
 | --- | --- | --- |
 | `C-DELETE-CHECK` (priced) | exact `d' = min(d, w_del, w_exp)` | minima `w_del`, `w_exp` over promoted/exposed sets |
 | `E-GRAFT` | sector-wise bounds | exposure minimum in the non-spliced sector + coverage condition |
+| `E-PEEL` (priced) | exact `d_τ' = w_avoid,τ(q)`, `d_σ' = min(d_σ, w_expose,σ(q))` | avoidance and exposure minima `w_avoid`, `w_expose` |
+| `E-GLUE` | exact `d_Z = min(d_Z(A), d_Z(B))` (lower bounds unconditional) | admissible planar seam certificate + surviving factor representative |
 | `C-ADD-CHECK` (strict improvement) | `d' ≥ d+1` | exact old `d` + exhaustive minimum-weight-class enumeration |
 | `C-ADD-CHECK` (sector gauging) | raised sector lower bound | sector minima `w_X`, `w_Z` |
 | `C-ADD-CHECK` (direct-sum extinction) | `d' = d_B` | trusted factor distance `d_B` + structural side conditions |
-| `E-GRAFT` (radius) | exact radius | none — radius is computable |
-| `A-CONCAT` towers | deletion/exposure price input | tower structure; price provider, not a constructor |
+| `E-GRAFT`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-GLUE`, `P-REBASE`, constructors (radius) | exact radius `r` | honest supplied layout where required (`spec/JUDGMENT_LAYER.md` §2d.5) |
+| `A-CONCAT` towers | deletion/exposure price input | tower structure (`machine/tower_prices.py`; separate from the `A-CONCAT` expression constructor) |
+| Ten `stdCSS-3` constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`, `L-NESTED-CSS`) | exact `n` and `k`; ledger starts at `[0, +∞)` | sourced lower bounds and child-valid witnesses only (`spec/JUDGMENT_LAYER.md` §2g) |
 
 Without the hypothesis the corresponding cell is `unavailable`, not a guess. The
 consumer checks that inputs are present and records their evidence reference; it
-does **not** establish their truth. See `spec/JUDGMENT_LAYER.md` §2a.
+does **not** establish their truth. See `spec/JUDGMENT_LAYER.md` §2a–§2g.
 
 ## What is tracked
 
@@ -217,19 +226,23 @@ fields: they are not part of state identity, not minted, and not transported by
 
 ## Status
 
-- **Gates:** Gate 0 (taxonomy-to-syntax) and Gate 1 (formal syntax) are
+- **Gates:** Gate 0 (record completeness) and Gate 1 (formal syntax) are
   ratified. Gates 2–7 are unchecked. See `spec/GATES.md`.
 - **Obligations:** every obligation in scope has a dated hand derivation in
   `spec/OPERATIONAL_SEMANTICS.md` §4; the ledger is `spec/OBLIGATIONS.md`.
-  Machine-checked soundness is **not** claimed. `OBL-JUDGMENT-SOUNDNESS` is
-  `proved` by hand derivation; its Lean form is stated for a well-formed
-  evaluation chain with evaluation assumed, and the `k` and distance cells enter
-  as hypotheses.
+  Machine-checked soundness is **not** claimed in full. `OBL-JUDGMENT-SOUNDNESS`
+  is `proved` by hand derivation; its Lean form (`judgment_soundness_of_term`,
+  `TermSoundness.lean`) derives the evaluation chain from the closed term's
+  evaluation, discharges the `k` cells via `ranksFit_of_wf`, and takes
+  `MeasureMonotone` (discharged for the exact sector distance in
+  `judgment_soundness_exact`, `ExactDistance.lean`) as its single distance
+  hypothesis.
 - **Mechanization:** `lean/` is partial and certifies only the theorems it
-  states (`lean/README.md`). The build is expected to be green on `main`.
-- **Scope:** the stopping point is `SCOPE.md`. The calculus is deliberately
-  incomplete: `unavailable` is withheld by design commitment, and no artifact
-  describes the MVP as aiming at completeness.
+  states (`lean/README.md`, `AXIOMS.md`). The build is green (`0 sorry`) on
+  `main`.
+- **Scope:** the calculus is deliberately incomplete: `unavailable` is withheld
+  by design commitment, and no artifact describes the calculus as aiming at
+  completeness. See `spec/GATES.md` §11 and `spec/VERSIONING.md`.
 
 ## Repository layout
 
@@ -238,11 +251,11 @@ Four layers. One authority per topic: the same fact is not stated twice.
 | Layer | Holds | Authority |
 | --- | --- | --- |
 | `spec/` | Normative calculus: representation, state model, term language, operational semantics, judgment layer, claims, obligations | Wins every disagreement |
-| `machine/` | `state.json`, `semantics.json`, `consumer.json`, executable interval consumer, fixtures, pinned replay | Derived; where it disagrees with prose, prose wins and the transcription is fixed |
-| `lean/` | Partial Lean 4 mechanization | Certifies only the theorems it states |
-| root | Framing and process: `README.md`, `AGENTS.md`, `AUTHORITY.md`, `SCOPE.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | Process only |
+| `machine/` | `state.json`, `semantics.json`, `consumer.json`, executable interval consumer, fixtures | Derived; where it disagrees with prose, prose wins and the transcription is fixed |
+| `lean/` | Partial Lean 4 mechanization (`AXIOMS.md` records the four non-audited rank axioms in `lean/extra/ClosedK.lean`) | Certifies only the theorems it states |
+| root | Framing and process: `README.md`, `AGENTS.md`, `AUTHORITY.md`, `AXIOMS.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | Process only |
 
-`CHANGELOG.md` is the dated record of what was decided, when, and why. Root
+`CHANGELOG.md` is the dated record of notable changes across releases. `spec/`
 also holds `spec/VOCABULARY.md`, `spec/CLAIMS.md`, `spec/VERSIONING.md`, and
 `spec/TAXONOMY.md`.
 
@@ -276,10 +289,10 @@ commit; see `machine/README.md`.
   `spec/GATES.md` (proof gates and non-goals), `spec/TAXONOMY.md` (operation
   inventory), `spec/VERSIONING.md`.
 - **The consumer:** `machine/README.md` and `machine/priced_calculus.py`.
-- **The mechanization:** `lean/README.md`.
-- **Scope and stopping point:** `SCOPE.md`.
+- **The mechanization:** `lean/README.md` and `AXIOMS.md`.
+- **Gates and non-goals:** `spec/GATES.md` and `spec/VERSIONING.md`.
 
-Agents should read `AGENTS.md` first (read order, hard rules, what to grep).
+Agents should read `AGENTS.md` first (read order, hard rules, validation).
 
 ## Non-goals
 
@@ -294,9 +307,10 @@ soundness. See `spec/VERSIONING.md`.
 
 Seeded from an earlier proposal draft; this copy is the living document. The
 formal-design packages FD0–FD7 are closed, and their artifacts are superseded by
-`spec/`. The proposal, an internal note, and an in-preparation
-manuscript are not shipped here; the calculus is stated so that its normative
-content does not depend on them (`REFERENCES.md`).
+`spec/`. Where a conditional cell cites an external theorem or a companion
+derivation, the reproduced derivation in `spec/OPERATIONAL_SEMANTICS.md` §4 is
+the authoritative statement in this repository, so the normative content of
+`spec/` is self-contained.
 
 ## Contributing
 
@@ -315,7 +329,7 @@ If you use code-calculus in your work, please cite the repository:
   title        = {code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes},
   author       = {Mathys Rennela},
   year         = {2026},
-  version      = {0.1.0},
+  version      = {0.2.0},
   publisher    = {Unitary Foundation},
   url          = {https://github.com/unitaryfoundation/code-calculus},
   license      = {Apache-2.0}
