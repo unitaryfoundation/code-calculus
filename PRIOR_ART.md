@@ -253,6 +253,20 @@ note at scale — a valid stabilizer code with no pure-sector presentation. The
 §2.12 splitting condition rescues exactly the residual case, which that finding showed
 vacuous inside CSS: a state whose row spaces split along the conjugated set is a
 direct sum, and the move is then the global $T=Q$ sector swap on one summand.
+
+Concretely, the per-qubit (or subset) Hadamard move `hadamard(T)` preserves the
+standard-CSS presentation exactly when both sector row spaces split along `T`:
+
+- for every row \(v\) of \(X\), \(v|_T \in X\);
+- for every row \(w\) of \(Z\), \(w|_T \in Z\).
+
+Without this split the image need not be CSS: a physical reading gives a valid
+stabilizer code with no pure-sector presentation, and a matrix reading breaks
+orthogonality under row reordering. The global instance \(T = Q\) exchanges
+the two sectors' distances; the empty instance \(T = \varnothing\) is the
+identity. See `spec/TAXONOMY.md` §2.12 and
+`spec/OPERATIONAL_SEMANTICS.md` §4.27.
+
 So the honest reading is the already-dispositioned one — **CDs are non-CSS
 stabilizer codes**, which is `spec/TAXONOMY.md` §4's
 extended-state layer, not §2. No operation ID is minted; §3.8 forbids granting
