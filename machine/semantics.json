@@ -153,7 +153,7 @@
       },
       {
         "id": "A-QUOTIENT",
-        "reason": "Needs typed quotient and embedding inputs; the ten admitted constructors (L-HGP, L-LIFTED, L-GROUP-ALGEBRA, A-CONCAT, L-BALANCED, L-TANNER, L-TILE, A-PRODUCT, A-DOUBLE, L-NESTED-CSS) have expression productions in categories.expression."
+        "reason": "Needs typed quotient and embedding inputs; the fifteen admitted constructors (L-HGP, L-LIFTED, L-GROUP-ALGEBRA, A-CONCAT, L-BALANCED, L-TANNER, L-TILE, A-PRODUCT, A-DOUBLE, L-NESTED-CSS, L-MAPPING-CONE, L-EMPTY, L-FREE, A-PULLBACK, A-PUSHOUT) have expression productions in categories.expression."
       },
       {
         "id": "X-*",
@@ -161,7 +161,7 @@
       },
       {
         "id": "E-* (unadmitted)",
-        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE's binary evaluator transition is listed in admitted_extensions (no unary production; contract-index row transition-defined as of 2026-11-11, issue #332). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
+        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE is binary-only (expression production glue(e1, e2; u) in categories.expression, no unary command production; decided 2026-11-18, issue #536) and is listed in admitted_extensions at contract-stated (rung 5, conditional cell, Gate 6 unchecked). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
       }
     ],
     "admitted_extensions": [
@@ -197,7 +197,7 @@
       },
       {
         "id": "E-GLUE",
-        "classification": "binary evaluator transition defined (section 4.30, 2026-10-27), no unary production; conditional cell (sections 2e/2f); contract-index row transition-defined (2026-11-11, issue #332); logical-witness field defined and §2e equality discharged (2026-11-11); sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+        "classification": "binary-only state-expression constructor glue(e1, e2; u) (decided 2026-11-18, issue #536; no unary command production); conditional cell (sections 2e/2f); contract-index row contract-stated (rung 5, 2026-11-18, issue #536; Gate 6 unchecked); future-Pi fields defined (STATE_MODEL.md section 1a); CSS-level algebra of section 4.31/4.33 mechanized (lean/CodeCalculus/GlueExtraction.lean) with geometric move-word gap recorded; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32)",
         "judgment_inputs": "seam certificate (identical move words plus an evidence reference) for the Z-sector upper endpoint; lower endpoints need none"
       }
     ]
@@ -545,7 +545,7 @@
     },
     {
       "id": "E-GLUE",
-      "form": "Eval(glue(C_A, C_B; seam checks), C)  -  a binary evaluator transition over two presented states; E-GLUE has no unary grammar production (TERM_LANGUAGE.md section 2)",
+      "form": "EvalExpr(glue(e_1, e_2; seam checks), C) / Eval(glue(C_A, C_B; seam checks), C)  -  binary-only state-expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18, issue #536; no unary command production)",
       "premises": [
         {
           "predicate": "ambient_membership",
@@ -579,7 +579,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "A qubit-namespace or identifier collision, or a seam check failing commutation or independence (no derivation). A seam certificate, when supplied, is consumed for admissibility only (JUDGMENT_LAYER.md section 2e): differing move words, or a certificate without an evidence reference, give no derivation.",
-      "standing": "transition specified (section 4.30, 2026-10-27; maintainer decision to define the transition). Well-formedness of the output follows the C-DIRECT-SUM argument plus the independence premises. The §2e equality d_Z(Q)=min(d_A,d_B) is discharged by extraction of Theorem 4 / claim 7.4 (section 4.31, 2026-11-11, issue #332) for admissible seams; the scalar relation d = min(d_A, d_B) is still not admitted; the logical-witness field is defined (STATE_MODEL.md section 1, 2026-11-11); boundary/edge-label field defined (STATE_MODEL.md section 1, 2026-11-12, issue #366); sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31); the contract-index row is transition-defined (2026-11-11); Lean mechanization of the extracted derivation remains follow-up work (issue #366).",
+      "standing": "binary-only expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18, issue #536; no unary command production); contract-stated (rung 5, 2026-11-18, issue #536; Gate 6 unchecked, conditional cell). Output well-formedness follows C-DIRECT-SUM plus seam independence (section 4.31; mechanized wf_glueState_of_eval_glueCommand and evalExpr_glue_iff_evalTerm_glueCommand in GlueExtraction.lean). Both future-Pi fields are defined in full (STATE_MODEL.md section 1a; WitnessFields.lean). CSS-level algebra of the extracted Theorem 4 / claim 7.4 derivation (w_re = +inf, Claim 2 Steps 1 & 3-5, Consequence (iii), issue #398 refutation, and AdmissibleSeam -> glueField / glueLedger soundness) is mechanized in ExactGlue*.lean, LogicalWitness.lean, AdmissibleSeamFamily.lean, Gate6Exact.lean, and GlueExtraction.lean; the geometric implication from planar move-word equality w(c_A) = w(c_B) to AdmissibleSeam remains a recorded substrate gap. The scalar relation d = min(d_A, d_B) is not admitted, and sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32).",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.31"
     },
     {
@@ -825,6 +825,89 @@
       "inapplicable_when": "Matrices with a row of H_X and a row of H_Z in odd overlap give no derivation; matrices with different column counts, no row, or a non-binary entry are malformed at the encoding.",
       "standing": "transition specified 2026-11-13 (issue #445), transition-defined; output well-formed under the nesting premise and k = n - rank(H_X) - rank(H_Z) (section 4.36); no distance rule and no classical distance input; an instance of the L-TANNER rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-NESTED-CSS"
+    },
+    {
+      "id": "L-EMPTY",
+      "form": "EvalExpr(empty, S)",
+      "premises": [],
+      "update": {
+        "Q": "empty",
+        "rows": "empty",
+        "used": "empty"
+      },
+      "inapplicable_when": "Never; the nullary empty code is always well-formed.",
+      "standing": "transition specified 2026-11-19 (issue #549), transition-defined; n = 0, k = 0 (section 4.43); no automatic distance rule beyond section 2g",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-EMPTY"
+    },
+    {
+      "id": "L-FREE",
+      "form": "EvalExpr(free(Q), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "Q is a finite set of distinct nonnegative integers, stored in strictly increasing order"
+        }
+      ],
+      "update": {
+        "Q": "Q",
+        "rows": "empty",
+        "used": "empty"
+      },
+      "inapplicable_when": "Always applicable for a well-typed finite qubit-label set; duplicate or non-integer/negative labels are malformed at the encoding.",
+      "standing": "transition specified 2026-11-19 (issue #549), transition-defined; n = |Q|, k = |Q| (section 4.43); no automatic distance rule beyond section 2g",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-FREE"
+    },
+    {
+      "id": "A-PULLBACK",
+      "form": "EvalExpr(pullback(e_1, e_2, e_I; phi_1, phi_2), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "C_1, C_2, I satisfy I1-I5 and ambient containment"
+        },
+        {
+          "predicate": "css_morphisms",
+          "formula": "phi_1 : Q_1 -> Q_I and phi_2 : Q_2 -> Q_I send the F_2-pushforward of every displayed row into the same-sector span of I"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the pulled-back X and Z natural rows on Q_1 x_{Q_I} Q_2 have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, n = |Q_1 x_{Q_I} Q_2| in lexicographic order",
+        "rows": "retained independent display of the pulled-back rows of C_1 then C_2 (section 4.43)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-morphism qubit maps or pulled-back rows that do not commute give no derivation.",
+      "standing": "transition specified 2026-11-19 (issue #549), transition-defined; output well-formed and n = |Q_1 x_{Q_I} Q_2| (section 4.43); k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PULLBACK"
+    },
+    {
+      "id": "A-PUSHOUT",
+      "form": "EvalExpr(pushout(e_1, e_2, e_S; psi_1, psi_2), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "C_1, C_2, S satisfy I1-I5 and ambient containment"
+        },
+        {
+          "predicate": "css_morphisms",
+          "formula": "psi_1 : Q_S -> Q_1 and psi_2 : Q_S -> Q_2 send the F_2-pushforward of every displayed row of S into the same-sector span of C_1 and C_2"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the pushed-forward X and Z natural rows on Q_1 |_| _{Q_S} Q_2 have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, n = |Q_1 |_| _{Q_S} Q_2|",
+        "rows": "retained independent display of the pushed-forward rows of C_1 then C_2 (section 4.43)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-morphism qubit maps or pushed-forward rows that do not commute give no derivation.",
+      "standing": "transition specified 2026-11-19 (issue #549), transition-defined; output well-formed and n = |Q_1 |_| _{Q_S} Q_2| (section 4.43); k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PUSHOUT"
     }
   ],
   "layout_cells": {
@@ -1028,6 +1111,42 @@
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
         "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.36",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-EMPTY": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on empty Q may be supplied",
+        "radius": "r = 0 (empty display), exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "vacuously honest",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-FREE": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the supplied Q must be supplied",
+        "radius": "r = 0 (empty display), exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-PULLBACK": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-PUSHOUT": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       }
     }

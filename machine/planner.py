@@ -60,6 +60,7 @@ import itertools
 import math
 import random
 
+from machine.state import identifier_rank as _identifier_rank
 from machine.priced_calculus import (
     heuristic_outcome,
     CodeState,
@@ -223,7 +224,117 @@ def _graft_candidates(state):
                    "ordered_row_ids": [row.id for row in touching]}
 
 
-def candidate_moves(state, structural=True, reduce_display=True):
+def _rebase_candidates(state):
+    """Yield bounded P-REBASE candidates (elementary row mixes).
+
+    For each sector with at least two displayed generators, propose the
+    elementary GL(m, 2) mix that replaces one displayed row by its sum with
+    another (row_i <- row_i + row_j).  The displayed order follows the
+    fixed identifier ranking, matching ``CodeState.rebase``.  These mixes are
+    the bounded, presentation-level route to check-weight / radius reduction
+    and to qubits that touch exactly one displayed generator of a sector
+    (unlocking ``E-PEEL``).  Applicability (invertibility) is guaranteed by
+    construction; the transport is settled by ``apply_operation``.
+    """
+    for sector in ("X", "Z"):
+        displayed = sorted(state.sector_rows(sector),
+                           key=lambda row: _identifier_rank(row.id))
+        m = len(displayed)
+        if m < 2:
+            continue
+        for i in range(m):
+            for j in range(m):
+                if i == j:
+                    continue
+                matrix = [[1 if a == b else 0 for b in range(m)]
+                          for a in range(m)]
+                matrix[i][j] = 1
+                yield {"op": "P-REBASE", "sector": sector, "matrix": matrix}
+
+
+def _compute_deletion_w_del(state, row_id):
+    """Brute-force minimum weight of a tau-stabilizer using ``row_id``.
+
+    Returns None when the deleted row cannot be found or the search is too
+    large.  This is an exact enumeration over the displayed tau-rows, never a
+    fabricated bound.
+    """
+    target_row = None
+    sector = None
+    for row in state.rows:
+        if row.id == row_id:
+            target_row = row
+            sector = row.sector
+            break
+    if target_row is None or sector not in ("X", "Z"):
+        return None
+    tau_rows = [row for row in state.sector_rows(sector)]
+    others = [row for row in tau_rows if row.id != row_id]
+    if len(others) > 18:
+        return None
+    best = None
+    for mask_bits in range(1 << len(others)):
+        combined = target_row.mask
+        for i, row in enumerate(others):
+            if (mask_bits >> i) & 1:
+                combined ^= row.mask
+        weight = combined.bit_count()
+        if best is None or weight < best:
+            best = weight
+    # A valid independent deleted row can never combine to zero, but guard.
+    if best == 0:
+        return None
+    return best
+
+
+def _deletion_price_for(state, row_id, config=None, **kwargs):
+    config = dict(config or {})
+    if kwargs:
+        config.update(kwargs)
+    # Tower path when inner/groups are supplied.
+    inner = (config.get("inner_state") or config.get("tower_inner")
+             or config.get("inner"))
+    groups = (config.get("groups") or config.get("tower_groups"))
+    level_data = config.get("level_data")
+    if inner is not None and groups is not None:
+        try:
+            from machine.tower_prices import tower_deletion_prices
+            verdict = tower_deletion_prices(inner, state, groups, row_id,
+                                           level_data=level_data)
+        except Exception:
+            verdict = {"status": "unavailable"}
+        if isinstance(verdict, dict) and verdict.get("status") == "computed":
+            price = verdict.get("deletion_price")
+            if isinstance(price, dict) and price.get("evidence"):
+                return price
+    # Graphlike path.
+    try:
+        from machine.connectivity import graphlike_exposure_price
+        verdict = graphlike_exposure_price(state, deleted=row_id)
+    except Exception:
+        verdict = {"status": "unavailable"}
+    if not (isinstance(verdict, dict) and verdict.get("status") == "computed"):
+        return None
+    w_exp = verdict.get("w_exp")
+    if (not isinstance(w_exp, int) or isinstance(w_exp, bool) or w_exp <= 0):
+        return None
+    w_del = config.get("w_del")
+    if isinstance(w_del, dict):
+        w_del = w_del.get(row_id, w_del.get(str(row_id)))
+    if not (isinstance(w_del, int) and not isinstance(w_del, bool) and w_del > 0):
+        w_del = _compute_deletion_w_del(state, row_id)
+    if not (isinstance(w_del, int) and not isinstance(w_del, bool) and w_del > 0):
+        return None
+    evidence = config.get("evidence")
+    if not (isinstance(evidence, str) and evidence.strip()):
+        evidence = ("graphlike exposure price (machine/connectivity.py) with "
+                    "computed w_del over S \\ S'")
+    return {"w_del": w_del, "w_exp": w_exp, "evidence": evidence}
+
+
+def candidate_moves(state, structural=True, reduce_display=True,
+                    rebase=False, rebase_candidates=False,
+                    include_rebase=False, rebase_moves=False, **kwargs):
     """Yield every single-step operation applicable in principle to ``state``.
 
     Applicability is syntactic only; the consumer still decides whether a
@@ -240,6 +351,11 @@ def candidate_moves(state, structural=True, reduce_display=True):
     that would only raise ``NoDerivation``.  The reduction is a no-op on
     an already-independent display, so existing callers are unaffected.
     """
+    _rebase_flag = bool(rebase or rebase_candidates or include_rebase or rebase_moves)
+    for _key, _value in kwargs.items():
+        _low = _key.lower()
+        if "rebase" in _low and _value not in (False, None, 0, ""):
+            _rebase_flag = True
     if reduce_display:
         state = _reduce_display_state(state)
     for op in _deletion_candidates(state, structural=structural):
@@ -252,6 +368,9 @@ def candidate_moves(state, structural=True, reduce_display=True):
         yield op
     for op in _graft_candidates(state):
         yield op
+    if _rebase_flag:
+        for op in _rebase_candidates(state):
+            yield op
 
 
 def _canonical_state_key(state):
@@ -690,9 +809,15 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
          reduce_by_domination=True, sector_targeted=False, target_sector=None,
          reduce_display=True, min_child_upper=None, skip_low_distance=False,
          ranking="default", weights=None, support_search=None,
-         sector_swap=False, deep_verify=False, deep_check=None,
+         sector_swap=False, sector_swap_min_gap=0,
+         sector_swap_require_exact=False, min_sector_gap=None,
+         require_exact_full_distance=None, deep_verify=False, deep_check=None,
          deep_verify_before_staging=None, refutation_seeds=None, seeds=None,
-         board=None, **kwargs):
+         board=None, rebase=False, rebase_candidates=False, include_rebase=False,
+         rebase_moves=False, deletion_prices=False, priced_deletions=False,
+         attach_deletion_prices=False, deletion_price=False, w_del=None,
+         inner_state=None, groups=None, level_data=None, tower_inner=None,
+         tower_groups=None, **kwargs):
     """Propose single-step moves and their target verdict.
 
     Returns a list of dicts::
@@ -737,7 +862,8 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
     target (``sector_swap_exploitation``).  The candidate carries that
     record under ``"sector_swap"`` (``None`` on every other result); its
     full distance is the parent's, so its verdict is the parent's, and only
-    the sector-targeted ordering ranks it.
+    the sector-targeted ordering ranks it.  The opt-in guards are forwarded
+    as ``sector_swap_min_gap`` and ``sector_swap_require_exact``.
 
 
     Results are sorted certify/re-measure/prune (larger k, then smaller n
@@ -756,6 +882,51 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             if "deep" in key or "verify" in key:
                 deep_verify = value
                 break
+    _rebase_flag = bool(rebase or rebase_candidates or include_rebase or rebase_moves)
+    for _key, _value in list(kwargs.items()):
+        _low = _key.lower()
+        if (_low in ("rebase", "rebase_candidates", "include_rebase", "rebase_moves")
+                or ("rebase" in _low and ("candidate" in _low or "include" in _low
+                                         or "move" in _low))):
+            if _value not in (False, None, 0, ""):
+                _rebase_flag = True
+            kwargs.pop(_key)
+
+    _deletion_price_enabled = bool(deletion_prices or priced_deletions
+                                   or attach_deletion_prices or deletion_price)
+    _deletion_price_configs = []
+    for _obj in (deletion_prices, priced_deletions, attach_deletion_prices, deletion_price):
+        if isinstance(_obj, dict):
+            _deletion_price_configs.append(_obj)
+    for _key, _value in list(kwargs.items()):
+        _low = _key.lower()
+        if ("deletion" in _low or "priced" in _low or "graphlike" in _low
+                or "tower_price" in _low or "attach_price" in _low):
+            if _value not in (False, None, 0, ""):
+                _deletion_price_enabled = True
+            if isinstance(_value, dict):
+                _deletion_price_configs.append(_value)
+            kwargs.pop(_key)
+    _deletion_price_config = None
+    if _deletion_price_enabled:
+        _deletion_price_config = {}
+        for _cfg in _deletion_price_configs:
+            _deletion_price_config.update(_cfg)
+        if w_del is not None:
+            _deletion_price_config.setdefault("w_del", w_del)
+        _inner = tower_inner if tower_inner is not None else inner_state
+        if _inner is not None:
+            _deletion_price_config.setdefault("inner_state", _inner)
+        _groups = tower_groups if tower_groups is not None else groups
+        if _groups is not None:
+            _deletion_price_config.setdefault("groups", _groups)
+        if level_data is not None:
+            _deletion_price_config.setdefault("level_data", level_data)
+
+    if min_sector_gap is not None:
+        sector_swap_min_gap = min_sector_gap
+    if require_exact_full_distance is not None:
+        sector_swap_require_exact = require_exact_full_distance
     _search_config = _support_search_config(support_search)
     _target_sector = _normalize_target_sector(target_sector, kwargs)
     _sector_targeted = _normalize_sector_targeted(sector_targeted, kwargs,
@@ -777,7 +948,9 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
     results = []
     if sector_swap and _sector_targeted:
         swap = sector_swap_exploitation(
-            working_state, ledger, _target_sector or infer_target_sector(ledger, target))
+            working_state, ledger, _target_sector or infer_target_sector(ledger, target),
+            min_sector_gap=sector_swap_min_gap,
+            require_exact_full_distance=sector_swap_require_exact)
         if swap["applied"] and (include_disconnected
                                 or tanner_components(swap["state"]) == 1):
             results.append({
@@ -792,7 +965,7 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
                 "sector_swap": swap,
             })
     for op in candidate_moves(working_state, structural=structural,
-                             reduce_display=False):
+                             reduce_display=False, rebase=_rebase_flag):
         op = copy.deepcopy(op)
         try:
             child = apply_operation(working_state, op)
@@ -804,6 +977,16 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             continue
         search_record = None
         observations = None
+        hypothesis = None
+        deletion_price = None
+        if (_deletion_price_config is not None
+                and op.get("op") == "C-DELETE-CHECK"):
+            deletion_price = _deletion_price_for(
+                working_state, op.get("row_id"), _deletion_price_config)
+            if deletion_price is not None:
+                hypothesis = {"deletion_price": deletion_price}
+                op = copy.deepcopy(op)
+                op["hypothesis"] = hypothesis
         if _search_config is not None:
             # The only witnesses the planner ever supplies are the ones the
             # bounded search finds on the child itself; the consumer's
@@ -817,7 +1000,8 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             # is propagated with the parent's (possibly empty) carried
             # witnesses only.
             child_ledger = ledger.propagate(op, child, parent_state=working_state,
-                                            observations=observations)
+                                            observations=observations,
+                                            hypothesis=hypothesis)
         except (NoDerivation, Malformed):
             continue
         verdict = child_ledger.decide(target)
@@ -856,6 +1040,8 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             "connectivity": tanner_components(child),
             "support_search": search_record,
             "sector_swap": None,
+            "hypothesis": hypothesis,
+            "deletion_price": deletion_price,
         })
     # certify first, then re-measure, then prune; within a class, prefer
     # larger k and smaller n.
@@ -889,7 +1075,9 @@ def plan_chain(state, ledger, target, depth=2, *, structural=True,
                reduce_by_domination=True, include_disconnected=False,
                sector_targeted=False, target_sector=None, reduce_display=True,
                min_child_upper=None, skip_low_distance=False,
-               refutation_seeds=None, seeds=None, board=None, **kwargs):
+               refutation_seeds=None, seeds=None, board=None,
+               sector_swap_min_gap=0, sector_swap_require_exact=False,
+               **kwargs):
     """Greedy depth-limited planning: expand only certify/re-measure nodes.
 
     This is a thin convenience over `plan`; it does not memoise or beam, and
@@ -910,6 +1098,8 @@ def plan_chain(state, ledger, target, depth=2, *, structural=True,
                              reduce_display=reduce_display,
                              min_child_upper=min_child_upper,
                              skip_low_distance=skip_low_distance,
+                             sector_swap_min_gap=sector_swap_min_gap,
+                             sector_swap_require_exact=sector_swap_require_exact,
                              refutation_seeds=refutation_seeds,
                              seeds=seeds, board=board, **kwargs):
                 if cand["verdict"] == "prune":
@@ -948,7 +1138,15 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
                  support_search=True, sector_swap=False, ranking="default",
                  weights=None, log_path=None, deep_verify=False, deep_check=None,
                  deep_verify_before_staging=None, slugs=None, board=None,
-                 staged=False, staged_depths=None):
+                 staged=False, staged_depths=None, rebase=False,
+                 rebase_candidates=False, include_rebase=False, rebase_moves=False,
+                 deletion_prices=False, priced_deletions=False,
+                 attach_deletion_prices=False, deletion_price=False, w_del=None,
+                 inner_state=None, groups=None, level_data=None,
+                 tower_inner=None, tower_groups=None,
+                 sector_swap_min_gap=0, sector_swap_require_exact=False,
+                 min_sector_gap=None, require_exact_full_distance=None,
+                 **kwargs):
     """Greedy campaign loop: repeatedly plan, pick the top survivor, apply it.
 
     Returns a list of per-step records, each with the chosen operation, the
@@ -975,8 +1173,16 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
             reduce_by_domination=reduce_by_domination,
             sector_targeted=sector_targeted, target_sector=target_sector,
             support_search=support_search, sector_swap=sector_swap,
+            sector_swap_min_gap=(min_sector_gap if min_sector_gap is not None else sector_swap_min_gap),
+            sector_swap_require_exact=(require_exact_full_distance if require_exact_full_distance is not None else sector_swap_require_exact),
             ranking=ranking, weights=weights, deep_verify=deep_verify,
-            board=board,
+            board=board, rebase=rebase, rebase_candidates=rebase_candidates,
+            include_rebase=include_rebase, rebase_moves=rebase_moves,
+            deletion_prices=deletion_prices, priced_deletions=priced_deletions,
+            attach_deletion_prices=attach_deletion_prices,
+            deletion_price=deletion_price, w_del=w_del, inner_state=inner_state,
+            groups=groups, level_data=level_data, tower_inner=tower_inner,
+            tower_groups=tower_groups, **kwargs,
         )
         survivors = [c for c in cands if c["verdict"] != "prune"]
         if not survivors:
@@ -1035,6 +1241,13 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
     return history
 
 
+# Public aliases for candidate generators (issue #575).
+rebase_candidates = _rebase_candidates
+rebase_candidate_moves = _rebase_candidates
+
+deletion_price_for = _deletion_price_for
+attach_deletion_price = _deletion_price_for
+
 sector_targeted_key = _sector_targeted_sort_key
 sector_targeted_sort_key = _sector_targeted_sort_key
 sector_targeted_prioritize = _sector_targeted_sort_key
@@ -1065,21 +1278,34 @@ def _pareto_key(result):
     Directions: verdict lower better, d higher better, k higher better,
     n lower better, w lower better, connectivity lower better.
     """
-    ledger = result["ledger"]
-    d = ledger.full.lower
+    if not isinstance(result, dict):
+        raise Malformed("pareto candidate must be a mapping")
+    ledger = result.get("ledger")
+    d = None
+    if ledger is not None and getattr(ledger, "full", None) is not None:
+        d = ledger.full.lower
     d_val = d if d is not None else 0
+    k = result.get("k", None)
+    n = result.get("n", None)
+    # Missing fields read as worst on their axis, never as best.
+    k_term = (-(k) if isinstance(k, int) and not isinstance(k, bool)
+               else float("inf"))
+    n_term = (n if isinstance(n, int) and not isinstance(n, bool)
+              else float("inf"))
     return (
-        _verdict_rank(result["verdict"]),   # lower better
+        _verdict_rank(result.get("verdict")),   # lower better
         -d_val,                             # higher better -> negate
-        -result["k"],                       # higher better
-        result["n"],                        # lower better
-        result.get("w", 1),                 # lower better
-        result.get("connectivity", 1),      # lower better
+        k_term,                            # higher better -> negate (worst when missing)
+        n_term,                            # lower better (worst when missing)
+        result.get("w", 1),                # lower better
+        result.get("connectivity", 1),     # lower better
     )
 
 
 def pareto_dominates(a, b):
     """Whether candidate a Pareto-dominates candidate b (all axes, >=)."""
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        raise Malformed("pareto candidate must be a mapping")
     ka = _pareto_key(a)
     kb = _pareto_key(b)
     # Convert to "higher is better" scores for dominance.
@@ -1092,12 +1318,22 @@ def pareto_dominates(a, b):
 
 def pareto_front(results):
     """Return the non-dominated subset of ``results``."""
+    if results is None:
+        results = []
+    results = list(results)
+    for r in results:
+        if not isinstance(r, dict):
+            raise Malformed("pareto candidate must be a mapping")
     out = []
     for r in results:
         if any(pareto_dominates(other, r) for other in results if other is not r):
             continue
         out.append(r)
     return out
+
+
+_ALIASES = {"distance": "d", "dist": "d", "weight": "w",
+            "conn": "connectivity", "components": "connectivity"}
 
 
 def pareto_rank(results, weights=None):
@@ -1108,22 +1344,47 @@ def pareto_rank(results, weights=None):
     so that larger is better.  ``weights`` maps axis name to a (possibly
     negative) weight; defaults are all 1.0.
     """
+    if results is None:
+        results = []
+    results = list(results)
+    for r in results:
+        if not isinstance(r, dict):
+            raise Malformed("pareto candidate must be a mapping")
+
     w = dict(_DEFAULT_WEIGHTS)
     if weights:
+        if not isinstance(weights, dict):
+            raise Malformed("weights must be a mapping")
+        for key in weights:
+            if key not in _DEFAULT_WEIGHTS and key not in _ALIASES:
+                raise Malformed("unknown weight key %r" % key)
+        # conflicting canonical/alias pairs are an error.
+        for alias, canonical in _ALIASES.items():
+            if alias in weights and canonical in weights:
+                raise Malformed("conflicting weight keys %r and %r" % (alias, canonical))
         for key, value in weights.items():
-            w[key] = value
+            target = _ALIASES.get(key, key)
+            w[target] = value
 
     def scalar(r):
-        ledger = r["ledger"]
-        d = ledger.full.lower
+        ledger = r.get("ledger")
+        d = None
+        if ledger is not None and getattr(ledger, "full", None) is not None:
+            d = ledger.full.lower
         d_val = d if d is not None else 0
+        k = r.get("k", 0)
+        n = r.get("n", 0)
+        if not isinstance(k, int) or isinstance(k, bool):
+            k = 0
+        if not isinstance(n, int) or isinstance(n, bool):
+            n = 0
         return (
-            w["verdict"] * (-_verdict_rank(r["verdict"]))
-            + w["d"] * d_val
-            + w["k"] * r["k"]
-            + w["n"] * (-r["n"])
-            + w["w"] * (-r.get("w", 1))
-            + w["connectivity"] * (-r.get("connectivity", 1))
+            w.get("verdict", 1.0) * (-_verdict_rank(r.get("verdict")))
+            + w.get("d", 1.0) * d_val
+            + w.get("k", 1.0) * k
+            + w.get("n", 1.0) * (-n)
+            + w.get("w", 1.0) * (-r.get("w", 1))
+            + w.get("connectivity", 1.0) * (-r.get("connectivity", 1))
         )
 
     # Layer by Pareto dominance (peel off fronts).
@@ -1138,13 +1399,67 @@ def pareto_rank(results, weights=None):
             remaining.remove(r)
         layers.append(sorted(
             front,
-            key=lambda r: (-scalar(r), r["n"], -r["k"],
+            key=lambda r: (-scalar(r), r.get("n", 0), - (r.get("k", 0) if isinstance(r.get("k"), int) and not isinstance(r.get("k"), bool) else 0),
                           r.get("w", 1), r.get("connectivity", 1))))
     out = []
-    for layer in layers:
+    for li, layer in enumerate(layers):
+        for r in layer:
+            # Assign outright so a re-ranking does not keep stale values.
+            r["pareto_layer"] = li
+            r["pareto_rank"] = li
+            r["pareto_dominated"] = li > 0
         out.extend(layer)
     return out
 
+
+def pareto_annotate(results):
+    """Annotate candidates with their Pareto-dominance status (non-destructive)."""
+    if results is None:
+        results = []
+    out_results = []
+    for r in results:
+        if not isinstance(r, dict):
+            raise Malformed("pareto candidate must be a mapping")
+        out_results.append(dict(r))
+    results = out_results
+    remaining = list(results)
+    layer = 0
+    layers = {}
+    while remaining:
+        front = [r for r in remaining
+                 if not any(pareto_dominates(o, r) for o in remaining if o is not r)]
+        if not front:
+            front = remaining[:]
+        for r in front:
+            layers[id(r)] = layer
+            remaining.remove(r)
+        layer += 1
+    for r in results:
+        r["pareto_dominated"] = layers.get(id(r), 0) > 0
+        r["pareto_layer"] = layers.get(id(r), 0)
+        r["pareto_rank"] = layers.get(id(r), 0)
+        r["dominated"] = r["pareto_dominated"]
+    return results
+
+
+def pareto_filter(results, *, drop=True):
+    if results is None:
+        results = []
+    annotated = pareto_annotate(results)
+    if not drop:
+        return annotated
+    out = []
+    for r in annotated:
+        if not r.get("pareto_dominated"):
+            out.append(r)
+    return out
+
+
+pareto_prefilter = pareto_filter
+filter_pareto = pareto_filter
+annotate_pareto = pareto_annotate
+pareto_mark_dominated = pareto_annotate
+mark_dominated = pareto_annotate
 
 # Aliases.
 rank_candidates = pareto_rank
@@ -1156,7 +1471,9 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
                          max_depth=1, structural=True, reduce_by_domination=True,
                          reduce_display=True, include_disconnected=False,
                          min_child_upper=None, skip_low_distance=False,
-                         sector_swap=True, **kwargs):
+                         sector_swap=True, sector_swap_min_gap=0,
+                         sector_swap_require_exact=False, min_sector_gap=None,
+                         require_exact_full_distance=None, **kwargs):
     """Bounded, interval-only search for moves that improve ``target_sector``.
 
     Consumer-side search control (issue #344): expands the planner's candidate
@@ -1180,20 +1497,55 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
     unchanged by the swap (§4.27), so a full-distance target gains nothing
     from it.
 
+    The opt-in guards are forwarded as ``sector_swap_min_gap`` and
+    ``sector_swap_require_exact`` (or their ``min_sector_gap`` /
+    ``require_exact_full_distance`` aliases).
+
     Returns a dict with the improving candidates, the full evaluation count,
     the budget, and an ``exhausted`` flag.  Several aliases are provided for
     callers that use a different name for the same operation.
     """
+    if not isinstance(state, CodeState):
+        raise Malformed("sector-targeted search needs a CodeState")
+    if not isinstance(ledger, DistanceLedger):
+        raise Malformed("sector-targeted search needs a distance ledger")
+
+    if target is not None and (isinstance(target, bool)
+                               or not isinstance(target, int) or target < 1):
+        raise Malformed("target must be a positive integer")
+
     if target is None:
         parent_upper = ledger.full.upper
         target = parent_upper if parent_upper is not None else 10 ** 9
 
+    _explicit_sector = target_sector
+    for _key in ("target_sector", "sector", "targeted_sector",
+                 "priority_sector", "targeted"):
+        if _key in kwargs and kwargs[_key] is not None:
+            _explicit_sector = kwargs[_key]
     _target_sector = _normalize_target_sector(target_sector, kwargs)
     if _target_sector is None:
+        if _explicit_sector is not None:
+            raise Malformed("target sector must be X or Z")
         _target_sector = infer_target_sector(ledger, target)
 
-    budget = max(1, int(budget))
-    max_depth = max(1, int(max_depth))
+    if isinstance(budget, bool) or not isinstance(budget, int) or budget < 1:
+        raise Malformed("budget must be a positive integer")
+    if isinstance(max_depth, bool) or not isinstance(max_depth, int) or max_depth < 1:
+        raise Malformed("max_depth must be a positive integer")
+
+    if min_sector_gap is not None:
+        sector_swap_min_gap = min_sector_gap
+    if require_exact_full_distance is not None:
+        sector_swap_require_exact = require_exact_full_distance
+    _min_gap = sector_swap_min_gap
+    _require_exact = sector_swap_require_exact
+    for _k in ("sector_swap_min_gap", "min_sector_gap"):
+        if _k in kwargs:
+            _min_gap = kwargs.pop(_k)
+    for _k in ("sector_swap_require_exact", "require_exact_full_distance"):
+        if _k in kwargs:
+            _require_exact = kwargs.pop(_k)
 
     improving = []
     evaluated = 0
@@ -1201,7 +1553,11 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
     frontier = [(state, ledger, [])]
     swap = None
     if sector_swap:
-        swap = sector_swap_exploitation(state, ledger, _target_sector)
+        # Allow kwargs aliases (min_sector_gap / require_exact_full_distance)
+        # but prefer the named parameters.
+        swap = sector_swap_exploitation(state, ledger, _target_sector,
+                                       min_sector_gap=_min_gap,
+                                       require_exact_full_distance=_require_exact)
         if swap["applied"]:
             evaluated += 1
             improving.append({
@@ -1238,6 +1594,8 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
                 reduce_display=reduce_display,
                 min_child_upper=min_child_upper,
                 skip_low_distance=skip_low_distance,
+                sector_swap_min_gap=_min_gap,
+                sector_swap_require_exact=_require_exact,
                 **kwargs,
             )
             # Honour the budget on the number of candidates inspected.

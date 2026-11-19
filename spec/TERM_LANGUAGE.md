@@ -10,8 +10,13 @@ State expressions and commands are separate. They are never composed as if both
 were functions.
 
 $$
-e \;::=\; S \;\mid\; e_1 \oplus e_2
+e \;::=\; S \;\mid\; e_1 \oplus e_2 \;\mid\; \mathrm{glue}(e_1, e_2; \vec u)
 $$
+
+where $\mathrm{glue}(e_1, e_2; \vec u)$ (`E-GLUE`, binary-only expression
+constructor decided 2026-11-18, issue #536; no unary command production)
+combines two disjoint state expressions with an ordered list $\vec u$ of
+typed seam checks $(\tau_i, \mathrm{supp}_i)$ (`OPERATIONAL_SEMANTICS.md` §4.31).
 
 and, since 2026-11-11 (issue #330), the four admitted typed constructors
 extend the expressions by
@@ -55,6 +60,19 @@ where $H_X$ and $H_Z$ are binary matrices with the same number of columns,
 the parity-check matrices of two classical codes of one length
 (`OPERATIONAL_SEMANTICS.md` §2 card).
 
+Since 2026-11-19 (issue #549) the expressions also include the nullary and
+qubit-set base constructors and the two interface constructors
+
+$$
+e ::= \mathrm{empty} \mid \mathrm{free}(Q) \mid \mathrm{pullback}(e_1, e_2, e_I; \phi_1, \phi_2) \mid \mathrm{pushout}(e_1, e_2, e_S; \psi_1, \psi_2)
+$$
+
+where $Q \subset \mathbb{N}$ is a finite set of distinct qubit labels,
+$\phi_i : Q_i \to Q_I$ are CSS code morphisms from the values of $e_1, e_2$
+to the value of $e_I$, and $\psi_i : Q_S \to Q_i$ are CSS code morphisms
+from the value of $e_S$ to the values of $e_1, e_2$ (`OPERATIONAL_SEMANTICS.md`
+§2 cards).
+
 $$
 m \;::=\; \mathrm{skip}
 \;\mid\; \mathrm{delete}_r
@@ -65,6 +83,7 @@ m \;::=\; \mathrm{skip}
 \;\mid\; \mathrm{extend}_{\Delta;\vec u}
 \;\mid\; \mathrm{hadamard}_T
 \;\mid\; \mathrm{rebase}_{\tau;M}
+\;\mid\; \mathrm{cnotSwap}_U
 \;\mid\; m_1; m_2
 $$
 
@@ -81,6 +100,7 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | --- | --- | --- | --- |
 | `C-SKIP` | command | $m ::= \mathrm{skip}$ | `skip` |
 | `C-DIRECT-SUM` | expression-constructor | $e ::= e_1\oplus e_2$ | `e₁ ⊕ e₂` |
+| `E-GLUE` | expression-constructor | $e ::= \mathrm{glue}(e_1, e_2; \vec u)$ | `glue(e₁, e₂; [(τ₁,u₁),…])` — binary-only (decided 2026-11-18, issue #536; no unary command production) |
 | `C-DELETE-CHECK` | command | $m ::= \mathrm{delete}_r$ | `delete_r` |
 | `C-ADD-CHECK` | command | $m ::= \mathrm{addStab}_r$ | `addStab_r` |
 | `E-GRAFT` | command | $m ::= \mathrm{graft}_{q,\tau;\vec r}$ | `graft(q, τ; [r₁,…,rₘ])` |
@@ -89,6 +109,7 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `E-EXTEND` | command | $m ::= \mathrm{extend}_{\Delta;\vec u}$ | `extend(Δ; [(τ₁,u₁),…])` |
 | `E-LOCAL-HADAMARD` | command | $m ::= \mathrm{hadamard}_T$ | `hadamard(T)` — admitted for $T=Q$ or $T=\varnothing$ |
 | `P-REBASE` | command | $m ::= \mathrm{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
+| `C-COLUMN-CNOT` | command | $m ::= \mathrm{cnotSwap}_U$ | `cnotSwap(U)`, $U\in\mathrm{GL}(Q,2)$ (admitted 2026-11-18, issue #570) |
 | `L-HGP` | expression-constructor | $e ::= \mathrm{hgp}(H_1,H_2)$ | `hgp(H₁, H₂)`, two binary matrices (admitted 2026-11-11, issue #330) |
 | `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B)$ | `lift_G(A, B)`, $G$ a finite abelian group by cyclic orders, $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11) |
 | `L-GROUP-ALGEBRA` | expression-constructor | $e ::= \mathrm{twoblock}_G(a,b)$ | `twoblock_G(a, b)`, $a, b \in \mathbb{F}_2[G]$ (admitted 2026-11-11) |
@@ -99,6 +120,11 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `L-TANNER` | expression-constructor | $e ::= \mathrm{tanner}(n;\Lambda_X,\Lambda_Z;\iota_X,\iota_Z)$ | `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)`, local checks on the two vertex classes of an incidence structure; no derivation unless the local checks of the two classes commute (admitted 2026-11-11, issue #369) |
 | `L-TILE` | expression-constructor | $e ::= \mathrm{tile}(\tau;\alpha;\beta)$ | `tile(tiles; placements; boundary rules)`; no derivation unless the placed rows of the two sectors commute (admitted 2026-11-11, issue #369) |
 | `L-NESTED-CSS` | expression-constructor | $e ::= \mathrm{nested}(H_X,H_Z)$ | `nested(H_X, H_Z)`, two binary parity-check matrices with equally many columns; no derivation unless every row of the one has even overlap with every row of the other (admitted 2026-11-13, issue #445) |
+| `L-MAPPING-CONE` | expression-constructor | $e ::= \mathrm{cone}(\partial_A,\partial_B,f_1,f_0)$ | `cone(∂_A, ∂_B, f_1, f_0)`, four binary matrices with the chain-map premise $\partial_B f_1 = f_0 \partial_A$; no derivation unless the premise holds (admitted 2026-11-18, issue #569) |
+| `L-EMPTY` | expression-constructor | $e ::= \mathrm{empty}$ | `empty`, the 0-qubit CSS code with empty display and empty `used` (admitted 2026-11-19, issue #549) |
+| `L-FREE` | expression-constructor | $e ::= \mathrm{free}(Q)$ | `free(Q)`, the check-free CSS code on a finite qubit-label set $Q \subset \mathbb{N}$ (admitted 2026-11-19, issue #549) |
+| `A-PULLBACK` | expression-constructor | $e ::= \mathrm{pullback}(e_1, e_2, e_I; \phi_1, \phi_2)$ | `pullback(e₁, e₂, e_I; φ₁, φ₂)`, fiber product along CSS code morphisms $\phi_i : C_i \to I$; no derivation unless $\phi_i$ are CSS code morphisms and the pulled-back rows commute (admitted 2026-11-19, issue #549) |
+| `A-PUSHOUT` | expression-constructor | $e ::= \mathrm{pushout}(e_1, e_2, e_S; \psi_1, \psi_2)$ | `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`, amalgamated sum along CSS code morphisms $\psi_i : S \to C_i$; no derivation unless $\psi_i$ are CSS code morphisms and the pushed-forward rows commute (admitted 2026-11-19, issue #549)
 | `C-SEQUENCE` | command | $m ::= m_1;m_2$ | `m₁ ; m₂` |
 | `P-RELABEL` | presentation-operation | **none** | — |
 
@@ -123,16 +149,21 @@ other $T$ (`OPERATIONAL_SEMANTICS.md` §2, §4.27). A $T$ that lists a label
 twice is **malformed** rather than inapplicable: a list with repeats does not
 name a subset, so there is no reading of it as one.
 
-`E-GLUE` has **no unary grammar production**: gluing is a binary state
-operation rather than a command over a single presented state, but an evaluator
-transition is now admitted (§4.31) that combines two disjoint factor states and
-consumes the §2e seam certificate. The Lean mechanization renders this binary
-transition as a state-expression constructor `glue(e₁, e₂; seams)` beside
-`⊕`, so `EvalExpr` evaluates both factors to presented states first; on
-closed terms this is the same transition as `Eval(glue(C_A, C_B; seam checks), C)`
-(`semantics.json`). The §2f conditional cell and the
-logical-witness prerequisite (`TAXONOMY.md` §2.10, still `not-yet-defined`)
-remain as stated. `P-RELABEL` has **no** grammar production; it is a congruence
+`E-GLUE` remains **binary-only, with no unary command production** (dated
+maintainer decision 2026-11-18, issue #536): gluing combines two disjoint
+factor states rather than transforming a single presented state, so it sits in
+the expression grammar as the binary state-expression constructor
+$e ::= \mathrm{glue}(e_1, e_2; \vec u)$ beside $\oplus$ (§1, §2; admitted
+evaluator transition at `OPERATIONAL_SEMANTICS.md` §4.31). `EvalExpr` evaluates
+both factors to presented states first (`StateExpr.glue` / `EvalExpr.glue` in
+`lean/CodeCalculus/Term.lean` and `Eval.lean`); on well-formed factors this is
+proved equivalent to the closed term
+`⟨glueCommand seams, directSum (base A) (base B)⟩`
+(`evalExpr_glue_iff_evalTerm_glueCommand` in `lean/CodeCalculus/GlueExtraction.lean`)
+and matches `Eval(glue(C_A, C_B; seam checks), C)` in `machine/semantics.json`.
+Both future-$\Pi$ fields (`STATE_MODEL.md` §1a) are defined outside the state,
+and the §2e/§2f conditional cell remains conditional on its seam-certificate
+hypothesis. `P-RELABEL` has **no** grammar production; it is a congruence
 to be proved, not a command.
 
 `P-REBASE` is admitted as a command expressing a full basis change of one
@@ -148,6 +179,7 @@ inputs, and `X-*` needs an extended state model.
 - $\mathrm{delete}_a\triangleright S$
 - $(\mathrm{delete}_a;\mathrm{addStab}_b)\triangleright S$
 - $m\triangleright (S\oplus T)$
+- $m\triangleright \mathrm{glue}(S, T; [(X, \{0, 2\})])$
 - $\mathrm{graft}_{q,X;[a_1,a_2]}\triangleright S$
 - $\mathrm{peel}_{q,Z;a}\triangleright S$
 - $\mathrm{puncture}_a\triangleright S$
@@ -187,8 +219,10 @@ not the original.
 Two presentations are equivalent only when a finite qubit relabeling transports
 qubits, displayed rows, generator identifiers, and sector labels. Direct sum is a
 separate matter: it is associative and commutative as literal equality of labeled
-states on unordered presentations, with disjointness premises — a claim recorded
-**`open`** at `OBL-DIRECT-SUM-LAWS`, not assumed.
+states on unordered presentations, with disjointness premises — a metatheorem
+discharged at `OBL-DIRECT-SUM-LAWS` (`OPERATIONAL_SEMANTICS.md` §4.8,
+re-evidenced 2026-10-29 and re-discharged through `stdCSS-3` at §4.40), not
+assumed.
 
 ## 7. What this document does not do
 
@@ -238,6 +272,18 @@ and it carries no distance rule (`JUDGMENT_LAYER.md` §2g). The realization
 narrows the signature of `archive/notes/CONSTRUCTOR_SIGNATURES.md` to
 codes given by parity-check matrices. The production constructs no state
 that `tanner` does not already construct (§4.36).
+
+**Admission of `L-EMPTY`, `L-FREE`, `A-PULLBACK`, and `A-PUSHOUT` (2026-11-19, issue #549).**
+The two base constructors (`empty` and `free(Q)`) and the two interface
+constructors (`pullback(e₁, e₂, e_I; φ₁, φ₂)` and `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`)
+gained expression productions (§1, §2). A CSS code morphism is a qubit map
+whose $\mathbb{F}_2$-pushforward sends every displayed row into the target
+code's same-sector row space; for `pullback` and `pushout`, morphism
+preservation and pairwise even overlap of the constructed natural rows are
+decidable applicability premises whose failure is a no-derivation. All four
+are `transition-defined`, their output well-formedness is derived at
+`OPERATIONAL_SEMANTICS.md` §4.43, and they carry no automatic distance rule in
+`JUDGMENT_LAYER.md` §2g. The Kan-extension candidate remains refused.
 
 ## 8. Contexts
 

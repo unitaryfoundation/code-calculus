@@ -83,10 +83,12 @@ Four pieces.
    condition (`SeamRowsDerived`, `Derives.shift_gen`): the composed chain
    must derive the claims of the seam state's rows. Sentences that are not
    generator-referencing claims shift with no condition (`Derives.shift`).
-   `SeamChains.lean` proves the seam condition on chains of kernel and
-   graft steps. The Gate 6 rows for `Ann.gen` — `E-EXTEND`, `E-PEEL`,
-   `E-PUNCTURE`, `E-LOCAL-HADAMARD`, and `P-REBASE` — carry rows and
-   refusals.
+   `SeamChains.lean` proves the seam condition on every chain of single
+   (non-sequence) steps — kernel, graft, and Gate 6 — and connects it to the
+   `Trace` of any evaluated command (`TermSoundness.lean`). The Gate 6 rows
+   for `Ann.gen` — `E-EXTEND`, `E-PEEL`, `E-PUNCTURE`, `E-LOCAL-HADAMARD`,
+   and `P-REBASE` — carry transport/mint rows, identifier-level refusals, and
+   worked instances below.
 
 What the slice does not do. The fixed-reference-set model is mechanized
 abstractly, over an arbitrary certificate type, because the context-update
@@ -1487,6 +1489,24 @@ theorem not_mem_rows_punctureState_of_contains {s : CodeState} {q : Nat}
   rw [heq] at hnot
   exact hnot (List.contains_iff_mem.mpr hq)
 
+/-- A generator whose input row contains the punctured qubit `q` names no
+    displayed row of the puncture's output, whatever sector and support are
+    claimed (by I3 identifier injectivity in `EncodingWellFormed s`). -/
+theorem not_mem_rows_punctureState_of_retired {s : CodeState}
+    (hwf : EncodingWellFormed s) {q r : Nat}
+    (hr : r ∈ (s.rows.filter (fun row => row.support.contains q)).map Row.id)
+    (σ : Sector) (S : List Nat) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (punctureState s q).rows := by
+  intro hmem
+  have hfilt := List.mem_filter.mp hmem
+  have hnot : ¬ S.contains q := of_decide_eq_true hfilt.2
+  rcases List.mem_map.mp hr with ⟨row0, hrow0, hid0⟩
+  have hrow0' := List.mem_filter.mp hrow0
+  have heq : ({ id := r, sector := σ, support := S } : Row) = row0 :=
+    id_inj_of_nodup hwf.2.1 hfilt.1 hrow0'.1 hid0.symm
+  have hS : S = row0.support := congrArg Row.support heq
+  exact hnot (hS ▸ hrow0'.2)
+
 /-- A row of the rebased sector (an old row, whose identifier is in
     `s.used`) is not in the rebase's output display. -/
 theorem not_mem_rows_rebaseState_of_sector {s : CodeState} {sector : Sector}
@@ -1508,13 +1528,42 @@ theorem not_mem_rows_rebaseState_of_sector {s : CodeState} {sector : Sector}
       exact mintFresh_not_mem s.used matrix.length cs_id.2 hmem'
     exact hfresh (hid ▸ hrused)
 
+/-- A generator of the rebased sector names no displayed row of the rebase's
+    output, whatever sector and support are claimed: surviving rows come from
+    the opposite sector (disjoint from `r` by I3 identifier injectivity), and
+    minted rows carry fresh identifiers outside `s.used`. -/
+theorem not_mem_rows_rebaseState_of_retired {s : CodeState}
+    (hwf : EncodingWellFormed s) {sector : Sector} {matrix : List (List Nat)}
+    {r : Nat}
+    (hr : r ∈ (s.rows.filter (fun row => row.sector = sector)).map Row.id)
+    (σ : Sector) (S : List Nat) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (rebaseState s sector matrix).rows := by
+  intro hmem
+  rcases List.mem_map.mp hr with ⟨row0, hrow0, hid0⟩
+  have hrow0' := List.mem_filter.mp hrow0
+  rcases List.mem_append.mp hmem with hleft | hright
+  · have hfilt := List.mem_filter.mp hleft
+    have hneq : σ ≠ sector := of_decide_eq_true hfilt.2
+    have heq : ({ id := r, sector := σ, support := S } : Row) = row0 :=
+      id_inj_of_nodup hwf.2.1 hfilt.1 hrow0'.1 hid0.symm
+    have hσ : σ = sector :=
+      (congrArg Row.sector heq).trans (of_decide_eq_true hrow0'.2)
+    exact hneq hσ
+  · rcases List.mem_map.mp hright with ⟨cs_id, hcs, heq⟩
+    have hid : cs_id.2 = r := congrArg Row.id heq
+    have hfresh : cs_id.2 ∉ s.used :=
+      mintFresh_not_mem s.used matrix.length cs_id.2 (List.of_mem_zip hcs).2
+    have hrused : r ∈ s.used := hid0 ▸ ids_subset_used_of_wf hwf row0 hrow0'.1
+    exact hfresh (hid ▸ hrused)
+
 /-- The `W13` half for the peel: a claim that refers to the peeled row's
-    identifier is not derivable at the peel's output. -/
+    identifier is not derivable at the peel's output, whatever sector and
+    support it states. -/
 theorem not_derivable_gen_of_peeled {τ : Sector} (dMeasure : Field → CodeState → Nat)
     (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
     (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q r_id : Nat}
     {s t : CodeState} {σ : Sector} {S : List Nat}
-    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (_hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
     (hstep : Eval (Command.peel q τ r_id) s t) :
     ¬ Derives dMeasure cs (Ann.gen (i + 1) r_id σ S) := by
   apply not_derivable_of_false dMeasure hmono cs hctxt hchain
@@ -1523,13 +1572,13 @@ theorem not_derivable_gen_of_peeled {τ : Sector} (dMeasure : Field → CodeStat
   rw [ht, eval_peel_eq hstep] at hmem
   exact not_mem_rows_peelState_of_peeled (σ := σ) (S := S) hmem
 
-/-- The `W13` half for the puncture: a claim whose support contains the
-    punctured qubit is not derivable at the puncture's output. -/
+/-- The `W13` half for the puncture (support form): a claim whose support
+    contains the punctured qubit is not derivable at the puncture's output. -/
 theorem not_derivable_gen_of_punctured (dMeasure : Field → CodeState → Nat)
     (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
     (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q : Nat}
     {s t : CodeState} {r : Nat} {σ : Sector} {S : List Nat}
-    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (_hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
     (hstep : Eval (Command.puncture q) s t) (hq : q ∈ S) :
     ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
   apply not_derivable_of_false dMeasure hmono cs hctxt hchain
@@ -1538,8 +1587,28 @@ theorem not_derivable_gen_of_punctured (dMeasure : Field → CodeState → Nat)
   rw [ht, eval_puncture_eq hstep] at hmem
   exact not_mem_rows_punctureState_of_contains hq hmem
 
-/-- The `W13` half for the rebase: a claim of a row of the rebased sector
-    (an old row) is not derivable at the rebase's output. -/
+/-- The `W13` half for the puncture (identifier form, issue #534): a generator
+    whose input row contains the punctured qubit has no derivable claim at the
+    puncture's output, whatever sector and support it states (even when
+    `q ∉ S`). -/
+theorem not_derivable_gen_of_punctured_id (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs) {i q : Nat}
+    {s t : CodeState} {r : Nat} {σ : Sector} {S : List Nat}
+    (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.puncture q) s t)
+    (hr : r ∈ (s.rows.filter (fun row => row.support.contains q)).map Row.id) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_puncture_eq hstep] at hmem
+  have hwf : EncodingWellFormed s := hctxt s (mem_of_getElem? hi)
+  exact not_mem_rows_punctureState_of_retired hwf hr σ S hmem
+
+/-- The `W13` half for the rebase: a generator of the rebased sector has no
+    derivable claim at the rebase's output, whatever sector and support it
+    states. -/
 theorem not_derivable_gen_of_rebased (dMeasure : Field → CodeState → Nat)
     (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
     (hctxt : WellFormedContext cs) (hchain : Chain cs) {i : Nat}
@@ -1547,21 +1616,228 @@ theorem not_derivable_gen_of_rebased (dMeasure : Field → CodeState → Nat)
     {r : Nat} {σ : Sector} {S : List Nat}
     (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
     (hstep : Eval (Command.rebase sector matrix) s t)
-    (hr : r ∈ (s.rows.filter (fun row => row.sector = sector)).map Row.id)
-    (hσ : σ = sector) :
+    (hr : r ∈ (s.rows.filter (fun row => row.sector = sector)).map Row.id) :
     ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
   apply not_derivable_of_false dMeasure hmono cs hctxt hchain
   rintro ⟨t', ht', hmem⟩
   have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
   rw [ht, eval_rebase_eq hstep] at hmem
   have hwf : EncodingWellFormed s := hctxt s (mem_of_getElem? hi)
-  cases hstep with
-  | rebase _ _ _ _ _ =>
-      have hrused : r ∈ s.used := by
-        rcases List.mem_map.mp hr with ⟨row, hrow, hid⟩
-        have hrow' := List.mem_filter.mp hrow
-        have hrow'' : row ∈ s.rows := hrow'.1
-        exact hid ▸ ids_subset_used_of_wf hwf row hrow''
-      exact not_mem_rows_rebaseState_of_sector hσ hrused hmem
+  exact not_mem_rows_rebaseState_of_retired hwf hr σ S hmem
+
+/-! ### Worked instances for the five Gate 6 commands (issue #534)
+
+Each Gate 6 command is instantiated on `graftableState`, exercising every
+transport row (`genExtend`, `genPeel`, `genPuncture`, `genHadamard`,
+`genRebase`), every minting source (`genExtendMint`, `genRebaseMint`), and
+every refusal (`not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured`,
+`not_derivable_gen_of_punctured_id`, `not_derivable_gen_of_rebased`). -/
+
+/-- `E-EXTEND` on `graftableState`: add qubit `5` and one `X`-row on `[5]`. -/
+theorem eval_extend_graftable :
+    Eval (Command.extend [5] [(Sector.X, [5])]) graftableState
+      (extendState graftableState [5] [(Sector.X, [5])]) := by
+  apply Eval.extend
+  · refine ⟨by decide, by decide, ?_, trivial⟩
+    intro rec hrec
+    have hEq : rec = (Sector.X, [5]) := List.mem_singleton.mp hrec
+    subst hEq
+    exact ⟨by decide, by decide, by decide, fun q hq => by
+      rw [List.mem_singleton.mp hq]; decide⟩
+  · rfl
+  · exact (wellFormedBool_iff _).mp (by decide)
+  · decide
+
+def extendChainExample : List CodeState :=
+  [graftableState, extendState graftableState [5] [(Sector.X, [5])]]
+
+/-- Pre-existing row `1` survives `E-EXTEND` unchanged. -/
+theorem derives_gen_extend_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure extendChainExample (Ann.gen 1 1 Sector.X [0, 1]) :=
+  Derives.genExtend 0 1 Sector.X [0, 1] [5] [(Sector.X, [5])] _ _ rfl rfl
+    eval_extend_graftable
+    (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
+
+/-- The newly minted row `0` (`X`, `[5]`) is sourced by `Derives.genExtendMint`. -/
+theorem derives_gen_extend_minted (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure extendChainExample (Ann.gen 1 0 Sector.X [5]) :=
+  Derives.genExtendMint 0 [5] [(Sector.X, [5])] _ _ ⟨0, Sector.X, [5]⟩ rfl rfl
+    eval_extend_graftable (by
+      rw [show extendMintedRows graftableState [(Sector.X, [5])] =
+        [⟨0, Sector.X, [5]⟩] from by decide]
+      exact List.mem_singleton.mpr rfl)
+
+/-- `E-PEEL` on `graftableState`: peel qubit `1` in sector `X` along the
+    unique touching `X`-row `1`. -/
+theorem eval_peel_graftable :
+    Eval (Command.peel 1 Sector.X 1) graftableState (peelState graftableState 1 1) := by
+  apply Eval.peel
+  · decide
+  · exact ⟨⟨1, Sector.X, [0, 1]⟩, List.mem_cons_self, rfl, rfl, by decide⟩
+  · decide
+  · decide
+  · rfl
+  · exact (wellFormedBool_iff _).mp (by decide)
+
+def peelChainExample : List CodeState :=
+  [graftableState, peelState graftableState 1 1]
+
+theorem chain_peelChainExample : Chain peelChainExample :=
+  Chain.cons eval_peel_graftable (Chain.single _)
+
+theorem wellFormedContext_peelChainExample : WellFormedContext peelChainExample :=
+  chain_peelChainExample.wellFormedContext (fun s hs => by
+    have hs' : graftableState = s := Option.some.inj hs
+    exact hs' ▸ encodingWellFormed_graftableState)
+
+/-- Opposite-sector row `3` contains the peeled qubit `1` and survives
+    shortened to `[0, 2]`. -/
+theorem derives_gen_peel_shortened (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure peelChainExample (Ann.gen 1 3 Sector.Z [0, 2]) :=
+  Derives.genPeel 0 3 1 Sector.Z [0, 1, 2] 1 Sector.X _ _ rfl rfl eval_peel_graftable
+    (by decide)
+    (Derives.genInput 3 Sector.Z [0, 1, 2] _ rfl (by simp [graftableState]))
+
+/-- Same-sector row `2` avoids the peeled qubit and survives unchanged. -/
+theorem derives_gen_peel_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure peelChainExample (Ann.gen 1 2 Sector.X [0, 2, 3, 4]) :=
+  Derives.genPeel 0 2 1 Sector.X [0, 2, 3, 4] 1 Sector.X _ _ rfl rfl eval_peel_graftable
+    (by decide)
+    (Derives.genInput 2 Sector.X [0, 2, 3, 4] _ rfl (by simp [graftableState]))
+
+/-- `W13` half for the peel: the peeled row `1` has no derivable claim at the
+    output, whatever sector and support are stated. -/
+theorem not_derivable_gen_peel_retired (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure peelChainExample (Ann.gen 1 1 σ S) :=
+  not_derivable_gen_of_peeled dMeasure hmono wellFormedContext_peelChainExample
+    chain_peelChainExample (i := 0) rfl rfl eval_peel_graftable
+
+/-- `E-PUNCTURE` on `graftableState`: puncture qubit `1`, deleting rows `1`
+    and `3` and keeping `2` and `4`. -/
+theorem eval_puncture_graftable :
+    Eval (Command.puncture 1) graftableState (punctureState graftableState 1) := by
+  apply Eval.puncture
+  · decide
+  · rfl
+  · exact (wellFormedBool_iff _).mp (by decide)
+
+def punctureChainExample : List CodeState :=
+  [graftableState, punctureState graftableState 1]
+
+theorem chain_punctureChainExample : Chain punctureChainExample :=
+  Chain.cons eval_puncture_graftable (Chain.single _)
+
+theorem wellFormedContext_punctureChainExample : WellFormedContext punctureChainExample :=
+  chain_punctureChainExample.wellFormedContext (fun s hs => by
+    have hs' : graftableState = s := Option.some.inj hs
+    exact hs' ▸ encodingWellFormed_graftableState)
+
+/-- Row `2` avoids the punctured qubit `1` and survives unchanged. -/
+theorem derives_gen_puncture_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure punctureChainExample (Ann.gen 1 2 Sector.X [0, 2, 3, 4]) :=
+  Derives.genPuncture 0 2 Sector.X [0, 2, 3, 4] 1 _ _ rfl rfl eval_puncture_graftable
+    (by decide)
+    (Derives.genInput 2 Sector.X [0, 2, 3, 4] _ rfl (by simp [graftableState]))
+
+/-- `W13` half for the puncture: the retired row `1` (which contained qubit
+    `1`) has no derivable claim for any sector and support (including `[0]`,
+    where `1 ∉ [0]`), and no claim whose support contains `1` is derivable. -/
+theorem not_derivable_gen_puncture_retired (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure punctureChainExample (Ann.gen 1 1 σ S) ∧
+      ¬ Derives dMeasure punctureChainExample (Ann.gen 1 3 σ S) ∧
+      (∀ r, ¬ Derives dMeasure punctureChainExample (Ann.gen 1 r σ [0, 1])) :=
+  ⟨not_derivable_gen_of_punctured_id dMeasure hmono wellFormedContext_punctureChainExample
+      chain_punctureChainExample (i := 0) rfl rfl eval_puncture_graftable (by decide),
+    not_derivable_gen_of_punctured_id dMeasure hmono wellFormedContext_punctureChainExample
+      chain_punctureChainExample (i := 0) rfl rfl eval_puncture_graftable (by decide),
+    fun _ => not_derivable_gen_of_punctured dMeasure hmono wellFormedContext_punctureChainExample
+      chain_punctureChainExample (i := 0) rfl rfl eval_puncture_graftable (by decide)⟩
+
+/-- `E-LOCAL-HADAMARD` on `graftableState` with `T = Q` swaps every sector. -/
+theorem eval_hadamard_graftable :
+    Eval (Command.hadamard [0, 1, 2, 3, 4]) graftableState
+      (hadamardState graftableState [0, 1, 2, 3, 4]) := by
+  apply Eval.hadamard
+  · exact Or.inl (List.Perm.refl _)
+  · rfl
+  · exact (wellFormedBool_iff _).mp (by decide)
+
+/-- `E-LOCAL-HADAMARD` on `graftableState` with `T = []` is the identity. -/
+theorem eval_hadamard_empty_graftable :
+    Eval (Command.hadamard []) graftableState (hadamardState graftableState []) := by
+  apply Eval.hadamard
+  · exact Or.inr rfl
+  · rfl
+  · exact encodingWellFormed_graftableState
+
+/-- Under `E-LOCAL-HADAMARD` (`T = Q`), row `1` keeps its id and support and
+    swaps sector from `X` to `Z`. -/
+theorem derives_gen_hadamard_swapped (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure [graftableState, hadamardState graftableState [0, 1, 2, 3, 4]]
+      (Ann.gen 1 1 Sector.Z [0, 1]) :=
+  Derives.genHadamard 0 1 Sector.X [0, 1] [0, 1, 2, 3, 4] _ _ rfl rfl eval_hadamard_graftable
+    (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
+
+/-- Under `E-LOCAL-HADAMARD` (`T = []`), row `1` keeps its id, sector, and
+    support unchanged. -/
+theorem derives_gen_hadamard_empty (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure [graftableState, hadamardState graftableState []]
+      (Ann.gen 1 1 Sector.X [0, 1]) :=
+  Derives.genHadamard 0 1 Sector.X [0, 1] [] _ _ rfl rfl eval_hadamard_empty_graftable
+    (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
+
+/-- `P-REBASE` on `graftableState` in sector `X` with shear `[[1, 1], [0, 1]]`:
+    retires rows `1` and `2`, keeps `Z`-rows `3` and `4`, and mints `0`
+    (`[1, 2, 3, 4]`) and `5` (`[0, 2, 3, 4]`). -/
+theorem eval_rebase_graftable :
+    Eval (Command.rebase Sector.X [[1, 1], [0, 1]]) graftableState
+      (rebaseState graftableState Sector.X [[1, 1], [0, 1]]) := by
+  apply Eval.rebase
+  · decide
+  · exact ⟨by decide, by decide, by decide⟩
+  · rfl
+  · exact (wellFormedBool_iff _).mp (by decide)
+  · decide
+
+def rebaseChainExample : List CodeState :=
+  [graftableState, rebaseState graftableState Sector.X [[1, 1], [0, 1]]]
+
+theorem chain_rebaseChainExample : Chain rebaseChainExample :=
+  Chain.cons eval_rebase_graftable (Chain.single _)
+
+theorem wellFormedContext_rebaseChainExample : WellFormedContext rebaseChainExample :=
+  chain_rebaseChainExample.wellFormedContext (fun s hs => by
+    have hs' : graftableState = s := Option.some.inj hs
+    exact hs' ▸ encodingWellFormed_graftableState)
+
+/-- Opposite-sector row `3` survives `P-REBASE` unchanged. -/
+theorem derives_gen_rebase_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure rebaseChainExample (Ann.gen 1 3 Sector.Z [0, 1, 2]) :=
+  Derives.genRebase 0 3 Sector.Z [0, 1, 2] Sector.X [[1, 1], [0, 1]] _ _ rfl rfl
+    eval_rebase_graftable (by decide)
+    (Derives.genInput 3 Sector.Z [0, 1, 2] _ rfl (by simp [graftableState]))
+
+/-- Minted row `0` (`X`, `[1, 2, 3, 4]`) is sourced by `Derives.genRebaseMint`. -/
+theorem derives_gen_rebase_minted (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure rebaseChainExample (Ann.gen 1 0 Sector.X [1, 2, 3, 4]) :=
+  Derives.genRebaseMint 0 Sector.X [[1, 1], [0, 1]] _ _ ⟨0, Sector.X, [1, 2, 3, 4]⟩ rfl rfl
+    eval_rebase_graftable (by
+      rw [show rebaseMintedRows graftableState Sector.X [[1, 1], [0, 1]] =
+        [⟨0, Sector.X, [1, 2, 3, 4]⟩, ⟨5, Sector.X, [0, 2, 3, 4]⟩] from by decide]
+      exact List.mem_cons_self)
+
+/-- `W13` half for the rebase: neither retired `X`-row (`1` or `2`) has a
+    derivable claim at the rebase's output, whatever sector and support are
+    stated. -/
+theorem not_derivable_gen_rebase_retired (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure rebaseChainExample (Ann.gen 1 1 σ S) ∧
+      ¬ Derives dMeasure rebaseChainExample (Ann.gen 1 2 σ S) :=
+  ⟨not_derivable_gen_of_rebased dMeasure hmono wellFormedContext_rebaseChainExample
+      chain_rebaseChainExample (i := 0) rfl rfl eval_rebase_graftable (by decide),
+    not_derivable_gen_of_rebased dMeasure hmono wellFormedContext_rebaseChainExample
+      chain_rebaseChainExample (i := 0) rfl rfl eval_rebase_graftable (by decide)⟩
 
 end CodeCalculus

@@ -1019,7 +1019,9 @@ d1_discharge = strict_improvement_d1_feasible
 
 strict_improvement_d1_feasible_multi = None
 
-def sector_swap_exploitation(state, ledger, target_sector):
+def sector_swap_exploitation(state, ledger, target_sector,
+                            min_sector_gap=0,
+                            require_exact_full_distance=False):
     """Sector-swap exploitation (issue #346): apply ``E-LOCAL-HADAMARD`` at
     ``T = Q`` when the carried ledger says the other sector is the stronger
     one for ``target_sector``.
@@ -1035,6 +1037,13 @@ def sector_swap_exploitation(state, ledger, target_sector):
     transport, which swaps the sector intervals and revalidates every
     witness on its new side.
 
+    ``min_sector_gap`` (default 0, disabled) and ``require_exact_full_distance``
+    (default False) are opt-in guards (see the diary fragment for this change):
+    the former refuses the swap unless ``other.lower - target.upper`` is at
+    least ``min_sector_gap``; the latter refuses it unless the carried full
+    interval is exact (``lower == upper``).  A refused swap carries
+    ``guard`` naming the guard that refused it (or ``None``).
+
     Returns a record: ``applied``; ``reason``; ``operation`` (the swap term,
     or ``None``); ``state`` and ``ledger`` (the swapped pair, or the inputs
     unchanged); ``target_sector``; the sector intervals ``before`` and
@@ -1045,10 +1054,18 @@ def sector_swap_exploitation(state, ledger, target_sector):
     """
     if not isinstance(ledger, DistanceLedger):
         raise Malformed("sector-swap exploitation needs a DistanceLedger")
+    if isinstance(min_sector_gap, bool) or not isinstance(min_sector_gap, int) or min_sector_gap < 0:
+        raise Malformed("min_sector_gap must be a non-negative integer")
+    if not isinstance(require_exact_full_distance, bool):
+        raise Malformed("require_exact_full_distance must be a bool")
     sectors_before = {side: ledger.sector[side].as_json() for side in ("X", "Z")}
     record = {
         "applied": False,
         "reason": None,
+        "guard": None,
+        "guard_name": None,
+        "refused_by": None,
+        "refusal_guard": None,
         "operation": None,
         "state": state,
         "ledger": ledger,
@@ -1072,12 +1089,55 @@ def sector_swap_exploitation(state, ledger, target_sector):
     other = opposite_sector_name(target_sector)
     target_interval = ledger.sector[target_sector]
     other_interval = ledger.sector[other]
+
+    # Ordering first, so a guard never masks the ordinary "already at
+    # least as strong" refusal.
     if not (_sector_interval_key(other_interval) > _sector_interval_key(target_interval)):
         record["reason"] = ("the carried %s interval %s is already at least as strong "
                             "as the %s interval %s"
                             % (target_sector, sectors_before[target_sector],
                                other, sectors_before[other]))
         return record
+
+    # Optional guards.  By default the calculus keeps its original,
+    # interval-driven behaviour; a consumer that has tightened its bounds
+    # can opt in to refusing a swap that rests on an inexact full distance
+    # or on a sector gap smaller than ``min_sector_gap``.  The gap is
+    # ``other.lower - target.upper``: the amount by which the other
+    # sector's carried distance is proved to exceed the target sector's
+    # upper bound; a missing lower endpoint reads as +inf (the vacuous
+    # k = 0 interval) and a missing upper endpoint reads as +inf.  A
+    # refused swap means the helper declines to propose it; the underlying
+    # ``E-LOCAL-HADAMARD`` transition at ``T = Q`` still derives.
+    full = ledger.full
+    if require_exact_full_distance and not (
+            full.lower is not None and full.upper is not None
+            and full.lower == full.upper):
+        record["reason"] = ("full distance is not exact (%s); the swap is "
+                            "refused until the carried interval is exact"
+                            % full.as_json())
+        record["guard"] = "require_exact_full_distance"
+        record["guard_name"] = "require_exact_full_distance"
+        record["refused_by"] = "require_exact_full_distance"
+        record["refusal_guard"] = "require_exact_full_distance"
+        return record
+    if min_sector_gap:
+        other_lower = (float("inf") if other_interval.lower is None
+                       else other_interval.lower)
+        target_upper = (float("inf") if target_interval.upper is None
+                        else target_interval.upper)
+        gap = other_lower - target_upper
+        if gap != gap:  # NaN (both endpoints missing)
+            gap = None
+        if gap is None or gap < min_sector_gap:
+            record["reason"] = ("sector gap %s is smaller than the required %s"
+                                % (gap if gap is not None
+                                   else "not demonstrable", min_sector_gap))
+            record["guard"] = "min_sector_gap"
+            record["guard_name"] = "min_sector_gap"
+            record["refused_by"] = "min_sector_gap"
+            record["refusal_guard"] = "min_sector_gap"
+            return record
     operation = {"op": "E-LOCAL-HADAMARD", "qubits": list(state.Q)}
     try:
         new_state = apply_operation(state, operation)
@@ -1100,16 +1160,21 @@ def sector_swap_exploitation(state, ledger, target_sector):
     record["full_distance"]["unchanged"] = new_ledger.full == ledger.full
     return record
 
-def sector_swap_if_beneficial(state, ledger, target_sector):
+def sector_swap_if_beneficial(state, ledger, target_sector,
+                            min_sector_gap=0,
+                            require_exact_full_distance=False):
     """Consumer helper for sector-swap exploitation (issue #315 C4, #346).
 
     Applies ``E-LOCAL-HADAMARD`` (``T = Q``) when the carried ledger says
     ``target_sector`` is the weaker sector, returning ``(new_state,
     new_ledger)``, and ``(state, ledger)`` unchanged otherwise.  The record
     form, with the reason and the full-distance invariance, is
-    ``sector_swap_exploitation``.
+    ``sector_swap_exploitation``.  The opt-in guards
+    ``min_sector_gap`` and ``require_exact_full_distance`` are forwarded.
     """
-    record = sector_swap_exploitation(state, ledger, target_sector)
+    record = sector_swap_exploitation(state, ledger, target_sector,
+                                     min_sector_gap=min_sector_gap,
+                                     require_exact_full_distance=require_exact_full_distance)
     return record["state"], record["ledger"]
 
 if __name__ == "__main__":
@@ -1371,6 +1436,284 @@ for _name in ["settled_distance_check","settled_check","distance_settle_check"]:
     globals()[_name]=staged_distance_check
 
 
+def _coerce_bool(value, default=None):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        low = value.strip().lower()
+        if low in ("true", "yes", "1", "admissible", "immune", "certified", "compatible"):
+            return True
+        if low in ("false", "no", "0", "inconclusive", "not_certified", "incompatible", "odd"):
+            return False
+        return None
+    return default
+
+
+def _positive_composition_visibility():
+    return {
+        "odd_cycle_table_omitted": True,
+        "certificate_producer_incomplete": True,
+        "circuit_preservation": "empirical",
+    }
+
+
+def interface_classification(*args, **kwargs):
+    seam_certificate = kwargs.get("seam_certificate", kwargs.get("certificate",
+                                 kwargs.get("seam")))
+    if seam_certificate is None and args:
+        for arg in args:
+            if isinstance(arg, dict):
+                seam_certificate = arg
+                break
+    if seam_certificate is None and isinstance(kwargs.get("hypothesis"), dict):
+        seam_certificate = kwargs["hypothesis"]
+    word_a = kwargs.get("move_word_A", kwargs.get("move_word_a",
+                      kwargs.get("word_A", kwargs.get("word_a",
+                      kwargs.get("c_A", kwargs.get("move_wordA"))))))
+    word_b = kwargs.get("move_word_B", kwargs.get("move_word_b",
+                      kwargs.get("word_B", kwargs.get("word_b",
+                      kwargs.get("c_B", kwargs.get("move_wordB"))))))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if word_a is None:
+            word_a = seam_certificate.get("move_word_A", seam_certificate.get("word_A",
+                      seam_certificate.get("word_a", seam_certificate.get("c_A",
+                      seam_certificate.get("move_word_a")))))
+        if word_b is None:
+            word_b = seam_certificate.get("move_word_B", seam_certificate.get("word_B",
+                      seam_certificate.get("word_b", seam_certificate.get("c_B",
+                      seam_certificate.get("move_word_b")))))
+        words = seam_certificate.get("move_words", seam_certificate.get("words"))
+        if words is not None and (word_a is None or word_b is None):
+            if isinstance(words, (list, tuple)) and len(words) == 2:
+                word_a, word_b = words
+    monotone = kwargs.get("monotone", kwargs.get("monotone_seam",
+                  kwargs.get("top_to_bottom")))
+    if monotone is None and seam_certificate is not None and isinstance(seam_certificate, dict):
+        monotone = seam_certificate.get("monotone", seam_certificate.get("monotone_top_to_bottom"))
+    monotone = _coerce_bool(monotone, None)
+    compatible = None
+    if isinstance(word_a, str) and isinstance(word_b, str):
+        if not (all(ch in "UDLR" for ch in word_a)
+                and all(ch in "UDLR" for ch in word_b)):
+            raise Malformed("move words must be strings over {U,D,L,R}^*")
+        compatible = (word_a == word_b)
+    admissible = (monotone is True) and (compatible is True)
+    evidence = kwargs.get("evidence", kwargs.get("source"))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if evidence is None:
+            evidence = seam_certificate.get("evidence", seam_certificate.get("source"))
+    has_evidence = isinstance(evidence, str) and bool(evidence.strip())
+    if admissible and not has_evidence:
+        admissible = False
+    verdict = "admissible" if admissible else "inconclusive"
+    record = {
+        "criterion": "interface classification",
+        "hypothesis": {
+            "monotone_top_to_bottom": monotone,
+            "compatible_move_words": compatible,
+        },
+        "verdict": verdict,
+        "admissible": admissible,
+        "inconclusive": not admissible,
+        "interface_class": ("monotone top-to-bottom surface-code seam"
+                            if admissible else None),
+        "status": "conditional",
+    }
+    record.update(_positive_composition_visibility())
+    return record
+
+
+def union_layout_immunity(*args, **kwargs):
+    seam_certificate = kwargs.get("seam_certificate", kwargs.get("certificate",
+                                 kwargs.get("seam")))
+    if seam_certificate is None and args:
+        for arg in args:
+            if isinstance(arg, dict):
+                seam_certificate = arg
+                break
+    odd_cycle = kwargs.get("odd_cycle", kwargs.get("has_odd_cycle",
+                      kwargs.get("odd_cycles")))
+    bipartite = kwargs.get("bipartite", kwargs.get("is_bipartite"))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if odd_cycle is None:
+            odd_cycle = seam_certificate.get("odd_cycle", seam_certificate.get("has_odd_cycle"))
+        if bipartite is None:
+            bipartite = seam_certificate.get("bipartite", seam_certificate.get("union_layout_bipartite"))
+        ul = seam_certificate.get("union_layout")
+        if isinstance(ul, dict):
+            if odd_cycle is None:
+                odd_cycle = ul.get("odd_cycle", ul.get("has_odd_cycle"))
+            if bipartite is None:
+                bipartite = ul.get("bipartite", ul.get("union_layout_bipartite"))
+        if odd_cycle is None and "seam_graph" in seam_certificate:
+            sg = seam_certificate["seam_graph"]
+            if isinstance(sg, dict):
+                odd_cycle = sg.get("has_odd_cycle", sg.get("odd_cycle"))
+                bipartite = sg.get("bipartite", bipartite)
+    seam_graph = kwargs.get("seam_graph", kwargs.get("graph"))
+    if seam_graph is not None and isinstance(seam_graph, dict):
+        if odd_cycle is None:
+            odd_cycle = seam_graph.get("has_odd_cycle", seam_graph.get("odd_cycle"))
+        if bipartite is None:
+            bipartite = seam_graph.get("bipartite")
+    layout = kwargs.get("layout", kwargs.get("union_layout"))
+    if isinstance(layout, dict):
+        if odd_cycle is None:
+            odd_cycle = layout.get("odd_cycle", layout.get("has_odd_cycle"))
+        if bipartite is None:
+            bipartite = layout.get("bipartite")
+    if bipartite is not None:
+        bipartite = _coerce_bool(bipartite, None)
+        if odd_cycle is None:
+            odd_cycle = not bool(bipartite)
+    if odd_cycle is not None:
+        odd_cycle = _coerce_bool(odd_cycle, None)
+        if bipartite is None:
+            bipartite = not bool(odd_cycle)
+    # require hypothesis supplied
+    hypothesis_supplied = (odd_cycle is not None) or (bipartite is not None)
+    immune = hypothesis_supplied and (odd_cycle is False) and (bipartite is not False)
+    evidence = kwargs.get("evidence", kwargs.get("source"))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if evidence is None:
+            evidence = seam_certificate.get("evidence", seam_certificate.get("source"))
+        ul = seam_certificate.get("union_layout")
+        if isinstance(ul, dict) and evidence is None:
+            evidence = ul.get("evidence", ul.get("source"))
+    layout = kwargs.get("layout", kwargs.get("union_layout"))
+    if isinstance(layout, dict) and evidence is None:
+        evidence = layout.get("evidence", layout.get("source"))
+    has_evidence = isinstance(evidence, str) and bool(evidence.strip())
+    if immune and not has_evidence:
+        immune = False
+    verdict = "immune" if immune else "inconclusive"
+    record = {
+        "criterion": "union-layout immunity",
+        "hypothesis": {
+            "no_odd_cycle": (odd_cycle is False) if odd_cycle is not None else None,
+            "bipartite_seam_graph": bipartite,
+        },
+        "verdict": verdict,
+        "admissible": immune,
+        "immune": immune,
+        "inconclusive": not immune,
+        "odd_cycle_omission_visible": True,
+        "status": "conditional",
+    }
+    record.update(_positive_composition_visibility())
+    return record
+
+
+def boundary_signature_certificate(*args, **kwargs):
+    seam_certificate = kwargs.get("seam_certificate", kwargs.get("certificate",
+                                 kwargs.get("seam")))
+    if seam_certificate is None and args:
+        for arg in args:
+            if isinstance(arg, dict):
+                seam_certificate = arg
+                break
+    agree = kwargs.get("signatures_agree", kwargs.get("signature_agree",
+                   kwargs.get("boundary_signatures_agree", kwargs.get("agree"))))
+    sig_a = kwargs.get("signature_A", kwargs.get("signature_a",
+                  kwargs.get("boundary_signature_A", kwargs.get("boundary_signature_a"))))
+    sig_b = kwargs.get("signature_B", kwargs.get("signature_b",
+                  kwargs.get("boundary_signature_B", kwargs.get("boundary_signature_b"))))
+    signatures = kwargs.get("boundary_signatures", kwargs.get("signatures"))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if agree is None:
+            agree = seam_certificate.get("signatures_agree",
+                    seam_certificate.get("signature_agree",
+                    seam_certificate.get("boundary_signatures_agree")))
+        if sig_a is None:
+            sig_a = seam_certificate.get("signature_A", seam_certificate.get("signature_a",
+                      seam_certificate.get("boundary_signature_A")))
+        if sig_b is None:
+            sig_b = seam_certificate.get("signature_B", seam_certificate.get("signature_b",
+                      seam_certificate.get("boundary_signature_B")))
+        if signatures is None:
+            signatures = seam_certificate.get("boundary_signatures", seam_certificate.get("signatures"))
+    if signatures is not None and isinstance(signatures, (list, tuple)) and len(signatures) == 2:
+        if sig_a is None:
+            sig_a = signatures[0]
+        if sig_b is None:
+            sig_b = signatures[1]
+    if agree is None and sig_a is not None and sig_b is not None:
+        try:
+            agree = (sig_a == sig_b)
+        except Exception:
+            agree = False
+    hypothesis_supplied = (agree is not None) or (sig_a is not None and sig_b is not None)
+    certified = hypothesis_supplied and (agree is True)
+    evidence = kwargs.get("evidence", kwargs.get("source"))
+    if seam_certificate is not None and isinstance(seam_certificate, dict):
+        if evidence is None:
+            evidence = seam_certificate.get("evidence", seam_certificate.get("source"))
+    has_evidence = isinstance(evidence, str) and bool(evidence.strip())
+    if certified and not has_evidence:
+        certified = False
+    verdict = "certified" if certified else "inconclusive"
+    record = {
+        "criterion": "boundary-signature certificates",
+        "hypothesis": {
+            "boundary_signatures_agree": agree,
+        },
+        "verdict": verdict,
+        "admissible": certified,
+        "certified": certified,
+        "inconclusive": not certified,
+        "bound": ("d_Z(Q)=min(d_A,d_B)" if certified else None),
+        "status": "conditional",
+    }
+    record.update(_positive_composition_visibility())
+    return record
+
+
+interface_classification_check = interface_classification
+classify_interface = interface_classification
+interface_classify = interface_classification
+
+union_layout_immunity_check = union_layout_immunity
+union_layout_check = union_layout_immunity
+layout_immunity = union_layout_immunity
+
+boundary_signature = boundary_signature_certificate
+boundary_signature_check = boundary_signature_certificate
+boundary_signatures = boundary_signature_certificate
+
+
+def positive_composition_criteria(*args, **kwargs):
+    seam_certificate = kwargs.get("seam_certificate", kwargs.get("certificate",
+                                 kwargs.get("seam")))
+    if seam_certificate is None and args:
+        for arg in args:
+            if isinstance(arg, dict):
+                seam_certificate = arg
+                break
+    if seam_certificate is None and isinstance(kwargs.get("hypothesis"), dict):
+        seam_certificate = kwargs["hypothesis"]
+    rest = {k: v for k, v in kwargs.items()
+            if k not in ("seam_certificate", "certificate", "seam", "hypothesis")}
+    results = []
+    results.append(interface_classification(seam_certificate=seam_certificate, **rest))
+    results.append(union_layout_immunity(seam_certificate=seam_certificate, **rest))
+    results.append(boundary_signature_certificate(seam_certificate=seam_certificate, **rest))
+    overall = {
+        "criteria": [r["criterion"] for r in results],
+        "verdicts": [r["verdict"] for r in results],
+        "all_admissible": all(r.get("admissible", False) for r in results),
+        "any_inconclusive": any(r.get("inconclusive", False) for r in results),
+    }
+    overall.update(_positive_composition_visibility())
+    return results, overall
+
+
+positive_composition = positive_composition_criteria
+composition_criteria = positive_composition_criteria
+positive_composition_check = positive_composition_criteria
+
+
 __all__ = [
     '_main',
     'HEURISTIC_OUTCOME_SOURCE',
@@ -1436,4 +1779,37 @@ __all__ = [
     'layout_aware_staged_distance_check',
     'layout_aware_staged_check',
     'staged_distance_check_layout_aware',
+    'interface_classification',
+    'classify_interface',
+    'interface_classify',
+    'interface_classification_check',
+    'union_layout_immunity',
+    'union_layout_check',
+    'union_layout_immunity_check',
+    'layout_immunity',
+    'boundary_signature_certificate',
+    'boundary_signature',
+    'boundary_signature_check',
+    'boundary_signatures',
+    'positive_composition_criteria',
+    'positive_composition',
+    'positive_composition_check',
+    'composition_criteria',
 ]
+
+
+# Issue #540: mapping-cone / chain-map constructor (re-exported from experiments).
+try:
+    from machine.experiments import mapping_cone as _mc540
+except Exception:
+    try:
+        import machine.experiments.mapping_cone as _mc540
+    except Exception:
+        try:
+            from experiments import mapping_cone as _mc540
+        except Exception:
+            _mc540 = None
+if _mc540 is not None:
+    for _n in getattr(_mc540, "__all__", []):
+        if _n not in globals():
+            globals()[_n] = getattr(_mc540, _n)

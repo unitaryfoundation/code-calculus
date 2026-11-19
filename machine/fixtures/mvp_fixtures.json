@@ -468,7 +468,7 @@
           ],
           "k": 2
         },
-        "reversed_order": "delete_{a1};delete_{a2} reaches the same final row spaces and parameters; steps differ only in record order (evidence for OBL-ORDER-INDEPENDENT-DELETION, conjectural, not proof)"
+        "reversed_order": "delete_{a1};delete_{a2} reaches the same final row spaces and parameters; steps differ only in record order (evidence for OBL-ORDER-INDEPENDENT-DELETION, proved by hand derivation at spec/OPERATIONAL_SEMANTICS.md section 4.15; example is evidence, not proof)"
       }
     },
     {
@@ -532,7 +532,7 @@
       "term": "delete_{a1}",
       "expected": {
         "outcome": "derivable",
-        "detail": "result A1 as in W3; the calculus derives only the class admissions, quotient-level transport (proposed), and k' = k + 1",
+        "detail": "result A1 as in W3; the calculus derives the class admissions; quotient-level transport is proved of the output state (spec/OPERATIONAL_SEMANTICS.md section 4.39), the non-increase upper bound (section 4.5), and k' = k + 1; exact unpriced distances remain unavailable",
         "distances_hand": {
           "d_X": {
             "before": "+inf",

@@ -44,10 +44,11 @@ A release is named `<line>-<ordinal>`.
  addition; a patch level for an obligation- or proof-only change; a markedly
  rarer in-line erratum otherwise (§4).
 
-The current development release is `stdCSS-3` (software `v0.2.0`, prepared
-2026-11-14 and not yet tagged; `v0.1` shipped at commit `078cab2` on
-2026-11-02); `MVP` remains an alias for the historical `stdCSS-1` baseline. The
-release table records all axis sets.
+The current development release is `stdCSS-3` (software `v0.3.0`, prepared
+2026-11-19 and not yet tagged; `v0.2.0` shipped at commit `e94fa83` on
+2026-11-17; `v0.1` shipped at commit `078cab2` on 2026-11-02); `MVP`
+remains an alias for the historical `stdCSS-1` baseline. The release table
+records all axis sets.
 
 `stdCSS-1` axes:
 
@@ -146,6 +147,7 @@ discharged.
 | `stdCSS-2` | same state model | `stdCSS-1` operations plus the in-scope `E-GRAFT` production, at `transition-defined` | `OBL-GRAFT-TRANSITION-SOUNDNESS` (§4.12), `OBL-PRICED-INTERVAL-SOUNDNESS` (§4.13, under the corrected E-GRAFT rules) and `OBL-PRICED-INPUT-SEMANTICS` (§4.14) are discharged by hand derivation; the source derivations for the conditional cells are reproduced at §4.19 | adds the conditional judgment-input schema for full-distance deletion price, graft exposure price, and strict improvement. `E-GRAFT` is not state-sound and is not claimed as a proved rule. Current development release; the interval-transport metatheorem is `proved` under the corrected E-GRAFT rules (§4.13, 2026-10-21), while the judgment soundness metatheorem `OBL-JUDGMENT-SOUNDNESS` remains open. |
 | `v0.1.0` (software release of `stdCSS-2`) | phase-insensitive standard CSS (`stdCSS-2`) | `stdCSS-1` operations plus `E-GRAFT` (conditional) and the six Gate 6 CSS-level conditional cells (`E-GLUE`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD`, `P-REBASE`), at their recorded rungs; `E-GLUE` has no unary grammar production | Gates 0 and 1 ratified (2026-10-29); `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32, 2026-10-28); `OBL-JUDGMENT-SOUNDNESS` proved by hand derivation (§4.11) with partial Lean mechanization; measure-monotonicity hypothesis discharged for the exact sector distance | Prepared 2026-11-10 at commit `1afc766`; not yet tagged. Gates 2–7 unchecked by design. Re-discharge obligations of §3/§4 remain open until the re-proofs land; `discharged-through` values are not advanced by this preparation. |
 | `stdCSS-3` / `v0.2.0` | phase-insensitive standard CSS (`stdCSS-2` state model) | `stdCSS-2` operations plus the `stdCSS-3` candidate scope of §5.1: the distance-increasing constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`), `L-NESTED-CSS`, layout-transfer cells, puncturing/peeling price cells, `E-GLUE` promotion with seam-certificate equality, `E-LOCAL-HADAMARD` sector-swap support, W13 half, and the admitted heuristic statuses; `E-GLUE` retains no unary grammar production | Gates 0 and 1 ratified; `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32); `OBL-JUDGMENT-SOUNDNESS` proved by hand (§4.11) with partial Lean mechanization; `discharged-through` values **not advanced** — re-discharge obligations of §4 remain open until the re-proofs land | **Prepared 2026-11-14 (issue #441, "prepare but do not tag"):** candidate scope of §5.1 staged as a release row; not tagged. Gates 2–7 unchecked by design. Rows are not edited after the fact; a changed release is a new row. |
+| `stdCSS-3` / `v0.3.0` | phase-insensitive standard CSS (`stdCSS-3` state model) | `stdCSS-2` operations plus the `stdCSS-3` candidate scope of §5.1, now completed: gate-realization judgment rows (`preserves_U`, `ω` floor, §2h/§7.1–§7.4), W13 Gate 6 rows and Trace/StepChain seam discharge (§4.11/§4.37), one-shot level-map transport (§2j), `A-QUOTIENT` monomial-quotient specialization (§2i), kernel five promoted to rung 6 (§4.40), `E-GLUE` mechanization with binary-only production (§1–§2, §4.31/§4.33) | Gates 0 and 1 ratified; `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32); `OBL-JUDGMENT-SOUNDNESS` proved by hand (§4.11) with partial Lean mechanization; `discharged-through` advanced to `stdCSS-3` for all metatheorems (§4.40) | **Prepared 2026-11-19 (maintainer decision):** completes the `stdCSS-3` candidate scope; `discharged-through` values advanced; Gates 2–7 unchecked by design. Re-discharge obligations of §4 remain scoped to the named fragments (§4.40). Tagging and appending the final tag record remain maintainer-only (AGENTS.md *Hard rules*). |
 
 **Dated note (2026-11-14, issue #441).** The `stdCSS-3` / `v0.2.0` release
 row above is **prepared but not tagged** ("prepare but do not tag"): it stages
@@ -153,6 +155,17 @@ the §5.1 candidate scope as a release row and records that
 `discharged-through` values are not advanced. Tagging and appending the final
 tag record remain maintainer-only actions (AGENTS.md *Hard rules*); the row is
 not edited after the fact, and a changed release is a new row.
+
+**Dated note (2026-11-19, v0.3.0 preparation).** The `stdCSS-3` / `v0.3.0`
+release row above is **prepared but not tagged** ("prepare but do not tag"):
+it completes the `stdCSS-3` candidate scope (gate-realization judgment rows,
+W13 Gate 6 rows, one-shot level-map transport, `A-QUOTIENT` specialization,
+kernel five at rung 6, `E-GLUE` mechanization) and records that
+`discharged-through` values are advanced to `stdCSS-3` (§4.40). By maintainer
+decision the calculus line is recorded as `stdCSS-3` (the candidate scope's
+own name) rather than a new ordinal; the §4.1 tension is noted and resolved
+by that decision. Tagging and appending the final tag record remain
+maintainer-only (AGENTS.md *Hard rules*).
 
 A future release appends a row. Rows are not edited after the fact; a changed
 release is a new row.
@@ -268,10 +281,12 @@ re-proofs land (§4).
   source rule and its graft rows landed 2026-11-11 (issue #368), in the same
   two sections; they add rules for the claim and no new vocabulary. The Gate 6
   rows for the claim landed 2026-11-14 (issue #424) in the same
-  two sections: `Derives.genExtend`, `genExtendMint`, `genPeel`,
-  `genPuncture`, `genHadamard`, `genRebase`, and `genRebaseMint`, with
-  refusals `not_derivable_gen_of_peeled`,
-  `not_derivable_gen_of_punctured`, and `not_derivable_gen_of_rebased`.
+  two sections: `Derives.genExtend`, `genExtendMint`, `genPeel` (with
+  `peelSupport_eq_graftSupport_of_eval`), `genPuncture`, `genHadamard`,
+  `genRebase`, and `genRebaseMint`, with refusals `not_derivable_gen_of_peeled`,
+  `not_derivable_gen_of_punctured`, `not_derivable_gen_of_punctured_id`, and
+  `not_derivable_gen_of_rebased`, completed together with the `Trace`/`StepChain`
+  seam-condition discharge and Gate 6 worked instances on 2026-11-18 (issue #534).
 - Layout-transfer judgment cells: landed 2026-11-10 (issue #333) as
   `spec/JUDGMENT_LAYER.md` §2d.5, `machine/semantics.json` `layout_cells`,
   and `machine/experiments/layout_conformance_harness.py`. A property cell
@@ -351,10 +366,10 @@ re-proofs land (§4).
 
 **Intended machine-side scope (no calculus change; may also ship as patches):**
 
-- Sector-targeted deletion/peel search, multi-objective candidate ranking,
-  heuristic-result status (TODO.md §13, distance-increasing subsection); the
-  heuristic-result status landed 2026-11-11 as the `heuristic_outcome`
-  record (issue #329).
+- Sector-targeted deletion/peel search landed 2026-11-18 as `bounded_sector_search`
+  (issue #530); multi-objective candidate ranking, heuristic-result status
+  (TODO.md §13, distance-increasing subsection); the heuristic-result status
+  landed 2026-11-11 as the `heuristic_outcome` record (issue #329).
 
 **Re-discharge obligations created by this release** (per §4): every
 metatheorem scoped to the `stdCSS-2` operation set must be re-established
@@ -386,9 +401,113 @@ lower-bound, or universal claim. Implementation (taxonomy IDs, grammar
 productions, spec cards, machine and Lean counterparts) follows in separate
 PRs; re-discharge obligations apply where an entry touches axis 2 or 3.
 
+**Dated note (2026-11-18, issue #543).** The two gate-realization judgment rows
+of #452 are decided and recorded on axis 3 (`stdCSS-3` / `v0.3.0` candidate
+scope): (1) the operator-indexed codespace-preservation predicate
+$\mathsf{preserves}_U(C)$ on CSS displays, with its `C-ADD-CHECK` carry cell
+(carries at every angle when all generators commute with the added row $s$,
+carries at $\theta_j = \pi/4$ iff $V_s \in \mathcal{S}(C')$, and stays
+`not yet defined` when a generator anticommutes with $s$ at an angle
+$\neq \pi/4$, alongside addressability and logical action) and kernel rows
+(`C-SKIP`, `C-DIRECT-SUM` on one summand, `C-SEQUENCE`, and the
+`C-DELETE-CHECK` refutation); and (2) the equal-syndrome generator weight floor
+$\omega(C) \ge \lceil d(C)/2 \rceil$, carried by weakening as the monotone
+image $\lceil L_d/2 \rceil$ of the full-distance lower endpoint $L_d$ re-read
+at each state (`spec/JUDGMENT_LAYER.md` §2, §2h, §7.1–§7.4;
+`spec/CLAIMS.md`; hand derivations at `spec/OPERATIONAL_SEMANTICS.md` §4.37).
+No operation identifier is minted for a logical gate (`spec/TAXONOMY.md` §3.8).
+`discharged-through` values are not advanced until the re-discharge obligations
+of §4 are met.
+
+**Dated note (2026-11-18, issue #547).** The monomial-quotient specialization
+of `A-QUOTIENT` (`spec/TAXONOMY.md` §2.15) and its conditional transfer-theorem
+record (`spec/JUDGMENT_LAYER.md` §2i) are recorded for `v0.3.0`. `A-QUOTIENT`
+remains `taxonomy-only` at rung 1 (no grammar production or axis-2 change), §2i
+records the existence of Hsin's transfer theorem without introducing a new
+assertion-language operator or usable automatic distance/dimension bound, and
+`discharged-through` values do not advance.
+
+**Dated note (2026-11-18, issue #541).** By dated maintainer decision
+extending `design/SCOPE.md` §3–§4, the conditional family-level transport rule for
+Yuan's one-shot hollowed-tensor level map (`arXiv:2610.02137v1`, Definitions
+104/106/111/113/116 and Eq. (249), Lemmas 117–118, Theorem 81 Eq. (1), Remark
+39) is admitted to the `stdCSS-3` / `v0.3.0` candidate scope on axis 3
+(`spec/JUDGMENT_LAYER.md` §2j; `spec/CLAIMS.md`). No new property is added to
+the §7.1 signature (failure probability is a decoder/noise quantity, not a
+carried property) and no new assertion-language operator is minted; the
+`upper-bound` cell is recorded as judgment vocabulary only. No taxonomy operation
+identifier is minted (`spec/TAXONOMY.md` §3.8), no distance lower bound is
+claimed (`unavailable`), imported framework lemmas stay `conditional`, empirical
+finite-seed $\bar\Gamma$ checks stay `empirical` and separate, and
+`discharged-through` values do not advance.
+
+**Dated note (2026-11-18, issue #536).** Axis: 2 (operation set / term
+language). By dated maintainer decision
+(`diary/2026-11-18-e-glue-mechanization-binary-only-and-contract-stated-issue-536.md`),
+the `glue(e_1, e_2; \vec u)` production is recorded in
+[`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §1, matching the constructor already
+present in Lean (`StateExpr.glue` / `EvalExpr.glue`) and
+`machine/semantics.json`; the binary-only decision (no unary command
+production) is an axis-2 record on the `stdCSS-3` candidate, not an edit to
+an existing release row. `E-GLUE` remains **binary-only** (no unary command
+production) and is recorded
+explicitly in [`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §1–§2 as the binary
+state-expression constructor $e ::= \mathrm{glue}(e_1, e_2; \vec u)$ beside
+$\oplus$ (matching `StateExpr.glue` / `EvalExpr.glue` in Lean and
+`machine/semantics.json`); the remaining CSS-level algebraic pieces of the
+extracted §4.31/§4.33 Theorem 4 / claim 7.4 derivation and `E-GLUE` state
+soundness are mechanized in `lean/CodeCalculus/GlueExtraction.lean` with the
+irreducible geometric move-word $\to$ `AdmissibleSeam` gap explicitly recorded
+as a substrate boundary; and `E-GLUE` advances to **rung 5 (`contract-stated`)**
+in [`CLAIMS.md`](CLAIMS.md) (and derived `machine/operation_registry.json`),
+while remaining a Gate 6 conditional cell with Gate 6 unchecked. Existing §5
+release rows are not edited, and `discharged-through` values do not advance.
+
+**Dated note (2026-11-18, issue #535).** By dated maintainer decision
+(`diary/2026-11-18-promote-kernel-five-to-contract-proved-issue-535.md`), the
+five kernel operations (`C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`,
+`C-ADD-CHECK`, `C-SEQUENCE`) are promoted from rung 5 (`contract-stated`) to
+**rung 6 (`contract-proved`)** in [`CLAIMS.md`](CLAIMS.md) (and derived index
+`machine/operation_registry.json`), backed by the dated hand derivations in
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4 including the
+quotient-level logical-sector exact sequences (§4.39) and the `stdCSS-3`
+metatheorem re-discharge ledger (§4.40). Every metatheorem in
+[`OBLIGATIONS.md`](OBLIGATIONS.md) — together with
+`OBL-WELL-FORMEDNESS-PRESERVATION` — now records its `discharged-through`
+field at **`stdCSS-3`** (either discharged across the full `stdCSS-3`
+operation and 2026-11-18 axis-3 judgment set, or explicitly restricted to its
+named fragment and discharged on that fragment through `stdCSS-3`; §4.40).
+This is an axis-4 / contract-status change (no new state model, operation ID,
+or grammar production). Existing §5 release rows are not edited; appending the
+`v0.3.0` release row and tagging remain maintainer-only actions (§8), rung 7
+(`mechanized`) remains owed, and Gates 2–7 remain unchecked.
+
+**Dated note (2026-11-19, issue #566).** The sector-split deletion price
+cells for `C-DELETE-CHECK` (deleted sector
+$d'_\tau=\min(d_\tau,w_{\mathrm{del}})$, opposite sector
+$d'_{\bar\tau}=\min(d_{\bar\tau},w_{\mathrm{exp}})$, full distance
+$d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$) are admitted as new-admission
+scope under the 2026-11-18 re-schedule and ship in `v0.4.0`; they do not form
+part of the `v0.3.x` patches. `discharged-through` values are not advanced.
+See `diary/2026-11-19-admit-sector-split-deletion-price-issue-566.md`.
+
+
 **Not in this candidate (guardrails, TODO.md §13):** exact-distance
 computation as a calculus move; heuristic search results presented as lower
 bounds; release-ordinal bumps for machine-only provider work.
+
+**Dated note (2026-11-19, issue #549, `v0.4.0` target).** Axis: 2 (operation
+set / term language). By dated maintainer decision
+(`diary/2026-11-19-admit-nullary-and-interface-constructors-issue-549.md`),
+`L-EMPTY` (`empty`), `L-FREE` (`free(Q)`), `A-PULLBACK`
+(`pullback(e₁, e₂, e_I; φ₁, φ₂)`), and `A-PUSHOUT`
+(`pushout(e₁, e₂, e_S; ψ₁, ψ₂)`) are admitted as `transition-defined`
+expression constructors (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md`
+§2 cards, §4.43; `JUDGMENT_LAYER.md` §2g, §2d.5; `CLAIMS.md`), and the
+Kan-extension candidate remains refused. They carry no automatic distance
+rule beyond §2g (`DistanceLedger.for_constructed`). Existing §5 release rows
+are not edited, and `discharged-through` values do not advance (re-discharge
+obligations of §4 apply).
 
 ## 6. Item-level conventions and owners
 

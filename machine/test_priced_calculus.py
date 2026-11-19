@@ -198,7 +198,8 @@ class PricedCalculusTests(unittest.TestCase):
         )
         child = apply_operation(state, operation)
         result = initial.propagate(
-            operation, child, hypothesis=operation["hypothesis"]
+            operation, child, hypothesis=operation["hypothesis"],
+            parent_state=state,
         )
         self.assertEqual(result.full, Interval(1, 1))
         self.assertEqual(result.conditions[-1]["status"], "conditional")
@@ -283,22 +284,19 @@ class PricedCalculusTests(unittest.TestCase):
 
 
 class SectorPriceFirewallTests(unittest.TestCase):
-    """A full-distance price is not a sector price -- but a *sector-indexed*
-    price is.
+    """The two prices in the consumer are indexed differently, and the
+    firewall follows the indexing, not the word "price".
 
-    The two prices in the consumer are indexed differently, and the firewall
-    follows the indexing, not the word "price".
-
-    * The **deletion** price is a full-distance price. The source states the
-      deletion relation on the full distance, with no sector-wise
-      counterpart, so it moves the full-distance endpoints and no sector
-      endpoint (`spec/JUDGMENT_LAYER.md` 2b).
+    * The **deletion** price is now admitted sector-wise (issue #566): $w_{\rm del}$
+      is the deleted sector's promotion minimum and $w_{\rm exp}$ the opposite
+      sector's exposure minimum, so it moves both sectors' endpoints as well as
+      the full distance (`spec/JUDGMENT_LAYER.md` §2a/§2b/§2c).
     * The **graft exposure** price is indexed to the **non-spliced** sector,
       and the source's graft relation is stated sector-wise, so it moves that
       sector's endpoints as well as the full distance.
     """
 
-    def test_full_distance_deletion_price_does_not_move_sector_endpoints(self):
+    def test_sector_split_deletion_price_moves_sector_endpoints(self):
         parent = small_challenge_code()
         state = CodeState.from_challenge(parent)
         operation = {
@@ -316,14 +314,15 @@ class SectorPriceFirewallTests(unittest.TestCase):
         )
         child = apply_operation(state, operation)
         result = initial.propagate(
-            operation, child, hypothesis=operation["hypothesis"]
+            operation, child, hypothesis=operation["hypothesis"],
+            parent_state=state,
         )
         # The price licenses the full distance ...
         self.assertEqual(result.full, Interval(1, 1))
-        # ... and nothing about the sectors, whose lower endpoints stay at the
-        # unpriced rule's reset value of zero.
-        self.assertEqual(result.sector["X"], Interval(0, 5))
-        self.assertEqual(result.sector["Z"], Interval(0, 5))
+        # ... and, sector-split, the deleted (X) sector and the opposite (Z)
+        # sector move under their own minima.
+        self.assertEqual(result.sector["X"], Interval(2, 2))
+        self.assertEqual(result.sector["Z"], Interval(1, 1))
 
     def test_graft_price_moves_the_non_spliced_sector_it_is_indexed_to(self):
         state = CodeState.from_challenge(graftable_code())
@@ -343,7 +342,8 @@ class SectorPriceFirewallTests(unittest.TestCase):
         )
         child = apply_operation(state, operation)
         result = initial.propagate(
-            operation, child, hypothesis=operation["hypothesis"]
+            operation, child, hypothesis=operation["hypothesis"],
+            parent_state=state,
         )
         # The exposure price is the non-spliced sector's, so it licenses that
         # sector's exact interval ...
@@ -1554,6 +1554,27 @@ class Gate6ConditionalCellTests(unittest.TestCase):
             self.assertEqual(out.sector["X"], Interval(0, None))
             self.assertEqual(out.sector["Z"], Interval(0, None))
 
+    def test_puncture_ignores_a_supplied_hole_price(self):
+        # JUDGMENT_LAYER.md §2f, hole-punch records (issue #548): the full
+        # hole-punch price is unavailable and no price cell is admitted, so
+        # price-shaped fields on the operation move no endpoint.
+        state = CodeState.from_challenge(graftable_code())
+        ledger = DistanceLedger(
+            Interval(1, 3), {"X": Interval(1, 3), "Z": Interval(1, 3)},
+            witnesses={},
+        )
+        q = state.Q[0]
+        child = state.puncture(q)
+        priced = {"op": "E-PUNCTURE", "qubit": q, "w_hole": 2, "d_hole": 2,
+                  "price": 2, "hole_price": {"Z": 2},
+                  "hypothesis": {"d_Z": 2}}
+        out = ledger.propagate(priced, child, parent_state=state)
+        self.assertEqual(out.full, Interval(0, None))
+        self.assertEqual(out.sector["X"], Interval(0, None))
+        self.assertEqual(out.sector["Z"], Interval(0, None))
+        cells = [c for c in out.conditions if c.get("cell") == "E-PUNCTURE"]
+        self.assertEqual(cells, [{"cell": "E-PUNCTURE", "status": "structural"}])
+
     # -- E-EXTEND (§4.30) -----------------------------------------------------
 
     def test_extend_adds_qubits_and_minted_rows(self):
@@ -1688,6 +1709,62 @@ class AmbientContainmentTests(unittest.TestCase):
         for row in child.rows:
             self.assertTrue(set(row.support) <= set(child.Q))
 
+
+class MonomialQuotientEnforcementTests(unittest.TestCase):
+    """Issue #547: enforce CSS-preserving constraints and routing for A-QUOTIENT."""
+
+    def test_enforces_css_preserving_and_routes_duality_quotient(self):
+        from machine.quotient_specialization import (
+            check_parent_css_compatibility,
+            enforce_css_monomial_quotient,
+            route_monomial_quotient,
+            transfer_theorem_cell,
+        )
+
+        action = {
+            "e": {0: 0, 1: 1, 2: 2, 3: 3},
+            "g": {0: 2, 1: 3, 2: 0, 3: 1},
+        }
+        parent = CodeState(
+            (0, 1, 2, 3),
+            (
+                Row("a1", "X", (0, 1)),
+                Row("a2", "X", (2, 3)),
+                Row("b1", "Z", (0, 1)),
+                Row("b2", "Z", (2, 3)),
+            ),
+            frozenset({"a1", "a2", "b1", "b2"}),
+        )
+        accepted = enforce_css_monomial_quotient(
+            (0, 1, 2, 3),
+            action,
+            cliffords={"e": "I", "g": "Z"},
+            parent_state=parent,
+        )
+        self.assertTrue(accepted["css_preserving"])
+        self.assertTrue(accepted["parent_css_compatible"])
+        compat = check_parent_css_compatibility(
+            parent, action, cliffords={"e": "I", "g": "Z"}
+        )
+        self.assertTrue(compat["quotient_css_orthogonal"])
+        cell = transfer_theorem_cell(accepted)
+        self.assertEqual(cell["intervals"]["d"], Interval(0, None))
+        self.assertFalse(cell["computed_distance"])
+        self.assertFalse(cell["usable_automatic_bound"])
+
+        routed = route_monomial_quotient(
+            (0, 1, 2, 3), action, cliffords={"e": "I", "g": "H"}
+        )
+        self.assertFalse(routed["accepted"])
+        self.assertNotIn("not_routed_to", routed)
+        self.assertEqual(
+            routed["css_sector_swap_counterpart"],
+            "E-LOCAL-HADAMARD (TAXONOMY.md §2.12, T=Q)",
+        )
+        with self.assertRaises(NoDerivation):
+            enforce_css_monomial_quotient(
+                (0, 1, 2, 3), action, cliffords={"e": "I", "g": "H"}
+            )
 
 
 if __name__ == "__main__":

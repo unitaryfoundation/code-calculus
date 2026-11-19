@@ -542,6 +542,128 @@ $k = n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$ are derived in §4.36. No
 distance rule is attached, and no classical distance is an input of the
 transition.
 
+### `L-MAPPING-CONE`
+
+**Introduced in:** `stdCSS-3` / `v0.3.0` (admitted 2026-11-18, issue #569;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{cone}(\partial_A, \partial_B, f_1, f_0), S)
+$$
+
+Typed inputs: four binary matrices $\partial_A$, $\partial_B$, $f_1$, $f_0$,
+with $\partial_A$ of shape $a_1 \times a_0$, $\partial_B$ of shape
+$b_1 \times b_0$, $f_1$ of shape $a_1 \times b_1$, and $f_0$ of shape
+$a_0 \times b_0$. They are read as the differentials and chain map of two
+two-term complexes $A$ and $B$ over $\mathbb{F}_2$. State update:
+$Q = \{0, \ldots, a_0 + b_1 - 1\}$, with the first $a_0$ labels the
+basis of $A_0$ and the remaining $b_1$ labels the basis of $B_1$. The
+natural $Z$-rows are, for each basis element of $A_1$, the support of
+$\delta_2(a_1) = (\partial_A a_1, f_1 a_1)$, and the natural $X$-rows
+are, for each basis element of $B_0$, the support of the corresponding row
+of $\delta_1(a_0, b_1) = f_0 a_0 + \partial_B b_1$. Applicability: the
+chain-map premise $\partial_B f_1 = f_0 \partial_A$; an input for which
+it fails gives no derivation. Under the premise the natural rows of the two
+sectors have pairwise even overlap, so the retained display is well-formed.
+The displayed rows are the retained display with canonically minted
+identifiers. Output well-formedness, $n = a_0 + b_1$, and
+$k = a_0 + b_1 - \mathrm{rank}(\text{natural }X) - \mathrm{rank}(\text{natural }Z)$
+are derived in §4.41. No distance rule is attached: the ledger starts at
+$[0, +\infty)$, and the conditional sector-distance cells are
+$\min(D_B, D_A)$ as recorded in `JUDGMENT_LAYER.md` §2g.
+
+### `L-EMPTY`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (admitted 2026-11-19, issue #549;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{empty}, S)
+$$
+
+Typed inputs: none (`()`). State update: $Q = \varnothing$, empty display
+(`rows = []`), empty `used`. Applicability: always applicable. Output
+well-formedness ($n = 0$, $k = 0$) and semantic distance ($d_X = d_Z = d = +\infty$)
+are derived in §4.43. No automatic distance rule is attached beyond §2g.
+
+### `L-FREE`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (admitted 2026-11-19, issue #549;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{free}(Q), S)
+$$
+
+Typed inputs: a finite set $Q \subset \mathbb{N}$ of distinct nonnegative
+qubit labels, stored in strictly increasing order. State update: $Q$, empty
+display (`rows = []`), empty `used` (`free(∅) ≡ empty`). Applicability: always
+applicable for a well-typed $Q$. Output well-formedness ($n = |Q|$, $k = |Q|$)
+and semantic distance ($d_X = d_Z = d = 1$ for $Q \neq \varnothing$, $+\infty$
+for $Q = \varnothing$) are derived in §4.43. No automatic distance rule is
+attached beyond §2g.
+
+### `A-PULLBACK`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (admitted 2026-11-19, issue #549;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{pullback}(e_1, e_2, e_I; \phi_1, \phi_2), S)
+$$
+
+Typed inputs: three state expressions $e_1, e_2, e_I$ evaluating to well-formed
+CSS states $C_1, C_2, I$, together with total qubit maps $\phi_1 : Q_1 \to Q_I$
+and $\phi_2 : Q_2 \to Q_I$. State update: the qubits are the fiber-product pairs
+$P = \{(q_1, q_2) \in Q_1 \times Q_2 : \phi_1(q_1) = \phi_2(q_2)\}$ in
+lexicographic order ($Q_1$ outer, $Q_2$ inner), relabeled $0, \dots, n - 1$ where
+$n = |P|$. The natural rows are, for each displayed row $r$ of $C_1$ in order,
+its pullback $\pi_1^*(r) = \{i \in \{0,\dots,n-1\} : q_1^{(i)} \in \mathrm{supp}(r)\}$
+in the same sector, followed by, for each displayed row $r$ of $C_2$ in order,
+its pullback $\pi_2^*(r) = \{i \in \{0,\dots,n-1\} : q_2^{(i)} \in \mathrm{supp}(r)\}$
+in the same sector. The displayed rows are the retained independent display
+(§4.34) with canonically minted identifiers from empty `used`. Applicability:
+(i) $\phi_1$ and $\phi_2$ are **CSS code morphisms** into $I$, i.e., for each
+$i \in \{1, 2\}$ and every displayed $\sigma$-row $r$ of $C_i$, its
+$\mathbb{F}_2$-pushforward $(\phi_i)_*(\mathrm{supp}(r)) = \{y \in Q_I : |\phi_i^{-1}(y) \cap \mathrm{supp}(r)| \equiv 1 \pmod 2\}$
+lies in the $\sigma$-row space of $I$; and (ii) the natural rows of the two
+sectors on $0, \dots, n - 1$ have pairwise even overlap ($X \perp Z$). A failed
+premise gives no derivation. Output well-formedness and $n$ are derived in §4.43;
+$k$ is the rank bookkeeping of the output. No distance rule is attached.
+
+### `A-PUSHOUT`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (admitted 2026-11-19, issue #549;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{pushout}(e_1, e_2, e_S; \psi_1, \psi_2), S)
+$$
+
+Typed inputs: three state expressions $e_1, e_2, e_S$ evaluating to well-formed
+CSS states $C_1, C_2, S$, together with total qubit maps $\psi_1 : Q_S \to Q_1$
+and $\psi_2 : Q_S \to Q_2$. State update: form the disjoint union
+$Q_1 \sqcup Q_2$ (tagged $(0, q_1)$ for $q_1 \in Q_1$ and $(1, q_2)$ for
+$q_2 \in Q_2$) and quotient by the equivalence relation $\sim$ generated by
+$(0, \psi_1(s)) \sim (1, \psi_2(s))$ for all $s \in Q_S$. Order the equivalence
+classes by first appearance in $[(0, q_1) : q_1 \in Q_1] \mathbin{++} [(1, q_2) : q_2 \in Q_2]$
+and relabel $0, \dots, n - 1$ where $n = |Q_1 \sqcup_{Q_S} Q_2|$. The natural
+rows are, for each displayed row $r$ of $C_1$ in order, its $\mathbb{F}_2$-pushforward
+to the quotient classes (class $c$ is in the support iff an odd number of
+$(0, q_1)$ with $q_1 \in \mathrm{supp}(r)$ lie in $c$), followed by, for each
+displayed row $r$ of $C_2$ in order, its $\mathbb{F}_2$-pushforward to the
+quotient classes (class $c$ is in the support iff an odd number of $(1, q_2)$
+with $q_2 \in \mathrm{supp}(r)$ lie in $c$). The displayed rows are the retained
+independent display (§4.34) with canonically minted identifiers from empty
+`used`. Applicability: (i) $\psi_1$ and $\psi_2$ are **CSS code morphisms** from
+$S$, i.e., for each $i \in \{1, 2\}$ and every displayed $\sigma$-row $r$ of $S$,
+$(\psi_i)_*(\mathrm{supp}(r))$ lies in the $\sigma$-row space of $C_i$; and
+(ii) the natural rows of the two sectors on $0, \dots, n - 1$ have pairwise even
+overlap ($X \perp Z$). A failed premise gives no derivation. Output
+well-formedness and $n$ are derived in §4.43; $k$ is the rank bookkeeping of
+the output. No distance rule is attached.
+
+
 ## 3. The two derivations the rules rest on
 
 These are the ranking arguments the deletion and addition laws depend on. Both are
@@ -964,7 +1086,18 @@ is a `Chain` from `s` to `t` (`Trace.chain`, `Trace.getLast`).
 well-formedness of the input state, with `_exact` forms for the exact
 distance. The well-formedness of the state the term's expression evaluates
 to stays the FD1 hypothesis.
-The slice proves the instantiation base for skip's
+The expanded-operation-set mechanization is
+`lean/CodeCalculus/ExpandedSoundness.lean` (issue #533):
+`ExtDerives` over `ExtNat = ℕ ∪ {+∞}`, with `TermModels`,
+`ext_judgment_soundness`, and its `_exact`, `_exact_uncertified`, and
+`_exact_admissible` instances; seam-certificate equality is retained as
+`SeamCertSound` and proved for `AdmissibleSeam`. It covers the kernel
+commands, `E-GRAFT`, all five unary Gate 6 moves, `C-DIRECT-SUM`,
+`E-GLUE` (uncertified and certified), and the ten typed constructors; the
+conditional priced cells are mechanized in `PricedInterval.lean` and
+`Gate6Exact.lean`. `Soundness.lean` / `TermSoundness.lean` keep the
+`Nat`-valued sentinel reading for fixed-namespace rows; the two systems
+relate by documentation only. The slice proves the instantiation base for skip's
 identity (every field) and the `n` cells of deletion, addition, and the graft,
 and the `k` cells and the distance monotonicity/bounds
 cells of deletion and addition, the latter two taken as premises at the row
@@ -1104,47 +1237,73 @@ survive (not be deleted) along the sequence.
  $(r,\sigma,\mathrm{graftSupport}(S_0))$ of a row $(r,\sigma,S_0)$
  displayed before with $r$ outside the graft's chain, and the graft's
  survival row carries the claim of $(r,\sigma,S_0)$ to it. After a peel at
- $q$ of the row $r_{\mathrm{id}}$ in sector $\tau$, a displayed row with
- $r \ne r_{\mathrm{id}}$ was displayed before with its support shortened,
- and the peel row carries its claim; the claim of $r_{\mathrm{id}}$ has no
- derivation. After a puncture at $q$, a displayed row whose support does not
- contain $q$ was displayed before and its claim is carried unchanged; a
- claim whose support contains $q$ has no derivation. After an extend, a
- displayed row was displayed before and its claim is carried unchanged, or
- it is a minted row, which the minting rule sources. After a
- local Hadamard with $T=Q$, when $T$ is empty the display is unchanged and
- the claim is carried with its sector unchanged; when $T$ is non-empty the
- sector of every displayed row is swapped and the claim follows the swap.
- After a rebase at sector $\tau$, a claim of an opposite-sector row is
- carried unchanged, and each minted row of the rebased sector is a source; a
- claim of a row of the rebased sector has no derivation. In each case the
- claim at position $i$ is derivable by the induction hypothesis. The seam
- condition is this statement at the seam position, so it holds for a
- sequence whose composed chain has only such steps. With soundness of the
- rows, on a well-formed chain of that kind the claim is derivable exactly
- when the row is displayed. $\square$
+ $q$ of the row $r_{\mathrm{id}}$ in sector $\tau$, every displayed output row
+ is the shortening at $q$ of an input row $(r,\sigma,S_0)$ with
+ $r \ne r_{\mathrm{id}}$ (same-sector survivors are $q$-free by uniqueness of
+ $r_{\mathrm{id}}$, so `peelSupport` agrees with `graftSupport`), and the
+ peel row carries its claim; the retired row $r_{\mathrm{id}}$ has no
+ derivation for any $\sigma, S$. After a puncture at $q$, every displayed
+ output row was displayed before with $q \notin S$ and its claim is carried
+ unchanged; no claim with $q \in S$ is derivable, and by I3 identifier
+ injectivity no retired identifier whose input row contained $q$ has a
+ derivable claim for any $\sigma, S$. After an extend, a displayed row was
+ displayed before and its claim is carried unchanged, or it is a minted row,
+ which the minting rule sources. After a local Hadamard ($T=Q$ or
+ $T=\varnothing$), when $T$ is empty the display is unchanged and the claim is
+ carried with its sector unchanged; when $T$ is non-empty the sector of every
+ displayed row is swapped and the claim follows the swap. After a rebase at
+ sector $\tau$, every displayed output row is either a surviving
+ opposite-sector row (carried unchanged) or a minted row of sector $\tau$
+ (sourced by the minting rule); by I3 identifier injectivity and mint
+ freshness, no retired identifier of sector $\tau$ has a derivable claim for
+ any $\sigma, S$. In each case the claim at position $i$ is derivable by the
+ induction hypothesis. Because every command evaluation unfolds through its
+ trace (`Trace`) into a chain of single (non-sequence) steps, the seam
+ condition holds unconditionally at the seam of every sequence $m_1; m_2$.
+ With soundness of the rows, on any well-formed single-step chain or command
+ trace from a well-formed input, $\mathsf{gen}_i(r,\sigma,S)$ is derivable
+ exactly when the state at position $i$ displays $(r,\sigma,S)$. $\square$
 
- *The Gate 6 rows (2026-11-14, issue #424).* The rows of
- `Derives` for `Ann.gen` under `E-EXTEND`, `E-PEEL`, `E-PUNCTURE`,
+ *The Gate 6 rows (2026-11-14, issue #424; completed 2026-11-18, issue #534).*
+ The rows of `Derives` for `Ann.gen` under `E-EXTEND`, `E-PEEL`, `E-PUNCTURE`,
  `E-LOCAL-HADAMARD`, and `P-REBASE` are sound. `E-EXTEND` keeps every
  displayed row and mints rows for the additions; a claim of a displayed row
  is carried with its identifier, sector and support unchanged, and each
  minted row is a source. `E-PEEL` at $q$ in sector $\tau$ retires the
  named row $r_{\mathrm{id}}$ and shortens the support of every surviving
- opposite-sector row at $q$; a claim with $r \ne r_{\mathrm{id}}$ is
- carried with its support shortened, and the claim of $r_{\mathrm{id}}$
- has no derivation (the `W13` half for the peel). `E-PUNCTURE` at $q$
- deletes every row whose support contains $q$; a claim whose support does
- not contain $q$ is carried unchanged, and a claim whose support contains
- $q$ has no derivation. `E-LOCAL-HADAMARD` with $T=Q$ keeps every
- displayed row and swaps its sector when $T$ is non-empty; the claim keeps
- its identifier and support and follows the sector swap (design choice:
- under this command the claim keeps its identifier and changes sector).
- `P-REBASE` at sector $\tau$ rewrites that sector's display and keeps the
- opposite sector's rows; a claim of an opposite-sector row is carried
- unchanged, and each minted row of the rebased sector is a source; a claim
- of a row of the rebased sector has no derivation. The refusals are the
- `W13` halves for these commands. $\square$
+ opposite-sector row at $q$ (agreeing with `peelSupport` because $r_{\mathrm{id}}$
+ is the unique $\tau$-row containing $q$); a claim with $r \ne r_{\mathrm{id}}$
+ is carried with its support shortened, and $r_{\mathrm{id}}$ names no output
+ row, so $\mathsf{gen}_{i+1}(r_{\mathrm{id}},\sigma,S)$ has no derivation
+ for any $\sigma, S$ (the `W13` half for the peel). `E-PUNCTURE` at $q$
+ deletes every row whose support contains $q$; a claim with $q \notin S$ is
+ carried unchanged, no claim with $q \in S$ is derivable, and by I3 identifier
+ injectivity of a well-formed input state no retired identifier whose input
+ row contained $q$ names any output row, so $\mathsf{gen}_{i+1}(r,\sigma,S)$
+ has no derivation for any $\sigma, S$ (the `W13` half for the puncture).
+ `E-LOCAL-HADAMARD` ($T=Q$ or $T=\varnothing$) keeps every displayed row and
+ swaps its sector when $T$ is non-empty; the claim keeps its identifier and
+ support and follows the sector swap (design choice: under this command the
+ claim keeps its identifier and changes sector). `P-REBASE` at sector $\tau$
+ retires every old row of sector $\tau$, keeps every opposite-sector row, and
+ mints fresh rows for sector $\tau$ outside $\mathsf{used}$; a claim of an
+ opposite-sector row is carried unchanged, each minted row is a source, and
+ by I3 identifier injectivity (excluding opposite-sector survivors) together
+ with mint freshness (excluding minted rows), a retired identifier of sector
+ $\tau$ names no output row, so $\mathsf{gen}_{i+1}(r,\sigma,S)$ has no
+ derivation for any $\sigma, S$ (the `W13` half for the rebase). *Decidability
+ re-check (per the 2026-10-20 diary obligation).* For the extended `Ann.gen`
+ inventory (kernel, `E-GRAFT`, and the five Gate 6 commands), the rule set is
+ finite, every state's display and `used` set are finite, and every transport
+ row strictly decreases chain position $i$ in its premise while source rows
+ have no `Ann.gen` premise; each step has only finitely many premises, because
+ a shortened support $S'$ is drawn from $S'$ or $S' \cup \{q\}$ and a swapped
+ sector from a single sector; derivation search for $\mathsf{gen}_i(r,\sigma,S)$
+ therefore terminates in at most $i$ steps, so failure to close remains a
+ decidable refutation on the extended inventory. On a well-formed trace the
+ same conclusion follows from `derives_gen_iff_displayed_of_trace` (Lean,
+ `SeamChains.lean`), which reduces it to a membership test on the display.
+ $\square$
 - *Positive half (surviving generator).* If $r$ survives, its schema persists and
  the claim transports. For the carry-table properties: across `C-SEQUENCE`,
  equalities compose by substitution; one-sided bounds of the same polarity
@@ -1181,22 +1340,41 @@ transports any derivation under the seam condition `SeamRowsDerived`. The
 Gate 6 rows for the claim are `Derives.genExtend`, `genExtendMint`,
 `genPeel`, `genPuncture`, `genHadamard`, `genRebase`, and `genRebaseMint`,
 with refusals `not_derivable_gen_of_peeled`,
-`not_derivable_gen_of_punctured`, and `not_derivable_gen_of_rebased`. The
+`not_derivable_gen_of_punctured`, `not_derivable_gen_of_punctured_id`, and
+`not_derivable_gen_of_rebased`. The
 instances are an input row claimed, transported across an addition, and
 refused across its own deletion
 (`derives_gen_input_across_addition`,
-`not_derivable_gen_input_across_own_deletion`), and a graft with a shortened
+`not_derivable_gen_input_across_own_deletion`), a graft with a shortened
 row, a kept row, a minted row, and its two retired generators
 (`derives_gen_graft_shortened`, `derives_gen_graft_kept`,
-`derives_gen_graft_minted`, `not_derivable_gen_graft_chain`). Mechanization,
-2026-11-12 (issue #424, `lean/CodeCalculus/SeamChains.lean`): the seam
-condition on chains of kernel and graft steps is
+`derives_gen_graft_minted`, `not_derivable_gen_graft_chain`), and worked
+instances for all five Gate 6 commands on `graftableState`
+(`derives_gen_extend_kept`, `derives_gen_extend_minted`,
+`derives_gen_peel_shortened`, `derives_gen_peel_kept`,
+`not_derivable_gen_peel_retired`, `derives_gen_puncture_kept`,
+`not_derivable_gen_puncture_retired`, `derives_gen_hadamard_swapped`,
+`derives_gen_hadamard_empty`, `derives_gen_rebase_kept`,
+`derives_gen_rebase_minted`, `not_derivable_gen_rebase_retired`).
+Mechanization, 2026-11-12 (issue #424, `lean/CodeCalculus/SeamChains.lean`)
+and 2026-11-15 (issue #489): the seam condition on chains of single
+(non-sequence) kernel, graft, and Gate 6 steps is
 `derives_gen_of_displayed`, `seamRowsDerived_of_stepChain`, and
 `derives_gen_iff_displayed`, with `Derives.shift_gen_of_stepChain`
-the resulting unconditional shift. Mechanization, 2026-11-15 (issue #489):
-the seam condition is extended to every chain of single (non-sequence)
-steps, including the five Gate 6 commands, by the same `derives_gen_of_displayed`
-and `seamRowsDerived_of_stepChain`. The record, with what is not
+the resulting unconditional shift. Mechanization, 2026-11-18 (issue #534):
+`peelSupport_eq_graftSupport_of_eval` (`Soundness.lean`) proves `peelSupport`
+agrees with `graftSupport` on surviving rows of `E-PEEL`;
+`not_derivable_gen_of_punctured_id` and the strengthened
+`not_derivable_gen_of_rebased` (`Transport.lean`) refuse any retired
+punctured or rebased generator for arbitrary sector and support via I3
+identifier injectivity; `stepChain_append`, `Trace.stepChain`,
+`seamRowsDerived_of_prefix_stepChain`, `seamRowsDerived_of_trace`,
+`Derives.shift_gen_of_trace`, and `derives_gen_iff_displayed_of_trace`
+(`SeamChains.lean`) connect `StepChain` to `Trace` so the seam condition
+discharges unconditionally on every command sequence trace, exercised on a
+three-step `P-REBASE` / `E-LOCAL-HADAMARD` / `E-PEEL` chain
+(`derives_gate6_seam_row3`, `derives_gate6_seam_row5`,
+`not_derivable_gate6_seam_peeled_minted`). The record, with what is not
 mechanized, is at `spec/OBLIGATIONS.md`, `OBL-JUDGMENT-TRANSPORT`, *Intended
 mechanization status*.
 
@@ -1313,11 +1491,18 @@ interval contains the resulting exact distance.
  carries the upper endpoint; exact distance is non-increasing under deletion
  (bold label §4.5 in §4), so the new exact distance is $\le$ the carried upper bound.
  Containment holds.
-- *`C-DELETE-CHECK` (priced).* The full-distance price gives
- $d'=\min(d,w_{\rm del},w_{\rm exp})$; the interval becomes
+- *`C-DELETE-CHECK` (priced, sector-split, 2026-11-18, issue #566).* The
+ deletion price is sector-specific: the deleted sector $\tau$ gets
+ $d'_\tau=\min(d_\tau,w_{\rm del})$ and the opposite sector
+ $\bar\tau$ gets $d'_{\bar\tau}=\min(d_{\bar\tau},w_{\rm exp})$,
+ with $d'=\min(d,w_{\rm del},w_{\rm exp})$. The interval becomes, in
+ sector $\tau$, $[\min(L_\tau,w_{\rm del}),\min(U_\tau,w_{\rm del})]$,
+ in sector $\bar\tau$,
+ $[\min(L_{\bar\tau},w_{\rm exp}),\min(U_{\bar\tau},w_{\rm exp})]$,
+ and in the full distance
  $[\min(L,w_{\rm del},w_{\rm exp}),\min(U,w_{\rm del},w_{\rm exp})]$,
- which contains $d'$ by construction. Sector endpoints are untouched, and the
- sector rules are sound by the same non-increase argument.
+ each of which contains the corresponding exact distance by construction.
+ The unpriced non-increase argument still covers the unpriced rule.
 - *`E-GRAFT`.* Under the transition of §2, the spliced sector's child
  logicals are a subset of the parent's:
  $C'_\tau=\{x|_{Q\setminus\{q\}}:x\in C_\tau,\,x_q=0\}$, so
@@ -1594,6 +1779,28 @@ $XXXX$ while anticommuting with $ZZZZ$, so $d'=1$ while the two-term
 formula gives $2$. The full-distance deletion
 price $d'=\min(d,w_{\rm del},w_{\rm exp})$ is the consumer-supplied form of
 this three-class minimum. $\square$
+
+**Sector split (issue #566, 2026-11-18).** Deleting a $\tau$-check
+leaves the opposite stabilizer span $S_{\bar\tau}$ unchanged, and,
+symmetrically, the deleted sector's normalizer $N_\tau(S)$ is unchanged:
+the normalizer of $\tau$ is cut out by the rows of the other sector, which
+are untouched by a $\tau$-deletion. The promoted stabilizers are $\tau$-type
+and become $\tau$-logicals, so the newly introduced logicals in the deleted
+sector are exactly the promoted ones:
+$d'_\tau=\min(d_\tau,w_{\mathrm{del}})$. The newly exposed normalizer
+vectors are $\bar\tau$-type and become $\bar\tau$-logicals, so the newly
+introduced logicals in the opposite sector are exactly the exposed ones:
+$d'_{\bar\tau}=\min(d_{\bar\tau},w_{\mathrm{exp}})$.
+The full distance is $d'=\min(d'_\tau,d'_{\bar\tau})
+=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$, recovering the three-class
+minimum above. $\square$
+
+The two sector minima agree with the earlier all-Pauli reading: a Pauli in
+$S\setminus S'$ has a $\tau$-part that is itself in the $\tau$-span and
+outside the child's, of no larger weight, so the promoted minimum is the
+same; a Pauli in $N(S')\setminus N(S)$ has an other-sector part that is
+itself exposed, of no larger weight, so the exposure minimum is the same.
+$\square$
 
 ### Proposition 18.3 (strict improvement) — reproduced
 
@@ -2812,12 +3019,18 @@ seam check, under the capacity premise of the `C-ADD-CHECK` card (issue #296).
 The seam checks are the only new rows; no factor row
 is removed or altered. Well-formedness (I1–I5) is preserved by the same
 arguments as `C-DIRECT-SUM` plus the independence premises above (each new row
-is independent and commutes with the opposite sector by construction). In the
-Lean development this update is the direct sum followed by the seam
-additions in order, the closed term
+is independent and commutes with the opposite sector by construction). In the Lean development this update is both the binary state-expression
+constructor `StateExpr.glue` (rule `EvalExpr.glue`, `TERM_LANGUAGE.md` §1–§2;
+binary-only, no unary command production, decided 2026-11-18, issue #536) and
+the direct sum followed by the seam additions in order, the closed term
 `⟨glueCommand seams, directSum (base A) (base B)⟩`
-(`lean/CodeCalculus/Gate6Soundness.lean`, issue #311); no constructor is
-added.
+(`lean/CodeCalculus/Gate6Soundness.lean`, issue #311). The two are proved
+equivalent on every pair of well-formed factors, deriving
+`EncodingWellFormed (glueState a b seams)` from step-by-step seam
+admissibility and `stateK (directSumState a b) = stateK (glueState a b seams) + seams.length`
+(`evalExpr_glue_iff_evalTerm_glueCommand`, `wf_glueState_of_eval_glueCommand`,
+`stateK_glueState_add_seams` in `lean/CodeCalculus/GlueExtraction.lean`,
+issue #536).
 
 **Ambient membership (W22).** The child's qubit set is $Q_A\cup Q_B$.
 Factor rows retain their supports in $Q_A$ or $Q_B$ (hence in the union), and
@@ -2944,12 +3157,16 @@ $d_Z(Q)=\min(d_Z(C_A),d_Z(C_B))$ holds for admissible seams, conditioned
 on survival of the factor representative — which is exactly the survival
 statement the logical-witness field carries.
 
-**Conclusion.** The family-level guarantee for admissible seams is
-discharged by extraction of Theorem 4 / claim 7.4 of *composition-distance*:
-the equality $d_Z(Q)=\min(d_A,d_B)$ is no longer a hypothesis of the §2e
-cell but a derived consequence, contingent on the seam's admissibility and
-on the survival of the factor representative (which the logical-witness
-field of `STATE_MODEL.md` §1 carries). The instance-wise route remains as
+**Conclusion.** The family-level guarantee for admissible seams is split by
+Theorem 4 / claim 7.4 of *composition-distance*: Theorem 4 supplies the
+unconditional lower half ($w_{\mathrm{re},Z}=+\infty$, hence
+$d_Z(Q)\ge \min(d_A,d_B)$) on every admitted glue without a certificate,
+while the equality $d_Z(Q)=\min(d_A,d_B)$ remains conditional on
+`AdmissibleSeam` (the upper half), i.e. on survival of the factor
+representative (which the logical-witness field of `STATE_MODEL.md` §1
+carries). It is therefore not discharged by extraction alone; the certificate
+(equal move words) is the evidence the consumer records for the
+`AdmissibleSeam` hypothesis. The instance-wise route remains as
 the decidable per-instance check. The consumer's certificate-gated
 transport is unchanged in behavior; the certificate's role narrows from
 underwriting the equality to attesting admissibility of the seam. No Lean
@@ -2957,16 +3174,27 @@ statement changes in this extraction; the lower-endpoint, instance-wise
 equality, and class-pair parts of the extracted derivation are mechanized
 (`lean/CodeCalculus/ExactGlue.lean`,
 `lean/CodeCalculus/ExactGlueSurvival.lean`,
-`lean/CodeCalculus/ExactGlueDistance.lean`). The family-level statement is
-mechanized in its conditional form (`lean/CodeCalculus/LogicalWitness.lean`,
-issue #439): `family_glueExact_iff` proves that, on any family of glues
-whose factor fields hold a least-weight representative of every class, the
-equality holds on every member iff the transported logical-witness field
-holds a representative of weight $\min(d_\sigma(C_A),d_\sigma(C_B))$ on
-every member. The family there is an arbitrary predicate. That the
-admissible seams of §2e form such a family is not mechanized and is not
-derivable from the state model, for the reason given under the attempted
-derivation above: move words and planarity are not state data.
+`lean/CodeCalculus/ExactGlueDistance.lean`). The family-level statement is mechanized in `lean/CodeCalculus/LogicalWitness.lean`
+(issue #439, `family_glueExact_iff`), `lean/CodeCalculus/AdmissibleSeamFamily.lean`
+(issue #439, `AdmissibleSeam`, `admissible_carriesMin`,
+`admissible_family_exactDistance_eq_min`), and `lean/CodeCalculus/GlueExtraction.lean`
+(issue #536): `wRe?_eq_none` and `glue_theorem4_lower_bound` mechanize
+$w_{\mathrm{re},\sigma} = +\infty$ and the Theorem 4 / claim 7.4 lower bound
+in `Option Nat`; `admissibleSeam_exactDistance?_eq_min` and
+`admissible_family_exactDistance?_eq_min` prove the `Option Nat` equality
+directly from `AdmissibleSeam` without `HasMinLogical` or `LogField`;
+`admissible_carriesMin_glueField` and `admissible_family_glueField_exact`
+bridge `AdmissibleSeam` to the §1a normalized transport `glueField`
+(`WitnessFields.lean`); and `glue_expr_sound_exact_of_admissible` /
+`glue_term_sound_exact_of_admissible` discharge the `hcert` equality premise
+of `Gate6Exact.lean` from `AdmissibleSeam` for $\sigma = Z$. **Recorded
+mechanization gap (issue #536):** the geometric implication that identical
+planar move words `w(c_A) = w(c_B)` (§2e) imply `AdmissibleSeam` is not
+mechanized and is not derivable from the state model, for the reason given
+under the attempted derivation above: move words and planarity are not state
+data (`design/ADMISSIBLE_SEAM_FAMILY.md` §4). Likewise, shared-interface
+Theorem 4 (overlapping qubits with finite $w_{\mathrm{re},\sigma}$) lies
+outside the admitted disjoint-namespace transition.
 
 **Boundary/edge labels (added 2026-11-12, issue #366).** The field is defined
 as a future-$\Pi$ type sketch in [`STATE_MODEL.md`](STATE_MODEL.md) §1: a
@@ -3130,9 +3358,16 @@ criterion, `survivesA_congr` and `survivesB_congr` show that it depends only
 on the class, `glue_exactDistance_eq_min_of_survivesA` and its `B` form give
 the equality from a survivor of weight
 $\min(d_\sigma(C_A), d_\sigma(C_B))$, and `glue_survivor_of_min_logical`
-gives a survivor of that weight from a glued logical of that weight. Step 1
-of Claim 2 as a statement about a linear functional on the direct sum of the
-two class groups, and consequences (iii) and (iv), remain hand derivations.
+gives a survivor of that weight from a glued logical of that weight. In `lean/CodeCalculus/GlueExtraction.lean` (issue #536), `reExposedVectors_eq_nil`,
+`wRe?_eq_none`, `glue_exactDistance?_ge_min`, and `glue_theorem4_lower_bound`
+mechanize $w_{\mathrm{re},\sigma} = +\infty$ and the `Option Nat` lower bound;
+`phiSeam_congr` and `phiSeam_linear` mechanize Step 1 of Claim 2 on
+representatives (class invariance modulo the full factor spans and
+$\mathbb{F}_2$-linearity); `glue_exactDistance?_ge_add_of_no_pure_survivor`
+mechanizes consequence (iii); and `glue_universal_min_equality_false`
+mechanizes the issue #398 refutation below. Only the categorical
+quotient-group packaging of $L_\sigma(C) \cong K_\sigma / W_\sigma$ and
+complexity remark (iv) remain hand derivations.
 
 **Setting.** The admitted `E-GLUE` transition of §4.31: factor states $C_A$
 and $C_B$ on disjoint qubit sets $Q_A$ and $Q_B$, and the glued state $C$ on
@@ -3299,7 +3534,9 @@ derivation is transcribed as stated, not a proof.
 The universal claim $d_\sigma(C)=\min(d_\sigma(C_A),d_\sigma(C_B))$ is
 `false`: the counterexample above (an admissible seam whose $X$ seam check
 kills both weight-one $Z$ classes, giving $d_Z(C)=2$) is a semantic
-counterexample. The relation holds only instance-wise, when a minimum-weight
+counterexample (mechanized as `glue_counterexample_distances` and
+`glue_universal_min_equality_false` in `lean/CodeCalculus/GlueExtraction.lean`,
+issue #536). The relation holds only instance-wise, when a minimum-weight
 factor class survives the seam (item (ii) above); it is not admitted as an
 operation contract. The scalar relation $d=\min(d_A,d_B)$ therefore remains
 unadmitted, and the obstruction row of `design/DERIVED_RELATIONS.md` §2
@@ -3829,6 +4066,850 @@ the derivation is transcribed as stated, not a proof. The constructor
 instance of `OBL-WELL-FORMEDNESS-PRESERVATION` is discharged by this
 section for `L-NESTED-CSS`. ∎
 
+## 4.37 Gate-realization judgment rows: codespace preservation and the equal-syndrome weight floor
+
+Dated hand derivation, 2026-11-18 (issues #452 and #543). Evidence, not a
+machine-checked proof. Source statements: Nelson, Danageozian, Cao, Economou,
+and Barnes, *From Syndromes to Computation: A General Framework for Logical
+Operations in Quantum Error-Correcting Codes*, arXiv 2610.17612v1 (Theorem 1
+and Corollaries 2 and 3), re-derived here for a CSS display so that no cell
+rests on the source's appendix proofs. The judgment cells are recorded in
+[`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2 and §2h.
+
+**Setting.** Let $C$ be a well-formed state on $n = |Q|$ qubits. Each
+displayed row is a sector $\sigma \in \{X, Z\}$ and a support $S \subseteq Q$,
+denoting the Pauli operator that applies $\sigma$ on $S$. Write
+$\mathcal{S}(C)$ for the stabilizer group these operators generate and
+$\mathcal{V}(C)$ for the codespace, the common $+1$ eigenspace of the
+displayed rows. For bit vectors $a, b \in \mathbb{F}_2^Q$, write $X(a)$ for
+the product of Pauli $X$ over the support of $a$ and $Z(b)$ for the product
+of Pauli $Z$ over the support of $b$. Every Pauli operator on $Q$ with a
+fourth-root-of-unity phase is $i^t X(a) Z(b)$ for a unique triple
+$(t, a, b)$ with $t \in \{0, 1, 2, 3\}$.
+
+**Lemma 1 (stabilizer membership on a CSS display).** *The operator
+$i^t X(a) Z(b)$ lies in $\mathcal{S}(C)$ iff $t = 0$, $a \in X$, and
+$b \in Z$.*
+
+*Derivation.* The displayed rows commute pairwise by I1, so any product of
+displayed rows can be ordered with the $X$-rows first and the $Z$-rows
+second. The $X$-rows multiply to $X(a)$ with $a \in X$ the $\mathbb{F}_2$-sum
+of their supports, the $Z$-rows to $Z(b)$ with $b \in Z$ likewise, and no
+phase factor arises in the product $X(a) Z(b)$. Conversely, each such
+$X(a) Z(b)$ with $a \in X$ and $b \in Z$ is a product of displayed rows.
+$\square$
+
+In particular $-I \notin \mathcal{S}(C)$, so $\mathcal{V}(C) \neq 0$, and the
+phase of any product of displayed CSS rows is determined by `(sector, support)`
+without an independent per-row sign field.
+
+**Lemma 2 (fixing the codespace).** *A Pauli operator $P$ with a phase
+satisfies $P\psi = \psi$ for every $\psi \in \mathcal{V}(C)$ iff
+$P \in \mathcal{S}(C)$.*
+
+*Derivation.* Every element of $\mathcal{S}(C)$ fixes $\mathcal{V}(C)$ by
+definition. Conversely, let
+$\Pi = \lvert\mathcal{S}(C)\rvert^{-1} \sum_{s \in \mathcal{S}(C)} s$ be the
+orthogonal projector onto $\mathcal{V}(C) \neq 0$. From $P\Pi = \Pi$,
+$\mathrm{Tr}(P\Pi) = \mathrm{Tr}(\Pi) > 0$, so $\mathrm{Tr}(Ps) \neq 0$ for
+some $s \in \mathcal{S}(C)$. A Pauli operator with nonzero trace is a scalar
+multiple of the identity, so $P = c s^{-1}$ for a scalar $c$, and $c = 1$
+because both $P$ and $s^{-1}$ fix a nonzero vector in $\mathcal{V}(C)$.
+$\square$
+
+**Gates and the codespace-preservation predicate $\mathsf{preserves}_U(C)$.**
+A *gate* $U$ is specified by a finite list of pairwise commuting Hermitian
+Pauli operators $G_1, \dots, G_q$ on $Q$ (the *generators*), signs
+$\epsilon_j \in \{+1, -1\}$, and angles $\theta_j \ge 0$, denoting the
+unitary
+
+$$
+U = \prod_{j=1}^{q} \exp(i\epsilon_j \theta_j G_j).
+$$
+
+A gate is an operator parameter of the assertion language, not state data,
+and leaves $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ unchanged; no
+operation identifier is minted for a logical gate
+([`TAXONOMY.md`](TAXONOMY.md) §3.8). The predicate $\mathsf{preserves}_U(C)$
+holds when $U$ maps $\mathcal{V}(C)$ into itself. Because $\mathcal{V}(C)$
+is determined by $\mathcal{S}(C) = \langle X, Z \rangle$, the carrier of
+$\mathsf{preserves}_U$ is `span`.
+
+**Lemma 3 (preservation at $\theta_j = \pi/4$).** *Let $\theta_j = \pi/4$ for
+all $1 \le j \le q$. For a displayed row $g$, let
+$J(g) = \{j \in \{1,\dots,q\} : G_j \text{ anticommutes with } g\}$ and*
+
+$$
+V_g = \prod_{j \in J(g)} i\epsilon_j G_j.
+$$
+
+*Then $U^\dagger g U = g V_g$, and $\mathsf{preserves}_U(C)$ holds iff
+$V_g \in \mathcal{S}(C)$ for every displayed row $g$.*
+
+*Derivation.*
+1. For a single rotation $R = \exp(i\epsilon(\pi/4) G)$, if $G$ commutes with
+   $g$ then $R^\dagger g R = g$; if $G$ anticommutes with $g$ then
+   $g R = R^\dagger g$, so
+   $R^\dagger g R = g R^2 = g \exp(i\epsilon(\pi/2) G) = g(i\epsilon G)$.
+2. Because $G_1, \dots, G_q$ commute pairwise, each rotation commutes with
+   every factor $i\epsilon_j G_j$. Conjugating $g$ by the rotations in turn
+   and applying step 1 at each step gives $U^\dagger g U = g V_g$.
+3. $\mathsf{preserves}_U(C)$ holds iff $g U\psi = U\psi$ for every displayed
+   row $g$ and every $\psi \in \mathcal{V}(C)$, which by step 2 and
+   $U^\dagger g U = g V_g$ is equivalent to $g V_g \psi = \psi$. Since
+   $g\psi = \psi$ and $g^2 = I$, this is $V_g \psi = \psi$ for all
+   $\psi \in \mathcal{V}(C)$. Because $V_g$ is a Pauli operator with a phase,
+   Lemma 2 gives $V_g \in \mathcal{S}(C)$. $\square$
+
+By Lemma 1, the condition $V_g \in \mathcal{S}(C)$ at angle $\pi/4$ is
+decidable from the display in polynomial time: two $\mathbb{F}_2$
+span-membership checks and one phase check ($t = 0$) per displayed row.
+
+**Carry derivations for $\mathsf{preserves}_U$ across the kernel.**
+
+- *`C-SKIP`.* The state and its codespace are unchanged, so
+  $\mathsf{preserves}_U(C)$ carries unchanged.
+- *`C-ADD-CHECK` adding row $s$, with child $C'$ and
+  $\mathsf{preserves}_U(C)$.* The child codespace is
+  $\mathcal{V}(C') = \{\psi \in \mathcal{V}(C) : s\psi = \psi\}$.
+  1. *Commuting generators, any angle.* If every $G_j$ commutes with $s$,
+     then $U$ commutes with $s$. For $\psi \in \mathcal{V}(C')$,
+     $U\psi \in \mathcal{V}(C)$ by $\mathsf{preserves}_U(C)$ and
+     $s U\psi = U s\psi = U\psi$, so $U\psi \in \mathcal{V}(C')$ and
+     $\mathsf{preserves}_U(C')$ holds at every angle.
+  2. *All angles $\pi/4$.* By Lemma 3 applied to $C'$,
+     $\mathsf{preserves}_U(C')$ holds iff $V_g \in \mathcal{S}(C')$ for every
+     displayed row $g$ of $C'$. The displayed rows of $C'$ are those of $C$
+     together with $s$. For every displayed row $g$ of $C$, Lemma 3 on $C$
+     gives $V_g \in \mathcal{S}(C) \subseteq \mathcal{S}(C')$. Thus
+     $\mathsf{preserves}_U(C')$ holds iff $V_s \in \mathcal{S}(C')$, a single
+     stabilizer-membership check at the added row $s$. (When every $G_j$
+     commutes with $s$, $J(s) = \varnothing$ and $V_s = I \in \mathcal{S}(C')$,
+     recovering branch 1 at $\pi/4$.)
+  3. *Anticommuting generator at an angle $\neq \pi/4$, and addressability.*
+     When some $G_j$ anticommutes with $s$ and some angle is not $\pi/4$,
+     codespace preservation depends on the eigenvalues of zero-syndrome
+     logical operators in a chosen frame; addressability (that $U$ acts on
+     chosen logical qubits) and the logical action of an accepted gate
+     likewise require a logical frame. Because no judgment rule reads the
+     eigenvalues of the future-$\Pi$ logical-witness field
+     ([`STATE_MODEL.md`](STATE_MODEL.md) §1a), these cases remain
+     `not yet defined`.
+- *`C-DELETE-CHECK` (refutation of carry).* On $Q = \{0, 1\}$ with displayed
+  rows $X_0 X_1$ and $Z_0 Z_1$, take $G_1 = X_0$, $G_2 = X_1$ with signs
+  $\epsilon_1 = +1$, $\epsilon_2 = -1$ at angle $\pi/4$. The row $Z_0 Z_1$
+  anticommutes with both generators, so
+  $V_{Z_0 Z_1} = (i X_0)(-i X_1) = X_0 X_1 \in \mathcal{S}(C)$, while
+  $X_0 X_1$ commutes with both ($V_{X_0 X_1} = I \in \mathcal{S}(C)$); hence
+  $\mathsf{preserves}_U(C)$ holds. Deleting $X_0 X_1$ produces $C'$ with
+  $\mathcal{S}(C') = \{I, Z_0 Z_1\}$, so
+  $V_{Z_0 Z_1} = X_0 X_1 \notin \mathcal{S}(C')$ and
+  $\mathsf{preserves}_U(C')$ is false. Thus $\mathsf{preserves}_U$ does not
+  carry across `C-DELETE-CHECK` (at $\pi/4$, Lemma 3 re-evaluated over the
+  child's remaining rows decides the child directly).
+- *`C-DIRECT-SUM`.* Let $\mathsf{preserves}_U(A)$ hold for a gate $U$ whose
+  generators are supported on $Q_A$ (acting as the identity on $Q_B$). Because
+  $\mathcal{V}(A \oplus B) = \mathcal{V}(A) \otimes \mathcal{V}(B)$ on the
+  disjoint union $Q_A \sqcup Q_B$, the operator $U \otimes I_{Q_B}$ maps
+  $\mathcal{V}(A \oplus B)$ into itself, so $\mathsf{preserves}_U(A \oplus B)$
+  holds.
+- *`C-SEQUENCE`.* Composes step by step from the per-primitive cells above.
+  $\square$
+
+**Lemma 4 (equal-syndrome generator weight floor).** *Call a family of
+pairwise commuting Hermitian Pauli generators $G_1, \dots, G_q$ ($q \ge 2$)
+equal-syndrome on $C$ when all members have one common nonempty syndrome on
+the displayed rows of $C$, and nontrivial on $C$ when some product $G_1 G_j$
+lies outside $\mathcal{S}(C)$ up to sign. Write
+$w_{\max} = \max_{1 \le j \le q} \mathrm{wt}(G_j)$ and let $\omega(C)$ be the
+least $w_{\max}$ over nontrivial equal-syndrome families on $C$ ($+\infty$ if
+none exists). Then at every well-formed state $C$,*
+
+$$
+\omega(C) \ge \lceil d(C)/2 \rceil.
+$$
+
+*Derivation.* Take $j$ such that $L = G_1 G_j$ is not in $\mathcal{S}(C)$ up
+to sign, and write $L = i^t X(a) Z(b)$. Because $G_1$ and $G_j$ have the same
+syndrome on every displayed row, $L$ commutes with every displayed row: $a$
+has even overlap with every displayed $Z$-row and $b$ has even overlap with
+every displayed $X$-row. By Lemma 1, since $L$ is not in $\mathcal{S}(C)$ up
+to sign, either $a \notin X$ or $b \notin Z$. In the first case $a$ is an
+$X$-logical of $C$, so $\lvert a\rvert \ge d_X(C) \ge d(C)$; in the second
+case $b$ is a $Z$-logical of $C$, so $\lvert b\rvert \ge d_Z(C) \ge d(C)$.
+Hence $\mathrm{wt}(L) = \lvert a \cup b\rvert \ge \max(\lvert a\rvert, \lvert b\rvert) \ge d(C)$.
+By subadditivity of Pauli weight under multiplication,
+$\mathrm{wt}(L) \le \mathrm{wt}(G_1) + \mathrm{wt}(G_j) \le 2 w_{\max}$, so
+$w_{\max} \ge \lceil d(C)/2 \rceil$. Taking the minimum over all nontrivial
+equal-syndrome families on $C$ gives $\omega(C) \ge \lceil d(C)/2 \rceil$
+(including when $k = 0$ and $d(C) = +\infty$, where no nontrivial
+equal-syndrome family exists and $\omega(C) = +\infty$). $\square$
+
+**Transport by weakening (and refutation of parent-value substitution).**
+If the full-distance interval at state $C$ has sound lower endpoint
+$\ell = L_d \le d(C)$, then because $\ell \mapsto \lceil \ell/2 \rceil$ is
+nondecreasing on $\mathbb{N} \cup \{+\infty\}$, Lemma 4 implies
+$\omega(C) \ge \lceil L_d/2 \rceil$. This bound is re-read at each state from
+that state's carried lower endpoint $L_d$: it is unchanged across `C-SKIP`,
+does not decrease across `C-ADD-CHECK` ($L_d' \ge L_d$), recomputes from
+$\min(L_d^A, L_d^B)$ across `C-DIRECT-SUM`, and weakens to
+$\lceil L_d'/2 \rceil$ across `C-DELETE-CHECK` (where $L_d'$ resets to $0$
+unpriced or moves to $\min(L_d, w_{\mathrm{del}}, w_{\mathrm{exp}})$ priced).
+
+The parent's value of the floor cannot be substituted into the child across
+`C-DELETE-CHECK`. On the nine-qubit Shor code ($Q = \{0,\dots,8\}$, $Z$-rows
+$\{0,1\},\{1,2\},\{3,4\},\{4,5\},\{6,7\},\{7,8\}$, $X$-rows
+$\{0,1,2,3,4,5\},\{3,4,5,6,7,8\}$), $d(C) = 3$ and the floor is
+$\lceil 3/2 \rceil = 2$. Deleting the first $X$-row $\{0,1,2,3,4,5\}$ produces
+a child $C'$ in which $G_1 = Z_3$ and $G_2 = Z_6$ both anticommute with the
+sole remaining $X$-row $\{3,4,5,6,7,8\}$ and commute with every $Z$-row, while
+$G_1 G_2 = Z_3 Z_6$ lies outside $\mathcal{S}(C')$ up to sign. Thus
+$\{Z_3, Z_6\}$ is a nontrivial equal-syndrome family on $C'$ with
+$w_{\max} = 1 < 2$, matching the child's own weakened floor
+$\lceil d(C')/2 \rceil = \lceil 1/2 \rceil = 1$.
+
+**Evidence.** `machine/experiments/gate_realization_rows.py` and
+`machine/test_gate_realization_rows.py` check Lemmas 1, 3, and 4 and the
+`C-ADD-CHECK` and `C-DELETE-CHECK` cells against a state-vector rotation
+oracle and an exact-distance oracle across the two named counterexamples and a
+seeded sweep (seed 452). Agreement is evidence that the derivations are
+transcribed as stated, not a proof. ∎
+
+## 4.38 Family-level one-shot level-map transport: block-length lower bound (issue #541)
+
+Dated 2026-11-18. For a seed $C$ satisfying Hypotheses 102--103 and a sheet
+count $m \ge 2$, the finite hollowed-tensor complex $\bar\Gamma(C)$ of
+Definition 116 (Eq. (249)) has qubit layer
+$Q(\Gamma) = \bigoplus_x Y^x_1 \oplus \bigoplus_q Y^q_0$.
+Each $Y^q_0$ is the 0-cells of $K^q \otimes V + G^q \otimes R$; since
+$G^q$ has no edges, $K^q = \mathrm{cone}\,G^q$ contributes the apex $q$
+tensored with the $m$ vertices of $V$, i.e. $m$ cells for the apex, plus
+$m (|\{z \succ q\}|)$ cells from $G^q \otimes R$'s vertex--edge
+incidence, so $Y^q_0$ contributes at least $m(1 + |\delta q|)$ qubits.
+Summing over $q \in Q(C)$ gives at least $m \cdot n(C)$ qubits from the
+$q$-layers alone, and any $x$-check contributes the additional cells
+$Y^x_1$ (the 1-cells $xq, qz$ tensored with $V$ and the edges $qz$ tensored
+with $R$). Hence $n(\bar\Gamma(C)) > m \cdot n(C)$ for every nonempty seed.
+This is a finite cell count from Definitions 104, 106, 111 and 116; it is
+not a distance or family-closure claim, and it says nothing about the tower
+cost scaling. $\square$
+
+## 4.39 Logical-sector quotient transport for `C-DIRECT-SUM`, `C-DELETE-CHECK`, and `C-ADD-CHECK` (issue #535)
+
+Dated hand derivation, 2026-11-18 (issue #535). Evidence, not a machine-checked
+proof; Lean currently builds no logical quotient (`design/STATUS.md`, Gate 2).
+Establishes the quotient-level logical-sector effects of the five kernel
+operations (`C-SKIP` is identity; `C-SEQUENCE` composes step-wise) for
+[`CLAIMS.md`](CLAIMS.md) §5 and the property inventory.
+
+**Setting.** Let $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ be a well-formed
+phase-insensitive CSS state (I1–I5) on finite qubit namespace $Q$ with
+$n = \lvert Q\rvert$. By I1, $X = \langle \mathit{rows}_X\rangle \subseteq \mathbb{F}_2^Q$,
+$Z = \langle \mathit{rows}_Z\rangle \subseteq \mathbb{F}_2^Q$, and $X \perp Z$
+(so $X \subseteq Z^\perp$ and $Z \subseteq X^\perp$ under the binary dot product
+$u \cdot v = \lvert u \cap v\rvert \bmod 2$ on $\mathbb{F}_2^Q$). Write the
+logical-sector quotient spaces over $\mathbb{F}_2$ as
+
+$$
+\mathcal{L}_X(C) = Z^\perp / X, \qquad \mathcal{L}_Z(C) = X^\perp / Z.
+$$
+
+**Lemma (orthogonality over $\mathbb{F}_2^Q$).** *For every subspace
+$W \subseteq \mathbb{F}_2^Q$, $\dim W^\perp = n - \dim W$ and
+$(W^\perp)^\perp = W$. Consequently
+$\dim \mathcal{L}_X(C) = \dim \mathcal{L}_Z(C) = k(C) = n - \dim X - \dim Z$.*
+
+*Derivation.* The map $\Phi : \mathbb{F}_2^Q \to (\mathbb{F}_2^Q)^*$ given by
+$\Phi(u)(v) = u \cdot v$ is linear and has identity matrix in the standard basis
+$\{e_q : q \in Q\}$, hence is an isomorphism. Restriction
+$\mathrm{res}_W : (\mathbb{F}_2^Q)^* \to W^*$ is surjective because any linear
+functional on a basis of $W$ extends by $0$ on a complementary basis of
+$\mathbb{F}_2^Q$. Since $W^\perp = \ker(\mathrm{res}_W \circ \Phi)$,
+rank–nullity yields $\dim W^\perp = n - \dim W^* = n - \dim W$. By symmetry of
+the dot product, $W \subseteq (W^\perp)^\perp$, and
+$\dim((W^\perp)^\perp) = n - (n - \dim W) = \dim W$, so $(W^\perp)^\perp = W$.
+(No $X \cap Z = \{0\}$ assumption is used; the identity holds over $\mathbb{F}_2$
+including isotropic subspaces and when $k(C) = 0$ or $n = 0$.) Finally, since
+$X \subseteq Z^\perp$, $\dim(Z^\perp / X) = (n - \dim Z) - \dim X = k(C)$, and
+symmetrically $\dim(X^\perp / Z) = k(C)$. $\square$
+
+**1. Direct sum (`C-DIRECT-SUM`).** Let $C_A, C_B$ be well-formed with
+$Q_A \cap Q_B = \varnothing$ and $\mathsf{used}_A \cap \mathsf{used}_B = \varnothing$,
+and let $C = C_A \oplus C_B$ on $Q = Q_A \sqcup Q_B$. In
+$\mathbb{F}_2^Q = \mathbb{F}_2^{Q_A} \oplus \mathbb{F}_2^{Q_B}$ we have
+$X = X_A \oplus X_B$, $Z = Z_A \oplus Z_B$, and by block-disjointness of the dot
+product $Z^\perp = Z_A^\perp \oplus Z_B^\perp$ and
+$X^\perp = X_A^\perp \oplus X_B^\perp$ (§4.4). Define
+$\phi_X : \mathcal{L}_X(C_A) \oplus \mathcal{L}_X(C_B) \to \mathcal{L}_X(C)$ by
+$\phi_X(u_A + X_A, u_B + X_B) = (u_A, u_B) + (X_A \oplus X_B)$.
+- *Well-defined and linear:* if $u_A' - u_A \in X_A$ and $u_B' - u_B \in X_B$,
+  then $(u_A', u_B') - (u_A, u_B) \in X_A \oplus X_B = X$; linearity is
+  componentwise.
+- *Surjective:* every $u \in Z^\perp = Z_A^\perp \oplus Z_B^\perp$ splits as
+  $(u_A, u_B)$ with $u_A \in Z_A^\perp$, $u_B \in Z_B^\perp$, and
+  $\phi_X(u_A + X_A, u_B + X_B) = u + X$.
+- *Injective:* $(u_A, u_B) \in X_A \oplus X_B \iff u_A \in X_A \land u_B \in X_B$.
+
+Hence $\mathcal{L}_X(C_A \oplus C_B) \cong \mathcal{L}_X(C_A) \oplus \mathcal{L}_X(C_B)$,
+and symmetrically
+$\mathcal{L}_Z(C_A \oplus C_B) \cong \mathcal{L}_Z(C_A) \oplus \mathcal{L}_Z(C_B)$.
+$\square$
+
+**2. Stabilizer deletion (`C-DELETE-CHECK`).** Let `delete_r` remove a displayed
+$X$-row $r \in \mathit{rows}_X$ from $C$ (the $Z$-row case is symmetric by
+exchanging $X \leftrightarrow Z$). By I1 and I2, $r \notin X' := \langle \mathit{rows}_X \setminus \{r\}\rangle$,
+$X = X' \oplus \langle r\rangle$, and $Z' = Z$. Hence
+$X' \subsetneq X \subseteq Z^\perp$ and $Z \subseteq X^\perp \subsetneq X'^\perp$.
+
+- *Same sector ($\mathcal{L}_X$).* The inclusion $X' \hookrightarrow X$ induces
+  a canonical surjective $\mathbb{F}_2$-linear projection
+  $\pi_X : \mathcal{L}_X(C') = Z^\perp / X' \twoheadrightarrow Z^\perp / X = \mathcal{L}_X(C)$,
+  $u + X' \mapsto u + X$, with kernel
+  $\ker(\pi_X) = X / X' = \{0 + X',\, r + X'\} \cong \mathbb{F}_2$, giving the
+  short exact sequence
+  $$
+  0 \longrightarrow X / X' \longrightarrow \mathcal{L}_X(C') \xrightarrow{\;\pi_X\;} \mathcal{L}_X(C) \longrightarrow 0.
+  $$
+  Every parent class $u + X \in \mathcal{L}_X(C)$ splits into two child classes
+  $u + X'$ and $(u + r) + X'$ whose vector union is $u + X$. In particular, the
+  trivial parent class $0 + X$ splits into $0 + X'$ and the **newly admitted
+  (promoted) $X$-logical class** $r + X' = X \setminus X'$, which is nonzero in
+  $\mathcal{L}_X(C')$ because $r \in X \subseteq Z^\perp$ and $r \notin X'$.
+  The canonical quotient map is the backward projection $\pi_X$, which has no
+  canonical section $\mathcal{L}_X(C) \to \mathcal{L}_X(C')$.
+- *Opposite sector ($\mathcal{L}_Z$).* The inclusion
+  $X^\perp \hookrightarrow X'^\perp$ induces a canonical injective
+  $\mathbb{F}_2$-linear transport map
+  $\iota_Z : \mathcal{L}_Z(C) = X^\perp / Z \hookrightarrow X'^\perp / Z = \mathcal{L}_Z(C')$,
+  $v + Z \mapsto v + Z$. Define $\ell_r : X'^\perp \to \mathbb{F}_2$ by
+  $\ell_r(v) = v \cdot r$. Because $Z \subseteq X^\perp \subseteq \ker(\ell_r)$,
+  $\ell_r$ descends to a well-defined linear functional
+  $\bar\ell_r : \mathcal{L}_Z(C') \to \mathbb{F}_2$, $\bar\ell_r(v + Z) = v \cdot r$,
+  with $\ker(\bar\ell_r) = ((X' + \langle r\rangle)^\perp) / Z = X^\perp / Z = \mathrm{im}(\iota_Z)$.
+  By the Lemma, $(X'^\perp)^\perp = X'$; since $r \notin X'$, there exists
+  $v_0 \in X'^\perp$ with $v_0 \cdot r = 1$. Hence $\bar\ell_r$ is
+  surjective (its value at $v_0 + Z$ is $1$; such a $v_0$ cannot lie in $Z$,
+  as $Z \perp X$ and $r \in X$), giving the short exact sequence
+  $$
+  0 \longrightarrow \mathcal{L}_Z(C) \xrightarrow{\;\iota_Z\;} \mathcal{L}_Z(C') \xrightarrow{\;\bar\ell_r\;} \mathbb{F}_2 \longrightarrow 0.
+  $$
+  Parent $Z$-logical classes embed injectively without merging as the surviving
+  subspace $\mathrm{im}(\iota_Z) = \ker(\bar\ell_r)$, and the **newly admitted
+  (exposed) $Z$-logical classes** are precisely the affine hyperplane
+  $\bar\ell_r^{-1}(1) = (X'^\perp \setminus X^\perp) / Z = \{v_0 + v + Z : v + Z \in \mathcal{L}_Z(C)\}$
+  of $2^{k(C)}$ classes anticommuting with $r$ while commuting with $X'$.
+  Together, $(r + X', v_0 + Z)$ satisfies $r \cdot v_0 = 1$ and forms a
+  conjugate logical pair for the added logical qubit ($k(C') = k(C) + 1$).
+
+This derivation settles the quotient-level logical-sector characterization
+(including the $k = 0$ case exhibited by fixture `W12`); it derives no
+unpriced post-deletion distance lower bound or equality, which remains
+`unavailable` (`JUDGMENT_LAYER.md` §2, §3). $\square$
+
+**3. Stabilizer addition (`C-ADD-CHECK`).** Let `addStab_{r:X}` add an $X$-row
+$r \in \mathbb{F}_2^Q$ satisfying the `C-ADD-CHECK` premises $r \in Z^\perp$
+and $r \notin X$ (the $Z$-row case is symmetric). Then
+$X' = X \oplus \langle r\rangle \subseteq Z^\perp$, $Z' = Z$, and
+$Z \subseteq X'^\perp \subsetneq X^\perp$; moreover $r + X$ is a nonzero class
+in $\mathcal{L}_X(C)$, so $k(C) \ge 1$ and $k(C') = k(C) - 1 \ge 0$. Reversing
+the roles of $(X', X)$ in Part 2 yields the dual exact sequences:
+
+- *Same sector ($\mathcal{L}_X$):* canonical surjection
+  $\pi_X : \mathcal{L}_X(C) \twoheadrightarrow \mathcal{L}_X(C')$,
+  $u + X \mapsto u + X'$, with $\ker(\pi_X) = X' / X = \{0 + X,\, r + X\} \cong \mathbb{F}_2$:
+  $$
+  0 \longrightarrow X' / X \longrightarrow \mathcal{L}_X(C) \xrightarrow{\;\pi_X\;} \mathcal{L}_X(C') \longrightarrow 0.
+  $$
+  The parent class $r + X$ is **absorbed** into the stabilizer group, and each
+  surviving pair $\{u + X, (u + r) + X\}$ merges into a single child class
+  $u + X' \in \mathcal{L}_X(C')$.
+- *Opposite sector ($\mathcal{L}_Z$):* canonical injection
+  $\iota_Z : \mathcal{L}_Z(C') \hookrightarrow \mathcal{L}_Z(C)$ with
+  surjective anticommutation functional $\bar\ell_r(v + Z) = v \cdot r$
+  (surjective since $r \notin X = (X^\perp)^\perp$):
+  $$
+  0 \longrightarrow \mathcal{L}_Z(C') \xrightarrow{\;\iota_Z\;} \mathcal{L}_Z(C) \xrightarrow{\;\bar\ell_r\;} \mathbb{F}_2 \longrightarrow 0.
+  $$
+  Surviving classes are $\ker(\bar\ell_r) = X'^\perp / Z = \mathcal{L}_Z(C')$
+  (those commuting with $r$), and the **removed (killed) classes** are the
+  affine hyperplane $\bar\ell_r^{-1}(1) = (X^\perp \setminus X'^\perp) / Z$ of
+  $2^{k(C)-1}$ parent $Z$-classes anticommuting with $r$.
+
+Exact post-addition distance values remain `open`; strict improvement,
+sector-aware gauging, and direct-sum extinction remain conditional cells
+(`JUDGMENT_LAYER.md` §2a). $\square$
+
+## 4.40 Metatheorem re-discharge for `stdCSS-3` and kernel rung-6 promotion (issue #535)
+
+Dated hand derivation and re-discharge audit, 2026-11-18 (issue #535). Evidence,
+not a machine-checked proof; Gates 2–7 remain unchecked and rung 7
+(`mechanized`) remains open.
+
+Per [`VERSIONING.md`](VERSIONING.md) §4, every release bump creates a
+**re-discharge obligation** for every metatheorem scoped to the operation set:
+each affected metatheorem must be re-established against the expanded operation
+set, either by extending its proof or by restricting its statement explicitly,
+before its `discharged-through` field advances. Between `stdCSS-1` (the five
+kernel primitives) and `stdCSS-3` (including the 2026-11-18 `v0.3.0` candidate
+axis-3 additions), the calculus changed in four places:
+
+1. **Equality and capacity:** $\equiv$ added the $Q_1 = Q_2$ clause
+   (2026-10-29, issue #241, `STATE_MODEL.md` §2), and every minting rule added
+   the H-4 finite 70,000-name capacity premise (2026-10-31 / 2026-11-11, issue
+   #296, §2 `C-ADD-CHECK`).
+2. **`stdCSS-2` transitions (axis 2):** `E-GRAFT` and the six Gate 6 CSS-level
+   conditional cells (`P-REBASE`, `E-LOCAL-HADAMARD` at $T \in \{Q, \varnothing\}$,
+   `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, and binary `E-GLUE`).
+3. **`stdCSS-3` constructors (axis 2):** ten `transition-defined` expression
+   constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`,
+   `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, `L-TILE`,
+   `L-NESTED-CSS`, §4.34–§4.36), carrying no distance rule (`JUDGMENT_LAYER.md`
+   §2g).
+4. **Axis-3 judgment additions:** derived properties $w$, $r$ (§4.21), $\kappa$
+   (§4.22); generator-referencing claim $\mathsf{gen}_i$ (`JUDGMENT_LAYER.md`
+   §4, §4.11); `E-PEEL` price cells (§4.28); heuristic statuses `probabilistic`
+   and `certificate-checked` (`CLAIMS.md`, issue #329/#371); gate-realization
+   rows $\mathsf{preserves}_U$ and $\omega$ weakening (§2h, §4.37, issue #543);
+   `A-QUOTIENT` monomial-quotient conditional slot (§2i, issue #547;
+   `A-QUOTIENT` remains `taxonomy-only`); and conditional family-level one-shot
+   level-map transport (§2j, §4.38, issue #541; no single-state evaluation or
+   operation ID).
+
+Each metatheorem in [`OBLIGATIONS.md`](OBLIGATIONS.md) — together with
+`OBL-WELL-FORMEDNESS-PRESERVATION`, which quantifies over all admitted
+operations — is audited below. Every entry is either **discharged** across
+`stdCSS-3` or **explicitly restricted** to a stated fragment and discharged on
+that fragment through `stdCSS-3`:
+
+1. **`OBL-WELL-FORMEDNESS-PRESERVATION`** *(discharged through `stdCSS-3` for
+   all admitted operations and constructors; explicitly restricted away from
+   unadmitted candidates).* Kernel five (§4.7), `E-GRAFT` (§4.12), six Gate 6
+   CSS cells (§4.26–§4.31), and all ten `stdCSS-3` constructors (§4.34–§4.36)
+   each have dated hand derivations preserving I1–I5 (and ambient containment in
+   $\mathbb{F}_2^{Q'}$). H-4 capacity restricts the domain of minting rules to
+   states with enough unused identifiers; it never alters output invariants.
+   Unadmitted candidates (`A-QUOTIENT`, `E-SPLIT`, `X-*`, `pullback`,
+   `pushout`) remain explicitly outside this scope (`open`).
+2. **`OBL-PRIMITIVE-DETERMINISM`** *(discharged through `stdCSS-3` as
+   single-valuedness on fixed presentations; $\equiv$-input invariance
+   explicitly restricted).* On a fixed encoded input state and explicit term
+   data, every transition and constructor of `stdCSS-3` is a deterministic
+   function of its input and term: kernel five (§4.8, re-evidenced for $Q$
+   2026-10-29), `E-GRAFT` (§4.12, explicit chain $\vec r$), six Gate 6 cells
+   (§4.26–§4.31), and all ten `stdCSS-3` constructors (§4.34–§4.36, with
+   `A-CONCAT` representatives explicit or canonically defaulted from
+   `tower_level_data`); capacity exhaustion (H-4) produces `no_derivation`, not
+   multiple outputs. Lean's `eval_unique` and `denoteExpr_eval` (`Eval.lean`)
+   match this single-valuedness across all mechanized commands and expressions.
+   *Explicit restriction:* invariance of the output modulo $\equiv$ under
+   row-order permutations of the input state holds for the five kernel
+   primitives, `E-GRAFT`, `E-LOCAL-HADAMARD`, `E-PEEL`, `E-PUNCTURE`,
+   `E-EXTEND`, `E-GLUE`, and the classical/algebraic `L-*` constructors, and is
+   **restricted away from** display-order-reading operations (`P-REBASE`,
+   `A-PRODUCT`, `A-DOUBLE`, `A-CONCAT`), whose matrix indexing, qubit/retention
+   order, or factor-row concatenation in display order depends on the concrete
+   display list order. For the six Gate 6 cells `E-GRAFT`,
+   `E-LOCAL-HADAMARD`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, and `E-GLUE`,
+   invariance follows from a common argument: each reads input rows by
+   identifier or as a set and mints any new identifiers canonically from
+   `used`, so a row-order permutation of the input leaves the output row set
+   and the minted names unchanged (§4.26–§4.31).
+3. **`OBL-SKIP-IDENTITY`** *(discharged through `stdCSS-3` for all admitted
+   commands).* §4.6's proof uses only the `C-SKIP` and `C-SEQUENCE` rules and
+   the Framing Lemma (no `Eval` premise or semantic output field reads `steps`).
+   Every command admitted in `stdCSS-2` (`E-GRAFT`, `P-REBASE`,
+   `E-LOCAL-HADAMARD`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`) obeys
+   `STATE_MODEL.md` §5 (`steps` is read by no `Eval` premise or judgment), and
+   `stdCSS-3` introduces no new command production. Thus §4.6 holds verbatim
+   for every command $m$ of `stdCSS-3`.
+4. **`OBL-SEQUENCE-ASSOCIATIVITY`** *(discharged through `stdCSS-3` for all
+   admitted commands).* §4.8's associativity proof uses only inversion of the
+   `C-SEQUENCE` rule and is parametric in the command language; §1a's
+   denotational adequacy ($\llbracket m\rrbracket(S) = \mathsf{some}\ S' \iff
+   \mathrm{Eval}(m, S, S')$) depends only on single-valuedness of `Eval`,
+   discharged for all `stdCSS-3` commands in item 2 above.
+5. **`OBL-DIRECT-SUM-LAWS`** *(discharged through `stdCSS-3`).* The state model
+   $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$, equality $\equiv$ (including
+   $Q$, re-evidenced 2026-10-29), and the `C-DIRECT-SUM` rule are unchanged
+   across `stdCSS-1`–`stdCSS-3`. Every `stdCSS-3` expression constructor yields
+   a well-formed presented CSS state on this model (§4.34–§4.36), so
+   associativity and commutativity at $\equiv$ apply to any disjoint pair or
+   triple of evaluated expressions. The 2026-11-18 axis-3 span properties
+   ($\mathsf{preserves}_U$, $\omega$) respect qubit relabeling $\approx$
+   (transporting $U$'s support by $\sigma$ for $\mathsf{preserves}_U$, and by
+   weight-invariance of $\sigma$ for $\omega$).
+6. **`OBL-ORDER-INDEPENDENT-DELETION`** *(explicitly restricted to pure
+   `C-DELETE-CHECK` / `C-SEQUENCE` batches; discharged through `stdCSS-3` on
+   that scope).* The statement explicitly excludes interleaved presentation or
+   extension commands. Because deletion neither mints identifiers nor changes
+   $Q$, neither the $Q$ clause in $\equiv$ nor H-4 capacity alters §4.15's
+   proof; the fixed-reference-set annotation-transport clause is likewise
+   unaffected.
+7. **`OBL-CROSS-SECTOR-PERMUTATION`** *(explicitly restricted to opposite-sector
+   kernel check commands `C-DELETE-CHECK` and `C-ADD-CHECK` under `C-SEQUENCE`;
+   discharged through `stdCSS-3` on that scope).* Excluded from `E-GRAFT` and
+   Gate 6 commands (which change $Q$, swap sectors, or mint multiple rows).
+   Under H-4 capacity on the kernel fragment: `Delete`/`Delete` mints nothing;
+   `Delete`/`Add` mints one identifier (since `Delete` leaves `used` unchanged,
+   capacity holds in both orders or fails in both, yielding Case 4 when
+   exhausted); `Add`/`Add` mints two identifiers (if fewer than two unused
+   identifiers remain, both orders fail at the second step, yielding Case 4;
+   otherwise §4.10's Case 2/Case 4 analysis holds unchanged). Thus the
+   four-case partition and side condition $\Pi$ stand verbatim.
+8. **`OBL-FIXED-NAMESPACE-REACHABILITY`** *(explicitly restricted to
+   fixed-namespace kernel `C-DELETE-CHECK` / `C-ADD-CHECK` / `C-SEQUENCE` paths
+   up to canonical identifier allocation; discharged through `stdCSS-3` on that
+   scope under H-4 capacity).* Excludes $n$-changing `E-*` commands and
+   extended-state models. Under H-4 capacity (§4.17, issue #296), the
+   all-deletions-first path mints $\dim X_1 + \dim Z_1 \le \lvert Q\rvert$
+   identifiers and exists whenever at least that many identifiers remain unused
+   in the 70,000-name enumeration.
+9. **`OBL-PRESENTATION-CONJUGATION`** *(explicitly restricted to the five
+   kernel primitives and `E-GRAFT`; discharged through `stdCSS-3` on that
+   scope).* §4.25 proves transported-command congruence for all five kernel
+   operations and `E-GRAFT`. Because a qubit relabeling $\sigma$ leaves `used`
+   untouched, the H-4 capacity premise is relabeling-invariant, so §4.25 stands
+   unchanged. Explicitly restricted away from `P-REBASE`, the other five Gate 6
+   cells, and the ten `stdCSS-3` expression constructors (which emit fresh
+   canonical namespaces $\{0, \dots, n-1\}$ or read input display order).
+10. **`OBL-DERIVED-TERM-FACTORIZATION`** *(explicitly restricted to derived
+    commands over the five kernel primitives for a fixed ordered elementary
+    expansion; discharged through `stdCSS-3` on that scope).* `E-GRAFT` and the
+    Gate 6 commands are admitted as primitive conditional transitions, not
+    derived commands (`CLAIMS.md`, `P-REBASE` card), and the ten `stdCSS-3`
+    constructors are expression constructors. On the kernel scope, H-4 capacity
+    makes a fixed ordered expansion applicable iff capacity suffices for its
+    additions, leaving §4.23 unchanged.
+11. **`OBL-CERTIFICATE-PATH-KEYING`** *(discharged through `stdCSS-3` for
+    per-state keying $(C, P, \sigma)$ and syntax-directed route-scoping; the
+    three Gate 5 design questions of §4.24 remain open).* `stdCSS-3` admitted
+    `certificate-checked` for per-state atomic judgments (`CLAIMS.md`, issues
+    #329/#371) using this exact keying (`CertificateChecker.lean`), and none of
+    the `stdCSS-3` or 2026-11-18 axis-3 additions adds a distance-computing rule
+    or an operation-contract certificate variant.
+12. **`OBL-JUDGMENT-SOUNDNESS`** *(discharged by hand derivation through
+    `stdCSS-3` for the unconditional L3 inventory; explicitly restricted away
+    from conditional priced/certificate/honest-layout cells, §2j family-level
+    transport, and unadmitted candidates).* For every unconditional L3 rule
+    currently in the signature, the instantiation base is backed by a dated hand
+    derivation:
+    - kernel five across all unconditional carry-table rows ($n, k, w, r, \kappa,
+      d_X, d_Z, d, \mathsf{preserves}_U, \omega$, output well-formedness,
+      logical-sector quotients, and $\mathsf{gen}_i$: §4.1–§4.7, §4.11,
+      §4.21–§4.22, §4.37, §4.39);
+    - `E-GRAFT` and the five unary Gate 6 commands for structural/WF rows and
+      $\mathsf{gen}_i$ (§4.11–§4.12, §4.21–§4.22, §4.26–§4.30);
+    - `E-GLUE` and the ten `stdCSS-3` expression constructors for structural/WF
+      rows, plus `E-GLUE`'s §4.31/§4.33 unpriced distance lower bound (§4.31,
+      §4.33–§4.36; constructors carry no distance rule, §2g).
+    The order and weakening rules (`TRANSITIVITY`, `MIN-ORDER`, ambient order
+    theory on $\mathbb{N} \cup \{+\infty\}$, and monotone weakening §7.2.6 /
+    §4.37) are sound over $\mathbb{N} \cup \{+\infty\}$. *Explicit
+    restrictions:* (a) conditional priced cells, seam certificates, and honest
+    merged/supplied layout premises remain conditional on consumer-supplied
+    hypotheses (`OBL-PRICED-INPUT-SEMANTICS`, `OBL-PRICED-INTERVAL-SOUNDNESS`,
+    `OBL-GATE6-CSS-EXTENSIONS`); (b) family-level one-shot level-map transport
+    (`JUDGMENT_LAYER.md` §2j) has no single-state evaluation and rests on
+    imported framework hypotheses; (c) `A-QUOTIENT` (`JUDGMENT_LAYER.md` §2i)
+    is an existence record only (`taxonomy-only`); and (d) full Lean
+    mechanization over the expanded inventory landed in
+    `lean/CodeCalculus/ExpandedSoundness.lean` (issue #533), and
+    Gate 5 remains unchecked.
+13. **`OBL-JUDGMENT-TRANSPORT`** *(discharged through `stdCSS-3` for
+    single-state command sequences; explicitly restricted away from mixed
+    opposite-polarity distance chains and future-$\Pi$ certificate mutation).*
+    The positive half composes all structural properties ($n, k, w, r, \kappa,
+    \mathsf{preserves}_U$, $\omega$ weakening, output well-formedness),
+    single-polarity distance chains, and surviving $\mathsf{gen}_i$ claims
+    across sequences of kernel, `E-GRAFT`, and unary Gate 6 commands, with
+    `stdCSS-3` expression constructors entering at chain position $0$ via the
+    input-display source rule (§4.11, §4.21–§4.22, §4.37). The `W13` refusal
+    half and the seam condition on chains of single steps cover deletion, graft,
+    peel, puncture, and rebase (§4.11; mechanized in `Transport.lean` and
+    `SeamChains.lean`). *Explicit restrictions:* mixed opposite-polarity
+    exact-quantity distance chains remain `open` in L3; future-$\Pi$
+    certificate context mutation is not part of `Eval`; binary `E-GLUE` and
+    expression constructors occur only in expression position $e$, not in
+    command sequences $m_1; m_2$; and every `W13` refutation is relative to the
+    recorded L3 inventory (F7 second cost).
+14. **`OBL-PRICED-INTERVAL-SOUNDNESS`** *(explicitly restricted to the core
+    §8.3 consumer transformer slice; discharged through `stdCSS-3` on that
+    scope).* Covers `C-SKIP`, `C-ADD-CHECK`, `C-DELETE-CHECK`, `E-GRAFT`,
+    `C-DIRECT-SUM`, and `C-SEQUENCE` (§4.13). The six Gate 6 cells are governed
+    separately by `OBL-GATE6-CSS-EXTENSIONS` (§4.32, including the 2026-11-10
+    `E-PEEL` price cells of §4.28); the ten `stdCSS-3` constructors carry no
+    distance rule and initialize ledgers at $[0, +\infty)$ (§2g, trivially
+    sound); and the 2026-11-18 axis-3 additions (§2h–§2j) modify no distance
+    interval endpoint.
+
+**Consequence for kernel rung 6 (`contract-proved`).** Together with §4.1–§4.11,
+§4.13–§4.19, §4.21–§4.25, §4.37, and §4.39, every transition, applicability
+condition, exact state/context update, unconditional theorem-level judgment,
+conditional carry cell (with stated hypotheses), and scoped metatheorem
+re-discharge for the five kernel operations (`C-SKIP`, `C-DIRECT-SUM`,
+`C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) now carries a dated hand
+derivation in this repository. This satisfies the `spec/CLAIMS.md` definition
+of rung 6 (`contract-proved`). It does **not** establish rung 7 (`mechanized`),
+does **not** ratify Gates 2–7, and does **not** promote any claim in the
+`AUTHORITY.md` §B4 review-disposition sense without independent review and
+maintainer confirmation. $\square$
+
+## 4.41 `L-MAPPING-CONE`: output well-formedness and the parameter bookkeeping (`OBL-WELL-FORMEDNESS-PRESERVATION`, constructor instance)
+
+Dated hand derivation, 2026-11-18 (issue #569). Evidence, not a
+machine-checked proof. It covers `L-MAPPING-CONE`, admitted as
+`transition-defined` on this date (§2 card).
+
+**Setting.** Let $\partial_A$ be an $a_1 \times a_0$ binary matrix,
+$\partial_B$ a $b_1 \times b_0$ matrix, $f_1$ an $a_1 \times b_1$
+matrix, and $f_0$ an $a_0 \times b_0$ matrix, satisfying the chain-map
+premise $\partial_B f_1 = f_0 \partial_A$. The matrices are read as
+linear maps $\partial_A \colon A_1 \to A_0$, $\partial_B \colon B_1 \to B_0$,
+$f_1 \colon A_1 \to B_1$, and $f_0 \colon A_0 \to B_0$, with $A$ and $B$
+two-term complexes. The cone has $C_2 = A_1$, $C_1 = A_0 \oplus B_1$, and
+$C_0 = B_0$, with $\delta_2(a_1) = (\partial_A a_1, f_1 a_1)$ and
+$\delta_1(a_0, b_1) = f_0 a_0 + \partial_B b_1$.
+
+**Well-formedness and $n$.** The premise gives $\delta_1 \delta_2 = 0$, so
+the natural $Z$-rows (one per basis element of $A_1$, the support of
+$\delta_2$) and the natural $X$-rows (one per basis element of $B_0$, the
+corresponding row of $\delta_1$) have pairwise even overlap. (The chain-map
+premise is equivalent to this overlap: the $(j,r)$ entry of
+$f_0\partial_A+\partial_Bf_1$ is the overlap of $Z$-row $j$ with $X$-row $r$.
+The Lean rule takes the commutation side, `naturalCommuteBool` of the natural
+rows, as its premise.) Hence, by the claim of §4.34, the retained display
+is a well-formed state on the labels $0, \ldots, a_0 + b_1 - 1$, and
+$n = \dim A_0 + \dim B_1 = a_0 + b_1$. The first $a_0$ labels are the
+basis of $A_0$ and the remaining $b_1$ labels the basis of $B_1$.
+
+**The count $k$.** The retained display of a sector spans the natural row
+space of that sector (§4.34), so $k$ is rank bookkeeping over the
+constructed display. Write $Z(A)=\ker\partial_A$, $Z(B)=\ker\partial_B$,
+and let $\bar f_0\colon A_0/\operatorname{im}\partial_A \to
+B_0/\operatorname{im}\partial_B$ be the map induced by $f_0$ (well-defined
+by the premise). Let $\pi$ send the class of a cycle $(a_0,b_1)$ to the
+class of $a_0$ in $A_0/\operatorname{im}\partial_A$, and $\iota$ send
+$b\in Z(B)$ to the class of $(0,b)$. Then $\pi$ is well-defined with
+image $\ker\bar f_0$, $\ker\pi=\operatorname{im}\iota$, and
+$\iota(b)=0$ iff $b\in f_1(Z(A))$. Hence the space of classes has
+dimension $\dim\operatorname{im}\iota+\dim\ker\bar f_0$, with
+$\operatorname{im}\iota\cong Z(B)/f_1(Z(A))$, giving
+
+$$
+k = \dim Z(B) - \dim f_1(Z(A)) + \dim \ker \bar f_0.
+$$
+
+**The sector distances (conditional, not cells).** A nonzero class is of
+exactly one of two kinds: either its image under $\pi$ is nonzero, with
+representative $(a_0,b_1)$ satisfying $a_0\notin\operatorname{im}\partial_A$;
+or it is $\iota(b)$ for some $b\in Z(B)\setminus f_1(Z(A))$. Define
+
+$$
+D_A=\min\{\lVert a_0\rVert+\lVert b_1\rVert :
+    f_0a_0=\partial_Bb_1,\ a_0\notin\operatorname{im}\partial_A\},
+$$
+
+$$
+D_B=\min\{\lVert\partial_Aa_1\rVert+\lVert f_1a_1+b\rVert :
+    a_1\in A_1,\ b\in Z(B)\setminus f_1(Z(A))\},
+$$
+
+each $+\infty$ when empty. Then
+
+$$
+d_Z(C(f)) = \min(D_B, D_A).
+$$
+
+The constructor computes no distance.
+The ledger starts at $[0, +\infty)$. A consumer that supplies sourced
+lower bounds $\ell_B \le D_B$ and $\ell_A \le D_A$ obtains the lower
+endpoint $\min(\ell_B, \ell_A)$, and $\ell_B$ alone when $\bar f_0$ is
+injective (decidable by rank). Upper endpoints come from validated
+witnesses in $B$ (§3.2). The other sector is the same statement for the
+transposed input (§3.3). No distance value is asserted by the transition.
+
+**What this does not settle.** Validation of supplied bounds or of
+exhaustive minimum-weight-class enumerations; weighted norms on the factors;
+cones of maps between longer complexes. The Lean mechanization is partial.
+`lean/CodeCalculus/Term.lean` and `Eval.lean` carry the production and its
+`EvalExpr` rule, with the state update in `Constructors.lean`. Proved in
+Lean (`ConstructorAssembly.lean`): $n$ (`evalExpr_cone_n`), output
+well-formedness (`evalExpr_cone_wf`), and the rank statement
+`evalExpr_cone_k` (an instance of `stateK_constructedState`), the rule
+carrying the commutation of the natural rows as its premise (equivalent to
+the chain-map premise, not yet mechanized). Not in Lean: the closed form
+for $k$ read on the complexes, the conditional distance cells, and the
+transposed duality. Evidence: `machine/test_mapping_cone.py` pins two
+instances and the premise refusal; `machine/test_constructor_lean.py` pins
+the Lean production. Agreement is evidence that the derivation is
+transcribed as stated, not a proof. The constructor instance of
+`OBL-WELL-FORMEDNESS-PRESERVATION` is discharged by this section for
+`L-MAPPING-CONE`. $\square$
+
+
+## 4.42 CSS-preserving column CNOT/SWAP transformation (issue #570)
+
+Dated hand derivation, 2026-11-18. Evidence, not a machine-checked proof.
+
+**Setting.** Let $C$ be a well-formed CSS state on qubits $Q$ with $n=|Q|$,
+check matrices $H_X, H_Z \in \mathbb{F}_2^{m_X \times n}, \mathbb{F}_2^{m_Z \times n}$.
+Let $U \in \mathrm{GL}(n,2)$. Define $C' = \mathrm{cnotSwap}_U(C)$ by
+
+$$
+    H_X' = H_X U^{-1}, \qquad H_Z' = H_Z U^{\mathsf{T}},
+$$
+
+with the same qubit set $Q$ and the same identifiers (no minting).  The
+orthogonality premise is preserved:
+
+$$
+    H_X' (H_Z')^{\mathsf{T}} = H_X U^{-1} U H_Z^{\mathsf{T}} = H_X H_Z^{\mathsf{T}} = 0.
+$$
+
+**Identifier retention (agreement with `P-REBASE`, §4.26).** No row is added or
+removed and no generator is renamed: each displayed row keeps its identifier,
+and only its support vector changes.  This differs from `P-REBASE`, which
+mints fresh identifiers because it replaces a sector's display by new basis
+vectors $V_\tau M$; here the display set is the same set of rows, so no
+minting occurs and `used` is unchanged.  The capacity premise (H-4) is
+therefore vacuously satisfied.  `pres` keeps its qubit namespace, sector
+labels, and identifier set; only the supports of the displayed rows are
+rewritten.  Carried witnesses are **not** automatically valid: a parent-valid
+logical witness is a subset of $Q$ whose membership in the normalizer depends
+on the row spans, and those spans change under $U$; the witness's support must
+be transported by the appropriate sector map and revalidated in the child before
+it can tighten an endpoint.  The consumer drops or revalidates witnesses rather
+than carrying them blindly. $\square$
+
+**Output well-formedness.** I1 carries: orthogonality is shown above.  I2
+carries: multiplication by the invertible matrix $U^{-1}$ (respectively
+$U^{\mathsf{T}}$) preserves linear independence of the displayed rows in each
+sector.  I3 carries: no identifiers are minted or retired, and `used` is
+unchanged, so injectivity and non-reuse are untouched.  I4 carries: every
+displayed row keeps its sector label, and the rewritten row spans the same
+sector's (transformed) space.  I5 carries: provenance records are append-only
+and no identifier is reused or removed from `used`.  Hence $C'$ is a
+well-formed CSS display (`OBL-WELL-FORMEDNESS-PRESERVATION`). $\square$
+
+**Parameter bookkeeping.** $n' = n$ and $k' = n - \mathrm{rank}(H_X') -
+\mathrm{rank}(H_Z') = n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z) = k$,
+since multiplication by an invertible matrix preserves rank.  The interaction
+radius and the maximum row weight are recomputed on the image display; no
+monotonicity claim is made. $\square$
+
+**Distance.** The two sectors transform by different matrices.  A $Z$-type
+logical (a vector $z$ with $H_X z = 0$) maps to $U z$ in $C'$, because
+$H_X' (U z) = H_X U^{-1} U z = H_X z = 0$.  An $X$-type logical (a vector
+$x$ with $H_Z x = 0$) maps to $U^{-\mathsf{T}} x$, because
+$H_Z' (U^{-\mathsf{T}} x) = H_Z U^{\mathsf{T}} U^{-\mathsf{T}} x = H_Z x = 0$.
+Define the four matrix norms
+
+$$
+\begin{aligned}
+\rho_Z      &= \max_{j} \mathrm{wt}(\text{column } j \text{ of } U), \\
+\rho_Z^-    &= \max_{j} \mathrm{wt}(\text{column } j \text{ of } U^{-1}), \\
+\rho_X      &= \max_{j} \mathrm{wt}(\text{column } j \text{ of } U^{-\mathsf{T}})
+            = \max_{i} \mathrm{wt}(\text{row } i \text{ of } U^{-1}), \\
+\rho_X^-    &= \max_{j} \mathrm{wt}(\text{column } j \text{ of } U^{\mathsf{T}})
+            = \max_{i} \mathrm{wt}(\text{row } i \text{ of } U).
+\end{aligned}
+$$
+
+For the $Z$ sector, the map is $U$, so
+$\mathrm{wt}(U z) \le \rho_Z \, \mathrm{wt}(z)$ and
+$\mathrm{wt}(z) \le \rho_Z^- \, \mathrm{wt}(U z)$; hence
+
+$$
+\lceil d_Z / \rho_Z^- \rceil \le d_Z' \le \rho_Z \, d_Z .
+$$
+
+For the $X$ sector, the map is $U^{-\mathsf{T}}$, so the same argument with
+$\rho_X, \rho_X^-$ gives
+
+$$
+\lceil d_X / \rho_X^- \rceil \le d_X' \le \rho_X \, d_X .
+$$
+
+No equality is claimed; the universal equality tail stays open. $\square$
+
+**Hamming-weight non-invariance.** For general $U$, $\mathrm{wt}(H_X' \text{ row})$
+need not equal $\mathrm{wt}(H_X \text{ row})$; a single column CNOT can
+increase it.  No generic CNOT layer is modelled as zero-price. $\square$
+
+## 4.43 Nullary, base, and interface constructors: output well-formedness and parameters (`OBL-WELL-FORMEDNESS-PRESERVATION`, issue #549)
+
+Dated hand derivation, 2026-11-19 (issue #549). Evidence, not a
+machine-checked proof. It covers `L-EMPTY`, `L-FREE`, `A-PULLBACK`, and
+`A-PUSHOUT`, admitted as `transition-defined` expression constructors on this
+date (§2 cards).
+
+**`L-EMPTY` (`empty`) and `L-FREE` (`free(Q)`).** For any finite set
+$Q \subset \mathbb{N}$ of distinct nonnegative integers stored in strictly
+increasing order, `free(Q)` produces $C = (Q, \varnothing, \varnothing, [], \varnothing)$
+(and `empty` is the $Q = \varnothing$ case). Because `rows` and `used` are
+empty, I1 ($X \perp Z$, with $X = Z = \{0\}$), I2 (displayed independence), I3
+(identifier discipline), I4 (sector typing), I5 (`ValidProvenance`), and
+ambient containment hold vacuously; $Q$ is duplicate-free and strictly
+increasing by typing. Thus the output is well-formed (`wf_emptyState` /
+`wf_freeState` in Lean). Parameters: $n = |Q|$, $\dim X = \dim Z = 0$, so
+$k = |Q|$; $w = 0$; Tanner components $\kappa = |Q|$ (every qubit is an
+isolated vertex with no check vertices); $r = 0$ under any supplied honest
+layout on $Q$.
+
+*Semantic distances (not automatic §2g ledger rules).* When $Q = \varnothing$
+(`empty` or `free(∅)`), $k = 0$ and no $\sigma$-logical exists in either sector,
+so $d_X = d_Z = d = +\infty$. When $Q \neq \varnothing$, $X = Z = \{0\}$ and
+every singleton $\{q\}$ ($q \in Q$) has even overlap with $\varnothing$ and lies
+outside $\{0\}$, so $\{q\}$ is a weight-$1$ logical in both sectors; since $0$ is
+not a logical, $d_X = d_Z = d = 1$. Under `JUDGMENT_LAYER.md` §2g,
+`DistanceLedger.for_constructed` starts at $[0, +\infty)$ unless a sourced
+lower bound or validated witness (such as $\{q\}$ for $Q \neq \varnothing$)
+is supplied.
+
+**`A-PULLBACK` (`pullback(e₁, e₂, e_I; φ₁, φ₂)`).** Let $C_1, C_2, I$ be
+well-formed CSS states and $\phi_i : Q_i \to Q_I$ ($i = 1, 2$) be total qubit
+maps. Each natural row of the card is a subset of $\{0, \dots, n - 1\}$ paired
+with a sector $\sigma \in \{X, Z\}$, where $n = |Q_1 \times_{Q_I} Q_2|$. Under
+the applicability premise that the natural rows of the two sectors have
+pairwise even overlap, the retained-display theorem of §4.34 (`wf_constructedState`
+in Lean) implies that the retained display with canonically minted identifiers
+from empty `used` satisfies I1–I5 and ambient containment on $\{0, \dots, n-1\}$.
+Notice that even when $n = 0$ (empty fiber product), the supports are all
+$\varnothing \subseteq \varnothing$ and the output is well-formed (`emptyState 0`
+with zero rows retained, or empty display). Parameters: $n = |Q_1 \times_{Q_I} Q_2|$
+exact; $k = n - \dim X - \dim Z$ by rank bookkeeping over the retained display;
+$w, \kappa, r$ recomputed over the constructed display (§2d.5, §2g).
+*Set-level equalizers (issue #518):* for parallel maps $f, g : C_1 \rightrightarrows I$,
+taking $C_2 = C_1$, $\phi_1 = f$, and $\phi_2 = g$ restricts to the equalizer
+subspace $\{q_1 \in Q_1 : f(q_1) = g(q_1)\}$ on the diagonal pairs, so
+set-level equalizers factor through `A-PULLBACK` as noted in issue #518.
+
+**`A-PUSHOUT` (`pushout(e₁, e₂, e_S; ψ₁, ψ₂)`).** Let $C_1, C_2, S$ be
+well-formed CSS states and $\psi_i : Q_S \to Q_i$ ($i = 1, 2$) be total qubit
+maps. The quotient $Q_1 \sqcup_{Q_S} Q_2$ has $n$ equivalence classes relabeled
+$0, \dots, n - 1$. Each natural row of the card is a subset of $\{0, \dots, n - 1\}$
+paired with a sector $\sigma \in \{X, Z\}$. Under the applicability premise that
+the natural rows of the two sectors have pairwise even overlap, §4.34
+(`wf_constructedState` in Lean) implies that the retained display with
+canonically minted identifiers from empty `used` satisfies I1–I5 and ambient
+containment. Parameters: $n = |Q_1 \sqcup_{Q_S} Q_2|$ exact;
+$k = n - \dim X - \dim Z$ by rank bookkeeping over the retained display;
+$w, \kappa, r$ recomputed over the constructed display (§2d.5, §2g).
+*Two-code set-level coequalizers (issue #518):* identifying pairs $(q_1, q_2)$
+witnessed by $Q_S$ via $\psi_1, \psi_2$ is the pushout construction itself.
+
+**Distance cells.** Neither `A-PULLBACK` nor `A-PUSHOUT` carries an automatic
+distance rule: the naive pullback lower bound $d(A \times_C B) \ge \min(d_A, d_B)$
+is `false` (`design/LEFT_IN_PAPERS.md` §6.3), and a general pushout along a
+nontrivial shared subcode $S \neq 0$ can drop distance (`design/LEFT_IN_PAPERS.md`
+claims 3.5, 4.1), so factor minima do not carry unconditionally. Both ledgers
+start at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g.
+
+The constructor instances of `OBL-WELL-FORMEDNESS-PRESERVATION` are discharged
+by this section for `L-EMPTY`, `L-FREE`, `A-PULLBACK`, and `A-PUSHOUT`. ∎
+
+
+
 ## Disposition (2026-11-10, issues #313 C1 / #315 C1/C3/C4)
 
 The following were accepted for work in v0.2 and are not discharged by this
@@ -3882,12 +4963,13 @@ fixed.
 
 Nor does it claim machine-checked soundness. The soundness metatheorem is
 `OBL-JUDGMENT-SOUNDNESS`: its evidence status is `proved` (hand derivation §4.11,
-2026-10-20); its Lean form `judgment_soundness` is stated for a well-formed
-evaluation chain, which `judgment_soundness_of_term`
-(`lean/CodeCalculus/TermSoundness.lean`) supplies from the evaluation of the
-closed term, with the `k` cells discharged via `ranksFit_of_wf` and the distance
-cells taking `MeasureMonotone` (discharged for the exact sector distance in
-`judgment_soundness_exact`, `lean/CodeCalculus/ExactDistance.lean`); and promoted
+2026-10-20); its Lean forms `judgment_soundness` / `judgment_soundness_of_term`
+(`lean/CodeCalculus/TermSoundness.lean`, over the `Nat`-valued sentinel
+reading) and `ext_judgment_soundness` (`lean/CodeCalculus/ExpandedSoundness.lean`,
+issue #533, over `ExtNat`) are stated for a well-formed evaluation chain, with
+the `k` cells discharged via `ranksFit_of_wf` and the distance cells taking
+`MeasureMonotone` (discharged for the exact sector distance in
+`judgment_soundness_exact` / `extMeasureLaws_exact`); and promoted
 remains a review disposition. The obligations themselves
 are tracked in [`OBLIGATIONS.md`](OBLIGATIONS.md); it is their ledger, and this
 section does not restate it.

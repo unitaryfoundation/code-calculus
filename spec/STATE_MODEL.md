@@ -369,6 +369,10 @@ well-formedness obligation; I3 by the partial-inverse laws.
 | `L-TANNER` | fresh, the supplied $n$ | the retained display of the local rows at every vertex | mint canonically from the empty used set | the minted IDs |
 | `L-TILE` | fresh, one label per site class | the retained display of the placed tile rows | mint canonically from the empty used set | the minted IDs |
 | `L-NESTED-CSS` | fresh, one label per column | the retained display of the rows of the two parity-check matrices (§4.36) | mint canonically from the empty used set, $X$-rows first | the minted IDs |
+| `L-EMPTY` | $\varnothing$ | empty (`rows = []`) | none | $\varnothing$ |
+| `L-FREE` | the supplied finite $Q \subset \mathbb{N}$ (sorted) | empty (`rows = []`) | none | $\varnothing$ |
+| `A-PULLBACK` | fresh $0,\ldots,n-1$, $n=|Q_1\times_{Q_I} Q_2|$ | the retained display of the pulled-back rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
+| `A-PUSHOUT` | fresh $0,\ldots,n-1$, $n=|Q_1\sqcup_{Q_S} Q_2|$ | the retained display of the pushed-forward rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
 | `C-SEQUENCE` | composed | composed | composed | union, in order |
 
 `C-DIRECT-SUM` requires the summands' **qubit namespaces to be disjoint and

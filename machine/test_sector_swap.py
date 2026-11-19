@@ -200,6 +200,87 @@ class SectorSwapExploitationTests(unittest.TestCase):
             sector_swap_exploitation(state, {"X": Interval(1, 1)}, "X")
 
 
+class SectorSwapGuardTests(unittest.TestCase):
+    def test_require_exact_full_distance_refuses_inexact_full(self):
+        state = lopsided_state()
+        ledger = DistanceLedger(Interval(1, 2), {"X": Interval(1, 1), "Z": Interval(2, 2)})
+        record = sector_swap_exploitation(state, ledger, "X",
+                                         require_exact_full_distance=True)
+        self.assertFalse(record["applied"])
+        self.assertEqual(record["guard"], "require_exact_full_distance")
+        self.assertEqual(record["guard_name"], "require_exact_full_distance")
+        # exact full interval lets the swap apply (when ordering allows)
+        ledger2 = exact_ledger(state)
+        record2 = sector_swap_exploitation(state, ledger2, "X",
+                                          require_exact_full_distance=True)
+        self.assertTrue(record2["applied"])
+
+    def test_min_sector_gap_uses_other_lower_minus_target_upper(self):
+        state = CodeState((0, 1, 2), (Row("b1", "Z", (0, 1)),
+                                     Row("b2", "Z", (1, 2))),
+                          frozenset(("b1", "b2")))
+        state.validate()
+        ledger = DistanceLedger(Interval(1, 1),
+                                {"X": Interval(1, 3), "Z": Interval(1, 8)})
+        # gap = 1 - 3 = -2 < 1 -> refused
+        record = sector_swap_exploitation(state, ledger, "X", min_sector_gap=1)
+        self.assertFalse(record["applied"])
+        self.assertEqual(record["guard"], "min_sector_gap")
+        # target upper finite, other lower finite but too small -> refused
+        ledger2 = DistanceLedger(Interval(1, 1),
+                                {"X": Interval(1, 5), "Z": Interval(2, 8)})
+        record2 = sector_swap_exploitation(state, ledger2, "X", min_sector_gap=5)
+        self.assertFalse(record2["applied"])
+        self.assertEqual(record2["guard"], "min_sector_gap")
+
+    def test_guards_default_preserve_behaviour(self):
+        state = lopsided_state()
+        ledger = exact_ledger(state)
+        record = sector_swap_exploitation(state, ledger, "X")
+        self.assertTrue(record["applied"])
+        self.assertIsNone(record["guard"])
+
+    def test_validation_raises_malformed(self):
+        state = lopsided_state()
+        ledger = exact_ledger(state)
+        with self.assertRaises(Malformed):
+            sector_swap_exploitation(state, ledger, "X", min_sector_gap="lots")
+        with self.assertRaises(Malformed):
+            sector_swap_exploitation(state, ledger, "X", min_sector_gap=-1)
+        with self.assertRaises(Malformed):
+            sector_swap_exploitation(state, ledger, "X", min_sector_gap=2.5)
+        with self.assertRaises(Malformed):
+            sector_swap_exploitation(state, ledger, "X",
+                                    require_exact_full_distance="yes")
+
+    def test_sector_swap_if_beneficial_forwards_guards(self):
+        state = CodeState((0, 1), (Row("a1", "X", (0,)),), frozenset(("a1",)))
+        ledger = DistanceLedger(Interval(1, 2),
+                                {"X": Interval(1, 2), "Z": Interval(3, 3)})
+        _ns, nl = sector_swap_if_beneficial(state, ledger, "X", min_sector_gap=10)
+        # gap = 3 - 2 = 1 < 10 -> refused, ledger unchanged
+        self.assertEqual(nl.sector["X"].lower, 1)
+
+    def test_bounded_sector_search_named_params(self):
+        state = lopsided_state()
+        ledger = exact_ledger(state)
+        found = bounded_sector_search(state, ledger, "X", budget=6,
+                                     sector_swap_min_gap=10)
+        self.assertFalse(found["sector_swap"]["applied"])
+        self.assertEqual(found["sector_swap"]["guard"], "min_sector_gap")
+        found2 = bounded_sector_search(state, ledger, "X", budget=6,
+                                       min_sector_gap=10)
+        self.assertFalse(found2["sector_swap"]["applied"])
+
+    def test_guard_does_not_mask_ordering_reason(self):
+        state = lopsided_state()
+        ledger = DistanceLedger(Interval(1, 2),
+                                {"X": Interval(1, 3), "Z": Interval(1, 2)})
+        record = sector_swap_exploitation(state, ledger, "X", min_sector_gap=5)
+        self.assertFalse(record["applied"])
+        self.assertIn("already at least as strong", record["reason"])
+        self.assertIsNone(record["guard"])
+
 class SwapConjugationTests(unittest.TestCase):
     def test_swapping_before_a_move_equals_swapping_after_the_mirrored_move(self):
         rng = random.Random(346)

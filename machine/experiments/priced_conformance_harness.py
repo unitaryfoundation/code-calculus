@@ -540,10 +540,10 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
             if not _inv_ok:
                 record_violation("C-DELETE-CHECK id=%s" % row.id, new_state, None, None, _inv_reasons)
             else:
-                op = {"op": "C-DELETE-CHECK"}
+                op = {"op": "C-DELETE-CHECK", "row_id": row.id}
                 # unpriced
                 _note_input(coverage, "C-DELETE-CHECK", current_ledger)
-                new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={})
+                new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={}, parent_state=current_state)
                 new_exact = exact_distances(new_state)
                 ok, reasons = _check_ledger(new_ledger, new_exact)
                 _dok, _dre = _check_decide(new_ledger, new_exact["d"])
@@ -552,13 +552,21 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
                     reasons = reasons + _dre
                 if not ok:
                     record_violation("C-DELETE-CHECK id=%s (unpriced)" % row.id, new_state, new_ledger, new_exact, reasons)
-                # priced with a true-ish price
-                price = new_exact["d"] if new_exact["d"] is not None else 10
-                hyp = {"deletion_price": {"w_del": price, "w_exp": price, "evidence": "harness"}}
+                # priced with true-ish sector prices: w_del for the deleted
+                # sector, w_exp for the opposite sector (issue #566).
+                _deleted_sector = row.sector
+                _other_sector = "Z" if _deleted_sector == "X" else "X"
+                _w_del = new_exact[_deleted_sector]
+                if _w_del is None:
+                    _w_del = 10
+                _w_exp = new_exact[_other_sector]
+                if _w_exp is None:
+                    _w_exp = 10
+                hyp = {"deletion_price": {"w_del": _w_del, "w_exp": _w_exp, "evidence": "harness"}}
                 hyp_counts["deletion_price"] = hyp_counts.get("deletion_price", 0) + 1
                 try:
                     _note_input(coverage, "C-DELETE-CHECK", current_ledger)
-                    new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={})
+                    new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={}, parent_state=current_state)
                     ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
                     _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
                     if not _dok2:
@@ -596,7 +604,7 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
                 continue
             op = {"op": "E-GRAFT", "sector": sector, "qubit": qubit}
             _note_input(coverage, "E-GRAFT", current_ledger)
-            new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={})
+            new_ledger = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp({}), observations={}, parent_state=current_state)
             new_exact = exact_distances(new_state)
             ok, reasons = _check_ledger(new_ledger, new_exact)
             _dok, _dre = _check_decide(new_ledger, new_exact["d"])
@@ -613,7 +621,7 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
             hyp_counts["graft_price"] = hyp_counts.get("graft_price", 0) + 1
             try:
                 _note_input(coverage, "E-GRAFT", current_ledger)
-                new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={})
+                new_ledger2 = current_ledger.propagate(op, new_state, hypothesis=_merge_hyp(hyp), observations={}, parent_state=current_state)
                 ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
                 _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
                 if not _dok2:

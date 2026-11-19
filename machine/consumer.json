@@ -1,5 +1,5 @@
 {
- "$comment": "Priced consumer transcription. Normative sources are spec/JUDGMENT_LAYER.md sections 2a-2f and 5 and spec/OPERATIONAL_SEMANTICS.md sections 2 and 4.25-4.30. Every transcribed rule carries a `source` of the form `spec/<FILE>.md §<section>`; scripts/lint_docs.sh check 4 (scripts/lint_transcription_sources.py) requires the section to exist once and to name the rule's operation. Prose wins on disagreement.", "_meta": {
+ "$comment": "Priced consumer transcription. Normative sources are spec/JUDGMENT_LAYER.md sections 2a-2j and 5, spec/OPERATIONAL_SEMANTICS.md sections 2 and 4.25-4.37, and spec/TAXONOMY.md section 2.15 (monomial-quotient specialization record). Every transcribed rule carries a `source` of the form `spec/<FILE>.md §<section>`; scripts/lint_docs.sh check 4 (scripts/lint_transcription_sources.py) requires the section to exist once and to name the rule's operation. Prose wins on disagreement.", "_meta": {
   "authority": "This is a machine-readable transcription of the interval consumer contract, not a proof object. It must be updated when the normative prose changes.",
   "implementation": "machine/priced_calculus.py",
   "experiment": "the conformance harness"
@@ -27,14 +27,14 @@
  },
  "conditional_inputs": {
   "deletion_price": {
-   "for": "Full distance only.",
+   "for": "Sector-split: deleted sector and opposite sector.",
    "fields": [
     "w_del",
     "w_exp",
     "evidence"
    ],
-   "claimed_rule": "d' = min(d, w_del, w_exp)",
-   "consumer_check": "Require nonnegative integer prices and a nonempty evidence reference; do not validate the underlying minima. The price moves the full-distance endpoints only; it moves no d_X or d_Z endpoint.",
+   "claimed_rule": "Sector-wise: d'_tau = min(d_tau, w_del) for the deleted sector tau; d'_bar_tau = min(d_bar_tau, w_exp) for the opposite sector bar_tau; full distance d' = min(d, w_del, w_exp).",
+   "consumer_check": "Require nonnegative integer prices and a nonempty evidence reference; do not validate the underlying minima. w_del is the promotion minimum for the deleted sector and moves that sector's endpoints; w_exp is the exposure minimum for the opposite sector and moves that sector's endpoints; both move the full-distance endpoints. Unpriced behavior resets lower endpoints to zero.",
    "source": "spec/JUDGMENT_LAYER.md §2c"
   },
   "graft_price": {
@@ -90,7 +90,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2c"
   },
   "seam_certificate": {
-   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE has an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31: disjoint factor namespaces plus seam checks); the logical-witness field is defined (STATE_MODEL.md §1, 2026-11-11) and the §2e equality is discharged by extraction of Theorem 4 / claim 7.4 (§4.31, 2026-11-11); the certificate remains a conditional judgment over factor codes and a seam attesting admissibility.",
+   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE is a binary-only expression constructor (TERM_LANGUAGE.md §1-§2, decided 2026-11-18, issue #536; contract-stated rung 5, Gate 6 unchecked) with an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31); both future-Pi fields are defined (STATE_MODEL.md §1a) and the CSS-level algebra of Theorem 4 / claim 7.4 is mechanized from AdmissibleSeam (GlueExtraction.lean), while the geometric move-word -> AdmissibleSeam step stays a recorded substrate gap; the certificate remains a conditional judgment over factor codes and a seam attesting admissibility.",
    "fields": [
     "move_word_A",
     "move_word_B",
@@ -99,6 +99,20 @@
    "claimed_rule": "admissible iff move_word_A == move_word_B (identical move words over {U,D,L,R}^*); then d_Z(Q) = min(d_A, d_B)",
    "consumer_check": "Require a single move_word string (or an equal pair move_words) and a nonempty evidence reference. The consumer does not validate the underlying move words; it checks only shape and admissibility equality.",
    "source": "spec/JUDGMENT_LAYER.md §2e"
+  },
+  "monomial_quotient_transfer": {
+   "for": "A-QUOTIENT monomial-quotient specialization (TAXONOMY.md §2.15, JUDGMENT_LAYER.md §2i; issue #547). A-QUOTIENT stays taxonomy-only at rung 1.",
+   "fields": [
+    "k_quotient",
+    "tate_new_logicals",
+    "d_x_lower",
+    "d_z_lower",
+    "d_lower",
+    "source"
+   ],
+   "claimed_rule": "Records existence of Hsin's §3.3 conditional transfer-theorem slot with no usable automatic distance bound or k formula beyond §2c/§2g defaults; parent logicals descend along pi, Tate cohomology counts new logicals, and distance bounds require sourced inputs or validated child witnesses.",
+   "consumer_check": "Checked on the consumer side (A-QUOTIENT has no admitted calculus transition): require a free group action and sector-preserving single-qudit Cliffords only (machine/quotient_specialization.py); reject fixed points, sector-swapping Cliffords (route to E-LOCAL-HADAMARD / deferred general-stabilizer extended-state layer), and sector-mixing Cliffords. Require a nonempty source string for any supplied count or lower bound; never compute distances.",
+   "source": "spec/JUDGMENT_LAYER.md §2i"
   }
  },
  "interval_rules": {
@@ -111,7 +125,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "C-DELETE-CHECK": {
-   "rule": "Reset lower endpoints to zero unless the full-distance price is supplied; carry old upper bounds by deletion non-increase and tighten with surviving or new witnesses. The full-distance price moves the full-distance endpoints only; the source's deletion relation has no sector-wise counterpart, so the price moves no d_X or d_Z endpoint.",
+   "rule": "Unpriced: reset lower endpoints to zero in every sector and the full distance; carry old upper bounds by deletion non-increase and tighten with surviving or new witnesses. Priced (sector-split, issue #566): deleted sector tau lower endpoint min(L_tau, w_del); opposite sector bar_tau lower endpoint min(L_bar_tau, w_exp); full distance min(L, w_del, w_exp); upper endpoints move correspondingly (U_tau = min(U_tau, w_del), U_bar_tau = min(U_bar_tau, w_exp), U = min(U, w_del, w_exp)). The price requires parent_state to identify the deleted row's sector and both minima together.",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-GRAFT": {
@@ -139,7 +153,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-PUNCTURE": {
-   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.29): a refusal by design, not an impossibility. The unnamed free-qubit instance (puncturing qubit 2 of Q={0,1,2} with the Z display {0,1}) raises the X distance 1->2, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal <= or >= claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reduction recorded 2026-11-10 (issue #331, §4.29): a puncture is the deletion of every row touching q followed by the removal of the then-free qubit q, so each sector distance of the child is the lightest q-free logical of that intermediate code, min(w_avoid,sigma(q) over the parent's logicals, w_hole,sigma(q) over the operators the deleted rows expose); the increase example (d_X 1 -> 2) and a decrease example (Z rows {0,1},{1,2}, puncture 2: d_X 3 -> 2) refute every unpriced direction. Hole-punch pricing is blocked on the D2 lower bound: no price cell or fixture enters until it lands. Witnesses are kept only where they revalidate in the child.",
+   "rule": "Reset every endpoint to (0, +inf) in both sectors and the full distance (OPERATIONAL_SEMANTICS.md §4.29): a refusal by design, not an impossibility. The unnamed free-qubit instance (puncturing qubit 2 of Q={0,1,2} with the Z display {0,1}) raises the X distance 1->2, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal <= or >= claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reduction recorded 2026-11-10 (issue #331, §4.29): a puncture is the deletion of every row touching q followed by the removal of the then-free qubit q, so each sector distance of the child is the lightest q-free logical of that intermediate code, min(w_avoid,sigma(q) over the parent's logicals, w_hole,sigma(q) over the operators the deleted rows expose); the increase example (d_X 1 -> 2) and a decrease example (Z rows {0,1},{1,2}, puncture 2: d_X 3 -> 2) refute every unpriced direction. Hole-punch pricing is blocked on the D2 lower bound: no price cell or fixture enters until it lands, and the full hole-punch price is unavailable (spec/JUDGMENT_LAYER.md §2f, hole-punch records, issue #548). Witnesses are kept only where they revalidate in the child.",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-EXTEND": {
@@ -212,6 +226,43 @@
   "honesty": "A layout is honest when at most `layers` qubits share a site and distinct sites are at least 1 apart. Honesty is a property of the layout alone, so it is inherited unchanged by C-SKIP, C-DELETE-CHECK and C-ADD-CHECK, and preserved by E-GRAFT: removing a qubit can only lower a site's occupancy and can only raise the minimum site spacing. A direct sum does NOT preserve it automatically.",
   "class": "The locality class is NOT a calculus property. It is a consumer-side verdict computed from the transported radius against consumer-supplied caps; the caps are the consumer's constants, and the class's transport follows from the radius's carry rules rather than from a cell of its own. Classes nest by radius, not by layer count: a code qualifies for every class whose layer cap and radius cap it satisfies, and the consumer assigns the tightest. A 1-layer code of radius 4.1 is therefore local-2d-bilayer. The verdict compares the squared radius against the squared cap exactly (r <= c iff r*r <= c*c for c >= 0); no tolerance is involved.",
   "export": "Inherit the parent's layout restricted to the qubits the child kept, and recompute the interaction radius against the child's own check set. The claim is the four-decimal round-up of the exact radius, computed by integer arithmetic on the exact squared diameter, so it is an upper bound on the real value rather than on a floating-point measurement of it; the verifier parses the same decimal, so claim and entry cannot drift apart."
+ },
+ "gate_realization": {
+  "no_operation_id": "A logical gate leaves C = (Q, X, Z, pres, used) unchanged and mints no taxonomy operation identifier (spec/TAXONOMY.md §3.8).",
+  "gate_survival": {
+   "predicate": "preserves_U(C): for U = prod_j exp(i eps_j theta_j G_j) with pairwise commuting Hermitian Pauli generators G_j, whether U maps the codespace V(C) into itself (carrier: span; CSS displays only).",
+   "carry_rules": {
+    "C-SKIP": "carries",
+    "C-ADD-CHECK": "adding row s: carries at every angle when all G_j commute with s; at all angles pi/4, carries iff V_s is in the child stabilizer group S(C') (one span-membership check at s); when some G_j anticommutes with s and some angle is not pi/4, not yet defined (logical-witness eigenvalues); addressability and logical action remain not yet defined",
+    "C-DELETE-CHECK": "does not carry (false; counterexample on two qubits in OPERATIONAL_SEMANTICS.md §4.37); at pi/4 the child's own Lemma 3 test over its remaining rows decides it",
+    "C-DIRECT-SUM": "carries when U is supported on one summand",
+    "C-SEQUENCE": "carries by composition of the step cells"
+   },
+   "source": "spec/JUDGMENT_LAYER.md §2h"
+  },
+  "equal_syndrome_weight_floor": {
+   "property": "omega(C): least w_max over nontrivial equal-syndrome generator families on C (+inf if none). At every well-formed CSS state, omega(C) >= ceil(d(C) / 2).",
+   "carry_shape": "weakening (monotone image): at any state whose full-distance interval has lower endpoint L_d, the state carries omega(C) >= ceil(L_d / 2) (DistanceLedger.equal_syndrome_weight_floor). Re-read at each state from L_d and never substituted from the parent (under C-DELETE-CHECK the floor weakens to ceil(L_d' / 2); Shor-code counterexample in OPERATIONAL_SEMANTICS.md §4.37).",
+   "source": "spec/JUDGMENT_LAYER.md §2h"
+  }
+ },
+ "monomial_quotient_specialization": {
+  "taxonomy_status": "taxonomy-only",
+  "css_preserving_constraint": "Applicability constraint checked consumer-side (machine/quotient_specialization.py): pure qudit-permutation actions or sector-preserving single-qudit Cliffords preserving X and Z individually; non-free actions and sector-swapping/mixing Cliffords are refused.",
+  "duality_quotient_routing": "Global CSS sector swaps route to E-LOCAL-HADAMARD (TAXONOMY.md §2.12, T=Q); non-CSS duality/mixed quotients route to the deferred general-stabilizer extended-state layer (§4, cf. X-LOCAL-CLIFFORD / X-SYMPLECTIC-HALVE; refused for v0.3.0 under issue #545).",
+  "source": "spec/TAXONOMY.md §2.15"
+ },
+ "family_level_transport": {
+  "no_operation_id": "Family-level transport under the one-shot hollowed-tensor level map acts on QLDPC families satisfying Hypotheses 102 and 103 rather than a single state C = (Q, X, Z, pres, used), and mints no taxonomy operation identifier (spec/TAXONOMY.md §3.8). This block is a transcription of spec/JUDGMENT_LAYER.md s2j; machine/priced_calculus.py does not consume it (no single-state transition is defined).",
+  "transport_rule": {
+   "k_preservation": "k(bar Gamma(C)) = k(C) and k(bar Theta(C)) = k(C), conditional on Lemma 118 (H_Q(bar Gamma) isomorphic to H_Q(C), citation-based proof).",
+   "block_length": "One application of bar Gamma inflates n strictly beyond m * n (finite cell count, spec/OPERATIONAL_SEMANTICS.md s4.38); a full level is bar Theta = bar Gamma_* circ bar Gamma (two applications); n * m**levels is only the bare sheet lower scale, never the amplified block length or a block-length ceiling.",
+   "transport_direction": "upper ceiling on RG decoding failure probability over ell levels of the 3-sheet level map: Pr[T rounds fail] <= O(T n)(p / p_RG)^Omega(tilde kappa^{-ell}) (equivalently Omega(M^alpha) with overhead M = 3^ell) (Theorem 81 Eq. (1), conditional on Remark 39 tower constants and seed local triviality in the source sense: every error supported in one seed X-check or one qubit with zero syndrome is a stabilizer; d_err > w_X is sufficient). Single 2-sheet levels are not covered (Remark 38).",
+   "distance_lower_bound": "unavailable (no amplified distance lower bound is claimed; ledger remains at [0, +inf)).",
+   "empirical_probes": "Finite-seed GF(2) bar Gamma(C) and C (x) R checks in machine/experiments/one_shot_level_map_transport.py are empirical only and separated from the conditional theorem.",
+   "source": "spec/JUDGMENT_LAYER.md §2j"
+  },
+  "source": "spec/JUDGMENT_LAYER.md §2j"
  },
  "decision": {
   "target": "T",

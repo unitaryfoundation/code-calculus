@@ -244,8 +244,9 @@ class DistanceLedger:
 
         `parent_state` carries the state before the step, for hypothesis
         cells whose cheap structural side is computed rather than trusted
-        (direct-sum extinction). Callers that supply no such hypothesis may
-        omit it.
+        (direct-sum extinction, and, since issue #566, the deleted sector of a
+        priced `C-DELETE-CHECK`). A priced deletion without `parent_state`
+        has no derivation.
         """
         hypothesis = hypothesis or {}
         observations = observations or {}
@@ -416,18 +417,48 @@ class DistanceLedger:
                 if any(not isinstance(value, int) or isinstance(value, bool) or value <= 0
                        for value in values):
                     raise NoDerivation("priced deletion requires positive integer minima")
+                w_del, w_exp = values
+                if parent_state is None:
+                    raise NoDerivation(
+                        "priced deletion requires parent_state to identify the "
+                        "deleted row's sector")
+                row_id = operation.get("row_id")
+                if row_id is None:
+                    row_id = operation.get("id")
+                row = None
+                for candidate in getattr(parent_state, "rows", ()):
+                    if getattr(candidate, "id", None) == row_id:
+                        row = candidate
+                        break
+                if row is None:
+                    raise NoDerivation(
+                        "priced deletion: deleted row %r not found in "
+                        "parent_state" % row_id)
+                tau = getattr(row, "sector", None)
+                if tau not in ("X", "Z"):
+                    raise NoDerivation(
+                        "priced deletion: deleted row has no X/Z sector")
+                for key in ("sector", "deleted_sector"):
+                    supplied = operation.get(key)
+                    if (isinstance(supplied, str) and supplied in ("X", "Z")
+                            and supplied != tau):
+                        raise NoDerivation(
+                            "priced deletion: operation %r sector %r disagrees "
+                            "with the deleted row's sector %r"
+                            % (key, supplied, tau))
+                other = "Z" if tau == "X" else "X"
+                for side, pval in ((tau, w_del), (other, w_exp)):
+                    low = _min_upper(self.sector[side].lower, pval)
+                    high = _min_upper(self.sector[side].upper, pval)
+                    out.sector[side] = Interval(low, high)
                 low = _min_upper(self.full.lower, min(values))
                 high = _min_upper(self.full.upper, min(values))
                 out.full = Interval(low, high)
-                # The supplied deletion price is a *full-distance* price. It
-                # licenses d' = min(d, w_del, w_exp) and nothing about d_X or
-                # d_Z: the source's deletion result is stated on the full
-                # distance, with no sector-wise counterpart, so the sector
-                # lower endpoints stay where the unpriced rule put them. A
-                # sector price would need separate admission.
                 out.conditions.append({"cell": "C-DELETE-CHECK priced",
                                        "status": "conditional",
-                                       "evidence": price["evidence"]})
+                                       "evidence": price["evidence"],
+                                       "deleted_sector": tau,
+                                       "exposure_sector": other})
         elif op == "E-GRAFT":
             # Sector-wise graft price (code-deformation row 28.2 under the
             # corrected rules of OPERATIONAL_SEMANTICS.md §4.13):
@@ -861,9 +892,72 @@ class DistanceLedger:
                 "move_word": word_a,
                 "evidence": evidence,
             })
+        try:
+            from machine import entrypoints as _ep
+        except Exception:
+            try:
+                import entrypoints as _ep
+            except Exception:
+                _ep = None
+        if _ep is not None:
+            hyp = hypothesis if isinstance(hypothesis, dict) else {}
+            combined = {}
+            if isinstance(seam_certificate, dict):
+                combined.update(seam_certificate)
+            combined.update(hyp)
+            criteria_keys = ("odd_cycle", "has_odd_cycle", "bipartite",
+                             "is_bipartite", "union_layout", "union_layout_bipartite",
+                             "seam_graph", "signatures_agree", "signature_agree",
+                             "boundary_signatures", "boundary_signatures_agree",
+                             "signature_A", "signature_a", "signature_B",
+                             "signature_b", "monotone", "monotone_top_to_bottom",
+                             "top_to_bottom", "move_word_A", "move_word_B",
+                             "move_word_a", "move_word_b", "word_A", "word_B",
+                             "words", "move_words", "evidence", "source")
+            supplied = any(k in combined for k in criteria_keys)
+            if supplied:
+                records, overall = _ep.positive_composition_criteria(
+                    seam_certificate=combined)
+                for rec in (records or []):
+                    merged.conditions.append({
+                        "cell": "E-GLUE %s" % rec.get("criterion", "positive composition"),
+                        "status": "conditional",
+                        "criterion": rec.get("criterion"),
+                        "verdict": rec.get("verdict"),
+                        "hypothesis": rec.get("hypothesis"),
+                        "admissible": rec.get("admissible", False),
+                        "inconclusive": rec.get("inconclusive", False),
+                        "bound": rec.get("bound"),
+                        "odd_cycle_table_omitted": True,
+                        "certificate_producer_incomplete": True,
+                        "circuit_preservation": "empirical",
+                    })
+                if overall:
+                    merged.conditions.append({
+                        "cell": "E-GLUE positive composition criteria",
+                        "status": "conditional",
+                        "verdicts": overall.get("verdicts"),
+                        "all_admissible": overall.get("all_admissible", False),
+                        "any_inconclusive": overall.get("any_inconclusive", False),
+                        "odd_cycle_table_omitted": True,
+                        "certificate_producer_incomplete": True,
+                        "circuit_preservation": "empirical",
+                    })
         return merged
 
     e_glue = glue
+
+    def equal_syndrome_weight_floor(self) -> Optional[int]:
+        """Lower bound ceil(L_d / 2) on the equal-syndrome generator weight
+        omega(C), transported by weakening (spec/JUDGMENT_LAYER.md §2h).
+
+        Returns None (+infinity) when the full-distance lower endpoint is None
+        (k = 0), and (L_d + 1) // 2 otherwise. Re-read at each state from the
+        current full-distance lower endpoint, never substituted from a parent.
+        """
+        if self.full.lower is None:
+            return None
+        return (self.full.lower + 1) // 2
 
 def validate_witness(state, side, support, claimed_weight):
     if side not in ("X", "Z"):

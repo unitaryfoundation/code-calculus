@@ -57,6 +57,22 @@ inductive StateExpr where
   /-- `L-NESTED-CSS`: `nested(H_X, H_Z)`, two parity-check matrices with
       equally many columns. -/
   | nested : List (List Bool) → List (List Bool) → StateExpr
+  /-- `L-MAPPING-CONE`: `cone(D_A, D_B, f_1, f_0)`. -/
+  | cone : List (List Bool) → List (List Bool) → List (List Bool) → List (List Bool) → StateExpr
+  /-- `L-EMPTY`: `empty`, the 0-qubit empty CSS code (issue #549). -/
+  | empty : StateExpr
+  /-- `L-FREE`: `free(Q)`, the check-free CSS code on a finite qubit set
+      (issue #549). -/
+  | free : List Nat → StateExpr
+  /-- `A-PULLBACK`: `pullback(e₁, e₂, e_I; φ₁, φ₂)`, fiber product along
+      CSS code morphisms (issue #549). -/
+  | pullback : StateExpr → StateExpr → StateExpr → List (Nat × Nat) → List (Nat × Nat) →
+      StateExpr
+  /-- `A-PUSHOUT`: `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`, amalgamated sum along
+      CSS code morphisms (issue #549). -/
+  | pushout : StateExpr → StateExpr → StateExpr → List (Nat × Nat) → List (Nat × Nat) →
+      StateExpr
+
   deriving Repr, BEq, DecidableEq
 
 /-- Commands: the kernel primitives plus the admitted conditional graft and the five Gate 6 conditional cells.

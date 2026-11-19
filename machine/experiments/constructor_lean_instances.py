@@ -181,6 +181,11 @@ def removed_term(removed):
         for position, sector, row in removed)
 
 
+def pair_map_term(mapping):
+    return "[%s]" % ", ".join(
+        "(%d, %d)" % (src, dst) for src, dst in sorted(mapping.items()))
+
+
 def mask_support(mask):
     return [q for q in range(mask.bit_length()) if (mask >> q) & 1]
 
@@ -359,6 +364,21 @@ def generate():
         "        [[0, 1, 2, 3, 4, 5, 6]] [[0, 1, 2, 3, 4, 5, 6]] := by decide"
         % ((bool_matrix(HAMMING),) * 4))
 
+    # L-MAPPING-CONE: a small chain map with one Z-row and one X-row.
+    CONE_DA = [[0]]
+    CONE_DB = [[0], [0]]
+    CONE_F1 = [[0, 1]]
+    CONE_F0 = [[1]]
+    result = construct({"constructor": "L-MAPPING-CONE", "d_a": CONE_DA,
+                        "d_b": CONE_DB, "f1": CONE_F1, "f0": CONE_F0})
+    args = "%s\n      %s\n      %s\n      %s" % (
+        bool_matrix(CONE_DA), bool_matrix(CONE_DB),
+        bool_matrix(CONE_F1), bool_matrix(CONE_F0))
+    blocks.append(instance(
+        "cone_example", "coneState %s" % args, "StateExpr.cone %s" % args,
+        "EvalExpr.cone (by decide) (by decide) (by decide)", result,
+        "evalExpr_cone_wf cone_example_eval"))
+
     # Section 4.34: the lifted product over the trivial group is the
     # hypergraph product, and the two-block code is a lifted product.
     unit = lambda matrix: [[[()] if v else [] for v in row] for row in matrix]
@@ -385,6 +405,60 @@ def generate():
         "      hgpState %s %s := by decide"
         % (bool_matrix(SMALL_H1), bool_matrix(SMALL_H2),
            bool_matrix(SMALL_H1), bool_matrix(SMALL_H2)))
+
+    # L-EMPTY: the nullary empty CSS code.
+    result = construct({"constructor": "L-EMPTY"})
+    blocks.append(instance(
+        "empty_base", "emptyCodeState", "StateExpr.empty",
+        "EvalExpr.empty", result,
+        "evalExpr_empty_wf empty_base_eval"))
+
+    # L-FREE: the 3-qubit check-free CSS code on [0, 1, 2].
+    result = construct({"constructor": "L-FREE", "qubits": [0, 1, 2]})
+    blocks.append(instance(
+        "free_3", "freeState [0, 1, 2]", "StateExpr.free [0, 1, 2]",
+        "EvalExpr.free (by decide)", result,
+        "evalExpr_free_wf free_3_eval"))
+
+    # A-PULLBACK: fiber product of pair_x with itself over free({0}) along
+    # a constant map (equalizer-style pullback on commuting X-only factors).
+    pb_iface = construct({"constructor": "L-FREE", "qubits": [0]})["state"]
+    pb_phi = {0: 0, 1: 0, 2: 0}
+    result = construct({"constructor": "A-PULLBACK", "left": pair, "right": pair,
+                        "interface": pb_iface, "phi1": pb_phi, "phi2": pb_phi})
+    blocks.append("def pb_iface_free1 : CodeState := %s" % lean_state_term(pb_iface))
+    blocks.append(
+        "theorem pb_iface_free1_wellFormed : EncodingWellFormed pb_iface_free1 :=\n"
+        "  encodingWellFormed_of_bool (by decide)")
+    pb_tail = "%s %s" % (pair_map_term(pb_phi), pair_map_term(pb_phi))
+    blocks.append(instance(
+        "pullback_pair",
+        "pullbackState pair_x pair_x %s" % pb_tail,
+        "StateExpr.pullback (StateExpr.base pair_x) (StateExpr.base pair_x) "
+        "(StateExpr.base pb_iface_free1)\n      %s" % pb_tail,
+        "EvalExpr.pullback pair_x_wellFormed pair_x_wellFormed pb_iface_free1_wellFormed\n"
+        "    (by decide) (by decide) (by decide) (by decide) (by decide)\n"
+        "    (EvalExpr.base _) (EvalExpr.base _) (EvalExpr.base _)",
+        result,
+        "evalExpr_pullback_wf pullback_pair_eval"))
+
+    # A-PUSHOUT: amalgamated sum of two copies of pair_x along free({0})
+    # identifying qubit 2 of the left copy with qubit 0 of the right copy.
+    po_psi1 = {0: 2}
+    po_psi2 = {0: 0}
+    result = construct({"constructor": "A-PUSHOUT", "left": pair, "right": pair,
+                        "subcode": pb_iface, "psi1": po_psi1, "psi2": po_psi2})
+    po_tail = "%s %s" % (pair_map_term(po_psi1), pair_map_term(po_psi2))
+    blocks.append(instance(
+        "pushout_pair",
+        "pushoutState pair_x pair_x pb_iface_free1 %s" % po_tail,
+        "StateExpr.pushout (StateExpr.base pair_x) (StateExpr.base pair_x) "
+        "(StateExpr.base pb_iface_free1)\n      %s" % po_tail,
+        "EvalExpr.pushout pair_x_wellFormed pair_x_wellFormed pb_iface_free1_wellFormed\n"
+        "    (by decide) (by decide) (by decide) (by decide) (by decide)\n"
+        "    (EvalExpr.base _) (EvalExpr.base _) (EvalExpr.base _)",
+        result,
+        "evalExpr_pushout_wf pushout_pair_eval"))
 
     parts = [
         "import CodeCalculus.ConstructorOverlap",

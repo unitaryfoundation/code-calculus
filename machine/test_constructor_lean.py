@@ -31,6 +31,11 @@ LEAN_NAMES = {
     "L-TANNER": ("tanner", "tannerState"),
     "L-TILE": ("tile", "tileState"),
     "L-NESTED-CSS": ("nested", "nestedState"),
+    "L-MAPPING-CONE": ("cone", "coneState"),
+    "L-EMPTY": ("empty", "emptyCodeState"),
+    "L-FREE": ("free", "freeState"),
+    "A-PULLBACK": ("pullback", "pullbackState"),
+    "A-PUSHOUT": ("pushout", "pushoutState"),
 }
 
 
@@ -54,19 +59,27 @@ class ConstructorLeanTests(unittest.TestCase):
             with self.subTest(constructor=taxonomy_id):
                 self.assertRegex(term, r"\|\s+%s\s+:" % name)
                 self.assertIn("`%s`" % taxonomy_id, term)
-                self.assertRegex(evaluation, r"\|\s+%s\s+\{" % name)
-                self.assertIn("EvalExpr (StateExpr.%s " % name, evaluation)
-                self.assertIn("| StateExpr.%s " % name, evaluation)
+                if name == "empty":
+                    self.assertIn("EvalExpr StateExpr.empty", evaluation)
+                    self.assertIn("| StateExpr.empty ", evaluation)
+                else:
+                    self.assertRegex(evaluation, r"\|\s+%s\s+\{" % name)
+                    self.assertIn("EvalExpr (StateExpr.%s " % name, evaluation)
+                    self.assertIn("| StateExpr.%s " % name, evaluation)
                 self.assertRegex(updates, r"def %s\b" % update)
 
     def test_every_admitted_constructor_has_a_checked_instance(self):
         instances = OUTPUT.read_text()
         for taxonomy_id, (name, update) in LEAN_NAMES.items():
             with self.subTest(constructor=taxonomy_id):
-                self.assertRegex(
-                    instances,
-                    r"theorem \w+_state : %s (.|\n)*?:= by decide" % re.escape(update))
-                self.assertIn("EvalExpr (StateExpr.%s " % name, instances)
+                if name == "empty":
+                    self.assertIn("theorem empty_base_state : emptyCodeState =", instances)
+                    self.assertIn("EvalExpr (StateExpr.empty)", instances)
+                else:
+                    self.assertRegex(
+                        instances,
+                        r"theorem \w+_state : %s (.|\n)*?:= by decide" % re.escape(update))
+                    self.assertIn("EvalExpr (StateExpr.%s " % name, instances)
 
     def test_well_formedness_theorems_are_present(self):
         text = lean_source("ConstructorOrthogonality.lean")
@@ -83,6 +96,9 @@ class ConstructorLeanTests(unittest.TestCase):
         for theorem in ("evalExpr_product_wf", "evalExpr_double_wf",
                         "evalExpr_balanced_wf", "evalExpr_tanner_wf",
                         "evalExpr_tile_wf", "evalExpr_nested_wf",
+                        "evalExpr_cone_wf",
+                        "evalExpr_empty_wf", "evalExpr_free_wf",
+                        "evalExpr_pullback_wf", "evalExpr_pushout_wf",
                         "product_naturalOrthogonal"):
             self.assertIn("theorem %s" % theorem, assembly)
         self.assertIn("theorem wf_constructedState",

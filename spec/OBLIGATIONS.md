@@ -84,6 +84,35 @@ Evidence statuses follow [`CLAIMS.md`](CLAIMS.md):
  fixes the operational semantics; `open` marks a claim with no available
 argument yet.
 
+## Re-discharge status of metatheorems (`stdCSS-3`, 2026-11-18, issue #535)
+
+Per [`VERSIONING.md`](VERSIONING.md) §4, every metatheorem scoped to the
+operation set carries a re-discharge obligation across release bumps, satisfied
+either by extending its proof to the expanded operation set or by explicitly
+restricting its statement. The table below indexes the `discharged-through`
+field of all thirteen metatheorems (plus `OBL-WELL-FORMEDNESS-PRESERVATION`),
+backed by the dated hand-derivation audit at
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.40. Hand-derivation
+re-discharge establishes `proved`, not rung 7 (`mechanized`) and not Gate 2–7
+ratification.
+
+| Obligation | `introduced-in` | `discharged-through` | Re-discharge disposition (§4.40) |
+| --- | --- | --- | --- |
+| `OBL-WELL-FORMEDNESS-PRESERVATION` | `stdCSS-1` | `stdCSS-3` (admitted operations and constructors) | **Discharged** for kernel five (§4.7), `E-GRAFT` (§4.12), six Gate 6 CSS cells (§4.26–§4.31), and ten `stdCSS-3` constructors (§4.34–§4.36); **restricted** away from unadmitted candidates (`open`) |
+| `OBL-PRIMITIVE-DETERMINISM` | `stdCSS-1` | `stdCSS-3` (fixed presentations; $\equiv$-invariance scoped) | **Discharged** as single-valuedness on fixed presentations across all `stdCSS-3` commands and constructors (H-4 capacity is a domain restriction); **restricted** away from $\equiv$-input invariance for display-order-reading ops (`P-REBASE`, `A-PRODUCT`, `A-DOUBLE`, `A-CONCAT`) |
+| `OBL-SKIP-IDENTITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands (§4.6: no admitted command reads `steps`, and `stdCSS-3` adds no new command production) |
+| `OBL-SEQUENCE-ASSOCIATIVITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands (§1a, §4.8: parametric in `Command`, single-valuedness holds for all `stdCSS-3` commands) |
+| `OBL-DIRECT-SUM-LAWS` | `stdCSS-1` | `stdCSS-3` | **Discharged** through `stdCSS-3` (§4.8, re-evidenced for `Q` 2026-10-29; state model unchanged across `stdCSS-1`–`stdCSS-3`; §4.37 span properties respect $\approx$) |
+| `OBL-ORDER-INDEPENDENT-DELETION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to pure `C-DELETE-CHECK` / `C-SEQUENCE` batches; unchanged under `Q` in $\equiv$ and H-4 capacity (§4.15) |
+| `OBL-CROSS-SECTOR-PERMUTATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to opposite-sector kernel single-check pairs (`C-DELETE-CHECK`, `C-ADD-CHECK` under `C-SEQUENCE`); exhaustive four-case partition and side condition $\Pi$ stand under H-4 capacity (§4.10) |
+| `OBL-FIXED-NAMESPACE-REACHABILITY` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to fixed-namespace kernel `C-DELETE-CHECK` / `C-ADD-CHECK` / `C-SEQUENCE` paths up to canonical minting under remaining H-4 capacity ($\ge \dim X_1 + \dim Z_1$; §4.17) |
+| `OBL-PRESENTATION-CONJUGATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to the kernel five and `E-GRAFT` (§4.25; $\sigma$ leaves `used` untouched, so H-4 capacity is invariant); excludes Gate 6 cells and `stdCSS-3` constructors |
+| `OBL-DERIVED-TERM-FACTORIZATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to derived commands over the kernel five for a fixed ordered elementary expansion (§4.23; excludes primitive extensions and expression constructors) |
+| `OBL-CERTIFICATE-PATH-KEYING` | `stdCSS-1` | `stdCSS-3` (Gate 5 questions open) | **Discharged** for $(C, P, \sigma)$ keying and syntax-directed route-scoping matching `CertificateChecker.lean` (§4.24, issue #371); the three Gate 5 design questions remain open |
+| `OBL-JUDGMENT-SOUNDNESS` | `stdCSS-1` | `stdCSS-3` (unconditional L3 inventory; hand derivation) | **Discharged** for unconditional L3 rules over kernel five (full property signature + §4.39 quotients + $\mathsf{gen}_i$), `E-GRAFT`, Gate 6 structural/`Ann.gen`, and `stdCSS-3` constructors' structural/WF rows; **restricted** away from conditional priced/certificate/layout-honesty cells, §2j family-level transport, `A-QUOTIENT` (§2i), and unadmitted candidates; Lean mechanization landed in `lean/CodeCalculus/ExpandedSoundness.lean` (issue #533): `ExtDerives` over `ExtNat`, `TermModels`, `ext_judgment_soundness` and its `_exact` / `_exact_uncertified` / `_exact_admissible` instances, seam-certificate equality retained as `SeamCertSound` and discharged for `AdmissibleSeam`. The kernel slice remains in `Soundness.lean` / `TermSoundness.lean` |
+| `OBL-JUDGMENT-TRANSPORT` | `stdCSS-1` | `stdCSS-3` (single-state command sequences) | **Discharged** for positive transport (structural + single-polarity distance + surviving $\mathsf{gen}_i$) and `W13` refusal/seam condition across kernel, `E-GRAFT`, and unary Gate 6 command chains (§4.11, §4.37); **restricted** away from mixed opposite-polarity distance chains (`open`) and future-$\Pi$ certificate context mutation |
+| `OBL-PRICED-INTERVAL-SOUNDNESS` | `stdCSS-2` | `stdCSS-3` (core §8.3 slice) | **Explicitly restricted** to core §8.3 transformers (`C-SKIP`, `C-ADD-CHECK`, `C-DELETE-CHECK`, `E-GRAFT`, `C-DIRECT-SUM`, `C-SEQUENCE`, §4.13); Gate 6 covered by `OBL-GATE6-CSS-EXTENSIONS` (§4.32), `stdCSS-3` constructors initialize at $[0, +\infty)$ (§2g), and §2h–§2j alter no distance interval endpoint |
+
 ---
 
 ## `OBL-ORDER-INDEPENDENT-DELETION` — Order-independent deletion
@@ -100,6 +129,11 @@ fixed-reference-set hypothesis (annotation-transport part) — hand derivation
 `spec/OPERATIONAL_SEMANTICS.md` §4.15, 2026-10-20.
 
 **Classification:** metatheorem
+
+**Discharged through:** `stdCSS-3` (explicitly restricted to pure
+`C-DELETE-CHECK` / `C-SEQUENCE` batches with no interleaved extension or
+presentation commands; `spec/OPERATIONAL_SEMANTICS.md` §4.15, §4.40,
+2026-11-18, issue #535).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.15, 2026-10-20).
 
@@ -391,6 +425,11 @@ status*; red-team R9).
 
 **Classification:** metatheorem
 
+**Discharged through:** `stdCSS-3` (explicitly restricted to fixed-namespace
+kernel `C-DELETE-CHECK` / `C-ADD-CHECK` / `C-SEQUENCE` paths up to canonical
+identifier allocation under remaining H-4 identifier capacity;
+`spec/OPERATIONAL_SEMANTICS.md` §4.17, §4.40, 2026-11-18, issue #535).
+
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.17, 2026-10-20), scoped to the R10 all-deletions-first route.
 
 **Intended mechanization status:** Lean metatheorem after the kernel slices; it is the
@@ -547,6 +586,13 @@ entry format above.
 
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (single-valuedness on fixed presentations
+discharged across all admitted `stdCSS-3` commands and constructors;
+$\equiv$-input invariance under row-order permutations explicitly restricted
+away from display-order-reading operations `P-REBASE`, `A-PRODUCT`,
+`A-DOUBLE`, and `A-CONCAT`; `spec/OPERATIONAL_SEMANTICS.md` §4.8, §4.40,
+2026-11-18, issue #535).
+
 **Ledger status:** added 2026-09-30 (logical-framework panel, §5.3) — statement fixed; proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8; evidence status `proved`. The provenance of this entry differs from those
 around it: it is **not** from the work plan's *Resolve* list or
 relational-core table. It formalizes a commitment the cards and
@@ -622,8 +668,8 @@ value claim was corrected 2026-09-30 independently of this entry.
 **Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`;
 constructor instances `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`
 (2026-11-11, issue #330), `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`,
-`A-DOUBLE` (2026-11-11, issue #369), and `L-NESTED-CSS` (2026-11-13, issue
-#445).
+`A-DOUBLE` (2026-11-11, issue #369), `L-NESTED-CSS` (2026-11-13, issue
+#445), and `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (2026-11-19, issue #549).
 
 **Semantic-contract field:** admission rule item 4 (`state-sound`).
 
@@ -639,14 +685,23 @@ constructors admitted the same day by issue #369 (`L-BALANCED`, `L-TANNER`,
 derived for `A-PRODUCT` and `L-BALANCED` and is an applicability premise of
 the other three), `A-PRODUCT` under repair (a) (see above); `proved` for
 `L-NESTED-CSS`, admitted 2026-11-13 by issue #445 (hand derivation §4.36:
-the overlap is the applicability premise). The instance is
+the overlap is the applicability premise); `proved` for `L-EMPTY`, `L-FREE`,
+`A-PULLBACK`, and `A-PUSHOUT`, admitted 2026-11-19 by issue #549 (hand
+derivation §4.43). The instance is
 `open` for any later-layer constructor not yet admitted.
 
 **Ledger status:** MVP instances proved by dated hand derivation
 `spec/OPERATIONAL_SEMANTICS.md` §4.7; statement fixed against
 the conventions above. The later-layer constructor instance is `proved` for
-the nine constructors admitted 2026-11-11 (§4.34 and §4.35) and for
-`L-NESTED-CSS` (§4.36).
+the nine constructors admitted 2026-11-11 (§4.34 and §4.35), for
+`L-NESTED-CSS` (§4.36), and for `L-EMPTY`, `L-FREE`,
+`A-PULLBACK`, and `A-PUSHOUT` (§4.43).
+
+**Discharged through:** `stdCSS-3` (discharged for all admitted operations and
+constructors: kernel five §4.7, `E-GRAFT` §4.12, six Gate 6 CSS cells
+§4.26–§4.31, and ten `stdCSS-3` constructors §4.34–§4.36; explicitly restricted
+away from unadmitted candidates, which remain `open`;
+`spec/OPERATIONAL_SEMANTICS.md` §4.40, 2026-11-18, issue #535).
 
 **Intended mechanization status:** one Lean lemma per kernel slice; input to
 Gates 2–4. Machine-checked (Lean 4, `lean/CodeCalculus/WellFormedness.lean`,
@@ -753,6 +808,11 @@ primitive's card ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2) ho
 
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (discharged for all admitted commands of
+`stdCSS-3`, since no admitted command reads `steps` and `stdCSS-3` adds no new
+command production; `spec/OPERATIONAL_SEMANTICS.md` §4.6, §4.40, 2026-11-18,
+issue #535).
+
 **Ledger status:** sharpened 2026-09-23 — statement fixed against the
 conventions above; **proof discharged** at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4. The evidence status
@@ -790,6 +850,11 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (discharged for all admitted commands of
+`stdCSS-3`: associativity is parametric in `Command`, and denotational adequacy
+holds via single-valuedness of `Eval`; `spec/OPERATIONAL_SEMANTICS.md` §1a,
+§4.8, §4.40, 2026-11-18, issue #535).
+
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
 **Intended mechanization status:** Lean theorem in the sequencing slice; Gate 3 input.
@@ -823,6 +888,12 @@ obligation's status is unchanged.
 **Claim shape:** `equality` — **Evidence status:** `proved` (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.10, 2026-10-20).
 
 **Classification:** metatheorem.
+
+**Discharged through:** `stdCSS-3` (explicitly restricted to opposite-sector
+kernel single-check commands `C-DELETE-CHECK` and `C-ADD-CHECK` under
+`C-SEQUENCE`, excluding `E-GRAFT` and Gate 6 commands; exhaustive four-case
+classification and side condition $\Pi$ stand under H-4 capacity;
+`spec/OPERATIONAL_SEMANTICS.md` §4.10, §4.40, 2026-11-18, issue #535).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.10, 2026-10-20).
 
@@ -1022,6 +1093,11 @@ identifier-disjointness, [`STATE_MODEL.md`](STATE_MODEL.md) §4).
 **Claim shape:** `equality` — **Evidence status:** `proved` (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.25, 2026-10-23).
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (explicitly restricted to the five kernel
+primitives and `E-GRAFT`, excluding `P-REBASE`, the other five Gate 6 cells,
+and the ten `stdCSS-3` constructors; H-4 capacity is relabeling-invariant;
+`spec/OPERATIONAL_SEMANTICS.md` §4.25, §4.40, 2026-11-18, issue #535).
+
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.25, 2026-10-23).
 
 **Disposition.** The same-command congruence is confirmed false for additions.
@@ -1088,6 +1164,12 @@ identifier-visibility reading, ratified at the walkthrough.
 **Claim shape:** `equality` — **Evidence status:** `proved` (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
 **Classification:** metatheorem.
+
+**Discharged through:** `stdCSS-3` (discharged through `stdCSS-3`: state model
+and $\equiv$ unchanged after the 2026-10-29 $Q$ re-evidencing, all `stdCSS-3`
+constructors yield states on this model, and the §4.37 span properties respect
+$\approx$; `spec/OPERATIONAL_SEMANTICS.md` §4.8, §4.40, 2026-11-18, issue
+#535).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
@@ -1178,6 +1260,14 @@ metatheorem over the transition system.
 
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (discharged for single-state command
+sequences over the kernel five, `E-GRAFT`, and the five unary Gate 6 commands,
+with `stdCSS-3` expression constructors entering at chain position $0$;
+explicitly restricted away from mixed opposite-polarity distance compositions,
+which stay `open`, and future-$\Pi$ certificate context mutation by `Eval`,
+with `W13` relative to the recorded L3 inventory;
+`spec/OPERATIONAL_SEMANTICS.md` §4.11, §4.37, §4.40, 2026-11-18, issue #535).
+
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
 
 The shape is `preservation` (established judgments survive sequencing), not the
@@ -1227,16 +1317,25 @@ for the generators the graft retires; and `Derives.shift_gen`, which
 transports a derivation over the second segment under the seam condition
 `SeamRowsDerived`, with `Derives.shift` restated for sentences that are not
 generator-referencing claims. The Gate 6 rows for the claim are
-`Derives.genExtend`, `genExtendMint`, `genPeel`, `genPuncture`,
+`Derives.genExtend`, `genExtendMint`, `genPeel` (with
+`peelSupport_eq_graftSupport_of_eval` in `Soundness.lean`), `genPuncture`,
 `genHadamard`, `genRebase`, and `genRebaseMint`, with refusals
-`not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured`, and
-`not_derivable_gen_of_rebased`. The seam condition is discharged on every
-chain of single (non-sequence) steps (issue #424, issue #489,
-`lean/CodeCalculus/SeamChains.lean`): `derives_gen_of_displayed` derives, at
-every position of such a chain, the claim of every row the state displays,
-`seamRowsDerived_of_stepChain` is the seam condition, and
-`derives_gen_iff_displayed` states that on a well-formed chain of that kind
-the claim is derivable exactly when the row is displayed. Not mechanized:
+`not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured` (support form),
+`not_derivable_gen_of_punctured_id` (identifier form, arbitrary $\sigma, S$),
+and `not_derivable_gen_of_rebased` (identifier form, arbitrary $\sigma, S$),
+plus worked instances for all five Gate 6 commands (`Transport.lean`, issues
+#424, #534). The seam condition is discharged on every chain of single
+(non-sequence) steps and on every command evaluation trace (issues #424, #489,
+#534, `lean/CodeCalculus/SeamChains.lean`): `derives_gen_of_displayed` derives,
+at every position of such a chain, the claim of every row the state displays,
+`seamRowsDerived_of_stepChain` and `seamRowsDerived_of_prefix_stepChain`
+discharge the seam condition, `stepChain_append` and `Trace.stepChain` connect
+`StepChain` to `Trace` (`seamRowsDerived_of_trace`, `Derives.shift_gen_of_trace`),
+and `derives_gen_iff_displayed` / `derives_gen_iff_displayed_of_trace` state
+that on a well-formed single-step chain or command trace the claim is derivable
+exactly when the row is displayed, exercised on a three-step Gate 6 seam chain
+(`derives_gate6_seam_row3`, `derives_gate6_seam_row5`,
+`not_derivable_gate6_seam_peeled_minted`). Not mechanized:
 the connection of
 the fixed-reference-set model to `Eval`, since no normative artifact fixes
 what a non-deletion command does to a context. Each refutation is relative to
@@ -1281,6 +1380,12 @@ operations.
 
 **Classification:** metatheorem.
 
+**Discharged through:** `stdCSS-3` (explicitly restricted to derived commands
+over the five kernel primitives for a fixed ordered elementary expansion,
+excluding primitive conditional extensions `E-GRAFT` / Gate 6 and expression
+constructors; `spec/OPERATIONAL_SEMANTICS.md` §4.23, §4.40, 2026-11-18, issue
+#535).
+
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.23, 2026-10-23).
 
 **Intended mechanization status:** Lean metatheorem after the kernel slices; Gate 6 input.
@@ -1314,6 +1419,12 @@ fixed at admission time.
 **Claim shape:** `definition` — **Evidence status:** `proved`.
 
 **Classification:** framework metatheorem (Gate 5 input).
+
+**Discharged through:** `stdCSS-3` (discharged for $(C, P, \sigma)$ per-state
+keying and syntax-directed route-scoping, aligned with `CertificateChecker.lean`
+and the `stdCSS-3` admission of `certificate-checked`; the three Gate 5 design
+questions of §4.24 remain open; `spec/OPERATIONAL_SEMANTICS.md` §4.24, §4.40,
+2026-11-18, issue #535).
 
 **Ledger status:** minted 2026-10-05 by the framework ratification; statement
 fixed, discharged at `spec/OPERATIONAL_SEMANTICS.md` §4.24; the three Gate 5 questions §4.24 lists stay open. Not
@@ -1386,10 +1497,20 @@ rule).
 
 **Claim shape:** metatheorem entry (explicit schema exception — see
 [`CLAIMS.md`](CLAIMS.md) *Claim shape and evidence
-status*; red-team R9, 
-(hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
+status*; red-team R9) — **Evidence status:** `proved`
+(hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20;
+re-discharged §4.40, 2026-11-18).
 
 **Classification:** metatheorem.
+
+**Discharged through:** `stdCSS-3` (hand-derivation discharge for the
+unconditional L3 rule inventory over the kernel five, `E-GRAFT`, Gate 6
+structural/`Ann.gen` rows, and `stdCSS-3` constructors' structural/WF rows,
+including §4.37 and §4.39; explicitly restricted away from conditional
+priced/certificate/honest-layout cells, §2j family-level transport,
+`A-QUOTIENT` §2i, and unadmitted candidates; full Lean mechanization stays open
+at issue #533 and Gate 5 remains unchecked; `spec/OPERATIONAL_SEMANTICS.md`
+§4.11, §4.40, 2026-11-18, issue #535).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
 
@@ -1414,6 +1535,20 @@ is a `Chain` from `s` to `t` (`Trace.chain`, `Trace.getLast`).
 well-formedness of the input state, with `_exact` forms for the exact
 distance. The well-formedness of the state the term's expression evaluates
 to stays the FD1 hypothesis.
+The expanded-operation-set mechanization is
+`lean/CodeCalculus/ExpandedSoundness.lean` (issue #533): `ExtDerives` over
+`ExtNat = ℕ ∪ {+∞}`, with `TermModels` / `ExtModels`,
+`ext_judgment_soundness` and its `_exact`, `_exact_uncertified`, and
+`_exact_admissible` instances; seam-certificate equality is retained as
+`SeamCertSound` and proved for `AdmissibleSeam`. It covers the kernel
+commands, `E-GRAFT`, all five unary Gate 6 moves, `C-DIRECT-SUM`,
+`E-GLUE` (uncertified and certified under `seamCert`), and the ten typed
+constructors; the conditional priced cells are mechanized elsewhere
+(`PricedInterval.lean`, `Gate6Exact.lean`). The two derivation systems
+relate by documentation only: `Soundness.lean` / `TermSoundness.lean` keep
+the `Nat`-valued sentinel reading for fixed-namespace rows, while
+`ExpandedSoundness.lean` is the mechanization of §4.11 over the expanded
+operation set.
 Scope of the slice: the instantiation cells proved are skip's
 identity (every field of the §4.11 list — input and output state coincide, so
 the identity holds under any reading of the distance fields: `dX` and `dZ` are
@@ -1588,6 +1723,14 @@ corrected E-GRAFT rules).
 
 **Introduced in:** `stdCSS-2`.
 
+**Discharged through:** `stdCSS-3` (explicitly restricted to the core §8.3
+consumer transformer slice `C-SKIP`, `C-ADD-CHECK`, `C-DELETE-CHECK`,
+`E-GRAFT`, `C-DIRECT-SUM`, `C-SEQUENCE`, with the six Gate 6 cells governed
+separately by `OBL-GATE6-CSS-EXTENSIONS` §4.32, the ten `stdCSS-3` constructors
+initialized at $[0, +\infty)$ per §2g, and §2h–§2j modifying no distance
+interval endpoint; `spec/OPERATIONAL_SEMANTICS.md` §4.13, §4.40, 2026-11-18,
+issue #535).
+
 **Ledger status:** added 2026-10-19 for the priced consumer; consumer rules are
 transcribed in [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2b and
 `machine/consumer.json`; interval soundness derivation recorded at §4.13 is
@@ -1644,10 +1787,13 @@ endpoint remains 0.
 
 Two further cases were found by review on 2026-10-20 and are recorded here
 because they are the shapes this obligation must exclude. First, a
-full-distance price that moves a **sector** endpoint: the consumer once
-raised the `d_X` and `d_Z` lower endpoints from a full-distance deletion
-price, which licenses `d' = min(d, w_del, w_exp)` on the full distance and
-nothing about the sectors. Second, a price that moves the wrong **sector**:
+full-distance price that moves a **sector** endpoint without a sector
+justification: the consumer once raised the `d_X` and `d_Z` lower endpoints
+from a full-distance deletion price, which licenses `d' = min(d, w_del, w_exp)`
+on the full distance and nothing about the sectors. (Sector endpoints are now
+moved only under the admitted sector-split deletion price of issue #566, where
+$w_{\mathrm{del}}$ is the deleted sector's and $w_{\mathrm{exp}}$ the
+opposite sector's minimum.) Second, a price that moves the wrong **sector**:
 the graft exposure price is indexed to the non-spliced sector, so it licenses
 that sector's interval and the full distance's; the spliced sector carries its
 lower endpoint only and drops its upper endpoint unless a child-valid witness
@@ -2047,9 +2193,9 @@ cell, not as a theorem of §4.31 or a carved-out obligation.
 
 **Taxonomy IDs:** `E-GLUE`.
 
-**Semantic-contract field:** none new; `E-GLUE`'s contract-index row stays
-`transition-defined` ([`CLAIMS.md`](CLAIMS.md)). The entry records a derived fact
-about the admitted transition, not a cell.
+**Semantic-contract field:** §5–§7 of `E-GLUE`'s contract record
+([`CLAIMS.md`](CLAIMS.md), promoted to `contract-stated` 2026-11-18, issue #536).
+The entry records a derived fact about the admitted transition, not a new cell.
 
 **Claim shape:** `direction` (the per-sector lower bound without a
 re-exposure term) and `equality` (the class-pair formula). **Evidence
@@ -2066,9 +2212,19 @@ candidate (re-exposure hardness in constrained splits); `proved`, not
 **Introduced-in:** `stdCSS-2` line, dated note 2026-11-11; proof-only, patch
 level ([`VERSIONING.md`](VERSIONING.md) §4.1).
 
-**Intended mechanization status:** not mechanized. A Lean statement would be
-a lemma about `glueCommand` over `directSum` in
-`lean/CodeCalculus/Gate6Soundness.lean`; not scheduled.
+**Intended mechanization status:** mechanized on representatives across
+`lean/CodeCalculus/ExactGlue.lean` (`glue_claim1`, `glue_exactDistance_ge_min`),
+`ExactGluePairs.lean` (`glue_normalizer_iff`, `glue_stabilizer_iff`,
+`glueW_subset_glueK`, `glue_class_eq_iff`, `glue_logical_iff`),
+`ExactGlueDistance.lean` (`glue_exactDistance?_eq_some_iff`,
+`glue_exactDistance?_eq_none_iff`), `ExactGlueSurvival.lean` (`survivesA_iff`,
+`survivesB_iff`, `glue_exactDistance_eq_min_of_survivesA/B`,
+`glue_survivor_of_min_logical`), and `GlueExtraction.lean` (`wRe?_eq_none`,
+`glue_exactDistance?_ge_min`, `glue_theorem4_lower_bound`, `phiSeam_congr`,
+`phiSeam_linear`, `glue_exactDistance?_ge_add_of_no_pure_survivor`,
+`glue_universal_min_equality_false`; issues #366, #395–#397, #536). Only the
+categorical quotient-group packaging and complexity remark (iv) remain hand
+derivations.
 
 **Statement.** For the admitted `E-GLUE` transition (§4.31), factors $C_A$
 and $C_B$ on disjoint qubit sets, glued state $C$, and either sector
@@ -2132,21 +2288,21 @@ in `machine/` and `TODO.md` only.
 | --- | --- | --- |
 | Re-exposure hardness in constrained splits (`E-GLUE`) | landed 2026-11-11 (issue #328): no re-exposed class under the admitted transition, so the quantity is $+\infty$ there; glued sector distance derived from factor class pairs; hardness boundary kept against shared-interface splits, not admitted | `OPERATIONAL_SEMANTICS.md` §4.33; `OBL-GLUE-RE-EXPOSURE`; `machine/experiments/glue_class_pairs.py` |
 | Consumer-side planner search budget | landed 2026-11-11 (issue #347): `bounded_support_search` in `machine/planner.py`, per-child budget and weight ceiling recorded, witnesses enter through the ledger's transport, no lower endpoint raised | `machine/planner.py`, `machine/test_support_search.py`; no calculus obligation |
-| Sector-targeted deletion/peel search | accepted | `machine/planner.py` follow-up; no calculus obligation |
-| Multi-objective candidate ranking | accepted | `machine/planner.py` follow-up; no calculus obligation |
+| Sector-targeted deletion/peel search | landed 2026-11-18 (issue #530) | `machine/planner.py` (`bounded_sector_search`): interval bounds only, refusal and success cases tested; no calculus obligation |
+| Multi-objective candidate ranking | landed 2026-11-18 (issue #531) | `machine/planner.py` (`pareto_rank`, `pareto_front`, `pareto_dominates`, `domination_prune`, `plan(ranking="pareto")`): Pareto over verdict, d, k, n, w, connectivity; filtered/annotated; tests in `machine/test_pareto_ranking.py`; no calculus obligation |
 | Heuristic-result status (machine-side) | landed 2026-11-11 (issue #329): `heuristic_outcome` records on the strict-improvement enumeration fallback and the bounded sector search | `machine/priced_calculus.py`; `machine/planner.py`; `machine/test_heuristic_outcome.py` |
 | Distance-increasing constructor admission (`L-*`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`) | landed 2026-11-11 (issues #330 and #369): `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT` admitted as `transition-defined` expression constructors, their well-formedness instances of `OBL-WELL-FORMEDNESS-PRESERVATION` proved (§4.34), no distance rule; `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` admitted the same way by issue #369 with typed inputs realized as finite objects and their instances proved (§4.35), three of them with a commutation premise | `TERM_LANGUAGE.md` §1, §2; `OPERATIONAL_SEMANTICS.md` §2 cards, §4.34, §4.35; `JUDGMENT_LAYER.md` §2g; typed signatures (`archive/notes/CONSTRUCTOR_SIGNATURES.md`); axis-2 change staged on the `stdCSS-3` candidate (`VERSIONING.md` §5.1) |
 | Puncturing/peeling distance prices (`E-PUNCTURE`/`E-PEEL`) | landed 2026-11-10 (issue #331): peel cells derived and admitted, puncture reduction recorded and refusal kept | `JUDGMENT_LAYER.md` §2a (two `E-PEEL` price cells), §2b, §2c (avoidance minimum), §2f; `OPERATIONAL_SEMANTICS.md` §4.28, §4.29; puncture's priced cell stays blocked on the D2 lower bound |
-| Gluing promotion (`E-GLUE`) | accepted; logical-witness field defined as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1, 2026-11-11, issue #332) and the §2e equality discharged by extraction of Theorem 4 / claim 7.4 of *composition-distance* (`OPERATIONAL_SEMANTICS.md` §4.31, 2026-11-11); boundary/edge-label field defined as a future-$\Pi$ type sketch (`STATE_MODEL.md` §1, 2026-11-12, issue #366), so both Gate 6 prerequisites are met; the move remains `transition-defined` pending the Lean mechanization of the extracted derivation, and is not `contract-stated` until that lands | seam-certificate equality discharged (2026-11-11); boundary/edge labels defined (2026-11-12); the instance-wise equality route, the extracted Theorem 4 / claim 7.4, the survival statement, and the boundary transport are recorded in `OPERATIONAL_SEMANTICS.md` §4.31, and the consumer carries factor witnesses through the seam |
-| Sector-swap exploitation (`E-LOCAL-HADAMARD`, `T=Q`) | landed 2026-11-11 (issue #346): consumer support (`sector_swap_exploitation`, planner `sector_swap`), full-distance invariance recorded; no derived cell needed, conjugation identity in `design/DERIVED_RELATIONS.md` §2b | `machine/priced_calculus.py`, `machine/planner.py`, `machine/test_sector_swap.py`; no calculus obligation |
+| Gluing promotion (`E-GLUE`) | landed to rung 5 (`contract-stated`, 2026-11-18, issue #536): both future-$\Pi$ fields defined in full (`STATE_MODEL.md` §1a, issues #332, #366, #440); CSS-level algebra of §4.31/§4.33 mechanized (`ExactGlue*.lean`, `LogicalWitness.lean`, `WitnessFields.lean`, `AdmissibleSeamFamily.lean`, `GlueExtraction.lean`) with the irreducible geometric move-word $\to$ `AdmissibleSeam` substrate gap explicitly recorded; binary-only expression constructor decided (`TERM_LANGUAGE.md` §1–§2, no unary command production); Gate 6 unchecked and move stays a conditional cell | `CLAIMS.md` `E-GLUE` contract record (`contract-stated`, rung 5); `TERM_LANGUAGE.md` §1–§2 (`glue(e₁, e₂; seams)`); `OPERATIONAL_SEMANTICS.md` §4.31, §4.33; `lean/CodeCalculus/GlueExtraction.lean`; `design/ADMISSIBLE_SEAM_FAMILY.md` §4, §7 |
+| Sector-swap exploitation (`E-LOCAL-HADAMARD`, `T=Q`) | landed 2026-11-11 (issue #346): consumer support (`sector_swap_exploitation`, planner `sector_swap`), full-distance invariance recorded; no derived cell needed, conjugation identity in `design/DERIVED_RELATIONS.md` §2b. Optional earned-bound guards added 2026-11-19 (PR #590): `min_sector_gap` on `other.lower - target.upper` and `require_exact_full_distance` on the carried full interval; refusal carries a `guard` field; defaults preserve the interval-driven behaviour | `machine/priced_calculus.py` (entrypoints), `machine/planner.py`, `machine/test_sector_swap.py`; no calculus obligation |
 | Layout-transfer judgment cells | landed 2026-11-10 (issue #333) | `JUDGMENT_LAYER.md` §2d.5 (one cell per transition); `machine/semantics.json` `layout_cells`; `machine/experiments/layout_conformance_harness.py`; `OBL-LOCALITY-TRANSPORT` clauses 4 and 5 |
 | Weight-3 exposure investigation | landed 2026-11-10 (issue #326): NP-hardness from column weight 3 on, by a column-splitting reduction from the general case; the provider's refusal is by design | `design/DERIVED_RELATIONS.md` §3a; `machine/priced_calculus.py` (`citation_status` of the refusal); `machine/experiments/weight3_split_reduction.py` |
 | Small-`n` exact-distance oracle | landed 2026-11-11 (follow-up to #324) | `machine/oracle.py`; replay re-exports; agreement test; oracle-only with `n` ceiling |
 | Cheap-first strict-improvement check | landed 2026-11-11 (follow-up to #324); hardened 2026-11-11 (issue #342) | cheap witness path + optional bounded enumeration fallback with its own reason (`all_killed_by_enumeration`); admissibility of the added check enforced; randomized tests on well-formed states |
 | Tower sweep (`k_in > 1`) | landed 2026-11-11 (issue #327): level-data provider derived in `design/DERIVED_RELATIONS.md` §2a for arbitrary `k_in`; sweep at `n_in = 4`, `k_in` in 1, 2, 3 | `tower_level_data`, `tower_deletion_prices`, `tower_cost_table_size`; `machine/experiments/tower_sweep.py`; `machine/test_tower_sweep.py` |
-| Complexity-ladder documentation/benchmark | accepted | `design/DERIVED_RELATIONS.md` + `design/benchmark/` |
-| Monomial-quotient specialization of `A-QUOTIENT` | admitted as specialization record | `TAXONOMY.md` §2.15 row; transfer theorem as conditional cell |
-| Dressed-quotient constructor (`X-DRESSED-QUOTIENT`) | admitted to roadmap (extended-state layer) | Gate 6 admission of extended-state layer prerequisite |
+| Complexity-ladder documentation/benchmark | landed 2026-11-19 (issue #532): complexity-ladder table (cheap/bounded/hard bands) plus `E-PEEL` and bounded-search rows in `design/DERIVED_RELATIONS.md` section "Complexity ladder"; direct-sum benchmark recorded in `design/benchmark/results.txt` (refreshed 2026-11-19); abstraction benchmarks for newly admitted providers remain owed | `design/DERIVED_RELATIONS.md` section "Complexity ladder" + `design/benchmark/` (`run_benchmark.py`, `README.md`, `results.txt`) |
+| Monomial-quotient specialization of `A-QUOTIENT` | admitted as specialization record; specialization row and conditional cell landed (issue #547) | `TAXONOMY.md` §2.15 specialization row; transfer-theorem conditional slot (`JUDGMENT_LAYER.md` §2i, existence recorded with no usable automatic bound); CSS-preserving applicability constraints checked consumer-side (`machine/quotient_specialization.py`, `machine/consumer.json`); duality-quotient instance routing recorded |
+| Dressed-quotient constructor (`X-DRESSED-QUOTIENT`) | admitted to roadmap (extended-state layer) | refused for `v0.3.0` (issue #545, 2026-11-18); Gate 6 admission of the extended-state layer prerequisite remains open, with reopening conditions recorded in the diary entry |
 
 No item above is discharged by this disposition; each requires its own dated
 artifact before its `discharged-through` advances.

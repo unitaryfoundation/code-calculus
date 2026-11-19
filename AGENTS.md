@@ -7,9 +7,9 @@ notes. Internal red-team records, issue numbers, and branch names are omitted.
 
 1. [`README.md`](README.md)
 2. [`CONTRIBUTING.md`](CONTRIBUTING.md)
-3. [`../spec/GATES.md`](spec/GATES.md) and [`../spec/VERSIONING.md`](spec/VERSIONING.md)
-4. [`../spec/VOCABULARY.md`](spec/VOCABULARY.md)
-5. [`../AXIOMS.md`](AXIOMS.md)
+3. [`spec/GATES.md`](spec/GATES.md) and [`spec/VERSIONING.md`](spec/VERSIONING.md)
+4. [`spec/VOCABULARY.md`](spec/VOCABULARY.md)
+5. [`AXIOMS.md`](AXIOMS.md)
 
 ## Hard rules
 

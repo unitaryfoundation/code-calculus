@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Machine-readable operation registry derived from spec/TAXONOMY.md and spec/CLAIMS.md.",
-    "generated": "2026-10-29",
+    "generated": "2026-11-18",
     "authority": "spec/TAXONOMY.md and spec/CLAIMS.md are the sources of truth; this file is a derived index. On any disagreement, normative prose wins.",
     "notes": "contract_status values use the spec/CLAIMS.md vocabulary (taxonomy-only, contract-draft, ...). null means the operation does not appear in the initial contract index; its contract status is not recorded there and must not be inferred."
   },
@@ -22,31 +22,31 @@
       "id": "C-SKIP",
       "name": "Identity / skip",
       "layer": "core-css-calculus",
-      "contract_status": "contract-stated"
+      "contract_status": "contract-proved"
     },
     {
       "id": "C-DIRECT-SUM",
       "name": "Direct sum",
       "layer": "core-css-calculus",
-      "contract_status": "contract-stated"
+      "contract_status": "contract-proved"
     },
     {
       "id": "C-DELETE-CHECK",
       "name": "Stabilizer/check deletion",
       "layer": "core-css-calculus",
-      "contract_status": "contract-stated"
+      "contract_status": "contract-proved"
     },
     {
       "id": "C-ADD-CHECK",
       "name": "Stabilizer/check addition",
       "layer": "core-css-calculus",
-      "contract_status": "contract-stated"
+      "contract_status": "contract-proved"
     },
     {
       "id": "C-SEQUENCE",
       "name": "Sequential composition",
       "layer": "core-css-calculus",
-      "contract_status": "contract-stated"
+      "contract_status": "contract-proved"
     },
     {
       "id": "E-PEEL",
@@ -76,7 +76,7 @@
       "id": "E-GLUE",
       "name": "Interface gluing / merge",
       "layer": "admitted-conditional-css-extension",
-      "contract_status": "transition-defined"
+      "contract_status": "contract-stated"
     },
     {
       "id": "E-SPLIT",
@@ -115,8 +115,38 @@
       "contract_status": "transition-defined"
     },
     {
+      "id": "A-PULLBACK",
+      "name": "Pullback / fiber product along interface maps",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "A-PUSHOUT",
+      "name": "Pushout / amalgamated sum along a shared subcode",
+      "layer": "later-algebraic-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "L-EMPTY",
+      "name": "Empty code (nullary base constructor)",
+      "layer": "lower-level-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "L-FREE",
+      "name": "Free code (qubit-set base constructor)",
+      "layer": "lower-level-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
       "id": "L-NESTED-CSS",
       "name": "CSS code from nested classical codes",
+      "layer": "lower-level-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "L-MAPPING-CONE",
+      "name": "Mapping cone of a chain map",
       "layer": "lower-level-constructor",
       "contract_status": "transition-defined"
     },

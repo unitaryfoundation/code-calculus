@@ -472,9 +472,9 @@ class CodeState:
     # Each method checks the applicability premises its §2 card states, then
     # constructs the child and validates it; a failed output check is a
     # no-derivation, per the §2 card wording ("an output failing I1-I5 gives
-    # no derivation"). E-GLUE has no admitted evaluator transition (the
-    # logical-witness prerequisite is unmet): its state/ledger seam helpers live
-    # above and consume the §2e certificate as a hypothesis, but no evaluator
+    # no derivation"). E-GLUE is a binary-only expression constructor
+    # (TERM_LANGUAGE.md §1-§2, issue #536; contract-stated, Gate 6 unchecked):
+    # its binary state/ledger helpers live above (OPERATIONAL_SEMANTICS.md §4.31).
 
     @staticmethod
     def _validate_matrix(matrix, size):

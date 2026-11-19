@@ -454,6 +454,35 @@ theorem nested_steane_eq_tanner :
         [[true, false, true, false, true, false, true], [false, true, true, false, false, true, true], [false, false, false, true, true, true, true]]
         [[0, 1, 2, 3, 4, 5, 6]] [[0, 1, 2, 3, 4, 5, 6]] := by decide
 
+def cone_example : CodeState := {
+  Q := [0, 1, 2],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0] },
+    { id := 1, sector := Sector.Z, support := [2] }
+  ],
+  used := [0, 1]
+}
+
+theorem cone_example_state : coneState [[false]]
+      [[false], [false]]
+      [[false, true]]
+      [[true]] = cone_example := by decide
+
+theorem cone_example_eval : EvalExpr (StateExpr.cone [[false]]
+      [[false], [false]]
+      [[false, true]]
+      [[true]]) cone_example :=
+  cone_example_state ▸ EvalExpr.cone (by decide) (by decide) (by decide)
+
+theorem cone_example_wellFormed : EncodingWellFormed cone_example :=
+  evalExpr_cone_wf cone_example_eval
+
+theorem cone_example_n : cone_example.Q.length = 3 := by decide
+
+theorem cone_example_k : stateK cone_example = 1 := by
+  rw [stateK_of_wf cone_example cone_example_wellFormed]
+  decide
+
 theorem lift_trivial_eq_hgp :
     liftState [] [[[[]], [[]], []], [[], [[]], [[]]]]
       [[[[]], [[]]]] =
@@ -468,5 +497,112 @@ theorem twoblock_eq_lift :
 theorem balanced_trivial_eq_hgp :
     balancedState [] [[true, true, false], [false, true, true]] [] [] [[true, true]] [] [] =
       hgpState [[true, true, false], [false, true, true]] [[true, true]] := by decide
+
+def empty_base : CodeState := {
+  Q := [],
+  rows := [
+
+  ],
+  used := []
+}
+
+theorem empty_base_state : emptyCodeState = empty_base := by decide
+
+theorem empty_base_eval : EvalExpr (StateExpr.empty) empty_base :=
+  empty_base_state ▸ EvalExpr.empty
+
+theorem empty_base_wellFormed : EncodingWellFormed empty_base :=
+  evalExpr_empty_wf empty_base_eval
+
+theorem empty_base_n : empty_base.Q.length = 0 := by decide
+
+theorem empty_base_k : stateK empty_base = 0 := by
+  rw [stateK_of_wf empty_base empty_base_wellFormed]
+  decide
+
+def free_3 : CodeState := {
+  Q := [0, 1, 2],
+  rows := [
+
+  ],
+  used := []
+}
+
+theorem free_3_state : freeState [0, 1, 2] = free_3 := by decide
+
+theorem free_3_eval : EvalExpr (StateExpr.free [0, 1, 2]) free_3 :=
+  free_3_state ▸ EvalExpr.free (by decide)
+
+theorem free_3_wellFormed : EncodingWellFormed free_3 :=
+  evalExpr_free_wf free_3_eval
+
+theorem free_3_n : free_3.Q.length = 3 := by decide
+
+theorem free_3_k : stateK free_3 = 3 := by
+  rw [stateK_of_wf free_3 free_3_wellFormed]
+  decide
+
+def pb_iface_free1 : CodeState := {
+  Q := [0],
+  rows := [
+
+  ],
+  used := []
+}
+
+theorem pb_iface_free1_wellFormed : EncodingWellFormed pb_iface_free1 :=
+  encodingWellFormed_of_bool (by decide)
+
+def pullback_pair : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 1, 2, 3, 4, 5] },
+    { id := 1, sector := Sector.X, support := [0, 1, 3, 4, 6, 7] }
+  ],
+  used := [0, 1]
+}
+
+theorem pullback_pair_state : pullbackState pair_x pair_x [(0, 0), (1, 0), (2, 0)] [(0, 0), (1, 0), (2, 0)] = pullback_pair := by decide
+
+theorem pullback_pair_eval : EvalExpr (StateExpr.pullback (StateExpr.base pair_x) (StateExpr.base pair_x) (StateExpr.base pb_iface_free1)
+      [(0, 0), (1, 0), (2, 0)] [(0, 0), (1, 0), (2, 0)]) pullback_pair :=
+  pullback_pair_state ▸ EvalExpr.pullback pair_x_wellFormed pair_x_wellFormed pb_iface_free1_wellFormed
+    (by decide) (by decide) (by decide) (by decide) (by decide)
+    (EvalExpr.base _) (EvalExpr.base _) (EvalExpr.base _)
+
+theorem pullback_pair_wellFormed : EncodingWellFormed pullback_pair :=
+  evalExpr_pullback_wf pullback_pair_eval
+
+theorem pullback_pair_n : pullback_pair.Q.length = 9 := by decide
+
+theorem pullback_pair_k : stateK pullback_pair = 7 := by
+  rw [stateK_of_wf pullback_pair pullback_pair_wellFormed]
+  decide
+
+def pushout_pair : CodeState := {
+  Q := [0, 1, 2, 3, 4],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 1] },
+    { id := 1, sector := Sector.X, support := [2, 3] }
+  ],
+  used := [0, 1]
+}
+
+theorem pushout_pair_state : pushoutState pair_x pair_x pb_iface_free1 [(0, 2)] [(0, 0)] = pushout_pair := by decide
+
+theorem pushout_pair_eval : EvalExpr (StateExpr.pushout (StateExpr.base pair_x) (StateExpr.base pair_x) (StateExpr.base pb_iface_free1)
+      [(0, 2)] [(0, 0)]) pushout_pair :=
+  pushout_pair_state ▸ EvalExpr.pushout pair_x_wellFormed pair_x_wellFormed pb_iface_free1_wellFormed
+    (by decide) (by decide) (by decide) (by decide) (by decide)
+    (EvalExpr.base _) (EvalExpr.base _) (EvalExpr.base _)
+
+theorem pushout_pair_wellFormed : EncodingWellFormed pushout_pair :=
+  evalExpr_pushout_wf pushout_pair_eval
+
+theorem pushout_pair_n : pushout_pair.Q.length = 5 := by decide
+
+theorem pushout_pair_k : stateK pushout_pair = 3 := by
+  rw [stateK_of_wf pushout_pair pushout_pair_wellFormed]
+  decide
 
 end CodeCalculus.ConstructorInstances

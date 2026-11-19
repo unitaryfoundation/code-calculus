@@ -19,6 +19,14 @@ chain hypothesis cannot be dropped (`le_refl` and the pure order rows are
 derivable over any list of states). `TermSoundness.lean` supplies the chain
 as the trace of an evaluation (`judgment_soundness_of_term`, issue #425).
 
+A second mechanization of §4.11 over the expanded operation set lives in
+`lean/CodeCalculus/ExpandedSoundness.lean` (`ExtDerives` over `ExtNat =
+ℕ ∪ {+∞}`, issue #533). This module keeps the `Nat`-valued reading (sentinel
+`|Q| + 1`) because its distance rows compare states of one fixed namespace;
+`ExpandedSoundness.lean` covers cross-namespace rows and `+∞`. No formal
+translation theorem between the two is mechanized; the kernel rows correspond
+row-for-row.
+
 The pieces, in dependency order:
 
 - `Field` — the carry-table cell families of §4.11's satisfaction clause
@@ -429,6 +437,56 @@ theorem eval_extend_eq {delta : List Nat} {adds : List (Sector × List Nat)} {s 
   cases h with
   | extend _ hs' _ _ => exact hs'
 
+/-- Agreement of `peelSupport` with `graftSupport` on every surviving row of a
+    valid `E-PEEL` evaluation (`spec/JUDGMENT_LAYER.md` §4): because `Eval.peel`
+    requires `r_id` to be the unique `tau`-row containing `q`, any other
+    surviving `tau`-row is `q`-free and keeps its support, while an
+    opposite-sector row loses `q` if present. -/
+theorem peelSupport_eq_graftSupport_of_eval {q r_id r : Nat} {tau σ : Sector}
+    {S : List Nat} {s t : CodeState}
+    (hstep : Eval (Command.peel q tau r_id) s t)
+    (hrow : ({ id := r, sector := σ, support := S } : Row) ∈ s.rows)
+    (hne : r ≠ r_id) :
+    peelSupport q S = graftSupport q tau σ S := by
+  cases hstep with
+  | peel _ hex huniq _ _ _ =>
+      obtain ⟨row0, hrow0, hid0, hsec0, hq0⟩ := hex
+      have hmem0 : row0 ∈ touchingRows s tau q :=
+        List.mem_filter.mpr ⟨hrow0, decide_eq_true ⟨hsec0, hq0⟩⟩
+      by_cases hsec : σ = oppositeSector tau
+      · unfold peelSupport graftSupport
+        rw [hsec]
+        simp
+      · have hsame : σ = tau := by
+          cases tau <;> cases σ <;> first | rfl | (exfalso; exact hsec rfl)
+        subst hsame
+        have hno : S.contains q = false := by
+          cases hc : S.contains q with
+          | false => rfl
+          | true =>
+              exfalso
+              have hmem1 : ({ id := r, sector := σ, support := S } : Row) ∈
+                  touchingRows s σ q :=
+                List.mem_filter.mpr ⟨hrow, decide_eq_true ⟨rfl, hc⟩⟩
+              cases hlist : touchingRows s σ q with
+              | nil => rw [hlist] at huniq; cases huniq
+              | cons x rest =>
+                  cases rest with
+                  | nil =>
+                      rw [hlist] at hmem0 hmem1
+                      have h0 : row0 = x := List.mem_singleton.mp hmem0
+                      have h1 : ({ id := r, sector := σ, support := S } : Row) = x :=
+                        List.mem_singleton.mp hmem1
+                      have hreq : ({ id := r, sector := σ, support := S } : Row) = row0 :=
+                        h1.trans h0.symm
+                      exact hne ((congrArg Row.id hreq).trans hid0)
+                  | cons y zs =>
+                      rw [hlist] at huniq
+                      cases huniq
+        unfold peelSupport graftSupport
+        rw [hno]
+        simp [hsec]
+
 /-! ## The measure-monotonicity hypothesis (issue #230)
 
 The distance fields are read through an uninterpreted measure, so the
@@ -675,8 +733,8 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
   -- generator-referencing claims (issue #340). Source: the addition that
   -- mints the generator. Transport: one row per kernel step under which the
   -- referenced generator survives. There is no row for the deletion of the
-  -- referenced generator (the `W13` half) and none for the graft, whose
-  -- update rewrites supports.
+  -- referenced generator (the `W13` half); the input-display source, graft,
+  -- and Gate 6 rows follow below.
   | genMint (i : Nat) (sector : Sector) (support : List Nat) (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
       (hstep : Eval (Command.addStab sector support) s t) :

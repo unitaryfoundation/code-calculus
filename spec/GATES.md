@@ -40,9 +40,14 @@ ratification (Gate 1 later ratified).
 **Supersession note.** The ratification record above is not edited by the later
 discharge of `OBL-GATE6-CSS-EXTENSIONS` (discharged by the dated hand
 derivation at `OPERATIONAL_SEMANTICS.md` §4.32 and recorded in
-`OBLIGATIONS.md`); the discharge supersedes only the "remained open" reading,
-not the ratification itself. Gate 6 remains unchecked (discharge is not
-promotion).
+`OBLIGATIONS.md`) or by the promotion of the five kernel operations
+(`C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) to
+rung 6 (`contract-proved`) on 2026-11-18 (issue #535, [`CLAIMS.md`](CLAIMS.md),
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.39–§4.40). Those
+updates supersede only the "remained open" and "`contract-proved` ... remain
+owed for the kernel" readings at ratification, not the ratification itself.
+Mechanization (rung 7) remains owed for the kernel, and Gates 2–7 remain
+unchecked (neither discharge nor rung-6 promotion ratifies a proof gate).
 
 ### Gate 1: formal syntax
 
@@ -59,6 +64,16 @@ ratification does **not** claim: any soundness result; admission of the
 extended-state moves (`X-*`, `E-GLUE`'s merge/split layer) or contract-level
 proofs, which remain later-layer work; and Gates 2–7 remain unchecked. The
 artifact does not admit any new operation or change any claim status.
+
+**Supersession note.** The `glue(e_1, e_2; \vec u)` production added to
+[`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §1 (`E-GLUE`, dated maintainer decision
+2026-11-18, issue #536) does not alter this ratification: it is an extension
+constructor admitted under Gate 6 as a conditional cell, not part of the MVP
+grammar ratified here. Gate 1's ratified scope — states
+$S \mid e_1 \oplus e_2$, elementary moves, sequential terms, and
+presentation-as-context — is unchanged; the glue production is recorded as an
+axis-2 (operation set / term language) addition on the `stdCSS-3` candidate,
+staged outside this ratification.
 
 ### Gate 2: deletion derivation
 
@@ -109,7 +124,7 @@ remain extension decisions under this gate, except the CSS-level subset
 (`E-GLUE`, `E-PUNCTURE`, `E-PEEL`, `E-EXTEND`, `E-LOCAL-HADAMARD`,
 `P-REBASE`) admitted as conditional cells on 2026-10-23.
 
-**Extended-state layer (deferred).** Whether the ordinary-CSS state model
+**Extended-state layer (refused for `v0.3.0`, issue #545, 2026-11-18).** Whether the ordinary-CSS state model
 $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$ is extended to a two-sorted model
 (CSS as a special case plus a general stabilizer state presented by a
 symplectic check matrix), with cross-layer moves between them, is also a Gate 6
@@ -119,7 +134,15 @@ requiring typed halving data: a fixed-point-free involution $\pi$ with
 $\pi(S_X)=S_Z$). Scoping: taxonomy records in `TAXONOMY.md` §4.3. Both sit at
 the admission ladder's `taxonomy-only` rung — a contract-index row, but no
 grammar production, no typed transition, and no obligation — and no obligation
-attaches until Gate 6 admits them. Out of scope under the stopping point.
+attaches until Gate 6 admits them. The maintainer has refused admission for
+`v0.3.0`: the state model stays $C=(Q,X,Z,\\mathsf{pres},\\mathsf{used})$, the
+four records stay at `taxonomy-only`, and `machine/symplectic_calculus.py`
+stays a consumer-side model that admits nothing. Reopening requires a reviewed
+design note for the two-sorted state model (including the sign decision and the
+embedding of the CSS line), a re-evidencing plan, and a per-move decision
+starting with the two symplectic moves (diary entry
+`2026-11-18-refuse-admission-of-the-extended-state-layer-issue-545.md`). Out
+of scope under the stopping point.
 
 ### Gate 7: constructor, family, and completeness decision
 

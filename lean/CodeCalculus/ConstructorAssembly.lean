@@ -1,4 +1,5 @@
 import CodeCalculus.ConstructorOrthogonality
+import CodeCalculus.ConstructorRank
 
 /-!
 # Well-formedness and `n` for the five constructors of issue #369 (issue #407)
@@ -540,5 +541,105 @@ theorem evalExpr_nested_n {HX HZ : List (List Bool)} {s : CodeState}
     (h : EvalExpr (StateExpr.nested HX HZ) s) : s.Q.length = matCols HX := by
   cases h
   exact constructedState_n _ _
+
+/-- `L-MAPPING-CONE`: every evaluation yields a well-formed state. -/
+theorem evalExpr_cone_wf {DA DB F1 F0 : List (List Bool)} {s : CodeState}
+    (h : EvalExpr (StateExpr.cone DA DB F1 F0) s) : EncodingWellFormed s := by
+  cases h with
+  | cone _ hcomm _ =>
+      exact wf_constructedState _ _ (naturalOrthogonal_of_commuteBool hcomm)
+
+/-- The `n` of an evaluation of `cone(D_A, D_B, f_1, f_0)`. -/
+theorem evalExpr_cone_n {DA DB F1 F0 : List (List Bool)} {s : CodeState}
+    (h : EvalExpr (StateExpr.cone DA DB F1 F0) s) : s.Q.length = matCols DA + DB.length := by
+  cases h
+  exact constructedState_n _ _
+
+/-- The `k` of an evaluation of `cone(D_A, D_B, f_1, f_0)`: `n`
+    minus the ranks of the two natural-row masks (an instance of
+    `stateK_constructedState`). -/
+theorem evalExpr_cone_k {DA DB F1 F0 : List (List Bool)} {s : CodeState}
+    (h : EvalExpr (StateExpr.cone DA DB F1 F0) s) :
+    stateK s =
+      coneN DA DB F1 F0 -
+        rankBitmasks (naturalMasks (coneN DA DB F1 F0) (coneVectors DA DB F1 F0) Sector.X) -
+        rankBitmasks (naturalMasks (coneN DA DB F1 F0) (coneVectors DA DB F1 F0) Sector.Z) := by
+  cases h
+  exact stateK_constructedState _ _
+
+/-- `L-EMPTY`: every evaluation yields a well-formed state. -/
+theorem evalExpr_empty_wf {s : CodeState}
+    (h : EvalExpr StateExpr.empty s) : EncodingWellFormed s := by
+  cases h
+  exact wf_emptyState 0
+
+/-- The `n` of an evaluation of `empty`: `0`. -/
+theorem evalExpr_empty_n {s : CodeState}
+    (h : EvalExpr StateExpr.empty s) : s.Q.length = 0 := by
+  cases h
+  rfl
+
+/-- `L-FREE`: every evaluation yields a well-formed state. -/
+theorem evalExpr_free_wf {qs : List Nat} {s : CodeState}
+    (h : EvalExpr (StateExpr.free qs) s) : EncodingWellFormed s := by
+  cases h with
+  | free hty =>
+      simp only [freeTyped, Bool.and_eq_true, decide_eq_true_eq] at hty
+      refine ⟨hty.1, List.nodup_nil, rfl, rfl, rfl, rfl, ?_, ?_⟩
+      · intro rX rZ hX
+        cases hX
+      · intro r hr
+        cases hr
+
+/-- The `n` of an evaluation of `free(Q)`: `Q.length`. -/
+theorem evalExpr_free_n {qs : List Nat} {s : CodeState}
+    (h : EvalExpr (StateExpr.free qs) s) : s.Q.length = qs.length := by
+  cases h
+  rfl
+
+/-- `A-PULLBACK`: every evaluation yields a well-formed state. -/
+theorem evalExpr_pullback_wf {e1 e2 eI : StateExpr} {phi1 phi2 : List (Nat × Nat)}
+    {s : CodeState} (h : EvalExpr (StateExpr.pullback e1 e2 eI phi1 phi2) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | pullback _ _ _ _ _ _ hcomm _ _ _ _ =>
+      exact wf_constructedState _ _ (naturalOrthogonal_of_commuteBool hcomm)
+
+/-- The `n` of an evaluation of `pullback` at factor states `s1`, `s2`, `sI`:
+    the number of fiber-product pairs. -/
+theorem evalExpr_pullback_n {s1 s2 sI : CodeState}
+    {phi1 phi2 : List (Nat × Nat)} {s : CodeState}
+    (h : EvalExpr (StateExpr.pullback (StateExpr.base s1) (StateExpr.base s2)
+      (StateExpr.base sI) phi1 phi2) s) :
+    s.Q.length = (pullbackPairs s1 s2 phi1 phi2).length := by
+  cases h with
+  | pullback _ _ _ _ _ _ _ _ he1 he2 heI =>
+      cases he1
+      cases he2
+      cases heI
+      exact constructedState_n _ _
+
+/-- `A-PUSHOUT`: every evaluation yields a well-formed state. -/
+theorem evalExpr_pushout_wf {e1 e2 eS : StateExpr} {psi1 psi2 : List (Nat × Nat)}
+    {s : CodeState} (h : EvalExpr (StateExpr.pushout e1 e2 eS psi1 psi2) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | pushout _ _ _ _ _ _ hcomm _ _ _ _ =>
+      exact wf_constructedState _ _ (naturalOrthogonal_of_commuteBool hcomm)
+
+/-- The `n` of an evaluation of `pushout` at factor states `s1`, `s2`, `sS`:
+    the number of quotient classes. -/
+theorem evalExpr_pushout_n {s1 s2 sS : CodeState}
+    {psi1 psi2 : List (Nat × Nat)} {s : CodeState}
+    (h : EvalExpr (StateExpr.pushout (StateExpr.base s1) (StateExpr.base s2)
+      (StateExpr.base sS) psi1 psi2) s) :
+    s.Q.length = (pushoutClasses s1 s2 sS psi1 psi2).length := by
+  cases h with
+  | pushout _ _ _ _ _ _ _ _ he1 he2 heS =>
+      cases he1
+      cases he2
+      cases heS
+      exact constructedState_n _ _
+
 
 end CodeCalculus
