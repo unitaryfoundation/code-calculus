@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re
@@ -116,7 +116,7 @@ def _graphlike_sector_status(state, sector):
     citation_status = (
         "settled (Theorem 25.1)" if graphlike
         else "settled (NP-hard at column weight 3: column-splitting reduction, "
-             "design/DERIVED_RELATIONS.md section 3a, 2026-11-10, issue #326)")
+             "DERIVED_RELATIONS.md section 3a, 2026-11-10, issue #326)")
     return {"graphlike": graphlike, "max_column_weight": max_weight,
             "sector": sector, "reason": reason,
             "citation_status": citation_status}
@@ -176,7 +176,7 @@ def graphlike_exposure_price(state, deleted=None, deleted_check=None,
     *code-deformation*), over the set of deleted checks supplied. For
     non-graphlike inputs, or when no finite exposed operator exists, it
     refuses with a recorded reason; beyond column weight 2 the price is
-    NP-hard (`design/DERIVED_RELATIONS.md` section 3a), so that refusal is
+    NP-hard (`DERIVED_RELATIONS.md` section 3a), so that refusal is
     by design. It is a price provider only: it does not mutate state and
     does not establish any proof.
 

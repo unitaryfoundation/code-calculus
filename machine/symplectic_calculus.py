@@ -4,11 +4,11 @@
 Consumer/model companion to ``machine/priced_calculus.py`` (issue #294 for the
 state slice, issue #305 for the move set, the ledger, and the conformance
 fixtures). It is not normative. The extended-state layer is a Gate 6 decision
-that has not been taken (``spec/GATES.md``, ``design/SCOPE.md`` section 4), so
+that has not been taken (``spec/GATES.md``, ``SCOPE.md`` section 4), so
 nothing in this module is an admitted calculus rule: the moves are
 consumer-side operations whose preconditions are checked here and whose
 interval rules are derived in
-``notes/harness/symplectic_move_set_2026-11-10.md``. The conformance harness
+``the symplectic move set (2026-11-10)``. The conformance harness
 ``machine/experiments/symplectic_conformance_harness.py`` is evidence about
 those rules, never a proof.
 
@@ -620,7 +620,7 @@ class SymplecticLedger:
         ledger.conditions.append({
             "cell": "X-SYMPLECTIC-DOUBLE interval",
             "status": "machine-side",
-            "source": "notes/harness/symplectic_move_set_2026-11-10.md",
+            "source": "the symplectic move set (2026-11-10)",
         })
         return ledger
 
@@ -658,7 +658,7 @@ class SymplecticLedger:
         out.conditions.append({
             "cell": "X-SYMPLECTIC-HALVE interval",
             "status": "machine-side",
-            "source": "notes/harness/symplectic_move_set_2026-11-10.md",
+            "source": "the symplectic move set (2026-11-10)",
         })
         return out
 

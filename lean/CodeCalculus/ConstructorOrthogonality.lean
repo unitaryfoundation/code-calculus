@@ -3,7 +3,7 @@ import CodeCalculus.GraftWellFormedness
 import CodeCalculus.ExactPeel
 
 /-!
-# Constructor well-formedness and the parameter bookkeeping (issue #370)
+# Constructor well-formedness and the parameter bookkeeping
 
 The per-constructor half of `spec/OPERATIONAL_SEMANTICS.md` §4.34.
 
@@ -11,7 +11,7 @@ The per-constructor half of `spec/OPERATIONAL_SEMANTICS.md` §4.34.
   matrices (`hgp_naturalOrthogonal`), so every evaluation of `hgp(H₁, H₂)`
   yields a well-formed state (`evalExpr_hgp_wf`), with no hypothesis.
 * `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`: the overlap and the
-  well-formedness theorems are in `ConstructorOverlap.lean` (issue #482).
+  well-formedness theorems are in `ConstructorOverlap.lean`.
 * `k`: on a well-formed state, `k` is `n` minus the two displayed row counts
   (`stateK_of_wf`), which is the rank bookkeeping the cards name. The closed
   forms of §4.34 (`k₁k₂ + k₁ᵀk₂ᵀ` for `L-HGP`, `2(ℓ - rank[L(a) | L(b)])`

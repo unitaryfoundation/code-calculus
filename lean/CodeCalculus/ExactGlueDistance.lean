@@ -1,7 +1,7 @@
 import CodeCalculus.ExactGluePairs
 
 /-!
-# `E-GLUE`: the class-pair distance formula (issue #396)
+# `E-GLUE`: the class-pair distance formula
 
 Mechanizes step 5 of Claim 2 of `spec/OPERATIONAL_SEMANTICS.md` §4.33: the
 exact `σ`-distance of the glued state `C = glueState a b seams` is the least

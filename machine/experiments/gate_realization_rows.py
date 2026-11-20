@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Falsification harness for the two candidate rows of issue #452.
+"""Falsification harness for the two gate-realization rows (issues #452, #543).
 
-`design/GATE_REALIZATION_ROWS.md` states two candidate judgment rows drawn
-from arXiv 2610.17612 and derives each from the CSS display alone. This
-script checks the derived criteria against an oracle that does not use them:
+`GATE_REALIZATION_ROWS.md` and `spec/JUDGMENT_LAYER.md` §2h state two
+judgment rows drawn from arXiv 2610.17612 and derive each from the CSS display
+alone. This script checks the derived criteria against an oracle that does not
+use them:
 
 * Survival row. A gate is a product of commuting Pauli rotations
   exp(i eps_j theta_j G_j). At theta_j = pi/4 the note derives that the gate
@@ -18,8 +19,7 @@ script checks the derived criteria against an oracle that does not use them:
   w_max >= ceil(d / 2). `exact_distance` enumerates logicals.
 
 Agreement on the sweep is evidence that the criteria are derived and
-transcribed as stated, not a proof (AGENTS.md). Nothing here is a consumer
-path, and no judgment row is admitted by this script.
+transcribed as stated, not a proof (AGENTS.md).
 """
 
 import argparse
@@ -108,6 +108,14 @@ class Display:
     def from_supports(cls, n, x_supports, z_supports):
         return cls(n, [mask(s) for s in x_supports], [mask(s) for s in z_supports])
 
+    @classmethod
+    def from_code_state(cls, state):
+        """Build a Display from a consumer CodeState, indexing qubits in state.Q order."""
+        q_index = {q: idx for idx, q in enumerate(state.Q)}
+        x_supports = [[q_index[q] for q in r.support] for r in state.sector_rows("X")]
+        z_supports = [[q_index[q] for q in r.support] for r in state.sector_rows("Z")]
+        return cls.from_supports(len(state.Q), x_supports, z_supports)
+
     def rows(self):
         return [Pauli(m, 0) for m in self.x_rows] + [Pauli(0, m) for m in self.z_rows]
 
@@ -195,12 +203,51 @@ def preserves_pi4(display, gens, eps):
 
 
 def survives_addition(display, gens, eps, sector, row):
-    """The candidate survival row. For a gate that preserves the codespace of
-    `display`, whether it preserves the codespace after `C-ADD-CHECK` adds
-    `row` in `sector`: one stabilizer-membership test at the added row."""
+    """The survival test at theta = pi/4. For a gate that preserves the
+    codespace of `display`, whether it preserves the codespace after
+    `C-ADD-CHECK` adds `row` in `sector`: one stabilizer-membership test at
+    the added row."""
     check_gate(gens, eps)
     added = Pauli(row, 0) if sector == "X" else Pauli(0, row)
     return in_stabilizer(display.add(sector, row), conditioned_pauli(gens, eps, added))
+
+
+def addition_survival_verdict(display, gens, eps, sector, row, thetas=None):
+    """Evaluate the three-branch `C-ADD-CHECK` gate-survival cell of
+    `spec/JUDGMENT_LAYER.md` §2h for a gate preserving `display`:
+
+    * If every generator commutes with the added row: returns `"carries"`
+      (holds at every angle theta_j >= 0).
+    * Else if `thetas` is omitted or every angle is pi/4: returns `"carries"`
+      when V_s is in the child stabilizer group and `"does_not_carry"`
+      otherwise.
+    * Else (some generator anticommutes with the added row and some angle is
+      not pi/4): returns `"not_yet_defined"`.
+    """
+    check_gate(gens, eps)
+    if sector not in ("X", "Z"):
+        raise ValueError("sector must be 'X' or 'Z'")
+    if not isinstance(row, int) or isinstance(row, bool) or row <= 0 or row >= (1 << display.n):
+        raise ValueError("added row mask must be a nonzero bitmask within display.n qubits")
+    opposite = display.z_rows if sector == "X" else display.x_rows
+    same = display.x_rows if sector == "X" else display.z_rows
+    if any(popcount(row & r) % 2 == 1 for r in opposite):
+        raise ValueError("added row does not commute with opposite-sector display rows")
+    if in_span(reduce_basis(same), row):
+        raise ValueError("added row is not independent of same-sector display rows")
+    if thetas is not None:
+        if len(thetas) != len(gens) or any(
+            isinstance(t, bool) or not isinstance(t, (int, float)) or t < 0 for t in thetas
+        ):
+            raise ValueError("thetas must be a sequence of len(gens) nonnegative numbers")
+    added = Pauli(row, 0) if sector == "X" else Pauli(0, row)
+    if all(not g.anticommutes(added) for g in gens):
+        return "carries"
+    if thetas is None or all(
+        math.isclose(t, math.pi / 4, rel_tol=0.0, abs_tol=1e-12) for t in thetas
+    ):
+        return "carries" if survives_addition(display, gens, eps, sector, row) else "does_not_carry"
+    return "not_yet_defined"
 
 
 def syndrome(display, pauli):

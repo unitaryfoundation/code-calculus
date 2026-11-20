@@ -1,4 +1,4 @@
-"""Executable interval consumer (compatibility shim, issue #378)."""
+"""Executable interval consumer (compatibility shim)."""
 
 from machine.gf2 import *  # noqa: F401,F403
 from machine.state import *  # noqa: F401,F403

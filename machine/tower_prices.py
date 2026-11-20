@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re
@@ -21,7 +21,7 @@ def tower_cost_table_size(k_in):
     The generalization to ``k_in > 1`` (Theorem 27.8) carries cost tables of
     size ``2 ** (2 * k_in)``. This helper records that size for sweep
     bookkeeping; it is a provider-side quantity, not a calculus move. The
-    in-repository derivation of the provider (`design/DERIVED_RELATIONS.md`
+    in-repository derivation of the provider (`DERIVED_RELATIONS.md`
     section 2a, issue #327) uses two class dictionaries of ``2 ** k_in``
     entries each; this helper keeps recording the source's figure.
     """
@@ -34,7 +34,7 @@ TOWER_LEVEL_CEILING = 20
 TOWER_OUTER_CEILING = 22
 
 TOWER_EVIDENCE = ("tower factorization from level data, "
-                  "design/DERIVED_RELATIONS.md section 2a (2026-11-11, issue #327)")
+                  "DERIVED_RELATIONS.md section 2a (2026-11-11, issue #327)")
 
 def _reduced_pivots(rows):
     """Fully reduced row echelon form as a map pivot bit -> row mask."""
@@ -117,7 +117,7 @@ def tower_level_data(inner_state, ceiling=TOWER_LEVEL_CEILING):
     weight of an X-type vector commuting with every inner Z-check whose class
     is ``c`` (class ``0`` is the X-stabilizer coset, weight ``0``), and
     likewise ``Z[c]``. These two tables are the level data the tower price
-    provider consumes (`design/DERIVED_RELATIONS.md` section 2a). The
+    provider consumes (`DERIVED_RELATIONS.md` section 2a). The
     enumeration runs over the kernel of the opposite sector's checks and
     refuses above ``ceiling`` kernel dimensions. Oracle-side bookkeeping for
     the inner code only; it never enumerates a tower.
@@ -226,7 +226,7 @@ def tower_deletion_prices(inner_state, outer_state, groups, deleted,
 
     The tower is the inner code on every block of the outer code plus each
     outer check lifted through inner logical representatives
-    (`design/DERIVED_RELATIONS.md` section 2a). Deleting the lifts of the
+    (`DERIVED_RELATIONS.md` section 2a). Deleting the lifts of the
     outer checks ``deleted`` (one sector, tau) has exposure price the least
     dictionary weight of an outer-level vector exposed by the same deletion
     in the outer code, and deletion price the least dictionary weight of an
@@ -334,7 +334,7 @@ def tower_deletion_prices(inner_state, outer_state, groups, deleted,
         "reason": ("tower factorization: outer-level search weighted by the "
                    "inner class dictionary; w_exp = %d, w_del = %d"
                    % (best_exp, best_del)),
-        "citation_status": ("derived in this repository (design/DERIVED_RELATIONS.md "
+        "citation_status": ("derived in this repository (DERIVED_RELATIONS.md "
                             "section 2a, issue #327); Theorems 27.2 / 27.5 / 27.8 of "
                             "code-deformation are cited, not reproduced"),
         "deletion_price": {"w_del": best_del, "w_exp": best_exp,

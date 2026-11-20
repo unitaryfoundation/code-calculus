@@ -3,12 +3,12 @@ import CodeCalculus.ExactDistance
 import CodeCalculus.ExactDirectSum
 
 /-!
-# `E-GLUE`: Claim 1 of the extracted derivation (issue #366)
+# `E-GLUE`: Claim 1 of the extracted derivation
 
 Mechanizes Claim 1 of `spec/OPERATIONAL_SEMANTICS.md` §4.33: every
 `σ`-logical of the glued state restricts to a `σ`-logical of at least one
 factor. State-shape lemmas retained. Claim 2 remains follow-up.
--/ 
+-/
 
 namespace CodeCalculus
 

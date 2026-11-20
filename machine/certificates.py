@@ -1,7 +1,7 @@
 """Certificate format and checker prototype for sector distance lower bounds.
 
 This module is the first branch of the certificate layer explored in
-`the archived notes` (option (ii), opened on issue #142,
+`the archived notes` (option (ii), opened,
 2026-10-25). It makes the *lower* endpoint of a sector distance checkable the
 same way the upper endpoint already is: an untrusted producer emits a
 self-contained artifact, and a small total checker accepts or rejects it
@@ -42,12 +42,12 @@ Checker contract (`the archived notes` section 4):
    whether the mechanized checker should verify more is plan section 9
    question 3, left open.
 5. Per-state scope: one certificate certifies one fact about one state. It
-   never certifies an operation contract (second-pass S7).
+   never certifies an operation contract (a second review pass).
 
 Status discipline: nothing this module's checker accepts changes a claim
 status. It is the prototype, and every fact it supports stays
 ``conditional``. The mechanized checker is
-`lean/CodeCalculus/CertificateChecker.lean` (issue #371), whose acceptance is
+`lean/CodeCalculus/CertificateChecker.lean`, whose acceptance is
 proved to imply the certified fact for the exact sector distance. The
 ``lean_*`` functions at the end of this module translate a state and a
 certificate into Lean source for that checker. The translation is untrusted:
@@ -369,7 +369,7 @@ def check_sector_lower_bound_certificate(certificate):
     return not failures, failures
 
 # ---------------------------------------------------------------------------
-# Translation to the mechanized checker (issue #371)
+# Translation to the mechanized checker
 # ---------------------------------------------------------------------------
 
 LEAN_SECTOR = {"X": "Sector.X", "Z": "Sector.Z"}

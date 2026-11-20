@@ -1,4 +1,4 @@
-"""Factor witnesses through the `E-GLUE` seam (issue #332, unblocked half).
+"""Factor witnesses through the `E-GLUE` seam (unblocked half).
 
 The glued code is the direct sum with seam checks added, so a factor's
 witness is a candidate upper bound in the child and nothing more: an X seam

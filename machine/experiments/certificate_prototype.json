@@ -37,11 +37,11 @@
   },
   "checker": {
     "module": "machine/certificates.py",
-    "contract": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 4",
+    "contract": "the certificate-layer plan section 4",
     "coverage_enumeration_per_certificate": 56
   },
   "kill_criterion": {
-    "statement": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 8",
+    "statement": "the certificate-layer plan section 8",
     "verdict": "passes at this instance",
     "assessment": "The prototype certifies a non-trivial lower endpoint (d_X >= 3 and d_Z >= 3 on the pinned parent) with 56 kill entries and a few kilobytes per sector, and the checker is total and decidable over a small trusted base. The flat ball format's cost is sum(C(n, w), w < bound) entries; at the challenge's larger boards the same format is impractically large (see scaling_probes), so the next decision is the plan's section 9 question 1 -- search tree or covering certificate -- not a bigger flat artifact.",
     "scaling_probes": [

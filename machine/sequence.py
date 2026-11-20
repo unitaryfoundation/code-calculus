@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re

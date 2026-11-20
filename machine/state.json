@@ -243,6 +243,38 @@
       "used": "the minted identifiers",
       "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-NESTED-CSS card) and section 4.36",
       "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-EMPTY": {
+      "Q": "empty",
+      "rows": "empty",
+      "ids": "none",
+      "used": "empty",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-EMPTY card) and section 4.43",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-FREE": {
+      "Q": "the supplied finite Q (sorted)",
+      "rows": "empty",
+      "ids": "none",
+      "used": "empty",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-FREE card) and section 4.43",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "A-PULLBACK": {
+      "Q": "fresh 0..n-1, n = |Q_1 x_{Q_I} Q_2|",
+      "rows": "the retained independent display of the pulled-back rows of C_1 then C_2 (section 4.43)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-PULLBACK card) and section 4.43",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "A-PUSHOUT": {
+      "Q": "fresh 0..n-1, n = |Q_1 |_| _{Q_S} Q_2|",
+      "rows": "the retained independent display of the pushed-forward rows of C_1 then C_2 (section 4.43)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-PUSHOUT card) and section 4.43",
+      "source": "spec/STATE_MODEL.md \u00a74"
     }
   }
 }

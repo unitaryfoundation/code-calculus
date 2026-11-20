@@ -1,12 +1,12 @@
 import CodeCalculus.State
 
 /-!
-# State updates of the typed constructors (issues #370 and #407)
+# State updates of the typed constructors
 
 `spec/TERM_LANGUAGE.md` §1 and §2 admit nine expression constructors
 (2026-11-11): `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT`
-(issue #330), then `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and
-`L-TILE` (issue #369). This module defines their state updates as computable functions,
+, then `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and
+`L-TILE`. This module defines their state updates as computable functions,
 following the cards of `spec/OPERATIONAL_SEMANTICS.md` §2. The productions
 are in `Term.lean` and the rules in `Eval.lean` (`EvalExpr.hgp`,
 `EvalExpr.lift`, `EvalExpr.twoblock`, `EvalExpr.concat`).
@@ -253,7 +253,7 @@ def concatQubits (I : CodeState) (blocks : List (List Nat)) : Nat :=
 def concatState (O I : CodeState) (blocks repsX repsZ : List (List Nat)) : CodeState :=
   constructedState (concatQubits I blocks) (concatVectors O I blocks repsX repsZ)
 
-/-! ## The five constructors of issue #369 (issue #407)
+/-! ## The five constructors
 
 `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and `L-TILE`, following
 their cards in `spec/OPERATIONAL_SEMANTICS.md` §2. Each lists natural rows
@@ -590,7 +590,117 @@ def nestedVectors (HX HZ : List (List Bool)) : List (Sector × List Bool) :=
 def nestedState (HX HZ : List (List Bool)) : CodeState :=
   constructedState (matCols HX) (nestedVectors HX HZ)
 
-/-! ## Retention of factor rows by `A-CONCAT` (issue #424) -/
+/-! ## `L-MAPPING-CONE` -/
+
+def coneTyped (DA DB F1 F0 : List (List Bool)) : Bool :=
+  binaryMatrixTyped DA && binaryMatrixTyped DB && binaryMatrixTyped F1 && binaryMatrixTyped F0 &&
+  DA.length == F1.length && DB.length == (matCols F1) &&
+  F0.length == (matCols DA) && (matCols F0) == (matCols DB)
+
+def coneN (DA DB F1 F0 : List (List Bool)) : Nat :=
+  matCols DA + DB.length
+
+def coneVectors (DA DB F1 F0 : List (List Bool)) : List (Sector × List Bool) :=
+  (List.range (matCols DB)).map (fun r =>
+    (Sector.X,
+      (List.range (matCols DA)).map (fun i => matEntry F0 i r) ++
+      (List.range DB.length).map (fun j => matEntry DB j r))) ++
+  (List.range DA.length).map (fun j =>
+    (Sector.Z,
+      (List.range (matCols DA)).map (fun i => matEntry DA j i) ++
+      (List.range (matCols F1)).map (fun jj => matEntry F1 j jj)))
+
+def coneState (DA DB F1 F0 : List (List Bool)) : CodeState :=
+  constructedState (coneN DA DB F1 F0) (coneVectors DA DB F1 F0)
+
+/-! ## `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` -/
+
+/-- The state update of `L-EMPTY`. -/
+def emptyCodeState : CodeState := emptyState 0
+
+/-- The typing of `free(Q)`: a duplicate-free, strictly increasing list of
+    qubit labels. -/
+def freeTyped (qs : List Nat) : Bool :=
+  decide qs.Nodup && decide (qs.Pairwise (· ≤ ·))
+
+/-- The state update of `L-FREE`. -/
+def freeState (qs : List Nat) : CodeState :=
+  { Q := qs, rows := [], used := [] }
+
+/-- Typing of a total qubit map `dom → cod` given as `(src, dst)` pairs. -/
+def qubitMapTyped (phi : List (Nat × Nat)) (dom cod : List Nat) : Bool :=
+  phi.all (fun p => dom.contains p.1 && cod.contains p.2) &&
+  decide (phi.map Prod.fst).Nodup &&
+  dom.all (fun q => (phi.map Prod.fst).contains q)
+
+/-- Whether `phi : src.Q → dst.Q` is a CSS code morphism: the `F₂`-pushforward
+    of every displayed row of `src` lies in the same-sector span of `dst`. -/
+def cssMorphismBool (src dst : CodeState) (phi : List (Nat × Nat)) : Bool :=
+  src.rows.all (fun r =>
+    let pushed := dst.Q.map (fun y =>
+      (r.support.filter (fun q => (phi.lookup q).getD 0 == y)).length % 2 == 1)
+    inSpanRowsBool dst.Q (dst.rows.filter (fun r' => r'.sector == r.sector)) pushed)
+
+/-- The fiber-product qubit pairs `(q₁, q₂)` with `φ₁(q₁) = φ₂(q₂)`. -/
+def pullbackPairs (s1 s2 : CodeState) (phi1 phi2 : List (Nat × Nat)) : List (Nat × Nat) :=
+  s1.Q.flatMap (fun q1 =>
+    (s2.Q.filter (fun q2 => (phi1.lookup q1).getD 0 == (phi2.lookup q2).getD 0)).map
+      (fun q2 => (q1, q2)))
+
+/-- Typing of `pullback(e₁, e₂, e_I; φ₁, φ₂)`. -/
+def pullbackTyped (s1 s2 sI : CodeState) (phi1 phi2 : List (Nat × Nat)) : Bool :=
+  qubitMapTyped phi1 s1.Q sI.Q && qubitMapTyped phi2 s2.Q sI.Q
+
+/-- The natural rows of `pullback`. -/
+def pullbackVectors (s1 s2 : CodeState) (phi1 phi2 : List (Nat × Nat)) :
+    List (Sector × List Bool) :=
+  let pairs := pullbackPairs s1 s2 phi1 phi2
+  s1.rows.map (fun r => (r.sector, pairs.map (fun p => r.support.contains p.1))) ++
+  s2.rows.map (fun r => (r.sector, pairs.map (fun p => r.support.contains p.2)))
+
+/-- The state update of `A-PULLBACK`. -/
+def pullbackState (s1 s2 : CodeState) (phi1 phi2 : List (Nat × Nat)) : CodeState :=
+  constructedState (pullbackPairs s1 s2 phi1 phi2).length (pullbackVectors s1 s2 phi1 phi2)
+
+/-- Typing of `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`. -/
+def pushoutTyped (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) : Bool :=
+  qubitMapTyped psi1 sS.Q s1.Q && qubitMapTyped psi2 sS.Q s2.Q
+
+/-- Each tagged qubit index `0 .. |Q₁| + |Q₂| - 1` paired with its
+    equivalence-class representative under `ψ₁(s) ~ ψ₂(s)`. -/
+def pushoutReps (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) : List (Nat × Nat) :=
+  let n1 := s1.Q.length
+  let n2 := s2.Q.length
+  let idx1 (q : Nat) : Nat := (s1.Q.findIdx? (· == q)).getD 0
+  let idx2 (q : Nat) : Nat := n1 + (s2.Q.findIdx? (· == q)).getD 0
+  let pairs := sS.Q.map (fun s => (idx1 ((psi1.lookup s).getD 0), idx2 ((psi2.lookup s).getD 0)))
+  pairs.foldl tileMerge ((List.range (n1 + n2)).map (fun i => (i, i)))
+
+/-- The equivalence classes of `Q₁ ⊔_{Q_S} Q₂` in increasing order. -/
+def pushoutClasses (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) : List Nat :=
+  let reps := pushoutReps s1 s2 sS psi1 psi2
+  (List.range (s1.Q.length + s2.Q.length)).filter (fun c => reps.any (fun p => p.2 == c))
+
+/-- The natural rows of `pushout`. -/
+def pushoutVectors (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) :
+    List (Sector × List Bool) :=
+  let n1 := s1.Q.length
+  let reps := pushoutReps s1 s2 sS psi1 psi2
+  let classes := pushoutClasses s1 s2 sS psi1 psi2
+  let idx1 (q : Nat) : Nat := (s1.Q.findIdx? (· == q)).getD 0
+  let idx2 (q : Nat) : Nat := n1 + (s2.Q.findIdx? (· == q)).getD 0
+  s1.rows.map (fun r => (r.sector, classes.map (fun c =>
+    (r.support.filter (fun q => (reps.lookup (idx1 q)).getD 0 == c)).length % 2 == 1))) ++
+  s2.rows.map (fun r => (r.sector, classes.map (fun c =>
+    (r.support.filter (fun q => (reps.lookup (idx2 q)).getD 0 == c)).length % 2 == 1)))
+
+/-- The state update of `A-PUSHOUT`. -/
+def pushoutState (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) : CodeState :=
+  constructedState (pushoutClasses s1 s2 sS psi1 psi2).length
+    (pushoutVectors s1 s2 sS psi1 psi2)
+
+
+/-! ## Retention of factor rows by `A-CONCAT` -/
 
 /-- The natural list of `A-CONCAT` has one entry per inner row per block and
     one per outer row; it says nothing about the retained display, which is

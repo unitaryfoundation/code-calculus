@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
-"""Finite-torus harness for the decoupling candidate of issue #451.
+"""Finite-torus harness for the decoupling candidate.
 
-`design/DECOUPLING_CONSTRUCTOR.md` proposes to read the decoupling of
+`DECOUPLING_CONSTRUCTOR.md` proposes to read the decoupling of
 arXiv 2610.40592 as a certificate-checked relation between two presented
 states, not as a constructor that runs the paper's algorithm. This script
 is the finite side of that proposal for qubits (p = 2):
 
 * a translation-invariant CSS code on a finite torus as a typed finite
-  object (periods, sites per cell, and two matrices over the group algebra
-  of the torus), with its presented display;
+  object (`Code`: periods, sites per cell, and two matrices over the group
+  algebra of the torus), with its typed input signature and presented
+  display;
 * the higher-form toric codes from the Koszul complex, stacks, ancillas,
   and coarse-graining on a superlattice;
 * translation-invariant SUM and SWAP circuits, applied both to the
   polynomial matrices and gate by gate to the presented display;
-* `check_decoupling`, which accepts a supplied circuit when the transformed
-  display spans the target's rows, sector by sector;
+* `check_decoupling`, which refuses missing translation-invariance data,
+  non-commuting inputs/targets, shape mismatches, or invalid circuits, and
+  accepts a supplied circuit when the transformed display spans the target's
+  rows, sector by sector;
 * the distance factors of a circuit, checked against exhaustive distances.
 
+Translation-triviality and gluing-vanishing remain the source paper's
+admission hypotheses (not checked by this finite-torus certificate check).
 Nothing here runs the paper's decoupling algorithm, and nothing is a
-consumer path. Agreement between the two routes and with the exhaustive
-distances is evidence that the note's derivations are transcribed as
-stated, not a proof (AGENTS.md).
+consumer path. Circuit verification is evidence only, not a calculus rule
+(AGENTS.md).
 """
 
 import argparse
@@ -35,6 +39,53 @@ def popcount(x):
     return bin(x).count("1")
 
 
+def _validate_int(value, name, minimum=1):
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        if minimum == 1:
+            raise ValueError(f"{name} must be a positive integer")
+        if minimum == 0:
+            raise ValueError(f"{name} must be a non-negative integer")
+        raise ValueError(f"{name} must be an integer >= {minimum}")
+    return value
+
+
+def _validate_periods(periods):
+    if not isinstance(periods, (tuple, list)) or len(periods) == 0:
+        raise ValueError("periods must be a non-empty tuple or list of positive integers")
+    return tuple(_validate_int(p, "period", 1) for p in periods)
+
+
+def _validate_poly_entry(entry, periods, label="entry"):
+    if not isinstance(entry, (frozenset, set)):
+        raise ValueError(f"{label} must be a frozenset or set of exponent tuples")
+    dim = len(periods)
+    out = set()
+    for alpha in entry:
+        if not isinstance(alpha, tuple) or len(alpha) != dim:
+            raise ValueError(f"exponent {alpha!r} in {label} must have length {dim}")
+        coords = []
+        for coord, p in zip(alpha, periods):
+            if isinstance(coord, bool) or not isinstance(coord, int):
+                raise ValueError(f"exponent coordinate {coord!r} in {label} must be an integer")
+            coords.append(coord % p)
+        out ^= {tuple(coords)}
+    return frozenset(out)
+
+
+def _validate_poly_matrix(matrix, q, periods, name):
+    if not isinstance(matrix, (list, tuple)):
+        raise ValueError(f"{name} must be a list or tuple of rows")
+    rows = []
+    for row_idx, row in enumerate(matrix):
+        if not isinstance(row, (list, tuple)) or len(row) != q:
+            raise ValueError(f"{name}[{row_idx}] must have length {q}")
+        rows.append([
+            _validate_poly_entry(entry, periods, f"{name}[{row_idx}][{col_idx}]")
+            for col_idx, entry in enumerate(row)
+        ])
+    return rows
+
+
 # The group algebra F_2[Z_{L_1} x ... x Z_{L_D}]: an element is a frozenset
 # of exponent tuples.
 
@@ -42,10 +93,19 @@ ZERO = frozenset()
 
 
 def monomial(exponent, periods):
-    return frozenset([tuple(e % p for e, p in zip(exponent, periods))])
+    periods = _validate_periods(periods)
+    if not isinstance(exponent, (tuple, list)) or len(exponent) != len(periods):
+        raise ValueError(f"exponent must have length {len(periods)}")
+    coords = []
+    for e, p in zip(exponent, periods):
+        if isinstance(e, bool) or not isinstance(e, int):
+            raise ValueError("exponent coordinates must be integers")
+        coords.append(e % p)
+    return frozenset([tuple(coords)])
 
 
 def one(periods):
+    periods = _validate_periods(periods)
     return monomial((0,) * len(periods), periods)
 
 
@@ -71,11 +131,10 @@ class Code:
     row per check type and one column per site."""
 
     def __init__(self, periods, q, hx, hz):
-        self.periods = tuple(periods)
-        self.q = q
-        self.hx = [list(row) for row in hx]
-        self.hz = [list(row) for row in hz]
-        assert all(len(row) == q for row in self.hx + self.hz)
+        self.periods = _validate_periods(periods)
+        self.q = _validate_int(q, "q", 1)
+        self.hx = _validate_poly_matrix(hx, self.q, self.periods, "hx")
+        self.hz = _validate_poly_matrix(hz, self.q, self.periods, "hz")
 
     def cells(self):
         return list(itertools.product(*[range(p) for p in self.periods]))
@@ -93,6 +152,16 @@ class Code:
                 if acc:
                     return False
         return True
+
+    def signature(self):
+        """Typed input signature `(L, q, H_X, H_Z)` and commutation premise."""
+        return {
+            "periods": self.periods,
+            "q": self.q,
+            "hx_rows": len(self.hx),
+            "hz_rows": len(self.hz),
+            "commutes": self.commutes(),
+        }
 
     def qubit(self, cell, site):
         index = 0
@@ -187,8 +256,10 @@ def toric_code(periods, j):
     """The j-form toric code on the torus of dimension D = len(periods),
     1 <= j <= D - 1, from the Koszul complex on w_i = x_i + 1: one site per
     j-subset of the directions, H_X = d_j and H_Z^dagger = d_{j+1}."""
+    periods = _validate_periods(periods)
     dim = len(periods)
-    assert 1 <= j <= dim - 1
+    if isinstance(j, bool) or not isinstance(j, int) or not (1 <= j <= dim - 1):
+        raise ValueError(f"form degree j must satisfy 1 <= j <= {dim - 1}")
 
     def w(i):
         exponent = tuple(1 if k == i else 0 for k in range(dim))
@@ -217,8 +288,14 @@ def toric_code(periods, j):
 
 def stack(codes):
     """The direct sum of codes on one torus."""
+    if not isinstance(codes, (list, tuple)) or len(codes) == 0:
+        raise ValueError("codes must be a non-empty sequence of Code instances")
+    for c in codes:
+        if not isinstance(c, Code):
+            raise ValueError("every element of codes must be a Code instance")
     periods = codes[0].periods
-    assert all(c.periods == periods for c in codes)
+    if any(c.periods != periods for c in codes):
+        raise ValueError("all codes in a stack must share the same periods")
     q = sum(c.q for c in codes)
     hx, hz, offset = [], [], 0
     for c in codes:
@@ -231,6 +308,10 @@ def stack(codes):
 
 def with_ancillas(code, plus=0, zero=0):
     """Add `plus` sites per cell stabilized by X and `zero` stabilized by Z."""
+    if not isinstance(code, Code):
+        raise ValueError("code must be a Code instance")
+    _validate_int(plus, "plus", 0)
+    _validate_int(zero, "zero", 0)
     q = code.q + plus + zero
     unit = one(code.periods)
     hx = [list(row) + [ZERO] * (plus + zero) for row in code.hx]
@@ -249,7 +330,13 @@ def coarse_grain(code, factors):
     """The same code read on the superlattice with `factors[i]` cells of the
     original lattice per cell in direction `i`. Returns the coarse code and
     the relabelling of qubits, a list `new_index[old_index]`."""
-    assert all(p % m == 0 for p, m in zip(code.periods, factors))
+    if not isinstance(code, Code):
+        raise ValueError("code must be a Code instance")
+    if not isinstance(factors, (tuple, list)) or len(factors) != len(code.periods):
+        raise ValueError(f"factors must have length {len(code.periods)}")
+    factors = tuple(_validate_int(m, "factor", 1) for m in factors)
+    if any(p % m != 0 for p, m in zip(code.periods, factors)):
+        raise ValueError("each factor must divide the corresponding period")
     periods = tuple(p // m for p, m in zip(code.periods, factors))
     cosets = list(itertools.product(*[range(m) for m in factors]))
     index = {beta: i for i, beta in enumerate(cosets)}
@@ -297,19 +384,55 @@ def relabel_rows(rows, relabel):
 # with c != t, acting as Z(v) -> Z(U v) and X(u) -> X((U^dagger)^{-1} u).
 
 
+def _validate_site(site, q, name):
+    if isinstance(site, bool) or not isinstance(site, int) or not (0 <= site < q):
+        raise ValueError(f"{name} must be an integer in 0..{q - 1}")
+    return site
+
+
+def _validate_circuit(circuit, q, periods):
+    if not isinstance(circuit, (list, tuple)):
+        raise ValueError("circuit must be a list or tuple of gates")
+    validated = []
+    for idx, gate in enumerate(circuit):
+        if not isinstance(gate, (list, tuple)) or len(gate) == 0:
+            raise ValueError(f"gate {idx} must be a non-empty tuple")
+        kind = gate[0]
+        if kind == "swap":
+            if len(gate) != 3:
+                raise ValueError(f"swap gate {idx} must have 3 elements")
+            a = _validate_site(gate[1], q, f"gate {idx} site a")
+            b = _validate_site(gate[2], q, f"gate {idx} site b")
+            validated.append(("swap", a, b))
+        elif kind == "sum":
+            if len(gate) != 4:
+                raise ValueError(f"sum gate {idx} must have 4 elements")
+            c = _validate_site(gate[1], q, f"gate {idx} site c")
+            t = _validate_site(gate[2], q, f"gate {idx} site t")
+            if c == t:
+                raise ValueError(f"sum gate {idx} requires c != t")
+            f = _validate_poly_entry(gate[3], periods, f"gate {idx} polynomial")
+            validated.append(("sum", c, t, f))
+        else:
+            raise ValueError(f"unknown gate kind {kind!r} at index {idx}")
+    return validated
+
+
 def apply_circuit(code, circuit):
     """The circuit on the polynomial matrices: H_Z U^dagger and H_X U^{-1}."""
+    if not isinstance(code, Code):
+        raise ValueError("code must be a Code instance")
+    gates = _validate_circuit(circuit, code.q, code.periods)
     hx = [list(row) for row in code.hx]
     hz = [list(row) for row in code.hz]
     periods = code.periods
-    for gate in circuit:
+    for gate in gates:
         if gate[0] == "swap":
             _, a, b = gate
             for row in hx + hz:
                 row[a], row[b] = row[b], row[a]
         else:
             _, c, t, f = gate
-            assert c != t
             bar = antipode(f, periods)
             for row in hz:
                 row[t] = poly_add(row[t], poly_mul(row[c], bar, periods))
@@ -321,8 +444,11 @@ def apply_circuit(code, circuit):
 def physical_gates(code, circuit):
     """The circuit as CNOT and SWAP gates on the qubits of the torus. A
     CNOT is ("cnot", control, target); the gates of one SUM commute."""
+    if not isinstance(code, Code):
+        raise ValueError("code must be a Code instance")
+    validated = _validate_circuit(circuit, code.q, code.periods)
     gates = []
-    for gate in circuit:
+    for gate in validated:
         if gate[0] == "swap":
             _, a, b = gate
             gates.extend(("swap", code.qubit(g, a), code.qubit(g, b)) for g in code.cells())
@@ -347,9 +473,11 @@ def apply_physical(display, gates):
                     m ^= (1 << a) | (1 << b)
                 return m
             xs, zs = [swap(m) for m in xs], [swap(m) for m in zs]
-        else:
+        elif kind == "cnot":
             xs = [m ^ (1 << b) if m >> a & 1 else m for m in xs]
             zs = [m ^ (1 << a) if m >> b & 1 else m for m in zs]
+        else:
+            raise ValueError(f"unknown physical gate kind {kind!r}")
     return xs, zs
 
 
@@ -368,30 +496,56 @@ def spread(code, circuit):
 
 
 def check_decoupling(code, circuit, target, plus=0, zero=0):
-    """The certificate check. Accepts when the code, with the stated
-    ancillas, is mapped by the circuit to a display that spans the target's
-    rows in each sector. Returns a record with the verdict and the cells."""
-    extended = with_ancillas(code, plus=plus, zero=zero)
+    """The certificate check.
+
+    Requires ``code`` and ``target`` to carry translation-invariance data as
+    typed ``Code`` objects (refusing inputs without it), checks commutation
+    and shape compatibility, validates ``circuit``, and accepts when the
+    transformed display spans the target's rows in each sector.
+    Translation-triviality and gluing-vanishing remain admission hypotheses
+    not checked by this function; acceptance is circuit evidence, not a
+    calculus rule.
+    """
     record = {"accepted": False, "reason": None}
+    if not isinstance(code, Code):
+        record["reason"] = "translation-invariance data required (expected Code)"
+        return record
+    record["input_signature"] = code.signature()
+    if not isinstance(target, Code):
+        record["reason"] = "translation-invariance data required (expected Code)"
+        return record
+    _validate_int(plus, "plus", 0)
+    _validate_int(zero, "zero", 0)
     if not code.commutes():
         record["reason"] = "input rows do not commute"
         return record
+    if not target.commutes():
+        record["reason"] = "target rows do not commute"
+        return record
+    extended = with_ancillas(code, plus=plus, zero=zero)
     if extended.periods != target.periods or extended.q != target.q:
         record["reason"] = "shape mismatch"
         return record
-    image = apply_physical(extended.display(), physical_gates(extended, circuit))
+    try:
+        validated_circuit = _validate_circuit(circuit, extended.q, extended.periods)
+    except ValueError as exc:
+        record["reason"] = f"invalid circuit: {exc}"
+        return record
+    image = apply_physical(extended.display(), physical_gates(extended, validated_circuit))
     goal = target.display()
     if not (same_span(image[0], goal[0]) and same_span(image[1], goal[1])):
         record["reason"] = "image does not span the target rows"
         return record
     n = extended.n()
-    rho_x, rho_z = spread(extended, circuit)
-    inv_x, inv_z = spread(extended, inverse(circuit))
+    rho_x, rho_z = spread(extended, validated_circuit)
+    inv_x, inv_z = spread(extended, inverse(validated_circuit))
     record.update(
         accepted=True,
         n=n,
         k=logical_count(n, goal),
         factors={"x": rho_x, "z": rho_z, "x_inverse": inv_x, "z_inverse": inv_z},
+        target_signature=target.signature(),
+        ancillas={"plus": plus, "zero": zero},
     )
     return record
 
@@ -399,6 +553,9 @@ def check_decoupling(code, circuit, target, plus=0, zero=0):
 def distance_window(d, forward, backward):
     """The interval for the image's sector distance given the source's
     exact distance `d`: ceil(d / backward) <= d' <= forward * d."""
+    _validate_int(d, "d", 1)
+    _validate_int(forward, "forward", 1)
+    _validate_int(backward, "backward", 1)
     return -(-d // backward), forward * d
 
 

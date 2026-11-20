@@ -4,7 +4,7 @@ import CodeCalculus.ExactDistance
 namespace CodeCalculus
 
 /-!
-# Gate 6 interval-transformer soundness (`OBL-GATE6-CSS-EXTENSIONS`, issue #311)
+# Gate 6 interval-transformer soundness (`OBL-GATE6-CSS-EXTENSIONS`)
 
 Mechanized form of `spec/OPERATIONAL_SEMANTICS.md` §4.32: the interval
 transformer that `spec/JUDGMENT_LAYER.md` §2b and §2e name for each admitted
@@ -38,7 +38,7 @@ proved twice:
 - `E-GLUE` has no unary grammar production and no `Eval` constructor on
   commands; its expression constructor `StateExpr.glue` (rule
   `EvalExpr.glue`, update `glueState`) is handled in `Gate6Exact.lean`
-  (`glue_state_transformer_sound`, `glue_expr_sound`, issue #339). Here its
+  (`glue_state_transformer_sound`, `glue_expr_sound`). Here its
   state update (§4.31) is the direct sum of the two factors followed by the
   seam checks added one at a time, each checked against the factor rows and
   the seam checks admitted before it, which is `EvalExpr.directSum` followed
@@ -52,7 +52,7 @@ Hypotheses and their discharge. The per-move relations are
 `hrebase` (§4.26: every distance unchanged), `hhadamard` (§4.27: the sector
 distances exchange), `hpeel` (§4.28: the selected sector does not lose
 distance, the opposite sector does not gain and loses at most one, the
-2026-11-10 sharpening of issue #331; the two peel prices of
+the 2026-11-10 sharpening; the two peel prices of
 `JUDGMENT_LAYER.md` §2a enter through `HypTrue` as the graft price does),
 `hextend` (§4.30 with
 `Δ = ∅`: a `C-ADD-CHECK` sequence, no distance falls), and for `E-GLUE` the
@@ -66,10 +66,10 @@ relation is proved when the extension leaves the namespace unchanged
 this is the identity on a sorted, duplicate-free namespace). The §4.28 peel
 relations and the `k = 0` reading `hk0` are discharged for `exactDist` in
 `ExactPeel.lean` (`exactDist_peel_relations`, `peel_transformer_sound_exact`,
-`exactDist_k0`, issue #338). The §4.13 graft relations remain hypotheses for
+`exactDist_k0`). The §4.13 graft relations remain hypotheses for
 the exact distance, as they are for `priced_interval_soundness`. The
 instance of `gate6_interval_soundness` at `exactDist` is
-`gate6_interval_soundness_exact` in `Gate6Exact.lean` (issue #339), which
+`gate6_interval_soundness_exact` in `Gate6Exact.lean`, which
 keeps the graft relations and the `Δ = ∅` extension law as its two
 hypotheses; the per-cell instances `rebase_transformer_sound_exact`,
 `hadamard_transformer_sound_exact`, `extend_transformer_sound_exact`, and
@@ -117,7 +117,7 @@ theorem predOpt_monotone {a b : Option Nat} (h : leOpt a b) :
     leOpt (predOpt a) (predOpt b) := by
   cases a <;> cases b <;> simp [leOpt, predOpt] at * <;> omega
 
-/-- The peel's opposite-sector interval (§2b, §4.28, issue #331): unpriced,
+/-- The peel's opposite-sector interval (§2b, §4.28): unpriced,
     `[L - 1, U]` from `d_σ - 1 ≤ d_σ' ≤ d_σ`; under the exposure price `p`,
     `[min(L, p), min(U, p)]` from `d_σ' = min(d_σ, p)`, as for the graft. -/
 def peelOpposite (I : Interval) (price : Option Nat) : Interval :=
@@ -138,8 +138,8 @@ def peelSelected (I : Interval) (price : Option Nat) : Interval :=
 def minInterval (I J : Interval) : Interval :=
   Interval.mk (minOpt I.lower J.lower) (minOpt I.upper J.upper)
 
-/-- §4.32's `E-PEEL` transformer (issue #295, sharpened 2026-11-10, issue
-    #331): the selected sector `τ` is `peelSelected`, the opposite sector is
+/-- §4.32's `E-PEEL` transformer (sharpened 2026-11-10): the selected sector
+    `τ` is `peelSelected`, the opposite sector is
     `peelOpposite`, and the full distance is the minimum of the two, since
     `d' = min(d_τ', d_σ')`. The prices are the two optional `Hyp` fields. -/
 def peelLedger (τ : Sector) (L : DistanceLedger) (expose avoid : Option Nat) :
@@ -286,7 +286,7 @@ theorem hexpose_avoid_Z {δ : CodeState → ExactDist} {s' : CodeState} {avoid :
     (w : Nat) (hw : avoid = some w) : (δ s').z = some w :=
   Eq.mp (ite_eq_right (by decide : Sector.Z ≠ Sector.X)) (h w hw)
 
-/-- `E-PEEL` (issue #295, sharpened 2026-11-10, issue #331): `peelLedger` is
+/-- `E-PEEL` (sharpened 2026-11-10): `peelLedger` is
     sound under §4.28's three relations, `d_τ' ≥ d_τ` for the selected
     sector and `d_σ - 1 ≤ d_σ' ≤ d_σ` for the opposite sector, and under the
     two price relations when a price is supplied (`HypTrue`): the

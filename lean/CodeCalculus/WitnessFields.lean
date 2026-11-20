@@ -1,7 +1,7 @@
 import CodeCalculus.LogicalWitness
 
 /-!
-# The logical-witness and boundary-label fields: definition and transport (issue #440)
+# The logical-witness and boundary-label fields: definition and transport
 
 Mechanizes the definitions of `spec/STATE_MODEL.md` §1a. Both fields stay
 outside `CodeState`.

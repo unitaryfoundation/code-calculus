@@ -13,7 +13,7 @@ It also replays the fixtures of ``machine/fixtures/symplectic_fixtures.json``.
 Evidence only. The move set is not an admitted calculus rule (the
 extended-state layer is a Gate 6 decision that has not been taken), and a
 run with zero violations is a run that failed to falsify the interval rules
-derived in ``notes/harness/symplectic_move_set_2026-11-10.md``, nothing more.
+derived in ``the symplectic move set (2026-11-10)``, nothing more.
 The oracle lives here and is never called by the model module.
 
 As in the CSS harness (issue #235), lower endpoints are seeded nonzero on

@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re
@@ -232,7 +232,7 @@ def layout_honest(parent):
     Until 2026-11-10 this function only required the sites to be distinct,
     which read a two-layer layout with two qubits on one site as dishonest
     and a pair of sites closer than 1 as honest; both disagreed with section
-    2d.3, and the transcription was fixed to the prose (issue #333).
+    2d.3, and the transcription was fixed to the prose.
     """
     locality = parent.get("locality") if isinstance(parent, dict) else None
     if not isinstance(locality, dict):

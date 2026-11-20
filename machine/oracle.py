@@ -63,7 +63,7 @@ def exact_distances(state):
                 weight += 1
             b >>= 1
             i += 1
-        # any trailing zeros already accounted for by i advancing only on set bits? 
+        # any trailing zeros already accounted for by i advancing only on set bits?
         # Need account positions for all i; recompute more simply below.
         vectors_examined += 1
         for side in ("X", "Z"):

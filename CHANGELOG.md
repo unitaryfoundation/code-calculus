@@ -5,6 +5,71 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
+### Added
+- **Gate-realization judgment rows (axis 3):** the operator-indexed codespace-preservation
+  predicate `preserves_U(C)` on CSS displays with its `C-ADD-CHECK` carry cell and
+  kernel rows, plus the equal-syndrome generator weight floor `ω(C) ≥ ⌈d(C)/2⌉`
+  carried by weakening (`spec/JUDGMENT_LAYER.md` §2, §2h, §7.1–§7.4;
+  `spec/OPERATIONAL_SEMANTICS.md` §4.37).
+- **`A-QUOTIENT` monomial-quotient specialization:** conditional transfer-theorem
+  record (`spec/JUDGMENT_LAYER.md` §2i, `spec/TAXONOMY.md` §2.15); remains
+  `taxonomy-only` at rung 1.
+- **Conditional family-level one-shot level-map transport:** Yuan hollowed-tensor
+  level map admitted as judgment vocabulary (`spec/JUDGMENT_LAYER.md` §2j,
+  `spec/CLAIMS.md`); no new property or operator.
+- **Positive composition criteria, CNOT-disguised direct sums, depth-one
+  equality, multi-band patch count, mapping-cone/chain-map constructor,
+  decoupling of translation-invariant CSS codes:** admitted as conditional
+  judgment rows (`spec/OPERATIONAL_SEMANTICS.md` §4.37–§4.42).
+- **New admitted constructors:** `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT`
+  (nullary/interface constructors) and the CSS-preserving column CNOT/SWAP
+  transformation, all `transition-defined` (`spec/TERM_LANGUAGE.md` §1–§2,
+  `spec/OPERATIONAL_SEMANTICS.md` §4.43, `spec/JUDGMENT_LAYER.md` §2g/§2d.5).
+- **Sector-split deletion price cells for `C-DELETE-CHECK`:** deleted-sector
+  `d'_τ = min(d_τ, w_del)`, opposite sector `d'_{τ̄} = min(d_{τ̄}, w_exp)`,
+  full distance `d' = min(d, w_del, w_exp)` (`spec/JUDGMENT_LAYER.md`).
+- **`E-SPLIT` transition:** stated as a candidate proposal
+  (`spec/OPERATIONAL_SEMANTICS.md`).
+- **`E-GLUE` mechanization and binary-only decision:** `glue(e_1, e_2; u⃗)`
+  production recorded in `spec/TERM_LANGUAGE.md` §1–§2; `E-GLUE` advances to
+  rung 5 (`contract-stated`) with the extracted derivation mechanized
+  (`lean/CodeCalculus/GlueExtraction.lean`).
+- **Annotated-term soundness mechanization and W13 Gate 6 rows:** completed
+  with identifier-level refusals and Trace/StepChain seam discharge.
+- **Kernel five promoted to rung 6 (`contract-proved`):** backed by dated hand
+  derivations including quotient-level logical-sector exact sequences (§4.39)
+  and the `stdCSS-3` metatheorem re-discharge ledger (§4.40); all
+  `discharged-through` values advanced to `stdCSS-3`.
+- **Machine-side:** sector-targeted deletion/peel search
+  (`bounded_sector_search`), multi-objective candidate ranking, multi-band
+  patch count as construction metadata, constructor support in
+  `machine/constructors.py` and Lean (`Constructors.lean`,
+  `ConstructorAssembly.lean`, `ConstructorInstances.lean`, `Eval.lean`).
+
+### Changed
+- `spec/VERSIONING.md`: current development release advanced to `stdCSS-3` /
+  `v0.3.0`; new release row appended (discharged-through advanced).
+- `spec/CLAIMS.md`: kernel five at rung 6; `E-GLUE` at rung 5; new
+  constructor and judgment-row admissions recorded.
+- `machine/operation_registry.json`, `machine/semantics.json`, `machine/state.json`:
+  updated for new constructors and cells.
+- Lean toolchain and axiom audit hygiene (continued).
+
+### Notes
+- Gates 0–6 are ratified; Gate 7 remains unchecked by design.
+- `discharged-through` values advanced to `stdCSS-3` (`spec/OPERATIONAL_SEMANTICS.md` §4.40); re-discharge
+  obligations scoped to named fragments remain open where recorded.
+- **Lean mechanization scope:** determinism of `EvalExpr` for the newly
+  admitted `A-PULLBACK` and `A-PUSHOUT` constructors is now discharged
+  (`evalExpr_unique`, `lean/CodeCalculus/ExpandedSoundness.lean`); the
+  module is in the axiom audit (`AxiomAudit.lean`), which reports
+  5,972 constants, 43 on `Classical.choice`, and no `sorryAx`. Every other
+  audited constant remains free of `sorryAx`. This closes the determinism gap
+  for those constructors; it is a mechanization fact, not a soundness
+  claim, and does not affect the executable consumer.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added

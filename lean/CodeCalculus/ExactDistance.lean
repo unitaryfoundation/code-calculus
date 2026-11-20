@@ -4,10 +4,10 @@ import CodeCalculus.Fixtures
 import CodeCalculus.Interval
 
 /-!
-# The exact distance as a concrete measure (issue #265, Route B of #230)
+# The exact distance as a concrete measure (Route B)
 
 `judgment_soundness` (`Soundness.lean`) takes one hypothesis about the
-distance measure, `MeasureMonotone dMeasure`, and Route A of issue #230
+distance measure, `MeasureMonotone dMeasure`, and Route A
 reduced it to `SpanMonotone`: on a fixed namespace, shrinking both sector
 spans does not raise either sector distance. This module defines the exact
 sector distance over `F₂` vectors and proves that it is span-monotone, so the
@@ -21,7 +21,7 @@ Hamming weight of a σ-logical. When no σ-logical exists (every vector outside
 the σ-span fails orthogonality, which is the `k = 0` case for a well-formed
 state) the value is `n + 1`.
 
-The `+∞` value (issue #310). The spec's distance domain is `ℕ ∪ {+∞}`
+The `+∞` value. The spec's distance domain is `ℕ ∪ {+∞}`
 (`spec/JUDGMENT_LAYER.md` §8.1), and the development reads it in three ways:
 `exactDistance?` in `Option Nat` with `none` for `+∞`, the reading of the
 executable ledger (`PricedInterval.lean`); `exactDistanceExt` in the S2
@@ -34,7 +34,7 @@ a common namespace length the `Nat` order of two sentinel readings is the
 `ExtNat` order of the two distances (`exactDistance_le_iff_ext`). The `k`
 cells and the `+∞` value are connected in `ExactPeel.lean`: a well-formed
 state with `k = 0` has no logical (`exactDist_k0`, the `hk0` hypothesis of
-`priced_interval_soundness`, issue #338).
+`priced_interval_soundness`).
 
 The sentence-language measure `dMeasure : Field → CodeState → Nat` of
 `Soundness.lean` stays `Nat`-valued by decision, recorded in that module's
@@ -276,7 +276,7 @@ theorem spanMonotone_exactMeasure : SpanMonotone exactMeasure := by
 theorem measureMonotone_exactMeasure : MeasureMonotone exactMeasure :=
   measureMonotone_of_spanMonotone spanMonotone_exactMeasure
 
-/-! ## The `+∞` value: the `Option Nat` and `ExtNat` readings (issue #310) -/
+/-! ## The `+∞` value: the `Option Nat` and `ExtNat` readings -/
 
 /-- Minimum weight over a list of vectors, `none` for the empty list. -/
 def minWeight? : List (List Bool) → Option Nat

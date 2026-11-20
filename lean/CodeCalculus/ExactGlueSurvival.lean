@@ -1,7 +1,7 @@
 import CodeCalculus.ExactGlueDistance
 
 /-!
-# `E-GLUE`: which factor logicals survive the seam (issue #397)
+# `E-GLUE`: which factor logicals survive the seam
 
 Mechanizes the survival statement of `spec/OPERATIONAL_SEMANTICS.md` §4.31
 (*Instance-wise equality through a surviving witness*) and §4.33 (*What

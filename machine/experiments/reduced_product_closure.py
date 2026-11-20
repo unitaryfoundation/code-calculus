@@ -8,7 +8,7 @@ soundness or for ``OBL-PRICED-INTERVAL-SOUNDNESS``.
 The ledger keeps three intervals -- ``d``, ``d_X`` and ``d_Z`` -- but the
 distance relation is ``d = min(d_X, d_Z)``.  The three projections lose the
 relation.  This script measures whether a *simple closure* of that relation
-changes a target decision on the traces recorded by the pinned issue #21
+changes a target decision on the traces recorded by the pinned replay
 replay, and exhibits one synthetic ledger where it does.
 
 The simple closure is:

@@ -1,9 +1,9 @@
-"""Tests for the regression fixture of issue #447.
+"""Tests for the regression fixture of.
 
 The fixture pins that Hamming weight is not invariant under a single CNOT
 layer, and that the single-layer lower bound / two-layer sharpness of a
 disguised direct sum hold as documented. A passing run is evidence for the
-conditions in `design/PRESENTATION_TRANSFORMS.md`, not a proof, and admits
+conditions in `the presentation-transforms note`, not a proof, and admits
 no judgment.
 """
 
@@ -44,6 +44,21 @@ class DirectSumBounds(unittest.TestCase):
 
     def test_two_layer_sharpness(self):
         self.assertEqual(two_layer_sharpness(), 1)
+
+
+class DepthSectorHypotheses(unittest.TestCase):
+    def test_depth_and_sector_preserved(self):
+        from presentation_transforms import cnot_disguised_direct_sum, depth_one_equality
+        rec = cnot_disguised_direct_sum(depth=2, sector="Z", d_a=3, d_b=5)
+        self.assertEqual(rec["depth"], 2)
+        self.assertEqual(rec["sector"], "Z")
+        self.assertTrue(rec["hamming_weight_noninvariant"])
+        self.assertTrue(rec["universal_equality_tail_open"])
+        self.assertFalse(rec["generic_cnot_layer_zero_price"])
+        rec2 = depth_one_equality(depth=1, sector="X", d_a=4, d_b=4)
+        self.assertEqual(rec2["depth"], 1)
+        self.assertEqual(rec2["sector"], "X")
+        self.assertTrue(rec2["depth_one_equality"])
 
 
 if __name__ == "__main__":

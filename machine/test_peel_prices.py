@@ -1,5 +1,5 @@
 """Sector-aware distance cells for `E-PEEL` and the recorded `E-PUNCTURE`
-reduction (issue #331, the C2 follow-up of the 2026-11-10 disposition).
+reduction (the C2 follow-up of the 2026-11-10 disposition).
 
 `spec/OPERATIONAL_SEMANTICS.md` §4.28 derives, for a peel at q in sector tau
 with opposite sector sigma, the two exact relations

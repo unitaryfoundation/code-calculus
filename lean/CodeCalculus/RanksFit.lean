@@ -3,7 +3,7 @@ import CodeCalculus.WellFormedness
 namespace CodeCalculus
 
 /-!
-# The dimension bound `rank X + rank Z ≤ |Q|` (issue #216)
+# The dimension bound `rank X + rank Z ≤ |Q|`
 
 `RanksFit` (`WellFormedness.lean`) is the premise the `k` rows of
 `Soundness.lean` take so that the truncated subtraction in `stateK` is exact.

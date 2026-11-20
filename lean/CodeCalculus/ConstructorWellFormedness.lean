@@ -2,7 +2,7 @@ import CodeCalculus.WellFormedness
 import CodeCalculus.WellFormedBool
 
 /-!
-# The retained display is well-formed (issue #370)
+# The retained display is well-formed
 
 The first claim of `spec/OPERATIONAL_SEMANTICS.md` §4.34, for the state
 updates of `Constructors.lean`: if the natural rows of the two sectors have

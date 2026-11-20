@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re
@@ -20,7 +20,8 @@ from machine.intervals import *
 
 ADMITTED_CONSTRUCTORS = ("L-HGP", "L-LIFTED", "L-GROUP-ALGEBRA", "A-CONCAT",
                          "L-BALANCED", "L-TANNER", "L-TILE", "A-PRODUCT",
-                         "A-DOUBLE", "L-NESTED-CSS")
+                         "A-DOUBLE", "L-NESTED-CSS", "L-MAPPING-CONE",
+                         "L-EMPTY", "L-FREE", "A-PULLBACK", "A-PUSHOUT")
 
 UNADMITTED_CONSTRUCTORS = {}
 
@@ -267,7 +268,7 @@ def concatenate(outer, inner, groups, representatives=None):
     inner label); each outer row is lifted block by block through the
     representatives (by default the dual logical bases of the inner level
     data, `tower_level_data`). Well-formedness, n = n_in n_out, and k = k_out
-    are derived in `design/DERIVED_RELATIONS.md` section 2a and
+    are derived in `DERIVED_RELATIONS.md` section 2a and
     `spec/OPERATIONAL_SEMANTICS.md` section 4.34. Returns (state, dropped_rows)
     with ``dropped_rows`` always 0 (the natural display is independent).
     """
@@ -634,6 +635,49 @@ def nested_css(check_x, check_z):
                            "(a row of check_x and a row of check_z overlap oddly)")
     return _constructed_state(n, rows)
 
+def _apply_matrix(matrix, v):
+    out = 0
+    for j in range(len(matrix)):
+        if (v >> j) & 1:
+            out ^= matrix[j]
+    return out
+
+
+def mapping_cone(d_a, d_b, f1, f0):
+    d_a = _binary_matrix(d_a, "d_a")
+    d_b = _binary_matrix(d_b, "d_b")
+    f1 = _binary_matrix(f1, "f1")
+    f0 = _binary_matrix(f0, "f0")
+    a1, a0 = len(d_a), len(d_a[0])
+    b1, b0 = len(d_b), len(d_b[0])
+    if len(f1) != a1 or any(len(row) != b1 for row in f1):
+        raise Malformed("L-MAPPING-CONE takes f1 of shape a_1 x b_1")
+    if len(f0) != a0 or any(len(row) != b0 for row in f0):
+        raise Malformed("L-MAPPING-CONE takes f0 of shape a_0 x b_0")
+    d_a_i = [sum(int(bit) << i for i, bit in enumerate(row)) for row in d_a]
+    d_b_i = [sum(int(bit) << i for i, bit in enumerate(row)) for row in d_b]
+    f1_i = [sum(int(bit) << i for i, bit in enumerate(row)) for row in f1]
+    f0_i = [sum(int(bit) << i for i, bit in enumerate(row)) for row in f0]
+    for j in range(a1):
+        if _apply_matrix(d_b_i, f1_i[j]) != _apply_matrix(f0_i, d_a_i[j]):
+            raise NoDerivation("L-MAPPING-CONE: the chain-map premise does not hold")
+    n = a0 + b1
+    rows = []
+    for r in range(b0):
+        mask = 0
+        for i in range(a0):
+            if (f0_i[i] >> r) & 1:
+                mask |= 1 << i
+        for j in range(b1):
+            if (d_b_i[j] >> r) & 1:
+                mask |= 1 << (a0 + j)
+        rows.append(("X", mask))
+    for j in range(a1):
+        mask = d_a_i[j] | (f1_i[j] << a0)
+        rows.append(("Z", mask))
+    return _constructed_state(n, rows)
+
+
 def tile_assembly(tiles, placements, identifications=(), removed=()):
     """`L-TILE`: local tiles placed on sites, with sites identified.
 
@@ -735,6 +779,168 @@ def tile_assembly(tiles, placements, identifications=(), removed=()):
         raise NoDerivation("L-TILE: the placed tile rows of the two sectors do not commute")
     return _constructed_state(len(classes), rows)
 
+def empty_code():
+    """`empty` (nullary base constructor): the CSS code on no
+    qubits: $Q = \\varnothing$, empty display ($X = Z = \\{0\\}$), empty
+    ``used``. Trivially well-formed (I1-I5 hold vacuously). Returns a
+    ``CodeState`` with $n = 0$, $k = 0$.
+    """
+    state = CodeState((), (), frozenset())
+    state.validate()
+    return state
+
+
+def free_code(qubits):
+    """`free` (qubit-set base constructor): the CSS code with
+    the given finite qubit set and an empty display ($X = Z = \\{0\\}$),
+    so $k = n = |Q|$ and (for $Q \\neq \\varnothing$) semantic
+    $d_X = d_Z = d = 1$. ``qubits`` is an iterable of distinct nonnegative
+    integer labels; it is sorted and validated. Returns a ``CodeState``.
+    """
+    if not isinstance(qubits, (list, tuple, set, frozenset)):
+        raise Malformed("free_code takes a collection of qubit labels")
+    if isinstance(qubits, str):
+        raise Malformed("free_code takes a collection of qubit labels")
+    try:
+        qubit_list = list(qubits)
+    except TypeError:
+        raise Malformed("free_code takes a collection of qubit labels")
+    labels = sorted(set(qubit_list))
+    if any(isinstance(q, bool) or not isinstance(q, int) or q < 0 for q in qubit_list):
+        raise Malformed("free_code qubit labels must be nonnegative integers")
+    if len(qubit_list) != len(set(qubit_list)):
+        raise Malformed("free_code qubit labels must be distinct")
+    state = CodeState(tuple(labels), (), frozenset())
+    state.validate()
+    return state
+
+
+def _parse_qubit_map(mapping, domain, codomain, name):
+    """Parse a total qubit map ``domain -> codomain`` from a dict or pair list."""
+    if isinstance(mapping, dict):
+        items = list(mapping.items())
+    elif isinstance(mapping, (list, tuple)):
+        items = []
+        for entry in mapping:
+            if not isinstance(entry, (list, tuple)) or len(entry) != 2:
+                raise Malformed("%s entries must be (source, target) pairs" % name)
+            items.append((entry[0], entry[1]))
+    else:
+        raise Malformed("%s must be a dict or list of (source, target) pairs" % name)
+    dom_set = set(domain)
+    cod_set = set(codomain)
+    parsed = {}
+    for src, dst in items:
+        if (isinstance(src, bool) or not isinstance(src, int)
+                or isinstance(dst, bool) or not isinstance(dst, int)):
+            raise Malformed("%s labels must be integers" % name)
+        if src in parsed:
+            raise Malformed("%s has duplicate source label %d" % (name, src))
+        if src not in dom_set:
+            raise Malformed("%s source label %d is not in domain" % (name, src))
+        if dst not in cod_set:
+            raise Malformed("%s target label %d is not in codomain" % (name, dst))
+        parsed[src] = dst
+    if set(parsed) != dom_set:
+        raise Malformed("%s must be total on the source qubit set" % name)
+    return parsed
+
+
+def _check_css_morphism(src, dst, mapping, name):
+    """Check that the F_2-pushforward of every displayed row of ``src`` lies
+    in the same-sector row space of ``dst``."""
+    dst_bases = {
+        "X": [row.mask for row in dst.sector_rows("X")],
+        "Z": [row.mask for row in dst.sector_rows("Z")],
+    }
+    for row in src.rows:
+        pushed_mask = 0
+        for q in row.support:
+            pushed_mask ^= 1 << mapping[q]
+        if not in_span(pushed_mask, dst_bases[row.sector]):
+            raise NoDerivation("%s: qubit map does not preserve %s-row %s"
+                               % (name, row.sector, row.id))
+
+
+def pullback_code(c1, c2, iface, phi1, phi2):
+    """`A-PULLBACK`: fiber product of ``c1`` and ``c2`` over ``iface`` along
+    CSS code morphisms ``phi1 : c1 -> iface`` and ``phi2 : c2 -> iface``.
+    Returns (state, dropped_rows).
+    """
+    for arg, label in ((c1, "left"), (c2, "right"), (iface, "interface")):
+        if not isinstance(arg, CodeState):
+            raise Malformed("A-PULLBACK %s must be a CodeState" % label)
+        arg.validate()
+    m1 = _parse_qubit_map(phi1, c1.Q, iface.Q, "A-PULLBACK phi1")
+    m2 = _parse_qubit_map(phi2, c2.Q, iface.Q, "A-PULLBACK phi2")
+    _check_css_morphism(c1, iface, m1, "A-PULLBACK phi1")
+    _check_css_morphism(c2, iface, m2, "A-PULLBACK phi2")
+    pairs = [(q1, q2) for q1 in c1.Q for q2 in c2.Q if m1[q1] == m2[q2]]
+    n = len(pairs)
+    rows = []
+    for row in c1.rows:
+        sup = set(row.support)
+        mask = 0
+        for idx, (q1, _q2) in enumerate(pairs):
+            if q1 in sup:
+                mask |= 1 << idx
+        rows.append((row.sector, mask))
+    for row in c2.rows:
+        sup = set(row.support)
+        mask = 0
+        for idx, (_q1, q2) in enumerate(pairs):
+            if q2 in sup:
+                mask |= 1 << idx
+        rows.append((row.sector, mask))
+    if not _natural_rows_orthogonal(rows):
+        raise NoDerivation("A-PULLBACK: pulled-back rows of the two sectors do not commute")
+    return _constructed_state(n, rows)
+
+
+def pushout_code(c1, c2, sub, psi1, psi2):
+    """`A-PUSHOUT`: amalgamated sum of ``c1`` and ``c2`` along ``sub`` via
+    CSS code morphisms ``psi1 : sub -> c1`` and ``psi2 : sub -> c2``.
+    Returns (state, dropped_rows).
+    """
+    for arg, label in ((c1, "left"), (c2, "right"), (sub, "subcode")):
+        if not isinstance(arg, CodeState):
+            raise Malformed("A-PUSHOUT %s must be a CodeState" % label)
+        arg.validate()
+    m1 = _parse_qubit_map(psi1, sub.Q, c1.Q, "A-PUSHOUT psi1")
+    m2 = _parse_qubit_map(psi2, sub.Q, c2.Q, "A-PUSHOUT psi2")
+    _check_css_morphism(sub, c1, m1, "A-PUSHOUT psi1")
+    _check_css_morphism(sub, c2, m2, "A-PUSHOUT psi2")
+    nodes = [(0, q1) for q1 in c1.Q] + [(1, q2) for q2 in c2.Q]
+    index_of = {node: idx for idx, node in enumerate(nodes)}
+    parent = list(range(len(nodes)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for s in sub.Q:
+        u = find(index_of[(0, m1[s])])
+        v = find(index_of[(1, m2[s])])
+        if u != v:
+            low, high = (u, v) if u < v else (v, u)
+            parent[high] = low
+    classes = sorted({find(i) for i in range(len(nodes))})
+    label = {root: pos for pos, root in enumerate(classes)}
+    n = len(classes)
+    rows = []
+    for side, code in ((0, c1), (1, c2)):
+        for row in code.rows:
+            mask = 0
+            for q in row.support:
+                mask ^= 1 << label[find(index_of[(side, q)])]
+            rows.append((row.sector, mask))
+    if not _natural_rows_orthogonal(rows):
+        raise NoDerivation("A-PUSHOUT: pushed-forward rows of the two sectors do not commute")
+    return _constructed_state(n, rows)
+
+
 def _factor_state(value):
     if isinstance(value, dict):
         return CodeState.from_challenge(value)
@@ -794,6 +1000,23 @@ def construct(spec):
                                       spec.get("conjugate", False))
     elif name == "L-NESTED-CSS":
         state, dropped = nested_css(spec.get("HX"), spec.get("HZ"))
+    elif name == "L-MAPPING-CONE":
+        state, dropped = mapping_cone(spec.get("d_a"), spec.get("d_b"),
+                                     spec.get("f1"), spec.get("f0"))
+    elif name == "L-EMPTY":
+        state, dropped = empty_code(), 0
+    elif name == "L-FREE":
+        state, dropped = free_code(spec.get("qubits")), 0
+    elif name == "A-PULLBACK":
+        state, dropped = pullback_code(_factor_state(spec.get("left")),
+                                       _factor_state(spec.get("right")),
+                                       _factor_state(spec.get("interface")),
+                                       spec.get("phi1"), spec.get("phi2"))
+    elif name == "A-PUSHOUT":
+        state, dropped = pushout_code(_factor_state(spec.get("left")),
+                                      _factor_state(spec.get("right")),
+                                      _factor_state(spec.get("subcode")),
+                                      spec.get("psi1"), spec.get("psi2"))
     else:
         raise Malformed("unknown constructor %r" % (name,))
     n = len(state.Q)
@@ -828,6 +1051,11 @@ __all__ = [
     'balanced_product',
     'tanner_code',
     'nested_css',
+    'mapping_cone',
+    'empty_code',
+    'free_code',
+    'pullback_code',
+    'pushout_code',
     'tile_assembly',
     '_factor_state',
     'construct',

@@ -6,7 +6,7 @@ import CodeCalculus.MixSupport
 namespace CodeCalculus
 
 /-!
-# Well-formedness preservation and rank decrease (issue #192)
+# Well-formedness preservation and rank decrease
 
 Two groups of per-primitive lemmas that `Soundness.lean` discharges its
 instantiation rows against.
@@ -22,7 +22,7 @@ instantiation rows against.
    the content of §4.12 and is mechanized in `GraftWellFormedness.lean`
    (`wf_graft_of_eval`), where `wf_of_eval_all` lifts preservation to every
    command. The `C-DIRECT-SUM` instance is a state expression, not a command
-   step, and is the subject of issue #180.
+   step, and is the subject of a later slice.
 
 2. Rank decrease: deleting an independent generator lowers its sector's rank
    by exactly one and leaves the other sector's rank unchanged

@@ -1,6 +1,6 @@
-"""Tests for the finite-torus harness of issue #451.
+"""Tests for the finite-torus harness.
 
-The harness is the finite side of `design/DECOUPLING_CONSTRUCTOR.md`. A
+The harness is the finite side of `DECOUPLING_CONSTRUCTOR.md`. A
 passing run is evidence for the note's derivations, not a proof, and admits
 nothing.
 """
@@ -115,6 +115,11 @@ class Certificate(unittest.TestCase):
         self.assertTrue(record["accepted"])
         self.assertEqual(record["n"], 12)
         self.assertEqual(record["k"], 2)
+        self.assertEqual(
+            record["input_signature"],
+            {"periods": (2, 2), "q": 3, "hx_rows": 2, "hz_rows": 1, "commutes": True},
+        )
+        self.assertEqual(record["ancillas"], {"plus": 0, "zero": 0})
 
     def test_refuses_the_empty_circuit_on_a_disguised_code(self):
         periods = (2, 2)
@@ -134,9 +139,10 @@ class Certificate(unittest.TestCase):
         periods = (2, 2)
         unit = one(periods)
         bad = Code(periods, 1, [[unit]], [[unit]])
-        self.assertEqual(
-            check_decoupling(bad, [], bad)["reason"], "input rows do not commute"
-        )
+        record = check_decoupling(bad, [], bad)
+        self.assertFalse(record["accepted"])
+        self.assertEqual(record["reason"], "input rows do not commute")
+        self.assertFalse(record["input_signature"]["commutes"])
 
     def test_distance_window(self):
         self.assertEqual(distance_window(4, 3, 2), (2, 12))
@@ -162,6 +168,79 @@ class Certificate(unittest.TestCase):
         f = record["factors"]
         low, high = distance_window(source[0], f["x"], f["x_inverse"])
         self.assertTrue(low <= image[0] <= high)
+
+
+class ValidationAndRefusal(unittest.TestCase):
+    def test_refuses_missing_translation_invariance_data(self):
+        target = toric_code((2, 2), 1)
+        for bad_input in (None, {"Q": [0, 1], "X": [], "Z": []}, "not-a-code"):
+            rec = check_decoupling(bad_input, [], target)
+            self.assertFalse(rec["accepted"])
+            self.assertEqual(
+                rec["reason"], "translation-invariance data required (expected Code)"
+            )
+            rec_target = check_decoupling(target, [], bad_input)
+            self.assertFalse(rec_target["accepted"])
+            self.assertEqual(
+                rec_target["reason"], "translation-invariance data required (expected Code)"
+            )
+
+    def test_refuses_noncommuting_target_and_malformed_circuits(self):
+        periods = (2, 2)
+        unit = one(periods)
+        good = Code(periods, 1, [[unit]], [])
+        bad_target = Code(periods, 1, [[unit]], [[unit]])
+        rec = check_decoupling(good, [], bad_target)
+        self.assertFalse(rec["accepted"])
+        self.assertEqual(rec["reason"], "target rows do not commute")
+
+        tc = toric_code(periods, 1)
+        for bad_circuit in (
+            [("sum", 0, 0, unit)],
+            [("sum", 0, 5, unit)],
+            [("swap", 0, 2)],
+            [("cz", 0, 1)],
+        ):
+            rec = check_decoupling(tc, bad_circuit, tc)
+            self.assertFalse(rec["accepted"])
+            self.assertTrue(rec["reason"].startswith("invalid circuit:"))
+            with self.assertRaises(ValueError):
+                apply_circuit(tc, bad_circuit)
+            with self.assertRaises(ValueError):
+                physical_gates(tc, bad_circuit)
+
+    def test_code_and_helpers_reject_invalid_typed_inputs(self):
+        periods = (2, 2)
+        unit = one(periods)
+        for bad_args in (
+            ((), 1, [], []),
+            ((0, 2), 1, [], []),
+            ((True, 2), 1, [], []),
+            (periods, 0, [], []),
+            (periods, False, [], []),
+            (periods, 2, [[unit]], []),
+            (periods, 1, [[frozenset({(0,)})]], []),
+        ):
+            with self.assertRaises(ValueError):
+                Code(*bad_args)
+
+        tc = toric_code(periods, 1)
+        with self.assertRaises(ValueError):
+            with_ancillas(tc, plus=-1)
+        with self.assertRaises(ValueError):
+            with_ancillas(tc, zero=True)
+        with self.assertRaises(ValueError):
+            stack([])
+        with self.assertRaises(ValueError):
+            stack([tc, toric_code((3, 2), 1)])
+        with self.assertRaises(ValueError):
+            coarse_grain(tc, (3, 1))
+        with self.assertRaises(ValueError):
+            distance_window(0, 1, 1)
+        with self.assertRaises(ValueError):
+            distance_window(2, 0, 1)
+        with self.assertRaises(ValueError):
+            check_decoupling(tc, [], tc, plus=-1)
 
 
 class Sweep(unittest.TestCase):

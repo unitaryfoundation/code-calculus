@@ -1,6 +1,6 @@
-"""Conformance entry point for the priced-consumer harness (issue #27).
+"""Conformance entry point for the priced-consumer harness.
 
-Scaled-up hardening entry point (issue #125): ~2000 cases per seed across
+Scaled-up hardening entry point : ~2000 cases per seed across
 several fixed seeds, including nonzero and exact derived lower endpoints.
 """
 

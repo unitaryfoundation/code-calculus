@@ -8,7 +8,7 @@ artifact: a kill certificate per sector for ``d_sigma >= 3`` on the pinned
 ``codes/10-2-3-b.json`` parent, verified by the checker in
 `machine/certificates.py`. It records the artifact sizes and the
 kill-criterion assessment required by the issue's first-branch deliverable
-(`archive/notes/CERTIFICATE_LAYER_PLAN.md` sections 5 and 8).
+(`the certificate-layer plan` sections 5 and 8).
 
 The upper-bound half stays where it already was: a logical witness the
 ledger validates by finite-field arithmetic. Nothing here changes a claim
@@ -112,12 +112,12 @@ def build_prototype_artifact():
         "negative_control": negative_control,
         "checker": {
             "module": "machine/certificates.py",
-            "contract": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 4",
+            "contract": "the certificate-layer plan section 4",
             "coverage_enumeration_per_certificate":
                 _ball_entries(state.n(), CERTIFIED_BOUND),
         },
         "kill_criterion": {
-            "statement": "archive/notes/CERTIFICATE_LAYER_PLAN.md section 8",
+            "statement": "the certificate-layer plan section 8",
             "verdict": "passes at this instance",
             "assessment": (
                 "The prototype certifies a non-trivial lower endpoint "

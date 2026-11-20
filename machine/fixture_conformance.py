@@ -402,7 +402,7 @@ def evaluate_fixture(f, fixtures_by_id, cache):
     except (pc.NoDerivation, pc.Malformed, ValueError, TypeError, KeyError) as e:
         actual_outcome = "no_derivation"
 
-    # W25 (issue #237): the judgment under test is not the term -- delete_{a1}
+    # W25: the judgment under test is not the term -- delete_{a1}
     # derives -- but whether a sector lower-bound certificate minted for the
     # pre-deletion state can be inherited by the child. The certificate is
     # checked and accepted (it is true of the parent); what refuses the

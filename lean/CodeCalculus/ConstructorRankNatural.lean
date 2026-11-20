@@ -1,7 +1,7 @@
 import CodeCalculus.BalancedOverlap
 
 /-!
-# `k` of `L-BALANCED`, `L-TANNER`, and `L-TILE` from the natural matrices (issue #501)
+# `k` of `L-BALANCED`, `L-TANNER`, and `L-TILE` from the natural matrices
 
 `spec/OPERATIONAL_SEMANTICS.md` §4.35 claims no closed form for the `k` of
 these three constructors: it is the rank bookkeeping of the output. This
@@ -12,7 +12,7 @@ lists of row masks. The statements hold for every input, with no typing
 premise, because they are instances of `stateK_constructedState`.
 
 These are not formulas in the parameters of the inputs, and the names
-ending in `_k_closed` follow the naming of issue #501 only.
+ending in `_k_closed` follow the established naming only.
 -/
 
 namespace CodeCalculus

@@ -5,7 +5,7 @@ import CodeCalculus.RebaseRankSector
 namespace CodeCalculus
 
 /-!
-# Graft well-formedness preservation (issue #217)
+# Graft well-formedness preservation
 
 `EncodingWellFormed` is preserved by the structural graft transition
 (`spec/OPERATIONAL_SEMANTICS.md` §4.12) under the transition's own premises
@@ -31,7 +31,7 @@ graft sector loses one row. The transition's `k`-preservation premise, read
 with the dimension bound `RanksFit` on the input so that the truncated
 subtraction in `stateK` is exact, then forces both output sectors to full
 rank, which is I2. The bound is derived from well-formedness by
-`ranksFit_of_wf` (`RanksFit.lean`, issue #216).
+`ranksFit_of_wf` (`RanksFit.lean`).
 
 Statements about these list functions only; no soundness claim for the
 calculus is made here (README *Status*).
@@ -556,7 +556,7 @@ theorem mem_graftState_rows {s : CodeState} {q : Nat} {σ : Sector} {ids : List 
     exact Or.inl ⟨r, hr, rfl⟩
   · exact Or.inr hu
 
-/-! ### The graft's effect on a displayed row (issue #368) -/
+/-! ### The graft's effect on a displayed row -/
 
 /-- The minted rows are displayed by the graft's output. -/
 theorem mem_graftState_of_minted {s : CodeState} {q : Nat} {σ : Sector} {ids : List Nat}

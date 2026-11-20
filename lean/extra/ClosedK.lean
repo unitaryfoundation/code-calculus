@@ -6,7 +6,7 @@ import CodeCalculus.ConstructorRank
 import CodeCalculus.ConstructorRankTyped
 
 /-!
-# Closed forms for `stateK` of the typed constructors (issue #483)
+# Closed forms for `stateK` of the typed constructors
 
 Non-audited module (lives in `lean/extra/`): the statements are exposed
 here, and they rest on axioms.
@@ -17,10 +17,10 @@ Each statement is the Lean counterpart of the hand derivation in
 which are not proved. `A-PRODUCT` is derived from the two rank axioms
 `product_rankX` and `product_rankZ`, which are not proved. The arithmetic
 that combines the ranks is proved (`hgp_arith`, `product_arith`,
-issue #424). The other three named by issue #483 are proved in the audited
+). The other three named in the statement are proved in the audited
 modules, with no axiom: `L-GROUP-ALGEBRA` (`twoblockState_k_closed`),
 `A-DOUBLE` with the empty wiring (`doubleState_empty_k`), and `A-CONCAT`
-(`concatState_k_closed`, `ConcatRetention.lean`, issue #505).
+(`concatState_k_closed`, `ConcatRetention.lean`).
 
 `k_i` and `k_iᵀ` are written below as `n_i - rank(H_i)` and
 `m_i - rank(H_i)` respectively, matching `hypergraph_parameters` in

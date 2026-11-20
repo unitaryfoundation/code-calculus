@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Column-splitting reduction for the exposure price (issue #326).
 
-`design/DERIVED_RELATIONS.md` section 3a derives that the exposure price of a
+`DERIVED_RELATIONS.md` section 3a derives that the exposure price of a
 check deletion is as hard at column weight three as in general: a parent
 whose Z-check matrix has maximum column weight c_max is split into t copies
 of every qubit, t = max(1, c_max - 2), joined by weight-two equality rows, and

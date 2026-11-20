@@ -21,7 +21,7 @@ inductive StateExpr where
       unary grammar production (TERM_LANGUAGE.md §2). -/
   | glue : StateExpr → StateExpr → List (Sector × List Nat) → StateExpr
   /-- `L-HGP`: `hgp(H₁, H₂)`, two binary matrices given row by row
-      (TERM_LANGUAGE.md §1; issues #330 and #370). -/
+      (TERM_LANGUAGE.md §1). -/
   | hgp : List (List Bool) → List (List Bool) → StateExpr
   /-- `L-LIFTED`: `lift_G(A, B)`, the group by its cyclic orders and two
       matrices of group-algebra elements, an element being a list of
@@ -35,7 +35,7 @@ inductive StateExpr where
   | concat : StateExpr → StateExpr → List (List Nat) → List (List Nat) → List (List Nat) →
       StateExpr
   /-- `A-PRODUCT`: `product(e_A, e_B)`, the CSS tensor product of two
-      presented states (issues #369 and #407). -/
+      presented states. -/
   | product : StateExpr → StateExpr → StateExpr
   /-- `A-DOUBLE`: `double_{w,s}(e)`, the wiring as a list of displayed row
       identifiers with their twisted qubits, and the `conjugate` flag. -/
@@ -57,6 +57,21 @@ inductive StateExpr where
   /-- `L-NESTED-CSS`: `nested(H_X, H_Z)`, two parity-check matrices with
       equally many columns. -/
   | nested : List (List Bool) → List (List Bool) → StateExpr
+  /-- `L-MAPPING-CONE`: `cone(D_A, D_B, f_1, f_0)`. -/
+  | cone : List (List Bool) → List (List Bool) → List (List Bool) → List (List Bool) → StateExpr
+  /-- `L-EMPTY`: `empty`, the 0-qubit empty CSS code. -/
+  | empty : StateExpr
+  /-- `L-FREE`: `free(Q)`, the check-free CSS code on a finite qubit set. -/
+  | free : List Nat → StateExpr
+  /-- `A-PULLBACK`: `pullback(e₁, e₂, e_I; φ₁, φ₂)`, fiber product along
+      CSS code morphisms. -/
+  | pullback : StateExpr → StateExpr → StateExpr → List (Nat × Nat) → List (Nat × Nat) →
+      StateExpr
+  /-- `A-PUSHOUT`: `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`, amalgamated sum along
+      CSS code morphisms. -/
+  | pushout : StateExpr → StateExpr → StateExpr → List (Nat × Nat) → List (Nat × Nat) →
+      StateExpr
+
   deriving Repr, BEq, DecidableEq
 
 /-- Commands: the kernel primitives plus the admitted conditional graft and the five Gate 6 conditional cells.

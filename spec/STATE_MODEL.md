@@ -38,7 +38,7 @@ conditional carry cells (minima, minimum-weight-class enumerations, exposure
 minima) are **judgment inputs**, not state fields: they are not part of state
 identity, not minted, and not transported by `used`.
 
-**Logical-witness field (future-$\Pi$, defined 2026-11-11, issue #332).**
+**Logical-witness field (future-$\Pi$, defined 2026-11-11).**
 The field is a finite set $\mathsf{log}\subseteq \mathcal{P}(Q)\times\{X,Z\}
 \times \{\pm 1\}$ of *logical representatives*: each entry is a support
 $S\subseteq Q$, a sector $\sigma$, and an eigenvalue $\varepsilon\in\{\pm1\}$,
@@ -59,7 +59,7 @@ survives. The field's transport under `E-GLUE` is therefore survival of
 factor representatives across the seam, which is the content Theorem 4 /
 claim 7.4 of *composition-distance* records. The field does not enter the
 consumer. It is mechanized as a definition outside `CodeState`, with its
-`E-GLUE` transport, in `lean/CodeCalculus/LogicalWitness.lean` (issue #439):
+`E-GLUE` transport, in `lean/CodeCalculus/LogicalWitness.lean`:
 the transported field is the set of factor representatives that survive, it
 is sound, and for factor fields that hold a least-weight representative of
 every class the equality of sector $\sigma$ holds exactly when the
@@ -69,9 +69,9 @@ condition of at most one representative per class: two surviving factor
 representatives can represent one class of the glued state
 (`glueLog_not_onePerClass`), so a transport that keeps the condition must
 also discard duplicates. The transport of §1a does, and the definition of
-§1a supersedes this paragraph as the definition of the field (issue #440).
+§1a supersedes this paragraph as the definition of the field.
 
-**Boundary/edge-label field (future-$\Pi$, defined 2026-11-12, issue #366).**
+**Boundary/edge-label field (future-$\Pi$, defined 2026-11-12).**
 The field is a finite set $\mathsf{bd}\subseteq \mathcal{P}(Q)\times
 \{X,Z\}\times \mathbb{N}$ of *boundary supports*: each entry is a support
 $S\subseteq Q$ (a boundary segment), a sector $\sigma$, and an index $i$
@@ -94,7 +94,7 @@ the restriction of the logical-witness survival statement of §4.31 to
 boundary supports and the two fields are coupled. `E-LOCAL-HADAMARD` applied
 along an edge exchanges the sector component of every label on that edge.
 The field does not enter the consumer. The definition of §1a supersedes
-this paragraph as the definition of the field (issue #440). It differs
+this paragraph as the definition of the field. It differs
 from the sketch in three places, each stated there: a label stores a
 representative, the partition of the boundary is replaced by a condition
 on segments, and a factor label is carried under `E-GLUE` only when its
@@ -108,7 +108,7 @@ bound, exact price, or exhaustive enumeration claim.
 
 ## 1a. The logical-witness and boundary-label fields: definition and transport
 
-Defined 2026-11-13 (issue #440). Both fields are future-$\Pi$ data. They are
+Defined 2026-11-13. Both fields are future-$\Pi$ data. They are
 not part of $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$, not read by equality,
 not minted, and not read by any transition or judgment rule, and the
 consumer does not carry them. This section fixes what each field is, when
@@ -116,13 +116,12 @@ it is well formed on a state, and how it is transported along every
 admitted transition. Admitting either field as state data would change
 state identity and is not done here.
 
-**Further future-$\Pi$ fields (issue #453).** No additional field beyond the
-logical-witness field above and the boundary/edge-label field (#366) is
+**Further future-$\Pi$ fields.** No additional field beyond the
+logical-witness field above and the proposed boundary/edge-label field is
 admitted as state data. Any further field is sketch refinement only (a
 minor, axis-3 change) unless a use and a dated maintainer decision admit it
 as state data, which would be a new calculus line (major). This disposition
-is recorded at `design/ROADMAP.md` and
-`diary/2026-11-14-admit-v030-candidate-constructors-judgments-issues-446-453.md`.
+is recorded at `ROADMAP.md` and in the decision log.
 
 **Notation.** Fix a state $C$ with qubit set $Q$, a sector $\sigma$, and
 the other sector $\tau$. A *$\sigma$-vector* is a subset of $Q$ read as a
@@ -138,7 +137,7 @@ eigenvalue $\varepsilon\in\{\pm1\}$. The field $\mathsf{log}$ is a finite
 list of representatives. It is *well formed* on $C$ when
 
 - **(W1)** every entry $(v,\sigma,\varepsilon)$ has $v$ a $\sigma$-logical of
-  $C$, and
+ $C$, and
 - **(W2)** no two entries of one sector are in the same class of $C$.
 
 Two further properties are named and are not required. The field is
@@ -157,7 +156,7 @@ of candidates:
 
 1. the transported field is well formed on $C'$, and
 2. every candidate that is a logical of $C'$ has an entry of its class in
-   the transported field, of no larger weight.
+ the transported field, of no larger weight.
 
 So the transport loses no class that a candidate represents and no minimum
 weight among the candidates. It does not preserve completeness or
@@ -216,7 +215,7 @@ and an index $i\in\mathbb{N}$. The field $\mathsf{bd}$ is a finite list of
 labels. It is well formed on $C$ when
 
 - **(B1)** for every label the vector $v$ of its representative is a
-  $\sigma$-logical of $C$ and $v\subseteq S$, and
+ $\sigma$-logical of $C$ and $v\subseteq S$, and
 - **(B2)** any two segments are equal or disjoint.
 
 The triple $(S,\sigma,i)$ of the 2026-11-12 sketch is the segment, the
@@ -369,6 +368,10 @@ well-formedness obligation; I3 by the partial-inverse laws.
 | `L-TANNER` | fresh, the supplied $n$ | the retained display of the local rows at every vertex | mint canonically from the empty used set | the minted IDs |
 | `L-TILE` | fresh, one label per site class | the retained display of the placed tile rows | mint canonically from the empty used set | the minted IDs |
 | `L-NESTED-CSS` | fresh, one label per column | the retained display of the rows of the two parity-check matrices (§4.36) | mint canonically from the empty used set, $X$-rows first | the minted IDs |
+| `L-EMPTY` | $\varnothing$ | empty (`rows = []`) | none | $\varnothing$ |
+| `L-FREE` | the supplied finite $Q \subset \mathbb{N}$ (sorted) | empty (`rows = []`) | none | $\varnothing$ |
+| `A-PULLBACK` | fresh $0,\ldots,n-1$, $n=|Q_1\times_{Q_I} Q_2|$ | the retained display of the pulled-back rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
+| `A-PUSHOUT` | fresh $0,\ldots,n-1$, $n=|Q_1\sqcup_{Q_S} Q_2|$ | the retained display of the pushed-forward rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
 | `C-SEQUENCE` | composed | composed | composed | union, in order |
 
 `C-DIRECT-SUM` requires the summands' **qubit namespaces to be disjoint and

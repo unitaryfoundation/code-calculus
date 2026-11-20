@@ -1,4 +1,4 @@
-"""The translation to the mechanized certificate checker (issue #371).
+"""The translation to the mechanized certificate checker.
 
 `lean/CodeCalculus/CertificateChecker.lean` is the checker and `lake build`
 is the authority for it. These tests do not run Lean. They pin that the

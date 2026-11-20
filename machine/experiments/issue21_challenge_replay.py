@@ -306,7 +306,7 @@ def main(argv=None):
     if sha != Q_LDPC_SHA:
         raise SystemExit("expected pinned qLDPC commit %s, got %s" % (Q_LDPC_SHA, sha))
     # A modified working tree at the pinned HEAD can execute arbitrary code
-    # while stamping the pinned SHA, so refuse a dirty checkout (RG-23/RC-23).
+    # while stamping the pinned SHA, so refuse a dirty checkout (review findings).
     dirty_run = subprocess.run(
         ["git", "-C", str(challenge_root), "status", "--porcelain"],
         capture_output=True, text=True,
@@ -323,7 +323,7 @@ def main(argv=None):
             "qLDPC checkout at %s has local modifications; refusing to run the "
             "verifier:\n%s" % (sha, dirty)
         )
-    # TODO(2026-10-29, issue #252): design/VALIDATION.md lists
+    # TODO(2026-10-29, issue #252): the validation program lists
     # ``verifier_source_hash`` as a required manifest field but records no
     # pinned hash yet, so there is nothing to compare against here. Once a
     # hash is recorded there, verify sha256(verify/qldpc_verify.py) against it

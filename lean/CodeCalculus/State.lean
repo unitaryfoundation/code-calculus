@@ -92,7 +92,7 @@ theorem canonicalMint_least (used : List Nat) (n : Nat)
   go_least used 0 (bound used) (fun m hm => absurd hm (Nat.not_lt_zero m)) n h
 
 /-- The canonical mint is monotone in the history: a longer `used` list never
-    mints an earlier identifier (issue #296, capacity premise). -/
+    mints an earlier identifier (capacity premise). -/
 theorem canonicalMint_le_append_left (used extra : List Nat) :
     canonicalMint used ≤ canonicalMint (used ++ extra) := by
   rcases Nat.lt_or_ge (canonicalMint (used ++ extra)) (canonicalMint used) with hlt | hge
@@ -229,7 +229,7 @@ theorem identifierBlock_index_ne_of_lt {r s : Nat} (h : r < s) :
 
 /-- Presentation equality ≡: identical qubit namespace (as a set), identical
     labeled rows (as a set), and identical used-identifier set
-    (`spec/STATE_MODEL.md` §2; the namespace clause was added by issue #241,
+    (`spec/STATE_MODEL.md` §2; the namespace clause was added later,
     since two well-formed states with the same rows and `used` on different
     namespaces differ in `n`, `k`, and applicability). Read on well-formed
     states, where `Q` and supports are without repeats and sorted, list
@@ -314,7 +314,7 @@ def I2 (s : CodeState) : Prop :=
   ∀ r ∈ s.rows, IndependentGenerator r.id s
 
 /-- Well-formedness predicate. List-level conditions plus I1 and I2.
-    I3–I5 are added as standalone predicates by the follow-up slice (PR #77);
+    I3–I5 are added as standalone predicates by a follow-up slice;
     they are not folded into this predicate. -/
 def EncodingWellFormed (s : CodeState) : Prop :=
   s.Q.Nodup ∧

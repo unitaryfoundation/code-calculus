@@ -6,11 +6,11 @@ import CodeCalculus.RebaseRankSector
 import CodeCalculus.GraftWellFormedness
 
 /-!
-# Well-formedness of the rebase update (issue #246, WP6)
+# Well-formedness of the rebase update (WP6)
 
 `Eval.rebase` carries `EncodingWellFormed s'` as a premise, mirroring the
 consumer's validity report on the output (`spec/OPERATIONAL_SEMANTICS.md`
-§4.25). Review finding RG-17 of issue #228 observed that nothing in the
+§4.25). A review finding observed that nothing in the
 development derived that premise. This module does: a well-formed parent and
 an invertible 0/1 matrix give a well-formed rebased state (`wf_rebaseState`),
 so the premise is discharged by the constructor's other premises

@@ -6,14 +6,14 @@ import CodeCalculus.Eval
 namespace CodeCalculus
 
 /-!
-# Kernel obligation mechanization (slice, issue #163)
+# Kernel obligation mechanization (slice)
 
 Kernel obligation lemmas for `spec/OPERATIONAL_SEMANTICS.md` §4.8–§4.10:
 primitive determinism, sequence associativity, the direct-sum laws up to list
 permutation, both partial-inverse clauses, both clauses of the frame law (the
-addition clause under its allocation-compatibility premise, issue #181), and
+addition clause under its allocation-compatibility premise), and
 cross-sector permutation. The later-layer well-formedness instance of #163 is
-not here (issue #180).
+not here.
 -/
 
 /-- Primitive determinism (OBL-PRIMITIVE-DETERMINISM): a command's evaluation is
@@ -278,7 +278,7 @@ theorem add_add_ne (s : CodeState) (sx sz : Sector) (sxsupp szsupp : List Nat)
     rfl
   exact hsec (congrArg Row.sector hfirst)
 
-/-! ## Frame law, addition clause (OBL-FRAME-LAW, issue #181)
+/-! ## Frame law, addition clause (OBL-FRAME-LAW)
 
 `spec/OPERATIONAL_SEMANTICS.md` §4.9, addition clause: for a direct sum
 `A ⊕ B` and a candidate row with support inside `Q_A`,
@@ -772,12 +772,12 @@ theorem frame_law_add_needs_mint_premise :
   have hmem := (h.2.1 ⟨2, Sector.X, [0]⟩).mp (by decide)
   exact absurd hmem (by decide)
 
-/-! ### The namespace clause of `≡` (issue #241)
+/-! ### The namespace clause of `≡`
 
 Before 2026-10-29 the equality read labeled rows and `used` only, so two
 well-formed states that differ in a bare qubit were equal while differing in
 `n`, `k`, and applicability. The witness below is the acceptance condition of
-issue #241: the same two states are now distinguished. -/
+The same two states are now distinguished. -/
 
 /-- Two qubits, no rows, nothing minted. -/
 def namespaceWitnessA : CodeState := { Q := [0, 1], rows := [], used := [] }
@@ -796,7 +796,7 @@ theorem namespaceWitnessB_wf : EncodingWellFormed namespaceWitnessB := by
   · intro r hr; cases hr
 
 /-- The two states agree on the rows and on `used`, the two clauses the
-    equality read before issue #241. -/
+    equality read before the change. -/
 theorem namespaceWitness_rows_used_agree :
     (∀ r, namespaceWitnessA.rows.contains r ↔ namespaceWitnessB.rows.contains r) ∧
     (∀ x, namespaceWitnessA.used.contains x ↔ namespaceWitnessB.used.contains x) :=

@@ -1,4 +1,4 @@
-"""Pinned-replay snapshot check (issue #125 deliverable 3)."""
+"""Pinned-replay snapshot check (deliverable 3)."""
 
 import hashlib
 import os

@@ -4,7 +4,7 @@ import CodeCalculus.ExactGraft
 namespace CodeCalculus
 
 /-!
-# The Gate 6 transformers for the exact distance, and `E-GLUE` as a constructor (issue #339)
+# The Gate 6 transformers for the exact distance, and `E-GLUE` as a constructor
 
 `gate6_interval_soundness` (`Gate6Soundness.lean`) proves the §4.32
 transformers sound over an uninterpreted distance reading, one hypothesis
@@ -22,9 +22,9 @@ the development can prove for it:
 * the three §4.28 peel relations (`exactDist_peel_relations`).
 
 * the two unpriced §4.13 graft relations (`exactDist_graft_relations`,
-  `ExactGraft.lean`, issue #367);
-* the §4.30 addition law of `E-EXTEND` with `Δ = ∅` (`exactDist_extend_nil`,
-  issue #367): the extension appends rows and re-sorts the namespace, and
+  `ExactGraft.lean`);
+* the §4.30 addition law of `E-EXTEND` with `Δ = ∅` (`exactDist_extend_nil`):
+  the extension appends rows and re-sorts the namespace, and
   the exact distance does not depend on the order of the namespace
   (`exactDist_perm`, `ExactPermute.lean`).
 
@@ -41,14 +41,14 @@ relation, and `glue_expr_sound` reads it off an `EvalExpr.glue` evaluation.
 For the exact distance both are theorems: the seam relation
 (`exactDist_glueState_ge`: the glued display contains the direct sum's rows
 over the same namespace) and the direct-sum law on well-formed factors with
-disjoint namespaces (`exactDist_directSumState`, `ExactDirectSum.lean`,
-issue #367). `glue_expr_sound_exact` therefore keeps two hypotheses, each a
+disjoint namespaces (`exactDist_directSumState`, `ExactDirectSum.lean`).
+`glue_expr_sound_exact` therefore keeps two hypotheses, each a
 premise by decision and not a missing proof:
 
 * the seam certificate's equality `hcert`, the cell hypothesis of
   `spec/JUDGMENT_LAYER.md` §2e. It is an input of the certified cell, used
   only when `certified = true`, and the derivation attempt recorded at
-  `spec/OPERATIONAL_SEMANTICS.md` §4 (issue #332) left it a hypothesis;
+  `spec/OPERATIONAL_SEMANTICS.md` §4 left it a hypothesis;
 * the well-formedness of the two factors. The glued state's own
   well-formedness is a premise of the rule `EvalExpr.glue`
   (`evalExpr_glue_implies_wf`), as the §4.31 card states it, and is not
@@ -61,7 +61,7 @@ measure-generic statements (`directSum_sound`, `glue_transformer_sound`,
 hypothesis `hdirect`, which no instance for `exactDist` satisfies. The
 statements of this module take the law at the two factors instead.
 
-`E-GLUE` as a closed term (issue #406). `glue_transformer_sound_at` is
+`E-GLUE` as a closed term. `glue_transformer_sound_at` is
 `glue_transformer_sound` with the direct-sum law asked at the two factors
 only. Its exact-distance instance is `glue_transformer_sound_exact`, read
 off the closed term `⟨glueCommand seams, directSum (base A) (base B)⟩` as
@@ -287,7 +287,7 @@ theorem glue_expr_sound_exact_uncertified
     LedgerSound (exactDist s') (glueLedger A B false) :=
   glue_expr_sound_exact hwfA hwfB h A B hA hB false (fun hc => absurd hc Bool.false_ne_true)
 
-/-! ## `E-GLUE` as a closed term, for the exact distance (issue #406) -/
+/-! ## `E-GLUE` as a closed term, for the exact distance -/
 
 /-- `glue_transformer_sound` with the direct-sum law taken at the two
     factors, not for every pair of states. -/

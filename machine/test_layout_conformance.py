@@ -1,4 +1,4 @@
-"""Conformance entry point for the layout cells (issue #333).
+"""Conformance entry point for the layout cells.
 
 The cells are `spec/JUDGMENT_LAYER.md` section 2d.5, transcribed in
 `machine/semantics.json` under `layout_cells`; the harness is

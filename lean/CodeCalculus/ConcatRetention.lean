@@ -1,7 +1,7 @@
 import CodeCalculus.ConstructorRankTyped
 
 /-!
-# `A-CONCAT` retains every natural row (issue #505)
+# `A-CONCAT` retains every natural row
 
 The retained display of `A-CONCAT` drops no natural row. By
 `sectorRank_constructedState` the displayed rows of one sector of a

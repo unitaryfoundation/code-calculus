@@ -16,7 +16,7 @@
 # hyphens, so substrings like "OBL-SKIP-IDENTITY" or "QLDPC-LAYA" do not leak
 # look-alike IDs ("L-SKIP-IDENTITY", "C-LAYA"). Checks 2 and 3 match a whole
 # word, so an ID is never satisfied by a longer token that merely contains it
-# (hardened 2026-10-29; RG-21).
+# (hardened 2026-10-29; a review finding).
 #
 # Usage: sh scripts/lint_docs.sh   (exit 0 = clean, 1 = findings)
 

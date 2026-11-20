@@ -4,7 +4,7 @@ import CodeCalculus.RanksFit
 namespace CodeCalculus
 
 /-!
-# The §4.28 peel relations and the `k = 0` reading for the exact distance (issue #338)
+# The §4.28 peel relations and the `k = 0` reading for the exact distance
 
 `gate6_interval_soundness` (`Gate6Soundness.lean`) takes the three §4.28
 relations of `E-PEEL` as the hypothesis `hpeel`, and `priced_interval_soundness`

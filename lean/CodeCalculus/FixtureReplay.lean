@@ -142,7 +142,7 @@ theorem fixture_W21_no_evalExpr (t : CodeState) :
       exact hU 50000 (by simp [fixture_W21_S_L, fixture_W14_S_L])
         (by simp [fixture_W21_S_R_double_prime])
 
--- Result states added by issue #246 (W9, W16), checked by kernel `decide`.
+-- Result states added in a later slice (W9, W16), checked by kernel `decide`.
 -- The `Eval` replays of every single-step and two-step fixture, positive and
 -- negative, are in `FixtureEvalReplay.lean`, together with the Bool/Prop
 -- bridge that connects these Boolean verdicts to `EncodingWellFormed`.

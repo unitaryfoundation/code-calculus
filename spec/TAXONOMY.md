@@ -32,20 +32,26 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `E-GRAFT` | Row-space grafting | In-scope conditional CSS extension; transition soundness proved under the coverage guard (§4.12); interval soundness proved (§4.13) |
 | `E-PUNCTURE` | Puncturing | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23; soundness discharged (§4.32), conditional on hypotheses; distance prices blocked |
 | `E-EXTEND` | Qubit/check extension | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23 (row-added form); soundness discharged (§4.32), conditional on hypotheses |
-| `E-GLUE` | Interface gluing / merge | Conditional CSS extension admitted 2026-10-23; evaluator transition admitted 2026-10-27 (§4.31); soundness discharged (§4.32) for lower endpoints; equality discharged by extraction of Theorem 4 / claim 7.4 of *composition-distance* (§4.31, 2026-11-11, issue #332); logical-witness field defined as a future-$\Pi$ type sketch (STATE_MODEL.md §1, 2026-11-11); boundary/edge-label field defined as a future-$\Pi$ type sketch (STATE_MODEL.md §1, 2026-11-12, issue #366) |
+| `E-GLUE` | Interface gluing / merge | Conditional CSS extension admitted 2026-10-23; binary-only expression constructor `glue(e₁, e₂; seams)` (`TERM_LANGUAGE.md` §1–§2, decided 2026-11-18; no unary command production); evaluator transition (§4.31) and interval soundness (§4.32) discharged; future-$\Pi$ fields defined (`STATE_MODEL.md` §1a); CSS-level algebra of §4.31/§4.33 mechanized (`GlueExtraction.lean`) with geometric move-word gap recorded; `contract-stated` (rung 5, 2026-11-18; Gate 6 unchecked) |
 | `E-SPLIT` | Split | Candidate CSS extension (unadmitted) |
 | `E-LOCAL-HADAMARD` | Local Hadamard (per-qubit sector swap) | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23 for the $T=Q$ instance (§4.27); soundness discharged (§4.32), conditional on hypotheses |
-| `A-PRODUCT` | Algebraic product of code-level objects | Later algebraic constructor; the CSS tensor product admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369) |
-| `A-CONCAT` | Concatenation | Later algebraic constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330); the tower price provider is separate |
+| `C-COLUMN-CNOT` | CSS-preserving column CNOT/SWAP transformation | Conditional CSS extension admitted 2026-11-18: state transformer by `U in GL(Q, 2)` with `H_X -> H_X U^{-1}`, `H_Z -> H_Z U^T`; `n' = n`, `k' = k`; `w`, `r` recomputed; distance window `[ceil(d_sigma / rho_sigma^-), rho_sigma d_sigma]` with four sector norms (§4.42); Hamming weight non-invariant; no zero-price generic CNOT layer |
+| `A-PRODUCT` | Algebraic product of code-level objects | Later algebraic constructor; the CSS tensor product admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
+| `A-CONCAT` | Concatenation | Later algebraic constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34); the tower price provider is separate |
 | `A-QUOTIENT` | Quotient and subspace transformation | Later algebraic constructor |
-| `A-DOUBLE` | Duplication ("double it") construction | Later algebraic constructor; the two-sheet cover under a wiring map admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369) |
-| `L-NESTED-CSS` | CSS code from nested classical codes | Lower-level constructor; admitted 2026-11-13 for codes given by parity-check matrices as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.36; issue #445) |
-| `L-HGP` | Hypergraph product | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330) |
-| `L-LIFTED` | Lifted product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330) |
-| `L-BALANCED` | Balanced product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369) |
-| `L-GROUP-ALGEBRA` | Group-algebra and two-block constructions | Lower-level constructor; the two-block code over a finite abelian group admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330) |
-| `L-TANNER` | Local code on a graph / quantum Tanner construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369) |
-| `L-TILE` | Tile or cellulation construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369) |
+| `A-DOUBLE` | Duplication ("double it") construction | Later algebraic constructor; the two-sheet cover under a wiring map admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
+| `A-PULLBACK` | Pullback / fiber product along interface maps | Later algebraic constructor; admitted 2026-11-19 as a typed expression constructor (`pullback(e₁, e₂, e_I; φ₁, φ₂)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.43) |
+| `A-PUSHOUT` | Pushout / amalgamated sum along a shared subcode | Later algebraic constructor; admitted 2026-11-19 as a typed expression constructor (`pushout(e₁, e₂, e_S; ψ₁, ψ₂)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.43) |
+| `L-EMPTY` | Empty code (nullary base constructor) | Lower-level base constructor; admitted 2026-11-19 as a nullary expression constructor (`empty`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.43) |
+| `L-FREE` | Free code (qubit-set base constructor) | Lower-level base constructor; admitted 2026-11-19 as a typed expression constructor (`free(Q)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.43) |
+| `L-NESTED-CSS` | CSS code from nested classical codes | Lower-level constructor; admitted 2026-11-13 for codes given by parity-check matrices as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.36) |
+| `L-MAPPING-CONE` | Mapping cone of a chain map between two-term complexes | Lower-level constructor; admitted 2026-11-18 for codes given by four binary matrices satisfying the chain-map premise as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.41) |
+| `L-HGP` | Hypergraph product | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
+| `L-LIFTED` | Lifted product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
+| `L-BALANCED` | Balanced product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
+| `L-GROUP-ALGEBRA` | Group-algebra and two-block constructions | Lower-level constructor; the two-block code over a finite abelian group admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
+| `L-TANNER` | Local code on a graph / quantum Tanner construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
+| `L-TILE` | Tile or cellulation construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
 | `X-GAUGE-FIX` | Gauge fixing | Extended state model |
 | `X-GAUGING` | Gauging / logical measurement by gauging | Extended state model (deferred) |
 | `X-LOCAL-CLIFFORD` | Local/block-Clifford conjugation | Extended state model (deferred) |
@@ -224,9 +230,9 @@ to `established` evidence.
 
 Cross-check: the qLDPC challenge's shortening entries are instances of this
 transition, not an unnamed move the calculus is missing. `../qldpc-challenge`
-`notes/103-30-7.md` constructs a code by "remove parent qubit 0, shorten the
+`a worked example` constructs a code by "remove parent qubit 0, shorten the
 X-check row space, and puncture the Z checks" — the §2.7 transition exactly,
-and `notes/785-8-27.md` performs a two-row pivot on qubit 548 using the XOR of
+and `a worked example` performs a two-row pivot on qubit 548 using the XOR of
 two Z rows, a graft with a chain of length two (read at challenge commit
 `d5a2a7406f92841ae1129c7db228c4d6eac35892`).
 
@@ -241,7 +247,7 @@ two Z rows, a graft with a chain of length two (read at challenge commit
 | **Conditions** | Raw column restriction is valid only under an explicit compatibility condition, or the operation must include the additional check modifications/measurement semantics that restore CSS orthogonality |
 | **Parameter effects** | $n'=n-1$; the change in $k$ and both distances is not fixed by $n$ alone |
 | **Primitive / derived** | Candidate primitive |
-| **Formalization status** | Transition defined 2026-10-23 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.29), under the 2026-10-23 Gate 6 admission (`JUDGMENT_LAYER.md` §2f): the admitted induced stabilizer update is the **check-puncturing form** (the qubit and every displayed row touching it are removed). Distance *prices* for this move are deliberately not admitted in this scope — hole-punch pricing is blocked on the D2 lower-bound question; no cell and no fixture for it enters until that lower bound lands. Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
+| **Formalization status** | Transition defined 2026-10-23 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.29), under the 2026-10-23 Gate 6 admission (`JUDGMENT_LAYER.md` §2f): the admitted induced stabilizer update is the **check-puncturing form** (the qubit and every displayed row touching it are removed). Distance *prices* for this move are deliberately not admitted in this scope — hole-punch pricing is blocked on the D2 lower-bound question; no cell and no fixture for it enters until that lower bound lands. The full price reads `unavailable`, and the partial facts about rectangular holes are recorded as records, not cells (`JUDGMENT_LAYER.md` §2f, hole-punch records). Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
 | **Partial inverse** | Extension by a qubit and compatible stabilizer data; generally many-to-one in the reverse direction |
 
 Raw column deletion is not automatically a valid CSS transformation. If an $X$ row and a $Z$ row both touch $q$, deleting the coordinate can change their overlap parity. A puncturing rule therefore needs either a support predicate or an induced stabilizer update.
@@ -276,7 +282,7 @@ This is an extension family, not a single universally valid operation. The exact
 | **Formalization status** | Listed as a later geometric construction |
 | **Partial inverse** | Split, only when a cut and its boundary data are retained |
 
-**Review finding (second red-team pass S4, 2026-09-26) — dispositioned
+**Review finding (second red-team pass, 2026-09-26) — dispositioned
 2026-09-26.** The **Conditions**
 row requires every interface to state $t$ and imposes $k' = k_1 + k_2 - t$,
 but the operation also identifies qubits and adds seam qubits, and both change
@@ -292,16 +298,16 @@ cannot be checked.
 stabilizer data as the drop in logical dimension attributable to the new seam
 checks; qubit identification and added seam qubits are accounted for in $n'$
 and the check spaces, not in $t$. The **Conditions** row now says so and also
-records that $k'$ is always $k' = n' - \dim X' - \dim Z'$. See finding S4.
+records that $k'$ is always $k' = n' - \dim X' - \dim Z'$. See that review.
 
 Gluing is not the same as placing two codes near each other. It is a code composition only when the resulting stabilizer structure contains an explicitly defined interface operation.
 
-**Gate 6 prerequisite (met, 2026-11-12, issue #366; defined in full
-2026-11-13, issue #440, [`STATE_MODEL.md`](STATE_MODEL.md) §1a).** Both
+**Gate 6 prerequisite (met, 2026-11-12; defined in full
+2026-11-13, [`STATE_MODEL.md`](STATE_MODEL.md) §1a).** Both
 future-$\Pi$ prerequisites were first defined as type sketches in
-[`STATE_MODEL.md`](STATE_MODEL.md) §1: the logical-witness field (issue #332)
+[`STATE_MODEL.md`](STATE_MODEL.md) §1: the logical-witness field
 is a set of logical representatives $(S,\sigma,\varepsilon)$ with survival
-transport under `E-GLUE`, and the boundary/edge-label field (issue #366) is a
+transport under `E-GLUE`, and the boundary/edge-label field is a
 set of boundary supports $(S,\sigma,i)$ indexed by logical operator, with
 transport under `E-GLUE` the restriction of logical-witness survival to
 boundary supports. Both remain future-$\Pi$ data, not MVP state data, and
@@ -310,14 +316,14 @@ about logical operators (which representatives survive the seam, which are
 created or destroyed) and about boundary segments (which labels are carried,
 refined, or exchanged), and the survival transport is the content Theorem 4 /
 claim 7.4 of *composition-distance* records. Both prerequisites are thereby
-met, subject to the equality cell being discharged (issue #332) and to the
-Lean mechanization of the extracted derivation (issue #366). The scalar
+met, subject to the equality cell being discharged and to the
+Lean mechanization of the extracted derivation. The scalar
 relation $d=\min(d_A,d_B)$ is still not admitted, and the candidate
 seam-distance claim is settled as `false` (refuted by the §4.33 counterexample).
 
 **2026-10-27 update.** `E-GLUE` gains an admitted evaluator transition (§4.31): two disjoint factor states are combined and seam checks are minted canonically, consuming the §2e seam certificate. The logical-witness prerequisite (`not-yet-defined`) remains unmet, so no distance relation beyond the §2e conditional cell is admitted and the §2f obstruction row stands.
 
-**2026-11-11 update (issue #332).** The logical-witness field is defined as a
+**2026-11-11 update.** The logical-witness field is defined as a
 future-$\Pi$ type sketch in [`STATE_MODEL.md`](STATE_MODEL.md) §1, with
 survival transport under `E-GLUE`. The §2e equality cell is discharged by
 extraction of Theorem 4 / claim 7.4 of *composition-distance* (recorded in
@@ -326,14 +332,24 @@ is thereby met; the second (boundary/edge labels) remains `not-yet-defined`,
 so the move's distance relation stays the §2e/§2f conditional cell and the
 scalar relation $d=\min(d_A,d_B)$ is still not admitted.
 
-**2026-11-12 update (issue #366).** The boundary/edge-label field is defined
+**2026-11-12 update.** The boundary/edge-label field is defined
 as a future-$\Pi$ type sketch in [`STATE_MODEL.md`](STATE_MODEL.md) §1, with
 transport under `E-GLUE` the restriction of logical-witness survival to
-boundary supports. Both Gate 6 prerequisites are thereby met. The Lean
-mechanization of the extracted derivation (Theorem 4 / claim 7.4) and the
-survival statement is recorded as follow-up work; the scalar relation
-$d=\min(d_A,d_B)$ remains unadmitted and the candidate seam-distance claim
-is settled as `false` (refuted by the §4.33 counterexample).
+boundary supports. Both Gate 6 prerequisites are thereby met. The scalar
+relation $d=\min(d_A,d_B)$ remains unadmitted and the candidate seam-distance
+claim is settled as `false` (refuted by the §4.33 counterexample).
+
+**2026-11-18 update.** By dated maintainer decision
+(MathysRennela): (1) `E-GLUE` remains **binary-only**, recorded in
+`TERM_LANGUAGE.md` §1–§2 as the expression constructor
+$e ::= \mathrm{glue}(e_1, e_2; \vec u)$ with no unary command production;
+(2) the CSS-level algebra of the extracted §4.31/§4.33 derivation is
+mechanized in `lean/CodeCalculus/GlueExtraction.lean` (building on
+`ExactGlue*.lean`, `LogicalWitness.lean`, `WitnessFields.lean`,
+`AdmissibleSeamFamily.lean`, and `Gate6Exact.lean`), with the irreducible
+geometric move-word $\to$ `AdmissibleSeam` gap recorded as a substrate
+boundary; and (3) `E-GLUE` advances to `contract-stated` (rung 5 in
+`CLAIMS.md`), remaining a Gate 6 conditional cell with Gate 6 unchecked.
 
 ## 2.11 Split
 
@@ -376,7 +392,7 @@ record.
 | **Formalization status** | The **$T=Q$ instance — the global sector duality** — has a typed transition (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.27), admitted 2026-10-23 as a conditional cell under the Gate 6 decision (`JUDGMENT_LAYER.md` §2f). The general split-subset instance is **without a transition**: `hadamard(T)` terms with $\varnothing\subsetneq T\subsetneq Q$ are inapplicable in the admitted transition, whose row-wise image for a mixed row needs a rebasing argument not specified here. Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
 | **Partial inverse** | Itself at $q$ (the Hadamard is an involution; the $T=Q$ instance is involutive) |
 
-**Review finding (second red-team pass S1, 2026-09-26) — dispositioned
+**Review finding (second red-team pass, 2026-09-26) — dispositioned
 2026-09-26.** The **Conditions**
 row's "none beyond a valid input" claim did not survive either reading of the
 operation.
@@ -396,7 +412,7 @@ conjugated qubits, and the column swap is read row-wise — each row's entry at
 $q$ moves to the other sector — not by pairing X rows with Z rows. The
 per-qubit move stays in the taxonomy as a conditional CSS-model move, the
 global sector swap being the $T=Q$ case. The former unconditional preservation
-claim is withdrawn; nothing may cite it. See finding S1.
+claim is withdrawn; nothing may cite it. See that review.
 
 Per-qubit conjugation is the only nontrivial single-qubit Clifford effect the phase-insensitive check structure can represent: Paulis act by quotiented phases, and $S$ is not CSS-representable (it maps $\langle X \rangle$ toward $\langle Y \rangle$, which has no pure-sector generator) — hence the name *Hadamard* rather than *local Clifford*. Applying it to every qubit realizes the global $X \leftrightarrow Z$ sector duality. Motivations include rough–smooth boundary changes, twist moves, and the conjugate-copy variants of `A-DOUBLE`. Boundary labels (once defined as proposed in [`STATE_MODEL.md`](STATE_MODEL.md) §1) are where this move's geometric uses would be typed: conjugating along a boundary edge exchanges the sector of the logical representative that edge supports.
 
@@ -411,7 +427,7 @@ Per-qubit conjugation is the only nontrivial single-qubit Clifford effect the ph
 | **Conditions** | The input maps, grading, boundary operators, and orthogonality proof must be part of the constructor type |
 | **Parameter effects** | Constructor-specific; generic tensor notation is insufficient. **Dispositioned 2026-10-05 (repair (a)):** for the CSS-tensor-product instance these effects are functions of the *retained display's row counts* rather than of ranks, so they are not code invariants; the constructor carries retained-presentation data of `P-REBASE` shape to discharge that dependence. See the disposition below |
 | **Primitive / derived** | Usually a lower-level or derived constructor |
-| **Formalization status** | Expression production `product(e_A, e_B)` admitted 2026-11-11 for the CSS tensor product of two presented states (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369), `transition-defined`; $k = k_A k_B$ derived; other product structures have no production |
+| **Formalization status** | Expression production `product(e_A, e_B)` admitted 2026-11-11 for the CSS tensor product of two presented states (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`; $k = k_A k_B$ derived; other product structures have no production |
 | **Partial inverse** | Generally none; factorization data may provide a restricted decomposition |
 
 A naive tensor product of Hilbert spaces is not by itself a CSS-code operation. The calculus needs the relevant chain-complex or matrix construction.
@@ -465,7 +481,7 @@ normative dependency.)*
  "I2/I5", citing two invariants that do not state spanning), the constructor's
  raw output is not a member of the MVP
  well-formedness class (`OBL-WELL-FORMEDNESS-PRESERVATION`).
- **Qualification (red-team T-3, 2026-10-10 — DISPOSITIONED as *live repair
+ **Qualification (red-team a review finding, 2026-10-10 — DISPOSITIONED as *live repair
  work*, D-3 closed, : reading (A)).** The
  citation "I2/I5 require ... to span the row spaces" repeats the T-2 defect:
  **I2 states displayed independence, I5 is a provenance invariant, and neither
@@ -484,7 +500,7 @@ normative dependency.)*
  **Actioned 2026-10-10 — this finding is now worked, not pending.** The
  rationale above has been rewritten and the citation corrected, both in this
  record. **Scope of what changed, stated so it is not read as a re-disposition:**
- the **disposition** (repair (a), 
+ the **disposition** (repair (a),
  re-decision; what was defective was its *argument*, now resting on the I2
  violation and on retained-presentation data rather than on presentation counts.
  D-2's queue row stands; no claim status, obligation, or fixture moves.
@@ -544,7 +560,7 @@ normative dependency.)*
  first rung (`taxonomy-only`) rather than on it. The families it would serve are
  indexed separately: `L-HGP` (canonical HGP amplifiers) and `A-DOUBLE` (duplication).
  Admission of the constructor itself was a Gate 7 matter when this bullet was
- written. **Superseded in part 2026-11-11 (issues #330 and #369):** `L-HGP`
+ written. **Superseded in part 2026-11-11:** `L-HGP`
  and `A-DOUBLE` are `transition-defined`, and the CSS tensor product instance
  of this record has the production `product(e_A, e_B)` under the stable
  identifier `A-PRODUCT`, also `transition-defined`
@@ -566,7 +582,7 @@ normative dependency.)*
 | **Conditions** | Encoding maps, block interfaces, CSS compatibility, and independence claims must be explicit |
 | **Parameter effects** | Constructor-specific; block lengths and logical dimensions usually multiply, while distance bounds require hypotheses |
 | **Primitive / derived** | Lower-level constructor or derived composition |
-| **Formalization status** | Expression production `concat(e_O, e_I; blocks)` admitted 2026-11-11 for CSS factors (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330), `transition-defined`; non-CSS inner inputs excluded |
+| **Formalization status** | Expression production `concat(e_O, e_I; blocks)` admitted 2026-11-11 for CSS factors (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; non-CSS inner inputs excluded |
 | **Partial inverse** | Generally none |
 
 **Flagged gap — non-CSS inner inputs.** The **Input** row reads
@@ -612,7 +628,7 @@ weight-3 representatives to max check weight 24, under the verifier's 32 cap.
 | **Output** | A CSS code represented by the resulting quotient or subspace structure |
 | **Operation** | Restrict, quotient, identify, or extend stabilizer data under a specified linear map |
 | **Conditions** | The map must preserve or explicitly account for CSS orthogonality, qubit support, and independence |
-| **Parameter effects** | Depends on ranks and kernels; no generic distance rule (general case). Candidate 1-complex bound for the self-zipping (co-equalizer) instance: $d(Q)\ge \min(d(A),\Delta(f,g))$, where $\Delta$ is the homological separation metric (min weight of a chain with nonzero zipped boundary). Proven in `../emlint-dev/notes/theory/coequalizer_bound/PROOF_ATTEMPT.md` (2026-11-09). Applies to twist-defect / folding constructions (Bombin 2010; planar-to-toric folding) at the 1-complex level. 2-complex case abandoned (same 2-cell re-exposure obstruction as other identifying compositions). |
+| **Parameter effects** | Depends on ranks and kernels; no generic distance rule (general case). Candidate 1-complex bound for the self-zipping (co-equalizer) instance: $d(Q)\ge \min(d(A),\Delta(f,g))$, where $\Delta$ is the homological separation metric (min weight of a chain with nonzero zipped boundary). Proven in `the coequalizer-bound proof attempt` (2026-11-09). Applies to twist-defect / folding constructions (Bombin 2010; planar-to-toric folding) at the 1-complex level. 2-complex case abandoned (same 2-cell re-exposure obstruction as other identifying compositions). |
 | **Primitive / derived** | Algebraic constructor |
 | **Formalization status** | Algebraic branch; no grammar production |
 | **Partial inverse** | Only with retained kernel, quotient, and embedding data |
@@ -636,17 +652,34 @@ of `E-LOCAL-HADAMARD` (§2.12) and, when it leaves the CSS model, the
 extended-state layer. The dressed-quotient variant (higher-form / cup-polynomial
 backgrounds producing commuting-projector codes) is the separate candidate
 `X-DRESSED-QUOTIENT` (§4.5), not a specialization of this record. Placement
-and admission criteria: `design/ROADMAP.md` (*Candidate specialization recorded
-from prior art*, 2026-11-09) and `design/PRIOR_ART.md`. Neither is an MVP
+and admission criteria: `ROADMAP.md` (*Candidate specialization recorded
+from prior art*, 2026-11-09) and `PRIOR_ART.md`. Neither is an MVP
 transformation.
 
-**Disposition (2026-11-10, issue #316 C1).** The monomial-quotient
+**Disposition (2026-11-10).** The monomial-quotient
 specialization above was admitted as a specialization record under this
 operation (§2.15), CSS-preserving instance only, with the transfer theorem as
 its conditional price/property cell. Admission of the specialization record
 still requires `A-QUOTIENT` itself to be admitted (it remains at rung 1,
 `taxonomy-only`); the disposition does not by itself add a grammar production
 or advance a ladder rung.
+
+**Specialization row (v0.3.0).** Under §3.8 the monomial quotient
+is a specialization of this record, not a new primitive and not a new state
+update: it shares `A-QUOTIENT`'s restrict/identify update (and single-code
+set-level coequalizers / self-zipping also fold here per the 2026-11-18
+disposition). Its row:
+
+| Field | Monomial-quotient specialization |
+| --- | --- |
+| Input | A CSS parent code $C$ (general Pauli stabilizer parents belong to the deferred extended-state layer §4) plus a free monomial-Clifford action $(G, \{c_g\})$: a finite group $G$ acting freely on the qubits/qudits by permutations composed with single-qudit Cliffords, with chosen orbit representatives |
+| State update | $\pi(S)$: identify stabilizer data under the group-equivariant quotient map $\pi$ sending each qudit $q = h r$ to representative $r$ conjugated by $c_h^{-1}$ (quotient, not the deck-invariant subspace) — the same restrict/identify update as `A-QUOTIENT` and the balanced product |
+| CSS-preserving instance | Pure qudit-permutation actions ($c_g = I$), or monomial-Clifford actions whose single-qudit Cliffords $c_g$ are **sector-preserving** (each $c_g$ maps pure-$X$ operators to pure-$X$ operators and pure-$Z$ operators to pure-$Z$ operators; on qubits, modulo phase this requires trivial sector exchange, i.e. $\{I, X, Y, Z\}$). **Applicability constraint:** any instance in which some $c_g$ swaps $X \leftrightarrow Z$ (Hadamard-type) or mixes $X$ and $Z$ (e.g. phase-type $X \mapsto Y$) is **not** CSS-preserving and is outside this specialization (checked consumer-side by `machine/quotient_specialization.py` and transcribed in `machine/consumer.json`; `A-QUOTIENT` remains `taxonomy-only` with no admitted calculus transition) |
+| Duality-quotient instance routing | Sector-swapping Cliffords (Hadamard-type, e.g. the paper's five-qubit example) and sector-mixing Cliffords are **not** instances of this CSS-preserving row: a global CSS sector swap routes to `E-LOCAL-HADAMARD` (§2.12, $T = Q$), and any quotient leaving the ordinary-CSS model routes to the deferred general-stabilizer extended-state layer (§4, cf. `X-LOCAL-CLIFFORD` §4.4 / `X-SYMPLECTIC-HALVE` §4.3; refused for `v0.3.0` under) |
+| Consistency condition | The action must be free: a nontrivial Clifford on a fixed point is inconsistent, and non-free actions violate quotient consistency |
+| Local Clifford equivalence | A different choice of orbit representatives changes $\pi$ by single-qudit Cliffords; the quotient is defined up to local Clifford equivalence (sector-preserving local equivalence within this specialization) |
+| Parameter theorem (conditional cell) | Transfer theorem (arXiv 2611.09538v1 §3.3): logical qudits, logical operators descending from the parent with new logicals counted by Tate cohomology, and conditional distance bounds from the parent's bounds. Recorded as a conditional cell in `JUDGMENT_LAYER.md` §2i |
+| Distance | No generic distance rule; supplied bounds and validated witnesses only, subject to the priced-hypothesis boundary (`JUDGMENT_LAYER.md` §2b, §2c, §2i) |
 
 ## 2.16 Duplication ("double it") construction
 
@@ -659,7 +692,7 @@ or advance a ladder rung.
 | **Conditions** | The wiring data must be explicit and typed; the resulting rows must be independent and $X \perp Z$. The duplication data is part of the constructor type, not implicit layout |
 | **Parameter effects** | $n' = 2n$; $k$ and both distances are constructor-specific — no generic distance rule |
 | **Primitive / derived** | Candidate primitive; whether it factors through `A-CONCAT` (with a fixed two-qubit inner code), through a cover/lift constructor, or requires `E-LOCAL-HADAMARD` for conjugate-copy variants is an open question, to be settled by the §3.8 criteria |
-| **Formalization status** | Expression production `double(e; wiring[, conjugate])` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369), `transition-defined`: the two-sheet cover of the displayed incidences, with a commutation premise; the factorization question in the row above stays open |
+| **Formalization status** | Expression production `double(e; wiring[, conjugate])` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`: the two-sheet cover of the displayed incidences, with a commutation premise; the factorization question in the row above stays open |
 | **Partial inverse** | Generally none; a projection recovering one copy requires retained wiring data |
 
 A family name alone is not an operation (§3.8), so this record deliberately states the *shape* — a unary code-to-code constructor with $n' = 2n$ — and leaves the mechanism open. Parametric family-level doubling frameworks exist in the prior art (QECLean's BB doubling framework, cover-transfer and deck-homotopy; PRIOR_ART.md §5) and must be represented as parameterizations or factorizations of this record rather than as unrelated primitives.
@@ -685,6 +718,34 @@ This is evidence that the degree-2 case of the `n' = 2n` shape factors through
 a cover constructor rather than arguing for a dedicated `A-DOUBLE` primitive
 (read at challenge commit `d5a2a7406f92841ae1129c7db228c4d6eac35892`).
 
+## 2.17 Pullback / fiber product
+
+| Field | Description |
+| --- | --- |
+| **Status** | Admitted typed expression constructor (`transition-defined`, 2026-11-19) |
+| **Input** | Three well-formed CSS codes $C_1, C_2, I$ and two CSS code morphisms $\phi_1 : Q_1 \to Q_I$, $\phi_2 : Q_2 \to Q_I$ |
+| **Output** | A CSS code on the fiber product $Q_1 \times_{Q_I} Q_2$ |
+| **Operation** | Form the fiber-product qubit set $Q_1 \times_{Q_I} Q_2$, pull back the displayed rows of $C_1$ and $C_2$ along the projections $\pi_1, \pi_2$, and retain an independent display with canonically minted identifiers |
+| **Conditions** | $\phi_1$ and $\phi_2$ are CSS code morphisms into $I$ (pushforwards of displayed rows lie in the corresponding sector span of $I$), and the pulled-back $X$ and $Z$ natural rows have pairwise even overlap |
+| **Parameter effects** | $n = |Q_1 \times_{Q_I} Q_2|$, $k$ by rank bookkeeping over the retained display; no automatic distance cell (the naive bound $d(A \times_C B) \ge \min(d_A, d_B)$ is `false`) |
+| **Primitive / derived** | Algebraic code-level constructor (includes set-level equalizers) |
+| **Formalization status** | Expression production `pullback(e₁, e₂, e_I; φ₁, φ₂)` admitted 2026-11-19 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.43), `transition-defined` |
+| **Partial inverse** | Generally none |
+
+## 2.18 Pushout / amalgamated sum
+
+| Field | Description |
+| --- | --- |
+| **Status** | Admitted typed expression constructor (`transition-defined`, 2026-11-19) |
+| **Input** | Three well-formed CSS codes $C_1, C_2, S$ and two CSS code morphisms $\psi_1 : Q_S \to Q_1$, $\psi_2 : Q_S \to Q_2$ |
+| **Output** | A CSS code on the amalgamated qubit set $Q_1 \sqcup_{Q_S} Q_2$ |
+| **Operation** | Quotient $Q_1 \sqcup Q_2$ by $\psi_1(s) \sim \psi_2(s)$ for $s \in Q_S$, push forward the displayed rows of $C_1$ and $C_2$ modulo 2, and retain an independent display with canonically minted identifiers |
+| **Conditions** | $\psi_1$ and $\psi_2$ are CSS code morphisms from $S$, and the pushed-forward $X$ and $Z$ natural rows have pairwise even overlap |
+| **Parameter effects** | $n = |Q_1 \sqcup_{Q_S} Q_2|$, $k$ by rank bookkeeping over the retained display; no automatic distance cell (general pushouts with $S \neq 0$ can drop distance) |
+| **Primitive / derived** | Algebraic code-level constructor (includes two-code set-level coequalizers) |
+| **Formalization status** | Expression production `pushout(e₁, e₂, e_S; ψ₁, ψ₂)` admitted 2026-11-19 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.43), `transition-defined` |
+| **Partial inverse** | Generally none |
+
 ---
 
 # 3. Lower-level CSS constructors
@@ -702,7 +763,7 @@ These operations do not primarily transform an existing CSS code. They form one 
 | **Conditions** | The resulting $X$ and $Z$ spaces must be orthogonal and the chosen presentation must be defined |
 | **Parameter effects** | $n$ and $k$ follow from the classical dimensions; distances require separate classical-code hypotheses |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `nested(H_X, H_Z)` admitted 2026-11-13 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.36; issue #445), `transition-defined`, for two parity-check matrices with the nesting as an applicability premise; an instance of the `L-TANNER` production (§4.36) |
+| **Formalization status** | Expression production `nested(H_X, H_Z)` admitted 2026-11-13 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.36), `transition-defined`, for two parity-check matrices with the nesting as an applicability premise; an instance of the `L-TANNER` production (§4.36) |
 | **Partial inverse** | Recovering the classical ingredients is non-unique |
 
 Self-orthogonal Steane-, Hamming-, or Reed–Muller-derived CSS codes belong here. They are not necessarily compositions of two independently supplied quantum codes.
@@ -718,7 +779,7 @@ Self-orthogonal Steane-, Hamming-, or Reed–Muller-derived CSS codes belong her
 | **Conditions** | Matrix dimensions, tensor-factor ordering, and the product differential must be explicit |
 | **Parameter effects** | For $H_i \in \mathbb{F}_2^{m_i \times n_i}$ in the standard parity-check convention, the usual qubit count is $n_1n_2+m_1m_2$; other conventions must state their object ordering |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `hgp(H₁, H₂)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330), `transition-defined`; $n = n_1 n_2 + m_1 m_2$ and $k = k_1 k_2 + k_1^{T} k_2^{T}$ derived |
+| **Formalization status** | Expression production `hgp(H₁, H₂)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; $n = n_1 n_2 + m_1 m_2$ and $k = k_1 k_2 + k_1^{T} k_2^{T}$ derived |
 | **Partial inverse** | Generally none |
 
 HGP is a genuine construction, but it should not be conflated with an operation that combines two already-formed CSS states unless the calculus defines that typed interface.
@@ -734,7 +795,7 @@ HGP is a genuine construction, but it should not be conflated with an operation 
 | **Conditions** | The coefficient algebra, involution/transpose convention, lift action, and orthogonality proof must be specified |
 | **Parameter effects** | Depend on base dimensions and lift size; degree and rank bounds require constructor-specific hypotheses |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330), `transition-defined`; nonabelian lifts not admitted |
+| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; nonabelian lifts not admitted |
 | **Partial inverse** | Generally none |
 
 Normal-subgroup lifts are specializations of this layer, not automatically a new primitive.
@@ -750,7 +811,7 @@ Normal-subgroup lifts are specializations of this layer, not automatically a new
 | **Conditions** | The group action, quotient relation, and induced check maps must be explicit |
 | **Parameter effects** | Typically differs from an unconstrained lifted product because the quotient changes qubit and check counts |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `balanced_G(H₁, α₁; H₂, α₂)` admitted 2026-11-11 for finite abelian groups acting by permutations (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369), `transition-defined`; nonabelian actions not admitted |
+| **Formalization status** | Expression production `balanced_G(H₁, α₁; H₂, α₂)` admitted 2026-11-11 for finite abelian groups acting by permutations (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`; nonabelian actions not admitted |
 | **Partial inverse** | Generally none |
 
 ## 3.5 Group-algebra and two-block constructions
@@ -764,7 +825,7 @@ Normal-subgroup lifts are specializations of this layer, not automatically a new
 | **Conditions** | The exact representation convention must prove $H_XH_Z^T=0$; nonabelian transpose/inversion conventions cannot remain implicit |
 | **Parameter effects** | Block length, check degree, and rank depend on the algebra and representation |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `twoblock_G(a, b)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34; issue #330), `transition-defined`; $k = 2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ derived |
+| **Formalization status** | Expression production `twoblock_G(a, b)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; $k = 2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ derived |
 | **Partial inverse** | Generally none |
 
 Generalized bicycle, bivariate bicycle, multivariate bicycle, quadricycle, and related group-action families should normally be recorded as specializations or parameterizations of this constructor rather than unrelated primitives.
@@ -780,7 +841,7 @@ Generalized bicycle, bivariate bicycle, multivariate bicycle, quadricycle, and r
 | **Conditions** | Incidence maps, local-to-global embeddings, and cross-partition commutation must be explicit |
 | **Parameter effects** | Depend on graph size, local dimensions, expansion, and boundary conventions |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369), `transition-defined`, with cross-partition commutation as an applicability premise; one local code per vertex class |
+| **Formalization status** | Expression production `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`, with cross-partition commutation as an applicability premise; one local code per vertex class |
 | **Partial inverse** | Generally none |
 
 A Tanner construction is a code constructor even when it is described informally as composing local codes.
@@ -796,10 +857,38 @@ A Tanner construction is a code constructor even when it is described informally
 | **Conditions** | Boundary identifications, retained/removed checks, and interface orthogonality must be specified |
 | **Parameter effects** | Depend on tile count, boundary type, identifications, and local rank relations |
 | **Primitive / derived** | Lower-level geometric constructor |
-| **Formalization status** | Expression production `tile(tiles; placements; boundary rules)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35; issue #369), `transition-defined`, with interface orthogonality as an applicability premise |
+| **Formalization status** | Expression production `tile(tiles; placements; boundary rules)` admitted 2026-11-11 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`, with interface orthogonality as an applicability premise |
 | **Partial inverse** | Splitting the assembly, only with tile and boundary provenance |
 
 “Packing” is not enough to make this a code construction. The tile assembly must change or define the global stabilizer code.
+
+## 3.7a Empty code (nullary base constructor)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Admitted nullary base constructor (`transition-defined`, 2026-11-19) |
+| **Input** | None (`()`) |
+| **Output** | The empty CSS code ($Q = \varnothing$, empty display, empty `used`) |
+| **Operation** | Construct the trivial 0-qubit CSS state |
+| **Conditions** | None (vacuously well-formed) |
+| **Parameter effects** | $n = 0$, $k = 0$, $w = 0$, $\kappa = 0$, $r = 0$; semantic $d_X = d_Z = d = +\infty$ (ledger starts at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g) |
+| **Primitive / derived** | Nullary base expression constructor |
+| **Formalization status** | Expression production `empty` admitted 2026-11-19 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.43), `transition-defined` |
+| **Partial inverse** | Not applicable |
+
+## 3.7b Free code (qubit-set base constructor)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Admitted base constructor (`transition-defined`, 2026-11-19) |
+| **Input** | A finite set $Q \subset \mathbb{N}$ of distinct nonnegative qubit labels |
+| **Output** | The CSS code on $Q$ with an empty display and empty `used` |
+| **Operation** | Construct the check-free CSS state on $Q$ (`free(∅) ≡ empty`) |
+| **Conditions** | $Q$ is a finite set of distinct nonnegative integers |
+| **Parameter effects** | $n = |Q|$, $k = |Q|$, $w = 0$, $\kappa = |Q|$, $r = 0$; semantic $d_X = d_Z = d = 1$ for $Q \neq \varnothing$ and $+\infty$ for $Q = \varnothing$ (ledger starts at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g) |
+| **Primitive / derived** | Base expression constructor (unary in `QubitSet`, 0-ary in input `CSSCode`s) |
+| **Formalization status** | Expression production `free(Q)` admitted 2026-11-19 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.43), `transition-defined` |
+| **Partial inverse** | Not applicable |
 
 ## 3.8 Named specializations and new families
 
@@ -821,7 +910,20 @@ A named family deserves its own operation only when it has at least one of the f
 - a distinct parameter theorem;
 - a genuinely different quotient, action, or boundary mechanism.
 
-A family name, repository tag, or paper citation alone is not an operation.
+A family name, repository tag, or paper citation alone is not an operation. In
+particular, a logical gate on a code (such as a commuting Pauli-rotation family
+checked for codespace preservation, [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md)
+§2h) leaves $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ unchanged
+and has no state update, so **no operation identifier is minted for a logical
+gate**; its codespace-preservation and weight-floor judgments belong to the
+judgment layer. Likewise, the *family-level* transport statement under the
+one-shot hollowed-tensor level map ([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2j) — the tower-level threshold and amplification claim — is a
+conditional rule over QLDPC code families rather than a single-state operation on
+$C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$, so **no taxonomy operation
+identifier is minted** for that family-level rule. (The single-code map
+$\bar\Gamma(C)$ itself is constructor-candidate material and is not evaluated
+by any calculus term in this release; identifier allocation for it is left for
+another PR.)
 
 ---
 
@@ -870,7 +972,7 @@ exchanging the two sector row spaces ($\pi(S_X) = S_Z$).
 
 Both the doubling input and the halving output live outside the ordinary-CSS
 state model, so neither transition can be a CSS-model rule. This is the global,
-structured version of the failure mode the S1 disposition identified for
+structured version of the failure mode the disposition identified for
 `E-LOCAL-HADAMARD` (§2.12): sector-conjugating moves without a splitting
 condition leave the CSS model. The records are therefore deferred to the
 extended-state layer, not conditioned into it. The doubling here is distinct
@@ -879,7 +981,7 @@ whether the two doubling records factor through one another is an explicit open
 question under the §3.8 criteria.
 
 Cross-check: the qLDPC challenge's `[[144,10,16]]` entry in
-`notes/144-10-16-b.md` does not perform a cover — its parent is a published
+`a worked example` does not perform a cover — its parent is a published
 cover, and the operation applied to it is the abelian mirror construction, an
 inversion-based instance of symplectic halving (read at challenge commit
 `d5a2a7406f92841ae1129c7db228c4d6eac35892`).
@@ -967,10 +1069,10 @@ discharge of any obligation.
 | **Conditions** | The parent must be a Pauli stabilizer code (or commuting-projector code for the non-trivializing-cover case); the background class / cup polynomial and the (optional) trivializing cover must be typed; the dressed Gauss laws must define a code (commutation of the dressed checks) |
 | **Parameter effects** | Dressings have Clifford level at most one less than the degree of the twist; for cubic twists the code dimension is a count of solutions of quadratic equations in cup products (certifies the code is not a Pauli stabilizer code when the count is not a power of two); on tori and slabs the distance is linear in the size. General parameter formulas are constructor-specific and not yet stated |
 | **Primitive / derived** | Constructor (extended-state layer) |
-| **Formalization status** | Candidate record added 2026-11-09 from prior art (Hsin, arXiv 2611.09538v1; `design/PRIOR_ART.md`). No transition, no grammar production, no contract-index row beyond this record. Gate 6 admission of the extended-state layer precedes any promotion |
+| **Formalization status** | Candidate record added 2026-11-09 from prior art (Hsin, arXiv 2611.09538v1; `PRIOR_ART.md`). No transition, no grammar production, no contract-index row beyond this record. Gate 6 admission of the extended-state layer precedes any promotion |
 | **Partial inverse** | None stated; a cover/lift reconstruction would require retained background and cover data |
 
-**Why it is a candidate rather than an alias.** Under [`spec/TAXONOMY.md`](TAXONOMY.md) §3.8 a named family earns its own record with a distinct input type, state update, CSS-orthogonality proof, parameter theorem, or quotient/action/boundary mechanism. The dressed quotient has all five: input type (parent + background class / cup polynomial + trivializing cover), state update (dressed Gauss laws in place of the parent's checks, producing a non-CSS commuting-projector code), orthogonality proof (the dressed Gauss laws), parameter theorem (point count of cup-product solutions; Clifford-level bound), and a quotient mechanism distinct from the monomial quotient (entangling-circuit dressing rather than a monomial-Clifford action). It is not representable in $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ and therefore cannot be a CSS-level move; it joins the extended-state layer alongside `X-SYMPLECTIC-DOUBLE`/`HALVE` and `X-LOCAL-CLIFFORD`. Its flat/monomial counterpart is the specialization of `A-QUOTIENT` recorded in `design/ROADMAP.md` (*Candidate specialization recorded from prior art*, 2026-11-09).
+**Why it is a candidate rather than an alias.** Under [`spec/TAXONOMY.md`](TAXONOMY.md) §3.8 a named family earns its own record with a distinct input type, state update, CSS-orthogonality proof, parameter theorem, or quotient/action/boundary mechanism. The dressed quotient has all five: input type (parent + background class / cup polynomial + trivializing cover), state update (dressed Gauss laws in place of the parent's checks, producing a non-CSS commuting-projector code), orthogonality proof (the dressed Gauss laws), parameter theorem (point count of cup-product solutions; Clifford-level bound), and a quotient mechanism distinct from the monomial quotient (entangling-circuit dressing rather than a monomial-Clifford action). It is not representable in $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ and therefore cannot be a CSS-level move; it joins the extended-state layer alongside `X-SYMPLECTIC-DOUBLE`/`HALVE` and `X-LOCAL-CLIFFORD`. Its flat/monomial counterpart is the specialization of `A-QUOTIENT` recorded in `ROADMAP.md` (*Candidate specialization recorded from prior art*, 2026-11-09).
 
 ## 4.6 Weight reduction to subsystem codes
 
@@ -1022,7 +1124,7 @@ is excluded because it is not constructor-shaped.
 The signature record itself admitted no constructor; ten of the fifteen
 (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`,
 `L-TILE`, `A-PRODUCT`, `A-DOUBLE`, `L-NESTED-CSS`) were subsequently admitted
-at rung 3 (`transition-defined`) in 2026-11-11/13 (issues #330, #369, #445;
+at rung 3 (`transition-defined`) in 2026-11-11/13 (
 [`CLAIMS.md`](CLAIMS.md)), while the remaining five stay at rung 1
 (`taxonomy-only`). Promotion above rung 1 remains maintainer work.
 
@@ -1077,7 +1179,7 @@ The two branches should not be silently identified. A lower-level constructor ma
 | Row-space grafting | In-scope conditional extension (`E-GRAFT`); transition soundness proved (§4.12) |
 | Puncturing | Admitted conditional extension 2026-10-23; transition defined (§2.8), soundness discharged (§4.32) |
 | Qubit/check extension | Admitted conditional extension 2026-10-23; transition defined (§2.9), soundness discharged (§4.32) |
-| Merge/glue/split | `E-GLUE` admitted conditional extension 2026-10-23, evaluator transition 2026-10-27 (§4.31), logical-witness and boundary/edge-label fields defined (`STATE_MODEL.md` §1/§1a), `transition-defined` (2026-11-11, issue #332); `E-SPLIT` remains an unadmitted candidate extension |
+| Merge/glue/split | `E-GLUE` admitted conditional extension 2026-10-23, evaluator transition 2026-10-27 (§4.31), logical-witness and boundary/edge-label fields defined (`STATE_MODEL.md` §1/§1a), `transition-defined` (2026-11-11); `E-SPLIT` remains an unadmitted candidate extension |
 | Local Hadamard (per-qubit sector swap) | Conditional extension admitted 2026-10-23; the **$T=Q$ instance has a typed transition** (§2.12: the sector exchange of the whole display); the general split-subset instance's conditions require both row spaces to split along the conjugated qubits and its row-wise conjugation mechanics are **not** specified |
 | Duplication ("double it") | Later algebraic branch; factorization question open (`A-CONCAT` vs. cover/lift vs. duality-assisted) |
 | Tensor, homological product, concatenation | Algebraic branch |

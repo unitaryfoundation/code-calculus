@@ -5,12 +5,12 @@ import CodeCalculus.WellFormedBool
 import CodeCalculus.Soundness
 
 /-!
-# Fixture replays under `Eval` and `EvalExpr` (issue #246, WP6)
+# Fixture replays under `Eval` and `EvalExpr` (WP6)
 
 `FixtureReplay.lean` decides `wellFormedBool` of the hand-typed fixture
 states and nothing else, so a mistyped result state went unnoticed (the W5
 and W7 results carried hard-coded identifiers instead of the minted rank;
-review findings RG-8 and RC-3 of issue #228). This module replays the
+review findings). This module replays the
 transitions themselves against `machine/fixtures/mvp_fixtures.json`:
 
 - every `derivable` single-step or two-step fixture has a positive theorem
@@ -274,7 +274,7 @@ theorem fixture_W7_chain :
     Chain [fixture_W7_initial, deleteState fixture_W7_initial 0, fixture_W7_result] :=
   Chain.cons fixture_W7_step1 (Chain.cons fixture_W7_step2 (Chain.single _))
 
-/-! ## Two-step `k` compositions by `TRANSITIVITY` alone (issue #246)
+/-! ## Two-step `k` compositions by `TRANSITIVITY` alone
 
 The `k` cells of deletion and addition are stated in an exact additive form
 and in a truncated form (`Soundness.lean`, module note). `TRANSITIVITY`

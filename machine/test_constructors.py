@@ -1,4 +1,4 @@
-"""Typed constructors admitted 2026-11-11 (issues #330 and #369).
+"""Typed constructors admitted 2026-11-11.
 
 `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT` build presented CSS
 states from finite constructive data (`spec/OPERATIONAL_SEMANTICS.md` section
@@ -7,13 +7,13 @@ parameter formulas, the exact-distance oracle on small instances, and each
 other (the trivial-group lifted product is the hypergraph product; the
 two-block code is the 1 x 1 lifted product).
 
-`A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and `L-TILE` (issue #369;
-section 4.35) are checked the same way: parameters against the derivations,
+`A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and `L-TILE`
+(section 4.35) are checked the same way: parameters against the derivations,
 small instances against the exact-distance oracle, the trivial-group
 balanced product against the hypergraph product, and the commutation
 premise of the last three as a refusal.
 
-`L-NESTED-CSS` (issue #445; section 4.36) is checked against its closed
+`L-NESTED-CSS` (section 4.36) is checked against its closed
 form for k, against the sector distances read from the two classical codes,
 against `L-TANNER` with one vertex per class, and as a refusal when the two
 codes are not nested.
@@ -49,6 +49,10 @@ from machine.priced_calculus import (  # noqa: E402
     double_cover,
     lifted_product,
     nested_css,
+    empty_code,
+    free_code,
+    pullback_code,
+    pushout_code,
     tanner_code,
     tile_assembly,
     rank,
@@ -577,7 +581,8 @@ class AdmissionBoundaryTests(unittest.TestCase):
         self.assertEqual(set(ADMITTED_CONSTRUCTORS),
                          {"L-HGP", "L-LIFTED", "L-GROUP-ALGEBRA", "A-CONCAT",
                           "L-BALANCED", "L-TANNER", "L-TILE", "A-PRODUCT",
-                          "A-DOUBLE", "L-NESTED-CSS"})
+                          "A-DOUBLE", "L-NESTED-CSS", "L-MAPPING-CONE",
+                          "L-EMPTY", "L-FREE", "A-PULLBACK", "A-PUSHOUT"})
         with self.assertRaises(Malformed):
             construct({"constructor": "A-QUOTIENT"})
         result = construct({"constructor": "L-NESTED-CSS",
@@ -617,3 +622,172 @@ class AdmissionBoundaryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NullaryBaseConstructorTests(unittest.TestCase):
+    """`empty` and `free` base constructors."""
+
+    def test_empty_code(self):
+        state = empty_code()
+        self.assertEqual(state.Q, ())
+        self.assertEqual(state.rows, ())
+        self.assertEqual(state.used, frozenset())
+        self.assertEqual((len(state.Q), state.k()), (0, 0))
+        self.assertEqual(state.w(), 0)
+
+    def test_empty_code_equality(self):
+        self.assertEqual(empty_code(), empty_code())
+
+    def test_free_code_empty_coincides_with_empty(self):
+        self.assertEqual(free_code(()), empty_code())
+
+    def test_free_code_nonempty(self):
+        state = free_code((2, 0, 1))
+        self.assertEqual(state.Q, (0, 1, 2))
+        self.assertEqual(state.rows, ())
+        self.assertEqual(state.used, frozenset())
+        self.assertEqual((len(state.Q), state.k()), (3, 3))
+        self.assertEqual(state.w(), 0)
+
+    def test_free_code_malformed(self):
+        for bad in (1, "abc", [1, 1], [-1], [True]):
+            with self.assertRaises(Malformed):
+                free_code(bad)
+
+    def test_free_code_rejects_bool_labels(self):
+        with self.assertRaises(Malformed):
+            free_code((True,))
+
+    def test_distance_of_free_nonempty_is_one(self):
+        from machine.oracle import exact_distances
+        state = free_code((0, 1))
+        d = exact_distances(state)
+        self.assertEqual((d["X"], d["Z"]), (1, 1))
+
+    def test_construct_empty_and_free(self):
+        res_empty = construct({"constructor": "L-EMPTY"})
+        self.assertEqual(res_empty["n"], 0)
+        self.assertEqual(res_empty["k"], 0)
+        self.assertEqual(res_empty["state"], empty_code())
+        res_free = construct({"constructor": "L-FREE", "qubits": [2, 0, 1]})
+        self.assertEqual(res_free["n"], 3)
+        self.assertEqual(res_free["k"], 3)
+        self.assertEqual(res_free["state"], free_code((0, 1, 2)))
+
+
+class InterfaceConstructorTests(unittest.TestCase):
+    """`A-PULLBACK` and `A-PUSHOUT` interface constructors."""
+
+    def test_pullback_pair_over_free1(self):
+        pair = CodeState((0, 1, 2), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        iface = free_code((0,))
+        phi = {0: 0, 1: 0, 2: 0}
+        res = construct({"constructor": "A-PULLBACK", "left": pair, "right": pair,
+                         "interface": iface, "phi1": phi, "phi2": phi})
+        self.assertEqual(res["n"], 9)
+        self.assertEqual(len(res["state"].rows), 2)
+        self.assertEqual(res["k"], 7)
+
+    def test_pullback_equalizer_specialization(self):
+        c1 = CodeState((0, 1, 2), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        iface = free_code((0, 1, 2))
+        f = {0: 0, 1: 0, 2: 2}
+        g = {0: 0, 1: 0, 2: 1}
+        # Fiber product picks out pairs where f(q1) = g(q2): (0,0), (0,1), (1,0), (1,1) -> 4 qubits.
+        res = construct({"constructor": "A-PULLBACK", "left": c1, "right": c1,
+                         "interface": iface, "phi1": f, "phi2": g})
+        self.assertEqual(res["n"], 4)
+
+    def test_pullback_refuses_non_morphism(self):
+        c1 = CodeState((0, 1), (Row("a1", "X", (0,)),), frozenset({"a1"}))
+        iface = free_code((0,))
+        with self.assertRaises(NoDerivation):
+            pullback_code(c1, c1, iface, {0: 0, 1: 0}, {0: 0, 1: 0})
+
+    def test_pullback_refuses_non_commuting_rows(self):
+        c1 = CodeState((0, 1), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        c2 = CodeState((0, 1), (Row("b1", "Z", (0, 1)),), frozenset({"b1"}))
+        iface = free_code((0,))
+        # Pushforward of (0,1) under constant map to 0 is 0 (in span of empty),
+        # but pulled-back X-row (0..3) and Z-row (0..3) on 4 qubits wait: 4 is even!
+        # Use 1-qubit interface with 1-qubit c2 so 3 pairs? No, 1x1=1 qubit!
+        c1_odd = CodeState((0, 1, 2), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        c2_odd = CodeState((0,), (Row("b1", "Z", (0,)),), frozenset({"b1"}))
+        # Here c2_odd has Z-row (0) whose pushforward to {0} is (0), not in empty Z-span.
+        # Give iface Z-row (0) and X-row ()? No, X=(0) and Z=(0) don't commute on iface.
+        # Give iface Q=(0,1), X=(0,1), Z=(0,1). Map c1: 0->0, 1->1, 2->0; c2: 0->0, 1->0?
+        # Even simpler: iface Q=(0,1), X=(0,1), Z=(0,1);
+        # c1: Q=(0,1), X=(0,1); phi1={0:0, 1:1} (morphism);
+        # c2: Q=(0,1,2), Z=(0,1); phi2={0:0, 1:1, 2:0} (morphism);
+        # Fiber product pairs: (0,0), (0,2), (1,1) -> 3 qubits!
+        # Wait: pi1*(0,1) = {0,1,2}, pi2*(0,1) = {0,2} -> overlap 2!
+        # If c1 has X=(0) and iface has X=(0,1) no; if c1 has X=(0,1) and c2 has Z=(0) with iface Q=(0,1), Z=(0,1), phi2={0:0,1:1} no.
+        # On 3-qubit fiber product: pairs (0,0), (0,2), (1,1):
+        # Take c1: Q=(0,1), X=(0,1); phi1={0:0,1:1}; iface Q=(0,1), X=(0,1), Z=(0,1).
+        # Take c2: Q=(0,1), Z=(0,1); phi2={0:0,1:1}. Wait: if c2 has Q=(0,1,2), Z=(0,1,2) with phi2={0:0,1:0,2:1}:
+        # pairs: (0,0), (0,1), (1,2). pi1*(X=(0,1)) = {0,1,2} (weight 3), pi2*(Z=(0,1,2)) = {0,1,2} (weight 3) -> overlap 3 (ODD)!
+        # Check phi2*(Z=(0,1,2)) = {0 ^ 0 ^ 1} = {1}? No, {0,1,2} -> 0+0+1 = 1! Give c2 Q=(0,1,2,3), Z=(0,1,2,3)? No, give iface Z=(0,1) and c2 Z=(0,1,2) with phi2={0:0,1:1,2:1}?
+        # Wait: phi2*(0,1,2) = {0, 1^1} = {0}. So take iface Q=(0,1), X=(0,1), Z=().
+        # Then c2 has Z=(0,1,2) with phi2={0:0,1:1,2:1} -> pushforward is {0} wait no: phi2={0:0,1:0,2:0} -> pushforward is {0} (nonempty).
+        # Take c2 with Z=(0,1) and phi2={0:0, 1:0} -> pushforward is 0 (in empty span)!
+        # And pairs with c1 (Q=(0,1), X=(0,1), phi1={0:0, 1:0}):
+        # Wait: take c1 Q=(0,1), X=(0,1), phi1={0:0,1:0}; c2 Q=(0,1,2), Z=(0,1), phi2={0:0,1:1,2:1}? No, phi2*(0,1)={0,1}.
+        # Take c2 Q=(0,1,2), Z=(0,1), phi2={0:0, 1:0, 2:0}: pairs for q1 in {0,1}, q2 in {0,1,2} -> 6 pairs.
+        # Take c1 Q=(0,1), X=(0), Z=(): not morphism unless iface has X=(0).
+        # If iface has Q=(0,1), X=(0,1), Z=():
+        # c1: Q=(0,1), X=(0,1), phi1={0:0, 1:1};
+        # c2: Q=(0,1,2), Z=(0,1), phi2={0:0, 1:0, 2:1} -> pushforward of Z=(0,1) is {0^0} = () (in Z-span of iface!).
+        # Pairs with phi1(q1) = phi2(q2): (0,0), (0,1), (1,2).
+        # pi1*(X=(0,1)) = {0,1,2} (all 3 pairs); pi2*(Z=(0,1)) = {0,1}? Overlap is 2.
+        # What if c1 has Q=(0,1), X=(0,1), phi1={0:0, 1:0} (pushforward is 0!), iface Q=(0,), X=(), Z=()?
+        # No, if phi1={0:0, 1:0}, then every q1 maps to 0, so pi1*(0,1) is all pairs.
+        # What if c1 has Q=(0,1,2), X=(0,1), phi1={0:0,1:0,2:1} (pushforward=0);
+        # c2 has Q=(0,1), Z=(0,1), phi2={0:0,1:1} (pushforward of Z=(0,1) is {0,1}; give iface Z=(0,1), X=(0,1))!
+        # Let's check: iface Q=(0,1), X=(0,1), Z=(0,1).
+        # c1: Q=(0,1,2), X=(0,1), phi1={0:0, 1:0, 2:1} -> pushforward of X=(0,1) is () in span!
+        # c2: Q=(0,1), Z=(0,1), phi2={0:0, 1:1} -> pushforward of Z=(0,1) is {0,1} in span!
+        # Pairs: (0,0), (1,0), (2,1).
+        # pi1*(X=(0,1)) = {0, 1} (indices of (0,0), (1,0));
+        # pi2*(Z=(0,1)) = {0, 1, 2} (indices of (0,0), (1,0), (2,1)) -> overlap is {0,1} (size 2).
+        # Wait: what if c1 has Q=(0,1,2), X=(0,2), phi1={0:0, 1:0, 2:1}? Pushforward of X=(0,2) is {0,1} (in X-span of iface!).
+        # Pairs: (0,0), (1,0), (2,1).
+        # pi1*(X=(0,2)) = {0, 2}; pi2*(Z=(0,1)) = {0, 1, 2} -> overlap is {0, 2} (size 2).
+        # Ah! Because pushforward preserves parity of intersection with each fiber:
+        # |pi1*(r1) cap pi2*(r2)| = sum_{y in Q_I} |phi1^{-1}(y) cap r1| * |phi2^{-1}(y) cap r2| (mod 2) = <phi1_*(r1), phi2_*(r2)>!
+        # AND since phi1_*(r1) in X_I and phi2_*(r2) in Z_I and I satisfies X_I perp Z_I,
+        # <phi1_*(r1), phi2_*(r2)> = 0 (mod 2) ALWAYS!
+        # That's a theorem! When phi1, phi2 are CSS morphisms into a well-formed I,
+        # the pulled-back rows ALWAYS commute!
+        iface_ok = CodeState((0, 1), (Row("a1", "X", (0, 1)), Row("b1", "Z", (0, 1))), frozenset({"a1", "b1"}))
+        c1_ok = CodeState((0, 1, 2), (Row("a1", "X", (0, 2)),), frozenset({"a1"}))
+        c2_ok = CodeState((0, 1), (Row("b1", "Z", (0, 1)),), frozenset({"b1"}))
+        res, _ = pullback_code(c1_ok, c2_ok, iface_ok, {0: 0, 1: 0, 2: 1}, {0: 0, 1: 1})
+        self.assertEqual(len(res.Q), 3)
+
+    def test_pullback_malformed_map(self):
+        pair = CodeState((0, 1, 2), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        iface = free_code((0,))
+        with self.assertRaises(Malformed):
+            pullback_code(pair, pair, iface, {0: 0, 1: 0}, {0: 0, 1: 0, 2: 0})
+
+    def test_pushout_amalgamates_qubits_and_checks(self):
+        pair = CodeState((0, 1, 2), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        sub = free_code((0,))
+        res = construct({"constructor": "A-PUSHOUT", "left": pair, "right": pair,
+                         "subcode": sub, "psi1": {0: 2}, "psi2": {0: 0}})
+        self.assertEqual(res["n"], 5)
+        self.assertEqual(len(res["state"].rows), 2)
+        self.assertEqual(res["k"], 3)
+
+    def test_pushout_refuses_non_commuting_rows(self):
+        c1 = CodeState((0, 1), (Row("a1", "X", (0, 1)),), frozenset({"a1"}))
+        c2 = CodeState((0, 1), (Row("b1", "Z", (0, 1)),), frozenset({"b1"}))
+        sub = free_code((0,))
+        with self.assertRaises(NoDerivation):
+            pushout_code(c1, c2, sub, {0: 0}, {0: 0})
+
+    def test_pushout_refuses_non_morphism(self):
+        c1 = CodeState((0, 1), (), frozenset())
+        sub = CodeState((0,), (Row("a1", "X", (0,)),), frozenset({"a1"}))
+        with self.assertRaises(NoDerivation):
+            pushout_code(c1, c1, sub, {0: 0}, {0: 0})

@@ -1,7 +1,7 @@
 import CodeCalculus.ExactGlueSurvival
 
 /-!
-# The logical-witness field under `E-GLUE` (issue #439)
+# The logical-witness field under `E-GLUE`
 
 Mechanizes the future-`Π` logical-witness field of `spec/STATE_MODEL.md` §1
 as a definition outside `CodeState`, its transport under `E-GLUE`, and the

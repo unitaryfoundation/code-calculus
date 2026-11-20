@@ -1,7 +1,7 @@
 import CodeCalculus.ConstructorAssembly
 
 /-!
-# Pairwise even overlap for `L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT` (issue #482)
+# Pairwise even overlap for `L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT`
 
 The §4.34 arguments of `spec/OPERATIONAL_SEMANTICS.md` for the three typed
 constructors whose overlap was a hypothesis of their well-formedness

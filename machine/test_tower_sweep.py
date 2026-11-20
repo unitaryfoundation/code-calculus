@@ -3,7 +3,7 @@
 The provider `tower_deletion_prices` prices the deletion of lifted outer
 checks of a concatenation tower from level data alone: the inner class
 dictionary (`tower_level_data`) and the outer presentation. The derivation
-is `design/DERIVED_RELATIONS.md` section 2a; the sweep against exhaustive
+is `DERIVED_RELATIONS.md` section 2a; the sweep against exhaustive
 enumeration on built towers is `machine/experiments/tower_sweep.py`. The
 tests here pin hand instances and a seeded sweep. Agreement is evidence,
 not proof.
@@ -129,11 +129,14 @@ class TestTowerDeletionPrices(unittest.TestCase):
         child = tower.delete_check(lifted["q1"])
         ledger = DistanceLedger(Interval(3, 4), {"X": Interval(3, 4), "Z": Interval(3, 4)})
         out = ledger.propagate({"op": "C-DELETE-CHECK", "row_id": lifted["q1"]}, child,
-                               hypothesis={"deletion_price": verdict["deletion_price"]})
+                               hypothesis={"deletion_price": verdict["deletion_price"]},
+                               parent_state=tower)
         # d' = min(d, w_del, w_exp) with w_exp = 2 pins the full interval at 2;
-        # the sector endpoints stay where the unpriced rule put them.
+        # sector-split : the deleted (Z) sector carries w_del = 4
+        # and the opposite (X) sector carries w_exp = 2.
         self.assertEqual(out.full, Interval(2, 2))
-        self.assertEqual(out.sector["X"].lower, 0)
+        self.assertEqual(out.sector["X"].lower, 2)
+        self.assertEqual(out.sector["Z"].lower, 3)
         self.assertEqual(out.conditions[-1]["cell"], "C-DELETE-CHECK priced")
         self.assertEqual(out.conditions[-1]["evidence"], verdict["deletion_price"]["evidence"])
 

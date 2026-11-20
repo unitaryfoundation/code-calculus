@@ -153,7 +153,7 @@
       },
       {
         "id": "A-QUOTIENT",
-        "reason": "Needs typed quotient and embedding inputs; the ten admitted constructors (L-HGP, L-LIFTED, L-GROUP-ALGEBRA, A-CONCAT, L-BALANCED, L-TANNER, L-TILE, A-PRODUCT, A-DOUBLE, L-NESTED-CSS) have expression productions in categories.expression."
+        "reason": "Needs typed quotient and embedding inputs; the fifteen admitted constructors (L-HGP, L-LIFTED, L-GROUP-ALGEBRA, A-CONCAT, L-BALANCED, L-TANNER, L-TILE, A-PRODUCT, A-DOUBLE, L-NESTED-CSS, L-MAPPING-CONE, L-EMPTY, L-FREE, A-PULLBACK, A-PUSHOUT) have expression productions in categories.expression."
       },
       {
         "id": "X-*",
@@ -161,7 +161,7 @@
       },
       {
         "id": "E-* (unadmitted)",
-        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE's binary evaluator transition is listed in admitted_extensions (no unary production; contract-index row transition-defined as of 2026-11-11, issue #332). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
+        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE is binary-only (expression production glue(e1, e2; u) in categories.expression, no unary command production; decided 2026-11-18) and is listed in admitted_extensions at contract-stated (rung 5, conditional cell, Gate 6 unchecked). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
       }
     ],
     "admitted_extensions": [
@@ -197,7 +197,7 @@
       },
       {
         "id": "E-GLUE",
-        "classification": "binary evaluator transition defined (section 4.30, 2026-10-27), no unary production; conditional cell (sections 2e/2f); contract-index row transition-defined (2026-11-11, issue #332); logical-witness field defined and §2e equality discharged (2026-11-11); sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+        "classification": "binary-only state-expression constructor glue(e1, e2; u) (decided 2026-11-18,; no unary command production); conditional cell (sections 2e/2f); contract-index row contract-stated (rung 5, 2026-11-18,; Gate 6 unchecked); future-Pi fields defined (STATE_MODEL.md section 1a); CSS-level algebra of section 4.31/4.33 mechanized (lean/CodeCalculus/GlueExtraction.lean) with geometric move-word gap recorded; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32)",
         "judgment_inputs": "seam certificate (identical move words plus an evidence reference) for the Z-sector upper endpoint; lower endpoints need none"
       }
     ]
@@ -218,7 +218,7 @@
     "shape": "partial big-step",
     "partiality": "No judgment when a command is inapplicable. No residual commands, no half-updated states, no partial results are ever exposed (W10).",
     "construction": "Eval(m >< e, S') when EvalExpr(e, S) and Eval(m, S, S')",
-    "derived_denotation": "Added 2026-10-25 (issue #140, Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
+    "derived_denotation": "Added 2026-10-25 (Option A; OPERATIONAL_SEMANTICS.md section 1a): the relation is primary and the denotation is derived from it. denote(m)(S) = some S' iff Eval(m, S, S'), none otherwise; denoteExpr(e) = some S iff EvalExpr(e, S). The 2026-09-30 framework decision's presentation ('Eval defined from the denotation') is superseded on this one point; its disciplines D1 (erasure of steps) and D2 (no consequence, no computation) and its Option carrier remain in force. The Lean development carries denote/denoteExpr with the equivalence theorems (lean/CodeCalculus/Eval.lean)."
   },
   "outcomes": {
     "derivable": "A derivation exists and the assertion is included.",
@@ -314,7 +314,7 @@
         },
         {
           "predicate": "capacity",
-          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11)"
         }
       ],
       "inapplicable_when": "Any premise fails. An out-of-namespace row (supp(r) not subseteq Q) has NO derivation: the term is well-typed and the same row applies against a state whose namespace contains its support (fixture W22) - it is no_derivation, not malformed and not false.",
@@ -361,7 +361,7 @@
         },
         {
           "predicate": "capacity",
-          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11)"
         }
       ],
       "update": {
@@ -406,7 +406,7 @@
         },
         {
           "predicate": "capacity",
-          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11)"
         }
       ],
       "update": {
@@ -437,7 +437,7 @@
         },
         {
           "predicate": "sector_exchange_instance",
-          "formula": "T = Q (the admitted instance); T = empty is the identity; any other T has no derivation (the S1-dispositioned split-subset mechanics are out of scope)"
+          "formula": "T = Q (the admitted instance); T = empty is the identity; any other T has no derivation (the review-dispositioned split-subset mechanics are out of scope)"
         }
       ],
       "update": {
@@ -482,7 +482,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "Any applicability premise fails; the output's I1-I5 check is a validity report (\u00a74.28 shows both I1 and I2 automatic under the premises)",
-      "standing": "transition specified; n'=n-1 and k'=k exact (\u00a74.28); distance rule admitted 2026-11-06 (issue #295) and sharpened 2026-11-10 (issue #331): d_tau' = w_avoid,tau(q) >= d_tau for the selected sector and d_sigma' = min(d_sigma, w_expose,sigma(q)) for the opposite sector (section 4.28), so unpriced the selected lower carries, the opposite lower carries less one, the opposite upper carries, and the full distance is the minimum of the sector endpoints; the two prices are conditional cells (JUDGMENT_LAYER.md section 2a, 2c); comparison d' vs. d bounded in neither direction, d' >= d - 1)",
+      "standing": "transition specified; n'=n-1 and k'=k exact (\u00a74.28); distance rule admitted 2026-11-06 and sharpened 2026-11-10 : d_tau' = w_avoid,tau(q) >= d_tau for the selected sector and d_sigma' = min(d_sigma, w_expose,sigma(q)) for the opposite sector (section 4.28), so unpriced the selected lower carries, the opposite lower carries less one, the opposite upper carries, and the full distance is the minimum of the sector endpoints; the two prices are conditional cells (JUDGMENT_LAYER.md section 2a, 2c); comparison d' vs. d bounded in neither direction, d' >= d - 1)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.28"
     },
     {
@@ -505,7 +505,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "q not in Q; no other premise (I1-I5 hold automatically, \u00a74.29)",
-      "standing": "transition specified (the check-puncturing induced stabilizer update required by TAXONOMY.md \u00a72.8); no distance rule carries, and hole-punch pricing is blocked on the D2 lower bound (issue #59)",
+      "standing": "transition specified (the check-puncturing induced stabilizer update required by TAXONOMY.md \u00a72.8); no distance rule carries, and hole-punch pricing is blocked on the D2 lower bound ",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.29"
     },
     {
@@ -530,7 +530,7 @@
         },
         {
           "predicate": "capacity",
-          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11)"
         }
       ],
       "update": {
@@ -545,7 +545,7 @@
     },
     {
       "id": "E-GLUE",
-      "form": "Eval(glue(C_A, C_B; seam checks), C)  -  a binary evaluator transition over two presented states; E-GLUE has no unary grammar production (TERM_LANGUAGE.md section 2)",
+      "form": "EvalExpr(glue(e_1, e_2; seam checks), C) / Eval(glue(C_A, C_B; seam checks), C) - binary-only state-expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18,; no unary command production)",
       "premises": [
         {
           "predicate": "ambient_membership",
@@ -569,7 +569,7 @@
         },
         {
           "predicate": "capacity",
-          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11, issue #296)"
+          "formula": "every new row's canonical mint exists: the fixed 70,000-identifier enumeration (STATE_MODEL.md I3) is not exhausted by `used`; an exhausted enumeration gives no derivation (H-4, decided 2026-10-31; machine/priced_calculus.py raises NoDerivation; lean/CodeCalculus/Eval.lean carries the premise on the rule since 2026-11-11)"
         }
       ],
       "update": {
@@ -579,7 +579,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "A qubit-namespace or identifier collision, or a seam check failing commutation or independence (no derivation). A seam certificate, when supplied, is consumed for admissibility only (JUDGMENT_LAYER.md section 2e): differing move words, or a certificate without an evidence reference, give no derivation.",
-      "standing": "transition specified (section 4.30, 2026-10-27; maintainer decision to define the transition). Well-formedness of the output follows the C-DIRECT-SUM argument plus the independence premises. The §2e equality d_Z(Q)=min(d_A,d_B) is discharged by extraction of Theorem 4 / claim 7.4 (section 4.31, 2026-11-11, issue #332) for admissible seams; the scalar relation d = min(d_A, d_B) is still not admitted; the logical-witness field is defined (STATE_MODEL.md section 1, 2026-11-11); boundary/edge-label field defined (STATE_MODEL.md section 1, 2026-11-12, issue #366); sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31); the contract-index row is transition-defined (2026-11-11); Lean mechanization of the extracted derivation remains follow-up work (issue #366).",
+      "standing": "binary-only expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18,; no unary command production); contract-stated (rung 5, 2026-11-18,; Gate 6 unchecked, conditional cell). Output well-formedness follows C-DIRECT-SUM plus seam independence (section 4.31; mechanized wf_glueState_of_eval_glueCommand and evalExpr_glue_iff_evalTerm_glueCommand in GlueExtraction.lean). Both future-Pi fields are defined in full (STATE_MODEL.md section 1a; WitnessFields.lean). CSS-level algebra of the extracted Theorem 4 / claim 7.4 derivation (w_re = +inf, Claim 2 Steps 1 & 3-5, Consequence (iii), refutation, and AdmissibleSeam -> glueField / glueLedger soundness) is mechanized in ExactGlue*.lean, LogicalWitness.lean, AdmissibleSeamFamily.lean, Gate6Exact.lean, and GlueExtraction.lean; the geometric implication from planar move-word equality w(c_A) = w(c_B) to AdmissibleSeam remains a recorded substrate gap. The scalar relation d = min(d_A, d_B) is not admitted, and sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32).",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.31"
     },
     {
@@ -601,7 +601,7 @@
         "used": "the canonically minted identifiers, X-rows first"
       },
       "inapplicable_when": "Malformed input only (a matrix that is not binary or not rectangular is malformed at the encoding); every well-typed input evaluates.",
-      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, n = n1 n2 + m1 m2 and k = k1 k2 + k1T k2T derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed, n = n1 n2 + m1 m2 and k = k1 k2 + k1T k2T derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-HGP"
     },
     {
@@ -623,7 +623,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only; every well-typed input evaluates. The trivial group gives L-HGP.",
-      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed by the commutativity of F_2[G] (section 4.34); n exact, k by rank bookkeeping; no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed by the commutativity of F_2[G] (section 4.34); n exact, k by rank bookkeeping; no distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-LIFTED"
     },
     {
@@ -645,7 +645,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only; every well-typed input evaluates. Equal row for row to lift_G((a), (b^*)).",
-      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, k = 2(|G| - rank[L(a) | L(b)]) derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed, k = 2(|G| - rank[L(a) | L(b)]) derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-GROUP-ALGEBRA"
     },
     {
@@ -675,7 +675,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "k_in = 0 gives no derivation; a block list that is not a partition into k_in-tuples is malformed at the encoding; non-CSS inner codes are not inputs.",
-      "standing": "transition specified 2026-11-11 (issue #330), transition-defined; output well-formed, n = n_in n_out and k = k_O derived (section 4.34); no distance rule; the tower price provider (JUDGMENT_LAYER.md section 2a) supplies deletion and exposure prices from level data",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed, n = n_in n_out and k = k_O derived (section 4.34); no distance rule; the tower price provider (JUDGMENT_LAYER.md section 2a) supplies deletion and exposure prices from level data",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-CONCAT"
     },
     {
@@ -697,7 +697,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only (a factor that is not a well-formed CSS state); every well-typed pair evaluates. The output depends on the two displays, not only on the two codes.",
-      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed, n and k = kA kB derived (section 4.35); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed, n and k = kA kB derived (section 4.35); no distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PRODUCT"
     },
     {
@@ -723,7 +723,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "A wiring whose lifted rows do not commute gives no derivation; a wiring naming an undisplayed row or a qubit outside the row's support is malformed at the encoding.",
-      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed and n = 2 nC (section 4.35); k by rank bookkeeping, 2 kC for the empty wiring; no distance rule; the factorization question of TAXONOMY.md section 2.16 stays open",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed and n = 2 nC (section 4.35); k by rank bookkeeping, 2 kC for the empty wiring; no distance rule; the factorization question of TAXONOMY.md section 2.16 stays open",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-DOUBLE"
     },
     {
@@ -745,7 +745,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only (permutations that do not form an action, or a matrix that is not equivariant); every well-typed input evaluates. The trivial group gives L-HGP row for row.",
-      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed because the product differentials descend to the orbit quotients (section 4.35); n the number of orbits, k by rank bookkeeping; no distance rule",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed because the product differentials descend to the orbit quotients (section 4.35); n the number of orbits, k by rank bookkeeping; no distance rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-BALANCED"
     },
     {
@@ -771,7 +771,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Local checks of the two classes that do not commute give no derivation; an embedding with a repeated or out-of-range label or the wrong length is malformed at the encoding.",
-      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed under the commutation premise (section 4.35, with a sufficient condition for tensor local codes); k by rank bookkeeping; no distance rule and no expansion hypothesis",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed under the commutation premise (section 4.35, with a sufficient condition for tensor local codes); k by rank bookkeeping; no distance rule and no expansion hypothesis",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-TANNER"
     },
     {
@@ -797,7 +797,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Placed rows of the two sectors that do not commute give no derivation; a placement, identification, or removal that does not name placed data is malformed at the encoding.",
-      "standing": "transition specified 2026-11-11 (issue #369), transition-defined; output well-formed under the commutation premise and n the number of site classes (section 4.35); k by rank bookkeeping; no distance rule",
+      "standing": "transition specified 2026-11-11, transition-defined; output well-formed under the commutation premise and n the number of site classes (section 4.35); k by rank bookkeeping; no distance rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-TILE"
     },
     {
@@ -823,12 +823,95 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Matrices with a row of H_X and a row of H_Z in odd overlap give no derivation; matrices with different column counts, no row, or a non-binary entry are malformed at the encoding.",
-      "standing": "transition specified 2026-11-13 (issue #445), transition-defined; output well-formed under the nesting premise and k = n - rank(H_X) - rank(H_Z) (section 4.36); no distance rule and no classical distance input; an instance of the L-TANNER rule",
+      "standing": "transition specified 2026-11-13, transition-defined; output well-formed under the nesting premise and k = n - rank(H_X) - rank(H_Z) (section 4.36); no distance rule and no classical distance input; an instance of the L-TANNER rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-NESTED-CSS"
+    },
+    {
+      "id": "L-EMPTY",
+      "form": "EvalExpr(empty, S)",
+      "premises": [],
+      "update": {
+        "Q": "empty",
+        "rows": "empty",
+        "used": "empty"
+      },
+      "inapplicable_when": "Never; the nullary empty code is always well-formed.",
+      "standing": "transition specified 2026-11-19, transition-defined; n = 0, k = 0 (section 4.43); no automatic distance rule beyond section 2g",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-EMPTY"
+    },
+    {
+      "id": "L-FREE",
+      "form": "EvalExpr(free(Q), S)",
+      "premises": [
+        {
+          "predicate": "well_typed_inputs",
+          "formula": "Q is a finite set of distinct nonnegative integers, stored in strictly increasing order"
+        }
+      ],
+      "update": {
+        "Q": "Q",
+        "rows": "empty",
+        "used": "empty"
+      },
+      "inapplicable_when": "Always applicable for a well-typed finite qubit-label set; duplicate or non-integer/negative labels are malformed at the encoding.",
+      "standing": "transition specified 2026-11-19, transition-defined; n = |Q|, k = |Q| (section 4.43); no automatic distance rule beyond section 2g",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-FREE"
+    },
+    {
+      "id": "A-PULLBACK",
+      "form": "EvalExpr(pullback(e_1, e_2, e_I; phi_1, phi_2), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "C_1, C_2, I satisfy I1-I5 and ambient containment"
+        },
+        {
+          "predicate": "css_morphisms",
+          "formula": "phi_1 : Q_1 -> Q_I and phi_2 : Q_2 -> Q_I send the F_2-pushforward of every displayed row into the same-sector span of I"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the pulled-back X and Z natural rows on Q_1 x_{Q_I} Q_2 have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, n = |Q_1 x_{Q_I} Q_2| in lexicographic order",
+        "rows": "retained independent display of the pulled-back rows of C_1 then C_2 (section 4.43)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-morphism qubit maps or pulled-back rows that do not commute give no derivation.",
+      "standing": "transition specified 2026-11-19, transition-defined; output well-formed and n = |Q_1 x_{Q_I} Q_2| (section 4.43); k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PULLBACK"
+    },
+    {
+      "id": "A-PUSHOUT",
+      "form": "EvalExpr(pushout(e_1, e_2, e_S; psi_1, psi_2), S)",
+      "premises": [
+        {
+          "predicate": "well_formed_factors",
+          "formula": "C_1, C_2, S satisfy I1-I5 and ambient containment"
+        },
+        {
+          "predicate": "css_morphisms",
+          "formula": "psi_1 : Q_S -> Q_1 and psi_2 : Q_S -> Q_2 send the F_2-pushforward of every displayed row of S into the same-sector span of C_1 and C_2"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "the pushed-forward X and Z natural rows on Q_1 |_| _{Q_S} Q_2 have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, n = |Q_1 |_| _{Q_S} Q_2|",
+        "rows": "retained independent display of the pushed-forward rows of C_1 then C_2 (section 4.43)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-morphism qubit maps or pushed-forward rows that do not commute give no derivation.",
+      "standing": "transition specified 2026-11-19, transition-defined; output well-formed and n = |Q_1 |_| _{Q_S} Q_2| (section 4.43); k by rank bookkeeping; no distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PUSHOUT"
     }
   ],
   "layout_cells": {
-    "$comment": "Layout cells (spec/JUDGMENT_LAYER.md section 2d.5, landed 2026-11-10, issue #333): how the layout travels with each transition and the exact interaction-radius and honesty cell it licenses. The radius formulas are also transcribed in consumer.json geometry.carry_rules; this table records the transport side (the child's layout), each cell's direction, its evidence status, and its derivation. `proved` is the evidence status of a dated hand derivation in this repository, never a mechanized result (AGENTS.md, Claim-status discipline). A cell marked conditional needs the named layout premise before its verdict applies.",
+    "$comment": "Layout cells (spec/JUDGMENT_LAYER.md section 2d.5, landed 2026-11-10): how the layout travels with each transition and the exact interaction-radius and honesty cell it licenses. The radius formulas are also transcribed in consumer.json geometry.carry_rules; this table records the transport side (the child's layout), each cell's direction, its evidence status, and its derivation. `proved` is the evidence status of a dated hand derivation in this repository, never a mechanized result (AGENTS.md, Claim-status discipline). A cell marked conditional needs the named layout premise before its verdict applies.",
     "source": "spec/JUDGMENT_LAYER.md \u00a72d.5",
     "conformance": "machine/experiments/layout_conformance_harness.py randomizes small states and layouts, transits every transition below, and checks each direction, formula, and honesty claim exactly; a run with no violation is evidence, never confirmation.",
     "cells": {
@@ -1028,6 +1111,42 @@
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
         "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.36",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-EMPTY": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on empty Q may be supplied",
+        "radius": "r = 0 (empty display), exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "vacuously honest",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-FREE": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the supplied Q must be supplied",
+        "radius": "r = 0 (empty display), exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-PULLBACK": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "A-PUSHOUT": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..n-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       }
     }

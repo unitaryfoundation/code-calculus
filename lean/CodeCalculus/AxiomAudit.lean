@@ -27,14 +27,17 @@ import CodeCalculus.ExactPeel
 import CodeCalculus.ExactDirectSum
 import CodeCalculus.ExactPermute
 import CodeCalculus.ExactGraft
+import CodeCalculus.DualityAdjunction
 import CodeCalculus.ExactGlue
 import CodeCalculus.ExactGluePairs
 import CodeCalculus.ExactGlueDistance
 import CodeCalculus.ExactGlueSurvival
+import CodeCalculus.ExpandedSoundness
 import CodeCalculus.LogicalWitness
 import CodeCalculus.WitnessFields
 import CodeCalculus.AdmissibleSeamFamily
 import CodeCalculus.Gate6Exact
+import CodeCalculus.GlueExtraction
 import CodeCalculus.CertificateChecker
 import CodeCalculus.CertificateInstances
 import CodeCalculus.Constructors
@@ -47,6 +50,7 @@ import CodeCalculus.ConstructorRankTyped
 import CodeCalculus.ConcatRetention
 import CodeCalculus.BalancedOverlap
 import CodeCalculus.ConstructorRankNatural
+import CodeCalculus.SplitCommand
 import CodeCalculus.ConstructorInstances
 import CodeCalculus.KernelObligations
 import CodeCalculus.Fixtures

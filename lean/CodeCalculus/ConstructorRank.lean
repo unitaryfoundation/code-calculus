@@ -2,7 +2,7 @@ import CodeCalculus.ConstructorWellFormedness
 import CodeCalculus.RanksFit
 
 /-!
-# Logical counts of the typed constructors (issue #483)
+# Logical counts of the typed constructors
 
 `stateK` of a constructed state is read from the retained display. This
 module shows that it can be read from the natural rows instead

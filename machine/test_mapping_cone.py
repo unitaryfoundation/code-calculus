@@ -1,7 +1,7 @@
-"""Tests for the mapping-cone checks of issue #449.
+"""Tests for the mapping-cone checks of.
 
 The harness enumerates small cones against the statements of
-`design/MAPPING_CONE_CONSTRUCTOR.md`. A passing run is evidence for the
+`MAPPING_CONE_CONSTRUCTOR.md`. A passing run is evidence for the
 note's derivations, not a proof, and admits nothing.
 """
 

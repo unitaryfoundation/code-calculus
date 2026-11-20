@@ -1,4 +1,4 @@
-"""Coverage link between Lean pinned fixtures and Python fixtures (issue #143)."""
+"""Coverage link between Lean pinned fixtures and Python fixtures."""
 
 import os
 import sys
@@ -38,7 +38,7 @@ class LeanFixtureCoverageTests(unittest.TestCase):
         # 85-row state whose `inSpanRowsBool` independence check would
         # enumerate 2^45 coefficient vectors, so it needs a bitmask-based
         # independence test before it can be replayed. W25-W28 are the
-        # supplementary refusal probes of issue #237: they are Python-side
+        # supplementary refusal probes of : they are Python-side
         # probes and are deliberately not transcribed into Lean (transcribing
         # them is not owed by this issue).
         r = lfc.coverage_report()

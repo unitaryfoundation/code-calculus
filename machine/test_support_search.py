@@ -1,4 +1,4 @@
-"""Bounded search over supports in the planner (issue #347).
+"""Bounded search over supports in the planner.
 
 The search is consumer configuration: it enumerates a child's supports by
 weight under a recorded budget, hands any witness it finds to the ledger's

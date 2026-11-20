@@ -2,7 +2,7 @@ import CodeCalculus.LogicalWitness
 import CodeCalculus.ExactGlueSurvival
 
 /-!
-# Admissible seams as a regular family (issue #439)
+# Admissible seams as a regular family
 
 Mechanizes the family-level guarantee of `LogicalWitness.lean` for the
 family of instances whose seams are admissible in the sense of

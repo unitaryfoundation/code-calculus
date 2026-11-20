@@ -2,7 +2,7 @@ import CodeCalculus.ExactDistance
 import CodeCalculus.ExactPeel
 
 /-!
-# The mechanized certificate checker (issue #371)
+# The mechanized certificate checker
 
 `spec/CLAIMS.md` admits the evidence status `certificate-checked` for
 per-state atomic judgments, attached only through a checker in the proof
@@ -31,7 +31,7 @@ for the three readings of the exact distance. `certificate_equality` adds a
 checked witness of weight exactly the bound and concludes
 `exactDistance? σ s = some L`.
 
-Scope (second-pass S7, `spec/OPERATIONAL_SEMANTICS.md` §4.24). A theorem
+Scope (a second review pass, `spec/OPERATIONAL_SEMANTICS.md` §4.24). A theorem
 obtained from these is keyed to one state, one property (the σ-distance), and
 one sector. It is a statement about the Lean term `s`; nothing here relates
 that term to a state written elsewhere, and nothing here concerns an operation

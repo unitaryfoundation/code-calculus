@@ -2,7 +2,7 @@ import CodeCalculus.ConstructorRank
 import CodeCalculus.ConstructorOverlap
 
 /-!
-# Closed forms for `k` of `L-GROUP-ALGEBRA` and `A-CONCAT` (issue #483)
+# Closed forms for `k` of `L-GROUP-ALGEBRA` and `A-CONCAT`
 
 `twoblockState_k_closed`: `k = 2(ℓ - rank[L(a) | L(b)])`, for every list of
 cyclic orders and every pair of algebra elements. The `Z`-rows
@@ -12,7 +12,7 @@ the two sectors have the same rank.
 
 `concatState_k_of_retention`: `k = k_O` for `A-CONCAT`, under the hypothesis
 that the display retains every natural row. That hypothesis is the
-independence of the natural rows of each sector (issue #484), which is not
+independence of the natural rows of each sector, which is not
 proved here.
 
 The closed form for `L-HGP` is proved in `lean/extra/ClosedK.lean` from

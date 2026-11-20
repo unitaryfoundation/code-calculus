@@ -1,6 +1,6 @@
 """The column-splitting reduction for the exposure price (issue #326).
 
-`design/DERIVED_RELATIONS.md` section 3a: the t-fold split of a parent has
+`DERIVED_RELATIONS.md` section 3a: the t-fold split of a parent has
 Z column weight at most three and exposure price t times the parent's. The
 tests pin the gadget on hand instances and on a seeded random run; they are
 evidence that the transcription matches the derivation, not a proof.

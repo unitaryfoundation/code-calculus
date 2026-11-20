@@ -14,10 +14,10 @@ specifies:
 - a **state model** for a presented CSS code,
 - a **term language** whose closed terms denote transformation sequences,
 - a **partial operational semantics** (absence of a derivation is part of the
-  semantics, not a failure),
+ semantics, not a failure),
 - a **judgment layer** that records, for each property and each transformation,
-  whether that property carries, does not carry, is not yet defined, or is
-  deliberately withheld (`unavailable`).
+ whether that property carries, does not carry, is not yet defined, or is
+ deliberately withheld (`unavailable`).
 
 Alongside the specification there is an executable consumer
 (`machine/priced_calculus.py`) that propagates distance **intervals** through
@@ -25,7 +25,7 @@ construction steps and asks for re-measurement only when the current bounds
 cannot decide a target. It is evidence about whether the interface is useful; it
 does not establish the calculus's soundness theorem.
 
-**Status.** Gate 0 and Gate 1 are ratified; Gates 2–7 are unchecked. The
+**Status.** Gates 0–6 are ratified (2026-11-19); Gate 7 is unchecked. The
 calculus is intended to be sound and deliberately incomplete. No soundness
 claim is machine-proved in full: the named obligations have dated hand
 derivations in `spec/OPERATIONAL_SEMANTICS.md` §4, and the Lean development
@@ -43,7 +43,7 @@ are:
 - **n** — number of physical qubits,
 - **k** — number of logical qubits (`k = n − rank(X) − rank(Z)`),
 - **d** — distance, the minimum weight of a logical operator (and its
-  X/Z-sector variants `d_X`, `d_Z`).
+ X/Z-sector variants `d_X`, `d_Z`).
 
 The calculus is **phase-insensitive**: it records supports and row spaces, not
 stabilizer phases. It also tracks derived, display-relative quantities such as
@@ -74,9 +74,9 @@ A state is a presented CSS code:
 {
  "Q": [0,1,2,3,4,5,6,7,8,9],
  "rows": [
-   {"id": "a_1", "sector": "X", "support": [0,4,5,7,8,9]},
-   {"id": "a_2", "sector": "X", "support": [0,1,5,6,8,9]},
-   {"id": "b_1", "sector": "Z", "support": [0,1,2,3,5,6]}
+ {"id": "a_1", "sector": "X", "support": [0,4,5,7,8,9]},
+ {"id": "a_2", "sector": "X", "support": [0,1,5,6,8,9]},
+ {"id": "b_1", "sector": "Z", "support": [0,1,2,3,5,6]}
  ],
  "used": ["a_1", "a_2", "b_1"]
 }
@@ -90,12 +90,12 @@ A transformation is a term, not a procedure. The grammar has two categories:
 
 ```
 e ::= S | e₁ ⊕ e₂ | glue(e₁, e₂; u)
-    | hgp(H₁, H₂) | lift(G; B_X, B_Z) | twoblock(G; a, b) | concat(e_O, e_I; L)
-    | product(e_A, e_B) | double(e; w, s) | balanced(G; H₁, act₁, H₂, act₂)
-    | tanner(n; Λ_X, Λ_Z, E_X, E_Z) | tile(n; T, P) | nested(H_X, H_Z)
+ | hgp(H₁, H₂) | lift(G; B_X, B_Z) | twoblock(G; a, b) | concat(e_O, e_I; L)
+ | product(e_A, e_B) | double(e; w, s) | balanced(G; H₁, act₁, H₂, act₂)
+ | tanner(n; Λ_X, Λ_Z, E_X, E_Z) | tile(n; T, P) | nested(H_X, H_Z)
 m ::= skip | delete_r | addStab_r | graft(q, τ; [r₁,…])
-    | peel(q, τ; r) | puncture_q | extend(Δ; u) | hadamard_T | rebase(τ; M)
-    | m₁ ; m₂
+ | peel(q, τ; r) | puncture_q | extend(Δ; u) | hadamard_T | rebase(τ; M)
+ | m₁ ; m₂
 ```
 
 A **closed construction term** is `m ▷ e`: evaluate the state expression `e`,
@@ -115,8 +115,8 @@ Three outcomes are kept distinct, and the fixture suite keeps them distinct:
 
 - **malformed** — rejected by the grammar or the encoding alone;
 - **no derivation** — a well-typed term whose premises do not hold for this
-  state (e.g. `delete_a ▷ S` when `a` is not displayed in `S`). This is not
-  an error; absence of a derivation is part of the semantics;
+ state (e.g. `delete_a ▷ S` when `a` is not displayed in `S`). This is not
+ an error; absence of a derivation is part of the semantics;
 - **a result state** — the term evaluates.
 
 ## Core concepts
@@ -216,7 +216,7 @@ The property signature is fixed and small:
 - `d_X`, `d_Z`, `d` — distances (opaque; transported as bounds),
 - `w` — maximum stabilizer weight (derived, exact, carried),
 - `r` — interaction radius relative to a supplied layout (derived, exact,
-  carried; a state with no layout has no radius),
+ carried; a state with no layout has no radius),
 - Tanner connectivity of the displayed rows (derived, exact, carried).
 
 Consumer-supplied hypotheses (`w_del`, `w_exp`, `w_X`, `w_Z`, exposure minima,
@@ -227,22 +227,22 @@ fields: they are not part of state identity, not minted, and not transported by
 ## Status
 
 - **Gates:** Gate 0 (record completeness) and Gate 1 (formal syntax) are
-  ratified. Gates 2–7 are unchecked. See `spec/GATES.md`.
+ ratified. Gates 2–6 are ratified (2026-11-19); Gate 7 is unchecked. See `spec/GATES.md`.
 - **Obligations:** every obligation in scope has a dated hand derivation in
-  `spec/OPERATIONAL_SEMANTICS.md` §4; the ledger is `spec/OBLIGATIONS.md`.
-  Machine-checked soundness is **not** claimed in full. `OBL-JUDGMENT-SOUNDNESS`
-  is `proved` by hand derivation; its Lean form (`judgment_soundness_of_term`,
-  `TermSoundness.lean`) derives the evaluation chain from the closed term's
-  evaluation, discharges the `k` cells via `ranksFit_of_wf`, and takes
-  `MeasureMonotone` (discharged for the exact sector distance in
-  `judgment_soundness_exact`, `ExactDistance.lean`) as its single distance
-  hypothesis.
+ `spec/OPERATIONAL_SEMANTICS.md` §4; the ledger is `spec/OBLIGATIONS.md`.
+ Machine-checked soundness is **not** claimed in full. `OBL-JUDGMENT-SOUNDNESS`
+ is `proved` by hand derivation; its Lean form (`judgment_soundness_of_term`,
+ `TermSoundness.lean`) derives the evaluation chain from the closed term's
+ evaluation, discharges the `k` cells via `ranksFit_of_wf`, and takes
+ `MeasureMonotone` (discharged for the exact sector distance in
+ `judgment_soundness_exact`, `ExactDistance.lean`) as its single distance
+ hypothesis.
 - **Mechanization:** `lean/` is partial and certifies only the theorems it
-  states (`lean/README.md`, `AXIOMS.md`). The build is green (`0 sorry`) on
-  `main`.
+ states (`lean/README.md`, `AXIOMS.md`). The build is green (`0 sorry`) on
+ `main`.
 - **Scope:** the calculus is deliberately incomplete: `unavailable` is withheld
-  by design commitment, and no artifact describes the calculus as aiming at
-  completeness. See `spec/GATES.md` §11 and `spec/VERSIONING.md`.
+ by design commitment, and no artifact describes the calculus as aiming at
+ completeness. See `spec/GATES.md` §11 and `spec/VERSIONING.md`.
 
 ## Repository layout
 
@@ -282,12 +282,12 @@ commit; see `machine/README.md`.
 ## Where to read next (humans)
 
 - **Start with the calculus:** `spec/REPRESENTATION.md` (how a code is written
-  down) → `spec/STATE_MODEL.md` → `spec/TERM_LANGUAGE.md` →
-  `spec/OPERATIONAL_SEMANTICS.md` → `spec/JUDGMENT_LAYER.md`.
+ down) → `spec/STATE_MODEL.md` → `spec/TERM_LANGUAGE.md` →
+ `spec/OPERATIONAL_SEMANTICS.md` → `spec/JUDGMENT_LAYER.md`.
 - **Then reference:** `spec/CLAIMS.md` (admission schema and evidence
-  vocabulary), `spec/OBLIGATIONS.md` (the obligation ledger),
-  `spec/GATES.md` (proof gates and non-goals), `spec/TAXONOMY.md` (operation
-  inventory), `spec/VERSIONING.md`.
+ vocabulary), `spec/OBLIGATIONS.md` (the obligation ledger),
+ `spec/GATES.md` (proof gates and non-goals), `spec/TAXONOMY.md` (operation
+ inventory), `spec/VERSIONING.md`.
 - **The consumer:** `machine/README.md` and `machine/priced_calculus.py`.
 - **The mechanization:** `lean/README.md` and `AXIOMS.md`.
 - **Gates and non-goals:** `spec/GATES.md` and `spec/VERSIONING.md`.
@@ -326,13 +326,13 @@ If you use code-calculus in your work, please cite the repository:
 
 ```bibtex
 @software{rennela2026codecalculus,
-  title        = {code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes},
-  author       = {Mathys Rennela},
-  year         = {2026},
-  version      = {0.2.0},
-  publisher    = {Unitary Foundation},
-  url          = {https://github.com/unitaryfoundation/code-calculus},
-  license      = {Apache-2.0}
+ title = {code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes},
+ author = {Mathys Rennela},
+ year = {2026},
+ version = {0.3.0},
+ publisher = {Unitary Foundation},
+ url = {https://github.com/unitaryfoundation/code-calculus},
+ license = {Apache-2.0}
 }
 ```
 

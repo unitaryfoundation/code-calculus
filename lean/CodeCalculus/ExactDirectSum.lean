@@ -1,7 +1,7 @@
 import CodeCalculus.ExactPeel
 
 /-!
-# The direct-sum law for the exact distance (issue #367)
+# The direct-sum law for the exact distance
 
 For two states on disjoint namespaces whose rows are supported on their own
 namespaces, each exact sector distance of the direct sum is the minimum of

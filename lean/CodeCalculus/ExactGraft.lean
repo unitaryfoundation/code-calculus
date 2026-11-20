@@ -1,7 +1,7 @@
 import CodeCalculus.ExactPermute
 
 /-!
-# The §4.13 graft relations for the exact distance (issue #367)
+# The §4.13 graft relations for the exact distance
 
 `E-GRAFT` at a qubit `q` in the sector `τ` along the chain of the `τ`-rows
 through `q` removes `q`, replaces the chain by its adjacent sums, and

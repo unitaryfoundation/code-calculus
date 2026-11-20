@@ -3,7 +3,7 @@
   "title": "Symplectic move set: conformance records (issue #305)",
   "status": "machine-side companion records; not part of the acceptance surface (mvp_fixtures.json) and not normative",
   "source_of_truth": [
-    "notes/harness/symplectic_move_set_2026-11-10.md",
+    "the symplectic move set (2026-11-10)",
     "machine/symplectic_calculus.py"
   ],
   "conventions": {

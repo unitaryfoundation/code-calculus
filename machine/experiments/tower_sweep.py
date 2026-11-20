@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Sweep of the tower price provider against exhaustive enumeration (issue #327).
 
-`design/DERIVED_RELATIONS.md` section 2a derives that deleting the lifts of
+`DERIVED_RELATIONS.md` section 2a derives that deleting the lifts of
 outer checks in a concatenation tower has exposure and deletion prices that
 factor through the outer code: each is the least dictionary weight of an
 outer-level vector, where the dictionary weight sums, over blocks, the inner

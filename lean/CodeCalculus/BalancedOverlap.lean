@@ -2,7 +2,7 @@ import CodeCalculus.ConstructorRankTyped
 import CodeCalculus.ConstructorAssembly
 
 /-!
-# `L-BALANCED`: the natural rows have pairwise even overlap (issue #501)
+# `L-BALANCED`: the natural rows have pairwise even overlap
 
 `balanced_naturalOrthogonal` proves, for every typed input, the overlap
 hypothesis of `evalExpr_balanced_wf`, so every evaluation of `L-BALANCED`

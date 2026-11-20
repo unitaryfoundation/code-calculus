@@ -4,7 +4,7 @@
 The radius is the largest Euclidean diameter of any single check's support in
 a layout. It is exactly computable, so this survey measures rather than
 searches. It exists to make two claims in
-[`archive/notes/LAYOUT_PARAMETER_PLAN.md`](../../archive/notes/LAYOUT_PARAMETER_PLAN.md) §5
+`the layout-parameter plan` §5
 auditable instead of asserted:
 
 * the graft does **not** preserve the radius -- some grafts increase it; and

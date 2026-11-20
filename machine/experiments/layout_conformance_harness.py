@@ -1,4 +1,4 @@
-"""Randomized conformance check for the layout cells (issue #333).
+"""Randomized conformance check for the layout cells.
 
 The layout cells of ``spec/JUDGMENT_LAYER.md`` section 2d.5 state, for every
 transition, how the layout travels (unchanged, restricted to the surviving

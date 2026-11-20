@@ -18,7 +18,7 @@ def mintFresh (used : List Nat) : Nat → List Nat
   | 0 => []
   | n + 1 => canonicalMint used :: mintFresh (used ++ [canonicalMint used]) n
 
-/-- Capacity premise (H-4, decided 2026-10-31; issue #296): every identifier
+/-- Capacity premise (H-4, decided 2026-10-31): every identifier
     the canonical mint produces for `n` fresh rows over `used` lies in the
     finite enumeration of `spec/STATE_MODEL.md` I3 (`totalIdentifiers` names).
     A transition that would mint past the enumeration has no derivation,
@@ -145,6 +145,47 @@ inductive EvalExpr : StateExpr → CodeState → Prop where
         (nestedVectors HX HZ)) = true)
       (hcap : MintsWithinCapacity [] (nestedState HX HZ).rows.length) :
       EvalExpr (StateExpr.nested HX HZ) (nestedState HX HZ)
+  | cone {DA DB F1 F0 : List (List Bool)}
+      (hty : coneTyped DA DB F1 F0 = true)
+      (hcomm : naturalCommuteBool (naturalRows (coneN DA DB F1 F0)
+        (coneVectors DA DB F1 F0)) = true)
+      (hcap : MintsWithinCapacity [] (coneState DA DB F1 F0).rows.length) :
+      EvalExpr (StateExpr.cone DA DB F1 F0) (coneState DA DB F1 F0)
+  /-- `L-EMPTY`: the nullary empty CSS code. -/
+  | empty : EvalExpr StateExpr.empty emptyCodeState
+  /-- `L-FREE`: the check-free CSS code on a finite qubit-label set. -/
+  | free {qs : List Nat}
+      (hty : freeTyped qs = true) :
+      EvalExpr (StateExpr.free qs) (freeState qs)
+  /-- `A-PULLBACK`: fiber product of two well-formed CSS states over an
+      interface along CSS code morphisms whose pulled-back rows commute. -/
+  | pullback {e1 e2 eI : StateExpr} {s1 s2 sI : CodeState}
+      {phi1 phi2 : List (Nat × Nat)}
+      (h1 : EncodingWellFormed s1) (h2 : EncodingWellFormed s2)
+      (hI : EncodingWellFormed sI)
+      (hty : pullbackTyped s1 s2 sI phi1 phi2 = true)
+      (hm1 : cssMorphismBool s1 sI phi1 = true)
+      (hm2 : cssMorphismBool s2 sI phi2 = true)
+      (hcomm : naturalCommuteBool (naturalRows (pullbackPairs s1 s2 phi1 phi2).length
+        (pullbackVectors s1 s2 phi1 phi2)) = true)
+      (hcap : MintsWithinCapacity [] (pullbackState s1 s2 phi1 phi2).rows.length) :
+      EvalExpr e1 s1 → EvalExpr e2 s2 → EvalExpr eI sI →
+      EvalExpr (StateExpr.pullback e1 e2 eI phi1 phi2) (pullbackState s1 s2 phi1 phi2)
+  /-- `A-PUSHOUT`: amalgamated sum of two well-formed CSS states along a
+      shared subcode via CSS code morphisms whose pushed-forward rows commute. -/
+  | pushout {e1 e2 eS : StateExpr} {s1 s2 sS : CodeState}
+      {psi1 psi2 : List (Nat × Nat)}
+      (h1 : EncodingWellFormed s1) (h2 : EncodingWellFormed s2)
+      (hS : EncodingWellFormed sS)
+      (hty : pushoutTyped s1 s2 sS psi1 psi2 = true)
+      (hm1 : cssMorphismBool sS s1 psi1 = true)
+      (hm2 : cssMorphismBool sS s2 psi2 = true)
+      (hcomm : naturalCommuteBool (naturalRows (pushoutClasses s1 s2 sS psi1 psi2).length
+        (pushoutVectors s1 s2 sS psi1 psi2)) = true)
+      (hcap : MintsWithinCapacity [] (pushoutState s1 s2 sS psi1 psi2).rows.length) :
+      EvalExpr e1 s1 → EvalExpr e2 s2 → EvalExpr eS sS →
+      EvalExpr (StateExpr.pushout e1 e2 eS psi1 psi2) (pushoutState s1 s2 sS psi1 psi2)
+
 
 /-- A displayed generator is one whose identifier names a live row. -/
 def DisplayedGenerator (r : Nat) (s : CodeState) : Prop :=
@@ -581,7 +622,7 @@ inductive EvalTerm : ClosedTerm → CodeState → Prop where
       EvalExpr e s → Eval m s s' →
       EvalTerm { command := m, expr := e } s'
 
-/-! ### The derived denotation (2026-10-25, issue #140)
+/-! ### The derived denotation (2026-10-25)
 
 `spec/OPERATIONAL_SEMANTICS.md` §1a fixes the reading after the authority
 reconciliation: the partial big-step relation `Eval` is **primary**, and the
@@ -681,6 +722,42 @@ noncomputable def denoteExpr : StateExpr → Option CodeState
          MintsWithinCapacity [] (nestedState HX HZ).rows.length then
         some (nestedState HX HZ)
       else none
+  | StateExpr.cone DA DB F1 F0 =>
+      if coneTyped DA DB F1 F0 = true ∧
+         naturalCommuteBool (naturalRows (coneN DA DB F1 F0) (coneVectors DA DB F1 F0)) = true ∧
+         MintsWithinCapacity [] (coneState DA DB F1 F0).rows.length then
+        some (coneState DA DB F1 F0)
+      else none
+  | StateExpr.empty => some emptyCodeState
+  | StateExpr.free qs =>
+      if freeTyped qs = true then some (freeState qs) else none
+  | StateExpr.pullback e1 e2 eI phi1 phi2 =>
+      match denoteExpr e1, denoteExpr e2, denoteExpr eI with
+      | some s1, some s2, some sI =>
+          if EncodingWellFormed s1 ∧ EncodingWellFormed s2 ∧ EncodingWellFormed sI ∧
+             pullbackTyped s1 s2 sI phi1 phi2 = true ∧
+             cssMorphismBool s1 sI phi1 = true ∧
+             cssMorphismBool s2 sI phi2 = true ∧
+             naturalCommuteBool (naturalRows (pullbackPairs s1 s2 phi1 phi2).length
+               (pullbackVectors s1 s2 phi1 phi2)) = true ∧
+             MintsWithinCapacity [] (pullbackState s1 s2 phi1 phi2).rows.length then
+            some (pullbackState s1 s2 phi1 phi2)
+          else none
+      | _, _, _ => none
+  | StateExpr.pushout e1 e2 eS psi1 psi2 =>
+      match denoteExpr e1, denoteExpr e2, denoteExpr eS with
+      | some s1, some s2, some sS =>
+          if EncodingWellFormed s1 ∧ EncodingWellFormed s2 ∧ EncodingWellFormed sS ∧
+             pushoutTyped s1 s2 sS psi1 psi2 = true ∧
+             cssMorphismBool sS s1 psi1 = true ∧
+             cssMorphismBool sS s2 psi2 = true ∧
+             naturalCommuteBool (naturalRows (pushoutClasses s1 s2 sS psi1 psi2).length
+               (pushoutVectors s1 s2 sS psi1 psi2)) = true ∧
+             MintsWithinCapacity [] (pushoutState s1 s2 sS psi1 psi2).rows.length then
+            some (pushoutState s1 s2 sS psi1 psi2)
+          else none
+      | _, _, _ => none
+
 
 open Classical in
 /-- The derived denotation of a command. -/
@@ -827,6 +904,32 @@ theorem eval_denoteExpr {e : StateExpr} {s : CodeState}
       · rfl
       · rename_i hNot
         exact absurd ⟨hty, hcomm, hcap⟩ hNot
+  | cone hty hcomm hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcomm, hcap⟩ hNot
+  | empty => rfl
+  | free hty =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd hty hNot
+  | pullback h1 h2 hI hty hm1 hm2 hcomm hcap _ _ _ ih1 ih2 ihI =>
+      simp only [denoteExpr, ih1, ih2, ihI]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨h1, h2, hI, hty, hm1, hm2, hcomm, hcap⟩ hNot
+  | pushout h1 h2 hS hty hm1 hm2 hcomm hcap _ _ _ ih1 ih2 ihS =>
+      simp only [denoteExpr, ih1, ih2, ihS]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨h1, h2, hS, hty, hm1, hm2, hcomm, hcap⟩ hNot
+
 
 /-- The denotation's `some` branch has a derivation (spec §1a). -/
 theorem denoteExpr_some_eval : ∀ (e : StateExpr) (s : CodeState),
@@ -987,6 +1090,75 @@ theorem denoteExpr_some_eval : ∀ (e : StateExpr) (s : CodeState),
         cases hEq
         exact EvalExpr.nested hty hcomm hcap
       · exact absurd hEq (by simp)
+  | cone DA DB F1 F0 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcomm, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.cone hty hcomm hcap
+      · exact absurd hEq (by simp)
+  | empty =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases hEq
+      exact EvalExpr.empty
+  | free qs =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hty
+        cases hEq
+        exact EvalExpr.free hty
+      · exact absurd hEq (by simp)
+  | pullback e1 e2 eI phi1 phi2 ih1 ih2 ihI =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr e1
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i s1
+        cases h2 : denoteExpr e2
+        · simp only [h1, h2] at hEq
+          exact absurd hEq (by simp)
+        · rename_i s2
+          cases hI : denoteExpr eI
+          · simp only [h1, h2, hI] at hEq
+            exact absurd hEq (by simp)
+          · rename_i sI
+            simp only [h1, h2, hI] at hEq
+            split at hEq
+            · rename_i hP
+              obtain ⟨hw1, hw2, hwI, hty, hm1, hm2, hcomm, hcap⟩ := hP
+              cases hEq
+              exact EvalExpr.pullback hw1 hw2 hwI hty hm1 hm2 hcomm hcap
+                (ih1 s1 h1) (ih2 s2 h2) (ihI sI hI)
+            · exact absurd hEq (by simp)
+  | pushout e1 e2 eS psi1 psi2 ih1 ih2 ihS =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h1 : denoteExpr e1
+      · simp only [h1] at hEq
+        exact absurd hEq (by simp)
+      · rename_i s1
+        cases h2 : denoteExpr e2
+        · simp only [h1, h2] at hEq
+          exact absurd hEq (by simp)
+        · rename_i s2
+          cases hS : denoteExpr eS
+          · simp only [h1, h2, hS] at hEq
+            exact absurd hEq (by simp)
+          · rename_i sS
+            simp only [h1, h2, hS] at hEq
+            split at hEq
+            · rename_i hP
+              obtain ⟨hw1, hw2, hwS, hty, hm1, hm2, hcomm, hcap⟩ := hP
+              cases hEq
+              exact EvalExpr.pushout hw1 hw2 hwS hty hm1 hm2 hcomm hcap
+                (ih1 s1 h1) (ih2 s2 h2) (ihS sS hS)
+            · exact absurd hEq (by simp)
+
 
 /-- The derived denotation is adequate for the expression relation. -/
 theorem denoteExpr_eval {e : StateExpr} {s : CodeState} :
@@ -1342,7 +1514,7 @@ theorem not_eval_graft_no_opposite :
       rcases hopp with ⟨r, hr, hsec, _⟩
       rcases List.mem_cons.mp hr with rfl | hr'
       · cases hsec
-      · simp at hr' 
+      · simp at hr'
 
 /-- Refusal: a chain that omits a touching row (length mismatch) is refused. -/
 theorem not_eval_graft_short_chain :
@@ -1593,7 +1765,7 @@ def twoQubitState : CodeState :=
 
 /-- A hadamard term with a subset strictly between ∅ and Q is refused: the
     constructor's first premise admits only `T = Q` or `T = []` (the
-    S1-dispositioned split-subset mechanics are outside the state update —
+    review-dispositioned split-subset mechanics are outside the state update —
     OPERATIONAL_SEMANTICS.md §4.27). -/
 theorem not_eval_hadamard_subset :
     ¬ Eval (Command.hadamard [0]) twoQubitState
@@ -1700,13 +1872,13 @@ theorem peelEval_Q_length {q : Nat} {tau : Sector} {r_id : Nat}
       rw [hs']
       exact peelState_Q_length hq hWF.1
 
-/-- Example states for the `E-GLUE` positive instance (PR #303 review). -/
+/-- Example states for the `E-GLUE` positive instance (review). -/
 def glueExampleA : CodeState :=
   { Q := [0, 1]
   , rows := [⟨1, Sector.X, [0, 1]⟩]
   , used := [1] }
 
-/-- Example states for the `E-GLUE` positive instance (PR #303 review). -/
+/-- Example states for the `E-GLUE` positive instance (review). -/
 def glueExampleB : CodeState :=
   { Q := [2, 3]
   , rows := [⟨2, Sector.X, [2, 3]⟩]
@@ -1760,7 +1932,7 @@ theorem not_evalExpr_glue_example :
   intro h
   exact glue_example_refusal_not_wellFormed (evalExpr_glue_implies_wf h)
 
-/-! ## Capacity alignment (H-4, issue #296)
+/-! ## Capacity alignment (H-4)
 
 The five minting rules carry a capacity premise, so no derivation mints an
 identifier at or beyond `totalIdentifiers`: a history inside the finite

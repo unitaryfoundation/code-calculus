@@ -1,4 +1,4 @@
-"""Extracted module from machine/priced_calculus.py (issue #378)."""
+"""Extracted module from machine/priced_calculus.py."""
 
 import copy
 import re
@@ -185,7 +185,7 @@ class CodeState:
     def relabel_identifiers(self, used=None):
         """Return a copy of this state whose row identifiers are re-minted
         from the fixed enumeration so that none of them collide with ``used``
-        (issue #431).
+        .
 
         The state's qubit namespace, supports, and sectors are unchanged;
         only the row identifiers (and the ``used`` set) are replaced.  This
@@ -336,7 +336,7 @@ class CodeState:
         return result
 
     def glue(self, other, seam_checks=None, seam_certificate=None, **kwargs):
-        """E-GLUE: gluing of two codes along a seam (issue #119).
+        """E-GLUE: gluing of two codes along a seam.
 
         Combines two disjoint-namespace CSS states and adds the seam checks
         supplied by the (consumer-provided) seam certificate. The logical-
@@ -472,9 +472,9 @@ class CodeState:
     # Each method checks the applicability premises its §2 card states, then
     # constructs the child and validates it; a failed output check is a
     # no-derivation, per the §2 card wording ("an output failing I1-I5 gives
-    # no derivation"). E-GLUE has no admitted evaluator transition (the
-    # logical-witness prerequisite is unmet): its state/ledger seam helpers live
-    # above and consume the §2e certificate as a hypothesis, but no evaluator
+    # no derivation"). E-GLUE is a binary-only expression constructor
+    # (TERM_LANGUAGE.md §1-§2,; contract-stated, Gate 6 unchecked):
+    # its binary state/ledger helpers live above (OPERATIONAL_SEMANTICS.md §4.31).
 
     @staticmethod
     def _validate_matrix(matrix, size):
@@ -532,7 +532,7 @@ class CodeState:
         """E-LOCAL-HADAMARD at T=Q: the sector exchange of the whole display.
 
         The general split-subset instance is not admitted: a hadamard term for
-        any other qubit subset has no derivation (the S1-dispositioned split
+        any other qubit subset has no derivation (the review-dispositioned split
         condition's row-wise mechanics are out of scope; see
         OPERATIONAL_SEMANTICS.md §4.27).
         """

@@ -1,8 +1,9 @@
-"""Tests for the falsification harness of issue #452.
+"""Tests for the gate-realization judgment rows (issues #452, #543).
 
-The harness checks the two candidate rows of
-`design/GATE_REALIZATION_ROWS.md` against a state-vector oracle. A passing
-sweep is evidence for the derivations, not a proof, and admits no row.
+The harness checks the two rows of `spec/JUDGMENT_LAYER.md` §2h,
+`spec/OPERATIONAL_SEMANTICS.md` §4.37, and `GATE_REALIZATION_ROWS.md`
+against a state-vector oracle, and checks the consumer-side
+`DistanceLedger.equal_syndrome_weight_floor` weakening transport.
 """
 
 import math
@@ -11,11 +12,15 @@ import sys
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(HERE, "experiments"))
 
 from gate_realization_rows import (  # noqa: E402
     Display,
     Pauli,
+    addition_survival_verdict,
     conditioned_pauli,
     deletion_instance,
     equal_syndrome,
@@ -33,6 +38,8 @@ from gate_realization_rows import (  # noqa: E402
     w_max,
     weight_floor,
 )
+from machine.intervals import DistanceLedger, Interval  # noqa: E402
+from machine.state import CodeState, Row  # noqa: E402
 
 QUARTER = math.pi / 4
 
@@ -44,7 +51,7 @@ class PauliAlgebra(unittest.TestCase):
         self.assertEqual(y * y, Pauli(0, 0, 0))
 
     def test_xz_product_phase(self):
-        # X Z = -i Y, the sign lemma of design/ROADMAP.md.
+        # X Z = -i Y, the sign lemma of ROADMAP.md.
         x, z, y = (pauli_from_string(s) for s in "XZY")
         self.assertEqual(x * z, y.scaled(3))
 
@@ -91,6 +98,57 @@ class SurvivalRow(unittest.TestCase):
         self.assertFalse(oracle_preserves(child, gens, eps, [QUARTER] * 2))
         self.assertFalse(preserves_pi4(child, gens, eps))
 
+    def test_three_branch_addition_verdict_and_from_code_state(self):
+        state = CodeState(
+            Q=(0, 1),
+            rows=(Row("b1", "Z", (0, 1)),),
+            used=frozenset({"b1"}),
+        )
+        parent = Display.from_code_state(state)
+        # Branch 1: commuting generator carries at any angle.
+        self.assertEqual(
+            addition_survival_verdict(
+                parent, [pauli_from_string("XX")], [1], "X", mask([0, 1]), thetas=[math.pi / 7]
+            ),
+            "carries",
+        )
+        # Branch 2: anticommuting generator at pi/4 is decided by V_s in S(C').
+        self.assertEqual(
+            addition_survival_verdict(
+                parent,
+                [pauli_from_string("ZI"), pauli_from_string("IZ")],
+                [1, -1],
+                "X",
+                mask([0, 1]),
+                thetas=[QUARTER, QUARTER],
+            ),
+            "carries",
+        )
+        self.assertEqual(
+            addition_survival_verdict(
+                parent, [pauli_from_string("ZI")], [1], "X", mask([0, 1]), thetas=[QUARTER]
+            ),
+            "does_not_carry",
+        )
+        # Branch 3: anticommuting generator at angle != pi/4 is not yet defined.
+        self.assertEqual(
+            addition_survival_verdict(
+                parent, [pauli_from_string("ZI")], [1], "X", mask([0, 1]), thetas=[math.pi / 8]
+            ),
+            "not_yet_defined",
+        )
+        # Invalid sector, non-commuting check, or dependent check is rejected.
+        with self.assertRaises(ValueError):
+            addition_survival_verdict(parent, [pauli_from_string("XX")], [1], "Y", mask([0, 1]))
+        with self.assertRaises(ValueError):
+            addition_survival_verdict(parent, [pauli_from_string("XX")], [1], "X", mask([0]))
+        with self.assertRaises(ValueError):
+            addition_survival_verdict(parent, [pauli_from_string("XX")], [1], "Z", mask([0, 1]))
+        with self.assertRaises(ValueError):
+            addition_survival_verdict(
+                parent, [pauli_from_string("XX")], [1], "X", mask([0, 1]), thetas=[-0.1]
+            )
+
 
 class WeightRow(unittest.TestCase):
     def test_shor_distance(self):
@@ -110,6 +168,53 @@ class WeightRow(unittest.TestCase):
         self.assertTrue(oracle_preserves(child, gens, [1, 1], [math.pi / 2] * 2))
         # In the parent the pair does not have a common syndrome.
         self.assertFalse(equal_syndrome(parent, gens))
+
+    def test_ledger_weakening_transport_across_transitions(self):
+        state = CodeState(
+            Q=(0, 1, 2, 3),
+            rows=(Row("a1", "X", (0, 1, 2, 3)), Row("b1", "Z", (0, 1))),
+            used=frozenset({"a1", "b1"}),
+        )
+        ledger = DistanceLedger(
+            Interval(3, 3),
+            {"X": Interval(3, 3), "Z": Interval(3, 3)},
+        )
+        self.assertEqual(ledger.equal_syndrome_weight_floor(), 2)
+        # C-SKIP keeps L_d = 3 and floor = 2.
+        after_skip = ledger.propagate({"op": "C-SKIP"}, state.skip(), parent_state=state)
+        self.assertEqual(after_skip.equal_syndrome_weight_floor(), 2)
+        # C-ADD-CHECK with k' = 1 > 0 carries L_d >= 3 and floor >= 2.
+        added_state = state.add_check("Z", (1, 2))
+        after_add = ledger.propagate(
+            {"op": "C-ADD-CHECK", "sector": "Z", "support": [1, 2]},
+            added_state,
+            parent_state=state,
+        )
+        self.assertEqual(after_add.equal_syndrome_weight_floor(), 2)
+        # C-ADD-CHECK reaching k'' = 0 sets L_d = None (+inf), so floor is None (+inf).
+        zero_k_state = added_state.add_check("Z", (2, 3))
+        after_zero_k = after_add.propagate(
+            {"op": "C-ADD-CHECK", "sector": "Z", "support": [2, 3]},
+            zero_k_state,
+            parent_state=added_state,
+        )
+        self.assertIsNone(after_zero_k.equal_syndrome_weight_floor())
+        # Unpriced C-DELETE-CHECK resets L_d to 0, so the floor weakens to 0.
+        deleted_state = state.delete_check("b1")
+        after_unpriced_del = ledger.propagate(
+            {"op": "C-DELETE-CHECK", "id": "b1"},
+            deleted_state,
+            parent_state=state,
+        )
+        self.assertEqual(after_unpriced_del.equal_syndrome_weight_floor(), 0)
+        # Priced C-DELETE-CHECK with min(w_del, w_exp) = 1 moves L_d to 1 and floor to ceil(1/2) = 1.
+        after_priced_del = ledger.propagate(
+            {"op": "C-DELETE-CHECK", "id": "b1"},
+            deleted_state,
+            hypothesis={"deletion_price": {"w_del": 2, "w_exp": 1, "evidence": "shor-test"}},
+            parent_state=state,
+        )
+        self.assertEqual(after_priced_del.equal_syndrome_weight_floor(), 1)
 
 
 class Sweep(unittest.TestCase):

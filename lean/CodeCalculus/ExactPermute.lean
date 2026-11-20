@@ -1,7 +1,7 @@
 import CodeCalculus.ExactDirectSum
 
 /-!
-# The exact distance does not depend on the order of the namespace (issue #367)
+# The exact distance does not depend on the order of the namespace
 
 `E-EXTEND` with `Δ = ∅` appends rows and re-sorts the qubit list
 (`extendState`), so its addition law for the exact distance needs the

@@ -1,11 +1,11 @@
 {
   "schema_version": "0.3.0",
   "title": "MVP acceptance fixtures (W0-W16 acceptance surface) plus supplementary MVP probes (W21-W29, acceptance_surface: false)",
-  "schema_note": "0.3.0 (2026-10-27): adds per-premise structured fields (premise_*) to conformance records, additive over 0.2.0; no existing field removed. 0.2.0 -> 0.3.0 is a fixture-schema bump only. 0.2.0 (2026-10-05): adds the boolean field `acceptance_surface` to every record. 0.1.0 -> 0.2.0 is additive only; no W0-W16 record's content changed. The field marks what the conformance rule executes. `true` = MVP acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26. `false` = supplementary probe, executed as a probe but NOT part of that surface. Maintainer disposition 2026-10-05, option B. See spec/CLAIMS.md sections 2 and 7. 2026-10-29 (issue #237): the W25 probe adds an optional, probe-local `expected.certificate` input object ({sector, bound}) read by machine/fixture_conformance.py; additive only, no existing record changed, schema_version stays 0.3.0.",
+  "schema_note": "0.3.0 (2026-10-27): adds per-premise structured fields (premise_*) to conformance records, additive over 0.2.0; no existing field removed. 0.2.0 -> 0.3.0 is a fixture-schema bump only. 0.2.0 (2026-10-05): adds the boolean field `acceptance_surface` to every record. 0.1.0 -> 0.2.0 is additive only; no W0-W16 record's content changed. The field marks what the conformance rule executes. `true` = MVP acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26. `false` = supplementary probe, executed as a probe but NOT part of that surface. Maintainer disposition 2026-10-05, option B. See spec/CLAIMS.md sections 2 and 7. 2026-10-29: the W25 probe adds an optional, probe-local `expected.certificate` input object ({sector, bound}) read by machine/fixture_conformance.py; additive only, no existing record changed, schema_version stays 0.3.0.",
   "source_of_truth": {
     "governing": "spec/ plus this JSON. AGENTS.md (Normative artifacts): machine/ is a derived transcription, so where spec/ and this JSON disagree spec/ wins and the transcription is fixed; where this JSON and an evaluator disagree, this JSON is what the evaluator must match. A disagreement anywhere in that triangle is a defect in one of the three, not a precedence call.",
-    "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model), on branch redteam-followup-corrections. Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
-    "state_model_note": "State tuple includes the semantic used-identifier set per the red-team R1 disposition (2026-09-26): C = (Q, X, Z, pres, used)."
+    "provenance": "Transcribed 2026-09-26 from spec/GATES.md (state cases), spec/GATES.md section 2 (primitive cards) and spec/GATES.md sections 1-3 and 6 (state model), on an internal development branch. Those three are archived predecessors: provenance for where these records came from, and normative for nothing (AGENTS.md).",
+    "state_model_note": "State tuple includes the semantic used-identifier set per a reviewed disposition (2026-09-26): C = (Q, X, Z, pres, used)."
   },
   "status": "current",
   "outcome_vocabulary": {
@@ -13,8 +13,8 @@
     "no_derivation": "well-typed term, but no evaluation derivation (inapplicable); absence of derivation IS the behavior",
     "malformed": "rejected by the grammar alone (ill-typed)",
     "false": "a semantic counterexample exists",
-    "not_derivable": "no derivation in the current rule system (may be a gap or by design); the label is recorded for one claim in a stated scope, naming the rule system and the record date (red-team R9, dispositioned 2026-09-26)",
-    "unavailable": "deliberately underivable in the MVP by design commitment; cannot be derived by omission; claimed per evaluation, not per state (red-team S5, dispositioned 2026-09-26)",
+    "not_derivable": "no derivation in the current rule system (may be a gap or by design); the label is recorded for one claim in a stated scope, naming the rule system and the record date (a review finding, dispositioned 2026-09-26)",
+    "unavailable": "deliberately underivable in the MVP by design commitment; cannot be derived by omission; claimed per evaluation, not per state (a review finding, dispositioned 2026-09-26)",
     "not_yet_defined": "outside the current assertion language",
     "hand": "true of the state but deliberately underivable in the calculus (distance values)"
   },
@@ -24,12 +24,12 @@
     "empty_row": "'0' or 'empty' denotes the zero row",
     "rows": "displayed rows are written (support, identifier); unordered sets",
     "infinite_distance": "'+inf' follows the proposal's empty-sector convention",
-    "equivalences": "approx is qubit-relabeling equivalence (presentation transport); equiv is identical Q AND identical labeled rows AND identical used-identifier set (used made semantic by the R1 disposition, 2026-09-26; Q added by issue #241, 2026-10-29)",
-    "canonical_mint": "the mint is the first element of the fixed identifier enumeration not in `used`; fixture identifiers like c1/c2 are example-local metavariables for 'the next canonically minted identifier' (red-team R5), not literal distinct names",
-    "acceptance_surface": "boolean, present on every record. true = MVP acceptance surface (W0-W16), fixed by spec/GATES.md *Addenda* 2(ii) 2026-09-26. false = supplementary MVP probe, executed under spec/CLAIMS.md section 2 as a probe but not part of that surface (W21, added 2026-10-05; maintainer disposition option B; W22, added 2026-10-18, same treatment). W17-W20 are later-layer probes and are not recorded in this file at all. W25-W28 (added 2026-10-29, issue #237, refusal probes for stale certificates, used-set collisions, I2 on the Z side, and ambient containment) carry the same treatment."
+    "equivalences": "approx is qubit-relabeling equivalence (presentation transport); equiv is identical Q AND identical labeled rows AND identical used-identifier set (used made semantic by a reviewed disposition, 2026-09-26; Q added 2026-10-29)",
+    "canonical_mint": "the mint is the first element of the fixed identifier enumeration not in `used`; fixture identifiers like c1/c2 are example-local metavariables for 'the next canonically minted identifier' (a review finding), not literal distinct names",
+    "acceptance_surface": "boolean, present on every record. true = MVP acceptance surface (W0-W16), fixed by spec/GATES.md *Addenda* 2(ii) 2026-09-26. false = supplementary MVP probe, executed under spec/CLAIMS.md section 2 as a probe but not part of that surface (W21, added 2026-10-05; maintainer disposition option B; W22, added 2026-10-18, same treatment). W17-W20 are later-layer probes and are not recorded in this file at all. W25-W28 (added 2026-10-29, refusal probes for stale certificates, used-set collisions, I2 on the Z side, and ambient containment) carry the same treatment."
   },
   "usage": {
-    "consumer": "Full kernel conformance evaluator (state-level replay: machine/fixture_conformance.py) or Lean 4 mechanization; the issue #21 consumer in machine/priced_calculus.py implements a separate transition subset and does not consume this fixture file.",
+    "consumer": "Full kernel conformance evaluator (state-level replay: machine/fixture_conformance.py) or Lean 4 mechanization; the separate consumer in machine/priced_calculus.py implements a separate transition subset and does not consume this fixture file.",
     "contract": "each entry is an acceptance test: evaluation of `term` on `initial_state` must produce `expected` exactly, or fail exactly as specified (no derivation, no stuck residual, no partial state)",
     "big_step_only": "the semantics is partial big-step: no residual commands or partial states are exposed (W10)",
     "priced_consumer_boundary": "Issue #21 construction and interval tests live in machine/test_priced_calculus.py and the conformance harness W0-W16 acceptance content and W21/W22 supplementary probes are unchanged."
@@ -322,7 +322,7 @@
         "premise_same_sector_independence": true
       },
       "caveats": [
-        "red-team R5: identifier metavariables are example-local, not literal distinct names"
+        "a review finding: identifier metavariables are example-local, not literal distinct names"
       ]
     },
     {
@@ -431,7 +431,7 @@
         "detail": "m1;m2 applies (final state A2 of W5); m2;m1 has no derivation (1 . 12 = 1 so addStab_1 fails on A). One order applies, the other does not: the moves do not permute; conditional permutation cannot be claimed here."
       },
       "caveats": [
-        "probe point of OBL-CROSS-SECTOR-PERMUTATION; red-team R2's fourth case is adopted (maintainer decision 2026-09-26): both orders applicable with unequal outputs; W8 is a case-3 instance (exactly one order applicable)"
+        "probe point of OBL-CROSS-SECTOR-PERMUTATION; a reviewed finding's fourth case is adopted (maintainer decision 2026-09-26): both orders applicable with unequal outputs; W8 is a case-3 instance (exactly one order applicable)"
       ]
     },
     {
@@ -468,7 +468,7 @@
           ],
           "k": 2
         },
-        "reversed_order": "delete_{a1};delete_{a2} reaches the same final row spaces and parameters; steps differ only in record order (evidence for OBL-ORDER-INDEPENDENT-DELETION, conjectural, not proof)"
+        "reversed_order": "delete_{a1};delete_{a2} reaches the same final row spaces and parameters; steps differ only in record order (evidence for OBL-ORDER-INDEPENDENT-DELETION, proved by hand derivation at spec/OPERATIONAL_SEMANTICS.md section 4.15; example is evidence, not proof)"
       }
     },
     {
@@ -517,8 +517,8 @@
         "w7_note": "A3 is not approx A under the ratified stable-ID convention (a1 has no image); under the rejected free-renaming convention it would be"
       },
       "caveats": [
-        "relabeling congruence OBL-PRESENTATION-CONJUGATION is proved (sections 4.22, presentation conjugation); red-team R4's disposition (maintainer decision 2026-09-26) adopts transported-command congruence (sigma m for additions), so 'all judgments agree across the pair' means agreement under that congruence, not same-command agreement",
-        "notation per red-team R6"
+        "relabeling congruence OBL-PRESENTATION-CONJUGATION is proved (sections 4.22, presentation conjugation); a reviewed disposition (maintainer decision 2026-09-26) adopts transported-command congruence (sigma m for additions), so 'all judgments agree across the pair' means agreement under that congruence, not same-command agreement",
+        "notation per a review finding"
       ]
     },
     {
@@ -532,7 +532,7 @@
       "term": "delete_{a1}",
       "expected": {
         "outcome": "derivable",
-        "detail": "result A1 as in W3; the calculus derives only the class admissions, quotient-level transport (proposed), and k' = k + 1",
+        "detail": "result A1 as in W3; the calculus derives the class admissions; quotient-level transport is proved of the output state (spec/OPERATIONAL_SEMANTICS.md section 4.39), the non-increase upper bound (section 4.5), and k' = k + 1; exact unpriced distances remain unavailable",
         "distances_hand": {
           "d_X": {
             "before": "+inf",
@@ -578,7 +578,7 @@
             "assertion": "d_Z(C') = 1",
             "truth": "true [hand]",
             "outcome": "unavailable",
-            "why": "unavailability is claimed for this evaluation: the annotation of delete_a1 carries no distance lower bound or equality (red-team S5, dispositioned 2026-09-26); the value stays true and hand-checked, and a fact about A1 derived through another route stays admissible; absence of a derivation through this route is not falsity"
+            "why": "unavailability is claimed for this evaluation: the annotation of delete_a1 carries no distance lower bound or equality (a review finding, dispositioned 2026-09-26); the value stays true and hand-checked, and a fact about A1 derived through another route stays admissible; absence of a derivation through this route is not falsity"
           },
           {
             "assertion": "rate(C) >= 1/2",
@@ -587,9 +587,9 @@
             "why": "outside the initial assertion language (proposal 6)"
           }
         ],
-        "point": "each label applies to one claim in a stated scope; the four labels are distinct but are not claimed to be a disjoint partition of facts (red-team R9, dispositioned 2026-09-26)"
+        "point": "each label applies to one claim in a stated scope; the four labels are distinct but are not claimed to be a disjoint partition of facts (a review finding, dispositioned 2026-09-26)"
       },
-      "mechanization_warning": "an implementation that derives a deletion-distance lower bound or equality through the delete evaluation has a soundness bug, not a feature; the non-increase upper bound is allowed (red-team S6), and facts about the same state derived through other evaluations are admissible (red-team S5)"
+      "mechanization_warning": "an implementation that derives a deletion-distance lower bound or equality through the delete evaluation has a soundness bug, not a feature; the non-increase upper bound is allowed (a review finding), and facts about the same state derived through other evaluations are admissible (a review finding)"
     },
     {
       "id": "W14",
@@ -719,7 +719,7 @@
         "premise_used_disjoint": true
       },
       "caveats": [
-        "red-team R8 (resolved 2026-09-26): the disjointness premise also covers used-identifier sets; a used-set collision makes the sum inapplicable exactly like a qubit collision"
+        "a review finding (resolved 2026-09-26): the disjointness premise also covers used-identifier sets; a used-set collision makes the sum inapplicable exactly like a qubit collision"
       ]
     },
     {
@@ -806,7 +806,7 @@
         "outcome": "no_derivation",
         "premise_qubit_disjoint": true,
         "premise_used_disjoint": false,
-        "detail": "Q_L intersect Q_R' = {1,2} intersect {3,4} = empty, so the qubit-namespace premise HOLDS; used_L intersect used_R' = {p1} is non-empty, so the C-DIRECT-SUM used-disjointness premise after the R1 disposition FAILS - no EvalExpr derivation. Both states are individually well-formed; the constructor, not the states, is inapplicable. Mirrors W15 exactly, on the other premise.",
+        "detail": "Q_L intersect Q_R' = {1,2} intersect {3,4} = empty, so the qubit-namespace premise HOLDS; used_L intersect used_R' = {p1} is non-empty, so the C-DIRECT-SUM used-disjointness premise after the reviewed disposition FAILS - no EvalExpr derivation. Both states are individually well-formed; the constructor, not the states, is inapplicable. Mirrors W15 exactly, on the other premise.",
         "non_vacuity": "used is per-state identifier history and the canonical mint (I3) allocates relative to that state's used, not globally; two independently constructed states may both mint p1 (merging separately built codes). If the premise were automatic it would carry no content."
       },
       "caveats": [
@@ -918,7 +918,7 @@
           "dim_Z": 1,
           "k": 3
         },
-        "note": "Family A from spec/GATES.md (issue #86 evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
+        "note": "Family A from spec/GATES.md (evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
         "premise_displayed_generator": true,
         "premise_independent": true
       }
@@ -2038,7 +2038,7 @@
           "dim_Z": 46,
           "k": 36
         },
-        "note": "Two-step deletion chain on pinned 119-34-5 (issue #86 evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
+        "note": "Two-step deletion chain on pinned 119-34-5 (evidence). Unpriced deletion resets the full-distance lower endpoint to 0 and carries d' <= d.",
         "premise_displayed_generator": true,
         "premise_independent": true
       }
@@ -2048,7 +2048,7 @@
       "acceptance_surface": false,
       "title": "Stale certificate inherited after its generator is deleted",
       "category": "certificate-inherit-inapplicable",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (issue #237; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The judged claim is certificate inheritance, transcribed in machine/fixture_conformance.py: the term delete_{a1} itself derives, and the certificate block lives in `expected.certificate` (an additive, probe-local input; schema_version stays 0.3.0). Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The judged claim is certificate inheritance, transcribed in machine/fixture_conformance.py: the term delete_{a1} itself derives, and the certificate block lives in `expected.certificate` (an additive, probe-local input; schema_version stays 0.3.0). Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "ref": "W0"
       },
@@ -2074,7 +2074,7 @@
       "acceptance_surface": false,
       "title": "Two states sharing a live identifier, with unequal used sets",
       "category": "direct-sum-inapplicable",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (issue #237; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Sharpening of W21: the shared identifier p1 is live on both sides, but the two used sets are UNEQUAL, so an implementation testing used-set equality rather than nonempty intersection reproduces W21 and still accepts this sum. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. Sharpening of W21: the shared identifier p1 is live on both sides, but the two used sets are UNEQUAL, so an implementation testing used-set equality rather than nonempty intersection reproduces W21 and still accepts this sum. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "S_L": {
           "Q": [
@@ -2120,7 +2120,7 @@
         "outcome": "no_derivation",
         "premise_qubit_disjoint": true,
         "premise_used_disjoint": false,
-        "detail": "Q_L intersect Q_R = {1,2,3} intersect {4,5} = empty, so the qubit-namespace premise HOLDS; the live identifier p1 is a displayed row of each summand, so used_L intersect used_R = {p1} is nonempty and the C-DIRECT-SUM used-disjointness premise after the R1 disposition (2026-09-26) FAILS - no EvalExpr derivation. Both summands are individually well-formed; the constructor, not the states, is inapplicable. Unlike W21 the used sets are not equal ({p1,p2} vs {p1}): the premise is a nonempty intersection, not set equality.",
+        "detail": "Q_L intersect Q_R = {1,2,3} intersect {4,5} = empty, so the qubit-namespace premise HOLDS; the live identifier p1 is a displayed row of each summand, so used_L intersect used_R = {p1} is nonempty and the C-DIRECT-SUM used-disjointness premise after a reviewed disposition (2026-09-26) FAILS - no EvalExpr derivation. Both summands are individually well-formed; the constructor, not the states, is inapplicable. Unlike W21 the used sets are not equal ({p1,p2} vs {p1}): the premise is a nonempty intersection, not set equality.",
         "non_vacuity": "used_L != used_R here, so an equality test on the two used sets accepts this sum while reproducing W21 (where the sets are equal); an implementation checking only qubit disjointness accepts both. The collision must be read as an intersection over the identifier history of the two summands."
       },
       "caveats": [
@@ -2132,7 +2132,7 @@
       "acceptance_surface": false,
       "title": "Dependent displayed Z rows (I2 on the Z side)",
       "category": "state-malformed",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (issue #237; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. W1 pins the I2 (displayed independence) violation on the X side; this record pins it on the Z side. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. W1 pins the I2 (displayed independence) violation on the X side; this record pins it on the Z side. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "Q": [
           1,
@@ -2181,7 +2181,7 @@
       "acceptance_surface": false,
       "title": "State with a row whose support leaves Q (encoding-level probe)",
       "category": "state-malformed",
-      "probe_note": "Supplementary MVP probe added 2026-10-29 (issue #237; ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The state-level counterpart of W22: W22's malformed_case_note names a state carrying such a row as a different case (malformed at the encoding, not no_derivation), and this record executes that case. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
+      "probe_note": "Supplementary MVP probe added 2026-10-29 (ablation of 2026-10-16, section 4b); NOT part of the W0-W16 acceptance surface fixed by spec/GATES.md *Addenda* 2(ii) on 2026-09-26, recorded in the shape of W21 under the same 2026-10-05 option B treatment: supplementary, surface unchanged, still executed under spec/CLAIMS.md section 2 as a probe. The state-level counterpart of W22: W22's malformed_case_note names a state carrying such a row as a different case (malformed at the encoding, not no_derivation), and this record executes that case. Next free W-number: W30 (W17-W20 are later-layer probes outside the MVP surface).",
       "initial_state": {
         "Q": [
           1,
@@ -2224,7 +2224,7 @@
     {
       "id": "W29",
       "acceptance_surface": false,
-      "title": "Multi-punch deletion sequence (issue #443)",
+      "title": "Multi-punch deletion sequence ",
       "category": "deletion-instance",
       "initial_state": {
         "ref": "W0"

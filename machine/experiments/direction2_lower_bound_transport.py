@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Direction-2 lower-bound transport experiment (issue #295).
+"""Direction-2 lower-bound transport experiment.
 
 Measures the pruning/soundness impact of transporting derived lower (and the
 paired upper) endpoints through E-PEEL, which §4.28 already proves sound but

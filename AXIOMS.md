@@ -1,7 +1,7 @@
 # AXIOMS.md — accepted assumptions in the mechanization
 
 This file records the Lean axioms that the repository **deliberately keeps**
-rather than proving, together with the issues they gate. It is the trust-basis
+rather than proving, together with the obligations they relate to. It is the trust-basis
 counterpart of `lean/CodeCalculus/AxiomAudit.lean` (which guards
 `Classical.choice` and `sorryAx` in the audited modules). Nothing here is
 claimed as a theorem.
@@ -10,19 +10,19 @@ claimed as a theorem.
 
 These four axioms are the only assumptions in `extra/ClosedK.lean`. They are
 rank identities of the natural check matrices of two constructors. Under the
-hard rule added in PR #507, they mean that issues #497, #498, and the #424
-umbrella are **closed on assumptions, not on proofs**; the corresponding
+ratified assumption policy, they mean that the associated work is **closed on
+assumptions, not on proofs**; the corresponding
 claims read `proposed (classical)` in the claim/evidence model.
 
-| Axiom | Statement (informal) | Gates |
+| Axiom | Statement (informal) | Status |
 | --- | --- | --- |
-| `hgp_rankX` | Rank of the `X`-sector natural matrix of `L-HGP` is `m1*n2 - (m1 - r1)*(n2 - r2)`. | #497 |
-| `hgp_rankZ` | Rank of the `Z`-sector natural matrix of `L-HGP` is `n1*m2 - (n1 - r1)*(m2 - r2)`. | #497 |
-| `product_rankX` | Rank of the `X`-sector natural matrix of `A-PRODUCT` is `nA*xB + xA*nB - xA*xB`. | #498 |
-| `product_rankZ` | Rank of the `Z`-sector natural matrix of `A-PRODUCT` is `nA*zB + zA*nB - zA*zB`. | #498 |
+| `hgp_rankX` | Rank of the `X`-sector natural matrix of `L-HGP` is `m1*n2 - (m1 - r1)*(n2 - r2)`. | Assumption remains |
+| `hgp_rankZ` | Rank of the `Z`-sector natural matrix of `L-HGP` is `n1*m2 - (n1 - r1)*(m2 - r2)`. | Assumption remains |
+| `product_rankX` | Rank of the `X`-sector natural matrix of `A-PRODUCT` is `nA*xB + xA*nB - xA*xB`. | Assumption remains |
+| `product_rankZ` | Rank of the `Z`-sector natural matrix of `A-PRODUCT` is `nA*zB + zA*nB - zA*zB`. | Assumption remains |
 
 The arithmetic that combines these ranks into the closed forms for `stateK`
-(`hgp_arith`, `product_arith`) **is** proved (PR #517). Only the rank
+(`hgp_arith`, `product_arith`) **is** proved. Only the rank
 identities above remain assumed.
 
 ### Why they are kept (not proved)
@@ -48,8 +48,9 @@ three-term complexes. The discharge path is therefore: extend
 - The set of four is frozen: `scripts/lint_docs.sh` checks that
   `lean/extra/ClosedK.lean` declares exactly these four axioms. Any change
   to the set requires updating this file and the check together.
-- They must not be cited as proofs of #497/#498/#424; those issues are
-  closed on the explicit condition that these assumptions hold.
+- They must not be cited as proofs of the corresponding rank claims; the
+  associated work is resolved only on the explicit condition that these
+  assumptions hold.
 
 ## Other modules
 

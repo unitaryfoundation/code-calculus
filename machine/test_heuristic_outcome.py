@@ -6,7 +6,7 @@ search that licenses no ledger endpoint. `heuristic_outcome` builds the
 record; the strict-improvement enumeration fallback and the planner's bounded
 sector search attach it. `certificate-checked` is admitted to the candidate
 release only and is carried by no field here; it attaches to kernel-checked
-Lean theorems (issue #371).
+Lean theorems.
 """
 
 import unittest

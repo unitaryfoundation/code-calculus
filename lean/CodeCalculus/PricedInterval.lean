@@ -40,7 +40,7 @@ def LedgerSound (δ : ExactDist) (L : DistanceLedger) : Prop :=
 structure Hyp where
   deletionPrice : Option (Nat × Nat) := none
   graftPrice : Option Nat := none
-  /-- `E-PEEL` prices (`JUDGMENT_LAYER.md` §2a, §2c; §4.28, issue #331): the
+  /-- `E-PEEL` prices (`JUDGMENT_LAYER.md` §2a, §2c; §4.28): the
       opposite sector's exposure price `w_expose` and the selected sector's
       avoidance minimum `w_avoid`, each optional. Read by `propagateGate6`
       (`Gate6Soundness.lean`), not by `propagateCmd`, whose peel transport is
@@ -65,10 +65,18 @@ def propagateCmd (m : Command) (s s' : CodeState) (L : DistanceLedger) (H : Hyp)
       match H.deletionPrice with
       | none => base
       | some (wd, we) =>
-          let p := min wd we
-          { full := Interval.mk (minOpt L.full.lower (some p)) (minOpt L.full.upper (some p))
-          , x := base.x
-          , z := base.z }
+          match rowById s r with
+          | none => base
+          | some row =>
+              let delSector := row.sector
+              let p := min wd we
+              let xLow := if delSector = Sector.X then minOpt L.x.lower (some wd) else minOpt L.x.lower (some we)
+              let xUp  := if delSector = Sector.X then minOpt L.x.upper (some wd) else minOpt L.x.upper (some we)
+              let zLow := if delSector = Sector.X then minOpt L.z.lower (some we) else minOpt L.z.lower (some wd)
+              let zUp  := if delSector = Sector.X then minOpt L.z.upper (some we) else minOpt L.z.upper (some wd)
+              { full := Interval.mk (minOpt L.full.lower (some p)) (minOpt L.full.upper (some p))
+              , x := Interval.mk xLow xUp
+              , z := Interval.mk zLow zUp }
   | Command.addStab sector support =>
       { full := Interval.mk L.full.lower none
       , x := Interval.mk L.x.lower none
@@ -113,9 +121,18 @@ theorem minOpt_monotone {a a' b b' : Option Nat}
 
 def HypTrue (δ : CodeState → ExactDist) (H : Hyp) :
     ∀ (m : Command) (s s' : CodeState), Prop
-  | Command.delete _r, s, s' =>
+  | Command.delete r, s, s' =>
       (∀ wd we, H.deletionPrice = some (wd, we) →
-          (δ s').full = minOpt (δ s).full (some (min wd we)))
+          ((δ s').full = minOpt (δ s).full (some (min wd we))) ∧
+          (match rowById s r with
+           | some row =>
+               if row.sector = Sector.X then
+                 (δ s').x = minOpt (δ s).x (some wd) ∧
+                 (δ s').z = minOpt (δ s).z (some we)
+               else
+                 (δ s').z = minOpt (δ s).z (some wd) ∧
+                 (δ s').x = minOpt (δ s).x (some we)
+           | none => True))
   | Command.graft q τ ids, s, s' =>
       (∀ p, H.graftPrice = some p →
           (if τ = Sector.X then (δ s').z = minOpt (δ s).z (some p)
@@ -123,7 +140,7 @@ def HypTrue (δ : CodeState → ExactDist) (H : Hyp) :
   | Command.addStab _sector support, _s, _s' =>
       True
   | Command.peel _q τ _r, s, s' =>
-      -- §4.28 (issue #331): the exposure price pins the opposite sector by
+      -- §4.28: the exposure price pins the opposite sector by
       -- `d_σ' = min(d_σ, w_expose)`, and the avoidance minimum pins the
       -- selected sector by `d_τ' = w_avoid`. Both are consumer inputs,
       -- exposed here as the premises they are.
@@ -184,13 +201,13 @@ theorem leOpt_min (a b c : Option Nat) (hab : leOpt a b) (hac : leOpt a c) :
   cases a <;> cases b <;> cases c <;> simp [leOpt, minOpt] at * <;> (try omega) <;> (try contradiction)
 
 /-!
-Gate 6 soundness (issues #218 and #311). `priced_interval_soundness` below
+Gate 6 soundness. `priced_interval_soundness` below
 is the interval-transport statement over all admitted commands. For the five
 Gate 6 moves that have Lean transitions (`P-REBASE`, `E-PEEL`, `E-PUNCTURE`,
 `E-EXTEND`, `E-LOCAL-HADAMARD`) their case in `propagateCmd` is the widened
 `[0, +∞]` reset (the default `_` case), so this theorem proves soundness of
 that reset. The §4.32 transformers (identity for `P-REBASE`, sector swap for
-`E-LOCAL-HADAMARD`, the issue #295 carries for `E-PEEL`, lower carry for
+`E-LOCAL-HADAMARD`, the higher carry for `E-PEEL`, lower carry for
 `E-EXTEND` with `Δ = ∅`, the reset for `E-PUNCTURE` and for `E-EXTEND` with
 `Δ ≠ ∅`, and the minimum rule for `E-GLUE`) are `propagateGate6` and
 `glueLedger` in `Gate6Soundness.lean`, with `gate6_interval_soundness` and
@@ -208,7 +225,7 @@ premise (`hwf'`). `E-GLUE` has an `Eval` transition in Lean (the
 `hadamardState_stateK`, `stateK_swap`, and `peelEval_Q_length` are facts
 about the transitions, not a soundness discharge.
 
-Well-formedness guard (issue #246, review findings RC-4 and RG-10). The
+Well-formedness guard (review findings). The
 `k = 0` hypothesis `hk0` and the three monotonicity hypotheses range over
 well-formed states only, and the theorem takes `EncodingWellFormed` of the
 input state, which `wf_of_eval_all` carries to the output and along a
@@ -286,25 +303,94 @@ theorem priced_interval_soundness
             | some pair =>
                 rcases pair with ⟨wd, we⟩
                 have hp' : H.deletionPrice = some (wd, we) := hp
-                have heq : (δ s').full = minOpt (δ s).full (some (min wd we)) :=
-                  hH wd we hp'
+                have hH' := hH wd we hp'
+                rcases hH' with ⟨heqFull, hsector⟩
                 let p := min wd we
-                simp [propagateCmd, hp, Interval.contains]
-                constructor
-                · constructor
-                  · have hlow : leOpt (minOpt L.full.lower (some p)) (δ s').full := by
-                      rw [show (δ s').full = minOpt (δ s).full (some p) from heq]; exact minOpt_monotone hLf.1 (leOpt_refl (some p))
-                    exact hlow
-                  · have hup : leOpt (δ s').full (minOpt L.full.upper (some p)) := by
-                      rw [show (δ s').full = minOpt (δ s).full (some p) from heq]; exact minOpt_monotone hLf.2 (leOpt_refl (some p))
-                    exact hup
-                · constructor
-                  · constructor
-                    · exact some_zero_leOpt (δ s').x
-                    · exact leOpt_trans hdx hLx.2
-                  · constructor
-                    · exact some_zero_leOpt (δ s').z
-                    · exact leOpt_trans hdz hLz.2
+                cases hrb : rowById s r with
+                | none =>
+                    simp [propagateCmd, hp, hrb, Interval.contains]
+                    constructor
+                    · constructor
+                      · exact some_zero_leOpt (δ s').full
+                      · exact leOpt_trans hdf hLf.2
+                    · constructor
+                      · constructor
+                        · exact some_zero_leOpt (δ s').x
+                        · exact leOpt_trans hdx hLx.2
+                      · constructor
+                        · exact some_zero_leOpt (δ s').z
+                        · exact leOpt_trans hdz hLz.2
+                | some row =>
+                    by_cases hsec : row.sector = Sector.X
+                    · have hx_eq : (δ s').x = minOpt (δ s).x (some wd) := by
+                        have := hsector
+                        simp [hrb, hsec] at this
+                        exact this.1
+                      have hz_eq : (δ s').z = minOpt (δ s).z (some we) := by
+                        have := hsector
+                        simp [hrb, hsec] at this
+                        exact this.2
+                      simp [propagateCmd, hp, hrb, hsec, Interval.contains]
+                      constructor
+                      · constructor
+                        · have hlow : leOpt (minOpt L.full.lower (some p)) (δ s').full := by
+                            rw [show (δ s').full = minOpt (δ s).full (some p) from heqFull]
+                            exact minOpt_monotone hLf.1 (leOpt_refl (some p))
+                          exact hlow
+                        · have hup : leOpt (δ s').full (minOpt L.full.upper (some p)) := by
+                            rw [show (δ s').full = minOpt (δ s).full (some p) from heqFull]
+                            exact minOpt_monotone hLf.2 (leOpt_refl (some p))
+                          exact hup
+                      · constructor
+                        · constructor
+                          · have hlowx : leOpt (minOpt L.x.lower (some wd)) (δ s').x := by
+                              rw [hx_eq]; exact minOpt_monotone hLx.1 (leOpt_refl (some wd))
+                            exact hlowx
+                          · have hupx : leOpt (δ s').x (minOpt L.x.upper (some wd)) := by
+                              rw [hx_eq]; exact minOpt_monotone hLx.2 (leOpt_refl (some wd))
+                            exact hupx
+                        · constructor
+                          · have hlowz : leOpt (minOpt L.z.lower (some we)) (δ s').z := by
+                              rw [hz_eq]; exact minOpt_monotone hLz.1 (leOpt_refl (some we))
+                            exact hlowz
+                          · have hupz : leOpt (δ s').z (minOpt L.z.upper (some we)) := by
+                              rw [hz_eq]; exact minOpt_monotone hLz.2 (leOpt_refl (some we))
+                            exact hupz
+                    · have hz_eq : (δ s').z = minOpt (δ s).z (some wd) := by
+                        have := hsector
+                        simp [hrb, hsec] at this
+                        exact this.1
+                      have hx_eq : (δ s').x = minOpt (δ s).x (some we) := by
+                        have := hsector
+                        simp [hrb, hsec] at this
+                        exact this.2
+                      simp [propagateCmd, hp, hrb, hsec, Interval.contains]
+                      constructor
+                      · constructor
+                        · have hlow : leOpt (minOpt L.full.lower (some p)) (δ s').full := by
+                            rw [show (δ s').full = minOpt (δ s).full (some p) from heqFull]
+                            exact minOpt_monotone hLf.1 (leOpt_refl (some p))
+                          exact hlow
+                        · have hup : leOpt (δ s').full (minOpt L.full.upper (some p)) := by
+                            rw [show (δ s').full = minOpt (δ s).full (some p) from heqFull]
+                            exact minOpt_monotone hLf.2 (leOpt_refl (some p))
+                          exact hup
+                      · constructor
+                        · constructor
+                          · have hlowx : leOpt (minOpt L.x.lower (some we)) (δ s').x := by
+                              rw [hx_eq]; exact minOpt_monotone hLx.1 (leOpt_refl (some we))
+                            exact hlowx
+                          · have hupx : leOpt (δ s').x (minOpt L.x.upper (some we)) := by
+                              rw [hx_eq]; exact minOpt_monotone hLx.2 (leOpt_refl (some we))
+                            exact hupx
+                        · constructor
+                          · have hlowz : leOpt (minOpt L.z.lower (some wd)) (δ s').z := by
+                              rw [hz_eq]; exact minOpt_monotone hLz.1 (leOpt_refl (some wd))
+                            exact hlowz
+                          · have hupz : leOpt (δ s').z (minOpt L.z.upper (some wd)) := by
+                              rw [hz_eq]; exact minOpt_monotone hLz.2 (leOpt_refl (some wd))
+                            exact hupz
+
     | addStab sector support =>
         cases hEval with
         | add _ _ _ _ _ hs' =>
@@ -648,10 +734,27 @@ theorem propagateCmd_monotone (m : Command) (s s' : CodeState) (H : Hyp)
             ⟨leOpt_refl (some 0), hz.2⟩⟩
       | some pair =>
           rcases pair with ⟨wd, we⟩
-          simp only [propagateCmd, hp, DistanceLedger.refines, Interval.refines]
-          exact ⟨⟨minOpt_monotone hf.1 (leOpt_refl (some (min wd we))),
-              minOpt_monotone hf.2 (leOpt_refl (some (min wd we)))⟩,
-            ⟨leOpt_refl (some 0), hx.2⟩, ⟨leOpt_refl (some 0), hz.2⟩⟩
+          cases hrb : rowById s r with
+          | none =>
+              simp only [propagateCmd, hp, hrb, DistanceLedger.refines, Interval.refines]
+              exact ⟨⟨leOpt_refl (some 0), hf.2⟩, ⟨leOpt_refl (some 0), hx.2⟩,
+                ⟨leOpt_refl (some 0), hz.2⟩⟩
+          | some row =>
+              by_cases hsec : row.sector = Sector.X
+              · simp only [propagateCmd, hp, hrb, hsec, DistanceLedger.refines, Interval.refines]
+                exact ⟨⟨minOpt_monotone hf.1 (leOpt_refl (some (min wd we))),
+                    minOpt_monotone hf.2 (leOpt_refl (some (min wd we)))⟩,
+                  ⟨minOpt_monotone hx.1 (leOpt_refl (some wd)),
+                    minOpt_monotone hx.2 (leOpt_refl (some wd))⟩,
+                  ⟨minOpt_monotone hz.1 (leOpt_refl (some we)),
+                    minOpt_monotone hz.2 (leOpt_refl (some we))⟩⟩
+              · simp only [propagateCmd, hp, hrb, hsec, DistanceLedger.refines, Interval.refines]
+                exact ⟨⟨minOpt_monotone hf.1 (leOpt_refl (some (min wd we))),
+                    minOpt_monotone hf.2 (leOpt_refl (some (min wd we)))⟩,
+                  ⟨minOpt_monotone hx.1 (leOpt_refl (some we)),
+                    minOpt_monotone hx.2 (leOpt_refl (some we))⟩,
+                  ⟨minOpt_monotone hz.1 (leOpt_refl (some wd)),
+                    minOpt_monotone hz.2 (leOpt_refl (some wd))⟩⟩
   | addStab sector support =>
       rcases h with ⟨hf, hx, hz⟩
       simp only [propagateCmd, DistanceLedger.refines, Interval.refines]
@@ -723,7 +826,7 @@ theorem propagateCmdK_monotone_seq (m1 m2 : Command) (s t u : CodeState) (H : Hy
       (propagateCmdK m2 t u (propagateCmdK m1 s t L2 H) H) :=
   propagateCmdK_monotone m2 t u H _ _ (propagateCmdK_monotone m1 s t H L1 L2 h)
 
-/-! ### The `Option Nat` reading and the S2 concrete domain (issue #310)
+/-! ### The `Option Nat` reading and the S2 concrete domain
 
 The executable ledger reads a distance as `Option Nat` with `none` for `+∞`;
 the S2 schema (`Interval.lean`) reads it as `ExtNat`. The two are the same

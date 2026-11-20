@@ -2,7 +2,7 @@ import CodeCalculus.ExactGlue
 import CodeCalculus.ExactPeel
 
 /-!
-# `E-GLUE`: the normalizer and the stabilizer of the glued state as pairs (issue #395)
+# `E-GLUE`: the normalizer and the stabilizer of the glued state as pairs
 
 Mechanizes steps 3 and 4 of Claim 2 of `spec/OPERATIONAL_SEMANTICS.md` §4.33
 for the glued state `C = glueState a b seams`. A vector on the glued namespace
