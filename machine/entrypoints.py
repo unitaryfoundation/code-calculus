@@ -1236,19 +1236,14 @@ def witness_confidence(trials, deep_threshold=200000):
     return "deep" if trials >= deep_threshold else "screened"
 
 def certified_distance(state):
-    try:
-        from machine.oracle import exact_distances, OracleTooLarge
-    except Exception:
-        try:
-            from oracle import exact_distances, OracleTooLarge
-        except Exception:
-            return None
-    try:
-        return exact_distances(state)
-    except OracleTooLarge:
-        return None
-    except Exception:
-        return None
+    # The in-repo exhaustive enumerator is a verifier tool, never a consumer
+    # path (machine/oracle.py).  The priced calculus never computes a
+    # distance; callers that want an exact distance must supply their own
+    # verifier (see planner.deep_verify).
+    raise Malformed(
+        "certified_distance is not available on the consumer path; "
+        "supply a verifier callable or use machine/oracle directly"
+    )
 
 certified_distances = certified_distance
 
@@ -1260,7 +1255,10 @@ def certified_distance_check(state, claimed=None, depths=None, trials=None, sect
                             max_weight=None, budget_per_depth=None, seeds=None,
                             seed=None, refutation_seeds=None, layout=None, parent=None,
                             coordinates=None, layout_aware=False, **kwargs):
-    dists = certified_distance(state)
+    try:
+        dists = certified_distance(state)
+    except Exception:
+        dists = None
     if dists is None:
         from machine import planner as _planner_mod
         return _planner_mod.staged_distance_check(

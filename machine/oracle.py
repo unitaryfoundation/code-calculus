@@ -2,11 +2,12 @@
 
 This module is a **verifier tool**, never a consumer path. It computes the
 exact minimum weight of a logical operator in each sector by exhaustive
-enumeration over the state's qubit labels. It is deliberately not imported
-by ``machine.priced_calculus`` or by ``machine.planner``: the priced
-calculus never computes a distance, and the evaluator never calls this
-routine. Its only legitimate use is checking, auditing, or replaying results
-on small codes.
+enumeration over the state's qubit labels. It is not imported by
+``machine.priced_calculus`` or by ``machine.planner`` (the planner accepts an
+externally supplied verifier callable, but never invokes this module): the
+priced calculus never computes a distance, and the evaluator never calls
+this routine. Its only legitimate use is checking, auditing, or replaying
+results on small codes.
 
 Hard rules (AGENTS.md): no exact-distance computation is a calculus move;
 distance stays ``unavailable`` by design in the calculus. This module is the

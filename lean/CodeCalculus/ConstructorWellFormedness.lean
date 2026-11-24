@@ -56,7 +56,25 @@ theorem constructedState_n (n : Nat) (vs : List (Sector × List Bool)) :
     (constructedState n vs).Q.length = n := by
   rw [constructedState_Q, List.length_range]
 
+theorem constructedStateFrom_Q (used0 : List Nat) (n : Nat) (vs : List (Sector × List Bool)) :
+    (constructedStateFrom used0 n vs).Q = List.range n := by
+  unfold constructedStateFrom
+  rw [foldl_retainStep_Q]
+  rfl
+
+theorem constructedStateFrom_n (used0 : List Nat) (n : Nat) (vs : List (Sector × List Bool)) :
+    (constructedStateFrom used0 n vs).Q.length = n := by
+  rw [constructedStateFrom_Q, List.length_range]
+
 theorem wf_emptyState (n : Nat) : EncodingWellFormed (emptyState n) := by
+  refine ⟨(nodup_range_cf _), List.nodup_nil, rfl, rfl, rfl, rfl, ?_, ?_⟩
+  · intro rX rZ hX
+    cases hX
+  · intro r hr
+    cases hr
+
+theorem wf_emptyStateWithUsed (n : Nat) (used0 : List Nat) :
+    EncodingWellFormed (emptyStateWithUsed n used0) := by
   refine ⟨(nodup_range_cf _), List.nodup_nil, rfl, rfl, rfl, rfl, ?_, ?_⟩
   · intro rX rZ hX
     cases hX
@@ -161,6 +179,22 @@ theorem wf_constructedState_of_bool (n : Nat) (vs : List (Sector × List Bool))
     (h : naturalOrthogonalBool (naturalRows n vs) = true) :
     EncodingWellFormed (constructedState n vs) :=
   wf_constructedState n vs (naturalOrthogonal_of_bool h)
+
+/-- §4.45: the retained display with identifiers canonically minted starting
+    from `used0` is well-formed when the natural rows have pairwise even overlap. -/
+theorem wf_constructedStateFrom (used0 : List Nat) (n : Nat) (vs : List (Sector × List Bool))
+    (horth : NaturalOrthogonal (naturalRows n vs)) :
+    EncodingWellFormed (constructedStateFrom used0 n vs) := by
+  have hsup : ∀ x ∈ naturalRows n vs,
+      supportSubset x.2 (List.range n) ∧ x.2.Nodup ∧ x.2.Pairwise (· ≤ ·) := by
+    intro x hx
+    unfold naturalRows at hx
+    obtain ⟨y, _, rfl⟩ := List.mem_map.mp hx
+    exact ⟨supportOfVector_subset n y.2, supportOfVector_nodup n y.2,
+      supportOfVector_sorted n y.2⟩
+  exact (wf_foldl_retainStep n (naturalRows n vs) hsup horth (naturalRows n vs)
+    (emptyStateWithUsed n used0) (fun _ h => h) (wf_emptyStateWithUsed n used0)
+    rfl (fun _ h => nomatch h)).1
 
 /-! ## The `n` of each card -/
 

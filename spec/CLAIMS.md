@@ -1400,9 +1400,11 @@ per-constructor differences.
  `L-GROUP-ALGEBRA`, `A-CONCAT`; rank bookkeeping for `L-LIFTED`), evidence
  `proved` (§4.34).
 - *Sector-specific and full distance effects.* Claim shape `unavailable`
- as a rule, evidence `not-applicable`; the judgment inputs are supplied
- sector or full lower bounds with a source and validated witnesses, never
- a computed value.
+ as an automatic rule, evidence `not-applicable`; the judgment inputs are
+ supplied sector or full lower bounds with a source, or the conditional
+ constructor cells of `JUDGMENT_LAYER.md` §2g.1 (§4.45) together with
+ deterministic factor-to-child lifted and validated witnesses, never an
+ unvalidated computed lower bound.
 - *Metric-preservation status.* Not applicable: there is no parent state.
 - *Required support and interface data.* The typed inputs of the §2 card.
 - *Computational complexity.* Polynomial in the output size: the natural
@@ -1412,31 +1414,49 @@ per-constructor differences.
 - *Partial inverse.* None.
 - *Provenance retention.* The constructed state records no provenance of
  its inputs beyond the term that built it; `used` is the minted set.
-- *Evidence and proof references.* §4.34; `machine/test_constructors.py`.
+- *Evidence and proof references.* §4.34, §4.44, §4.45;
+ `lean/CodeCalculus/ConstructorOverlap.lean`,
+ `lean/CodeCalculus/PricedInterval.lean`; `machine/test_constructors.py`.
 
 **Per constructor.**
 
 - `L-HGP`: inputs $H_1 \in \mathbb{F}_2^{m_1 \times n_1}$,
  $H_2 \in \mathbb{F}_2^{m_2 \times n_2}$; $n = n_1 n_2 + m_1 m_2$;
  $k = k_1 k_2 + k_1^{T} k_2^{T}$ with $k_i = n_i - \mathrm{rank}(H_i)$ and
- $k_i^{T} = m_i - \mathrm{rank}(H_i)$. The classical distances are the natural
- source of a supplied bound (Tillich and Zémor 2014), named by the consumer
- as a source, not a cell.
-- `L-LIFTED`: inputs a finite abelian group by cyclic orders and base
- matrices over its group algebra; $n = |G| (n_A n_B + m_A m_B)$; $k$ by rank
- bookkeeping; the trivial group gives `L-HGP`.
-- `L-GROUP-ALGEBRA`: inputs a finite abelian group and two algebra
- elements; $n = 2|G|$; $k = 2(|G| - \mathrm{rank}[L(a) \mid L(b)])$; equals
- the $1 \times 1$ lifted product of $(a)$ and $(b^{*})$.
+ $k_i^{T} = m_i - \mathrm{rank}(H_i)$. The classical distances
+ $(d_1, d_1^T, d_2, d_2^T)$ populate the conditional constructor cell
+ $d_X \ge \min(d_2, d_1^T)$, $d_Z \ge \min(d_1, d_2^T)$,
+ $d \ge \min(d_1, d_2, d_1^T, d_2^T)$ (`JUDGMENT_LAYER.md` §2g.1, Tillich and
+ Zémor 2014, §4.45), with deterministic factor-to-child witness lifting
+ (`lift_hgp_witnesses`).
+- `L-LIFTED`: inputs a finite group $G$ (abelian by cyclic orders, or
+ nonabelian by multiplication table or permutation generators; §4.44) and base
+ matrices over $\mathbb{F}_2[G]$ using left regular representations $L(A[a, i])$
+ and right regular representations $R(B[b, j])$; $n = |G| (n_A n_B + m_A m_B)$;
+ $k$ by rank bookkeeping; the trivial group gives `L-HGP`, and abelian cyclic
+ orders coincide with $R = L$.
+- `L-GROUP-ALGEBRA`: inputs a finite group $G$ (abelian by cyclic orders, or
+ nonabelian by multiplication table or permutation generators; §4.44) and two
+ algebra elements $a, b \in \mathbb{F}_2[G]$; $n = 2|G|$;
+ $H_X = [L(a) \mid R(b)]$, $H_Z = [R(b)^T \mid L(a)^T] = [R(b^*) \mid L(a^*)]$;
+ $k = 2|G| - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$
+ in general (reducing to $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ when $G$ is
+ abelian); equals the $1 \times 1$ lifted product of $(a)$ and $(b^{*})$.
 - `A-CONCAT`: inputs two well-formed CSS states and a block partition;
  $n = n_{\mathrm{in}} n_{\mathrm{out}}$; $k = k_O$; the tower price provider
- (`JUDGMENT_LAYER.md` §2a) is its distance input path. Non-CSS inner codes
+ (`JUDGMENT_LAYER.md` §2a) supplies deletion/exposure prices and the
+ conditional constructor cell
+ $d_\sigma \ge \max(\lceil \ell_{O,\sigma}/k_{\mathrm{in}}\rceil, \ell_{\mathrm{block},\sigma}) \cdot \ell_{I,\sigma}$
+ (`JUDGMENT_LAYER.md` §2g.1, §4.45) together with deterministic witness lifting
+ (`lift_concat_witnesses`) seeds the constructed ledger. Non-CSS inner codes
  are not inputs.
 
 **The other five (admitted 2026-11-11).** `A-PRODUCT`,
 `A-DOUBLE`, `L-BALANCED`, `L-TANNER`, and `L-TILE` are `transition-defined`
 expression constructors with cards at `OPERATIONAL_SEMANTICS.md` §2 and
-derivations at §4.35. The common fields above hold for them with these
+derivations at §4.35 (generalized to nonabelian finite groups for `L-BALANCED`
+at §4.44, with conditional distance cells and witness lifting for `A-PRODUCT`
+and `A-DOUBLE` at §4.45). The common fields above hold for them with these
 differences.
 
 - *Applicability.* `A-PRODUCT` and `L-BALANCED` evaluate on every
@@ -1449,7 +1469,9 @@ differences.
 - *Provenance retention.* `A-PRODUCT` and `A-DOUBLE` read the displays of
  their input states, and `A-DOUBLE`'s wiring is keyed by displayed
  identifiers. The output records none of it.
-- *Evidence and proof references.* §4.35; `machine/test_constructors.py`.
+- *Evidence and proof references.* §4.35, §4.44, §4.45;
+ `lean/CodeCalculus/BalancedOverlap.lean`,
+ `lean/CodeCalculus/PricedInterval.lean`; `machine/test_constructors.py`.
 
 Per constructor:
 
@@ -1457,13 +1479,29 @@ Per constructor:
  the CSS tensor product only; $n = m_Z^A m_X^B + n_A n_B + m_X^A m_Z^B$;
  $k = k_A k_B$. The output depends on the two displays, not only on the
  two codes, up to an invertible linear map on two of its three qubit
- blocks, so no distance claim transfers between displays.
+ blocks, so its conditional distance cell
+ (`JUDGMENT_LAYER.md` §2g.1, §4.45) requires an explicit display-specific
+ Audoux–Couvreur certificate (`display_certificate`) supplying direct lower
+ bounds $d_\sigma \ge \ell_\sigma$ (or multiplicative bounds
+ $d_\sigma \ge \underline d_{A,\sigma}\underline d_{B,\sigma}$ when certified
+ for the chosen displays; multiplicative scaling is not automatic from factor
+ distances alone), while deterministic middle-block witness lifting
+ (`lift_product_witnesses`) earns upper bounds directly on the constructed
+ display.
 - `A-DOUBLE`: inputs a well-formed CSS state, a wiring map on its displayed
- incidences, and an optional sector-duality flag; $n = 2 n_C$. The
+ incidences, and an optional sector-duality flag; $n = 2 n_C$. For the empty
+ wiring $w = \varnothing$, the conditional constructor cell
+ (`JUDGMENT_LAYER.md` §2g.1, §4.45) records $d_\sigma \ge \underline d_{C,\sigma}$
+ (or $d_\sigma \ge \min(\underline d_{C,X}, \underline d_{C,Z})$ under
+ `conjugate`), and `lift_double_witnesses` lifts parent witnesses to both
+ sheets (validating against the twisted rows when $w \neq \varnothing$). The
  factorization question of `TAXONOMY.md` §2.16 stays open.
-- `L-BALANCED`: inputs a finite abelian group, two binary matrices, and
- permutation actions under which the matrices are equivariant; $n$ is the
- number of orbits; the trivial group gives `L-HGP` row for row.
+- `L-BALANCED`: inputs a finite group $G$ (abelian by cyclic orders, or
+ nonabelian by multiplication table or permutation generators; §4.44), two
+ binary matrices $H_1, H_2$, a right action $\alpha_1$ on $H_1$, and a left
+ action $\alpha_2$ on $H_2$ under which the matrices are equivariant; $n$ is
+ the number of orbits under $(x, y) \mapsto (\alpha_1(g)(x), \alpha_2(g)^{-1}(y))$;
+ the trivial group gives `L-HGP` row for row.
 - `L-TANNER`: inputs a qubit count, one local check matrix per vertex
  class, and one embedding per vertex. Expansion and distance hypotheses
  are not inputs.
@@ -1472,8 +1510,8 @@ Per constructor:
 
 **`L-NESTED-CSS` (admitted 2026-11-13).** `L-NESTED-CSS` is a
 `transition-defined` expression constructor with a card at
-`OPERATIONAL_SEMANTICS.md` §2 and a derivation at §4.36. The common fields
-above hold for it with these differences.
+`OPERATIONAL_SEMANTICS.md` §2 and derivations at §4.36 and §4.45. The common
+fields above hold for it with these differences.
 
 - *Typed input.* Two binary parity-check matrices with equally many
  columns. Codes given by generator matrices or as subspaces are not
@@ -1484,10 +1522,15 @@ above hold for it with these differences.
 - *Logical-sector effects.* $n$ is the number of columns and
  $k = n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$, exact, evidence
  `proved` (§4.36).
-- *Distance.* No rule. §4.36 derives that each sector distance is at least
- the minimum distance of one of the two classical codes. That inequality
- is not a cell, and a classical distance is not an input.
-- *Evidence and proof references.* §4.36; `machine/test_constructors.py`.
+- *Distance.* Claim shape `unavailable` as an automatic rule; the conditional
+ constructor cell (`JUDGMENT_LAYER.md` §2g.1, §4.45) accepts supplied classical
+ lower bounds $d(\ker H_Z)$ and $d(\ker H_X)$ (or coset distances) to license
+ $d_X \ge d(\ker H_Z)$ and $d_Z \ge d(\ker H_X)$ with `status: "conditional"`,
+ and `lift_nested_witnesses` deterministically lifts nontrivial codewords in
+ $\ker H_Z \setminus \mathrm{rowspan}(H_X)$ and
+ $\ker H_X \setminus \mathrm{rowspan}(H_Z)$ as validated upper-bound witnesses.
+- *Evidence and proof references.* §4.36, §4.45;
+ `lean/CodeCalculus/PricedInterval.lean`; `machine/test_constructors.py`.
 
 **`L-EMPTY`, `L-FREE`, `A-PULLBACK`, and `A-PUSHOUT` (admitted 2026-11-19).**
 All four are `transition-defined` expression constructors with cards at
@@ -1511,6 +1554,43 @@ $[0, +\infty)$ via `DistanceLedger.for_constructed`.
  morphism preservation and pairwise even overlap of the pushed-forward rows
  are decidable applicability premises; general pushouts with $S \neq 0$
  can drop distance.
+
+**`L-PAIR-PARTITION` and `PP-SCALE` (admitted/promoted 2026-11-22).** Both are
+`transition-defined` expression constructors with cards at
+`OPERATIONAL_SEMANTICS.md` §2 and derivations at §4.46–§4.47 (`OBL-PP-SCALE`
+and `OBL-WELL-FORMEDNESS-PRESERVATION`).
+
+- `L-PAIR-PARTITION` (`pair_partition(p; B_X, B_Z)`): constructs a CSS code on
+ $n = L \cdot p$ qubits from paired affine/circulant permutation block matrices
+ $B_X, B_Z$ over $\mathbb{Z}_p$ ($p \ge 1$, $L \ge 2$ even); structural rows
+ $n = L \cdot p$ exact, $k = L \cdot p - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$
+ exact by rank bookkeeping (`proved`, §4.46), $w, \kappa, r$ recomputed over
+ the retained display; WF rows: output well-formed under unit slopes and
+ paired relative-affine orthogonality ($H_X H_Z^T = 0 \pmod 2$); distance
+ rows: no automatic cell, ledger starts at $[0, +\infty)$ (the CPM-PP factorial
+ ceiling $d \le (J+1)!$ of Okada–Kasai Thm 3 is an external source a consumer
+ may cite, while APM-PP escapes that ceiling).
+- `PP-SCALE` (`pp_scale(e; P)`): scales a PP-presented CSS state $C_0$ to
+ target lift size $P \ge 2$ via the Smith-normal-form slope/shift
+ parametrization (Kasai 2026, §2.1); structural rows: $n' = L \cdot P$ exact,
+ $k' = L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z')$ exact by rank
+ bookkeeping, $w' = L$ carries (each natural row has one 1 in each of the $L$ block columns), $r'$ and Tanner
+ connectivity recomputed, fresh namespace $Q' = \{0, \dots, L \cdot P - 1\}$
+ with row identifiers canonically minted disjoint from $\mathsf{used}_0$; WF
+ rows: output well-formed under applicability premise (vi) (pairwise even
+ overlap of the generated natural rows) together with `wf_constructedStateFrom`;
+ the claim that the PP conditions at $P_0$ give orthogonality at every
+ $P \ge 2$ is cited from Kasai 2026 \S2.1 and is not derived here; $k' > 0$
+ checked separately (no derivation when $k' \le 0$); distance rows: no
+ automatic rule, $d, d_X, d_Z$ are `not yet defined` unless a verified interval
+ $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied, in which case the conditional
+ priced cell (`JUDGMENT_LAYER.md` §2g, §2l) applies and is marked `conditional`,
+ not `proved`; the family-level structural upper bound $B$ (§2l) is marked
+ `conjectural`.
+- Evidence and proof references: §4.46, §4.47; `OBL-WELL-FORMEDNESS-PRESERVATION`,
+ `OBL-PP-SCALE`; `machine/test_constructors.py`, `lean/CodeCalculus/ConstructorAssembly.lean`,
+
+ `lean/CodeCalculus/ConstructorInstances.lean`.
 
 ## 2. Typed input and output
 
@@ -1988,6 +2068,9 @@ The initial calculus should develop contracts in this order:
 | `L-FREE` | Free code (qubit-set base constructor) | `transition-defined` (admitted 2026-11-19) |
 | `A-PULLBACK` | Pullback / fiber product | `transition-defined` (admitted 2026-11-19) |
 | `A-PUSHOUT` | Pushout / amalgamated sum | `transition-defined` (admitted 2026-11-19) |
+| `L-PAIR-PARTITION` | Pair-partition relative-permutation construction | `transition-defined` (admitted 2026-11-22) |
+| `PP-SCALE` | Explicit extension of a pair-partition code | `transition-defined` (promoted 2026-11-22) |
+
 | `L-TILE` | Tile or cellulation construction | `transition-defined` (admitted 2026-11-11) |
 | `L-TANNER` | Local code on a graph / quantum Tanner construction | `transition-defined` (admitted 2026-11-11) |
 | `L-BALANCED` | Balanced product | `transition-defined` (admitted 2026-11-11) |

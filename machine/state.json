@@ -275,6 +275,23 @@
       "used": "the minted identifiers",
       "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (A-PUSHOUT card) and section 4.43",
       "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-PAIR-PARTITION": {
+      "Q": "fresh 0..n-1, n = L * p",
+      "rows": "the retained independent display of the paired affine-permutation block rows (section 4.46)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-PAIR-PARTITION card) and section 4.46",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "PP-SCALE": {
+      "Q": "fresh 0..n-1, n = L * P",
+      "rows": "the retained independent display of the SNF-scaled affine-permutation block rows (section 4.47)",
+      "ids": "mint canonically from used_0",
+      "used": "used_0 union the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (PP-SCALE card) and section 4.47",
+
+      "source": "spec/STATE_MODEL.md \u00a74"
     }
   }
 }

@@ -47,11 +47,13 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `L-NESTED-CSS` | CSS code from nested classical codes | Lower-level constructor; admitted 2026-11-13 for codes given by parity-check matrices as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.36) |
 | `L-MAPPING-CONE` | Mapping cone of a chain map between two-term complexes | Lower-level constructor; admitted 2026-11-18 for codes given by four binary matrices satisfying the chain-map premise as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.41) |
 | `L-HGP` | Hypergraph product | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
-| `L-LIFTED` | Lifted product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
-| `L-BALANCED` | Balanced product | Lower-level constructor; admitted 2026-11-11 for finite abelian groups as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
-| `L-GROUP-ALGEBRA` | Group-algebra and two-block constructions | Lower-level constructor; the two-block code over a finite abelian group admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34) |
+| `L-LIFTED` | Lifted product | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; generalized to finite abelian and nonabelian groups 2026-11-22, §4.44) |
+| `L-BALANCED` | Balanced product | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35; generalized to finite abelian and nonabelian groups 2026-11-22, §4.44) |
+| `L-GROUP-ALGEBRA` | Group-algebra and two-block constructions | Lower-level constructor; the two-block code over a finite group (abelian or nonabelian, with explicit left/right regular representations) admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34; generalized 2026-11-22, §4.44) |
 | `L-TANNER` | Local code on a graph / quantum Tanner construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
 | `L-TILE` | Tile or cellulation construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
+| `L-PAIR-PARTITION` | Pair-partition relative-permutation construction (CPM-PP / APM-PP) | Lower-level constructor; admitted 2026-11-22 as a typed expression constructor (`pair_partition(p; B_X, B_Z)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.46) |
+| `PP-SCALE` | Explicit extension (size scaling) of a pair-partition code (Kasai 2026) | Lower-level specialization constructor; promoted 2026-11-22 to a typed expression constructor (`pp_scale(e; P)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.47) |
 | `X-GAUGE-FIX` | Gauge fixing | Extended state model |
 | `X-GAUGING` | Gauging / logical measurement by gauging | Extended state model (deferred) |
 | `X-LOCAL-CLIFFORD` | Local/block-Clifford conjugation | Extended state model (deferred) |
@@ -795,7 +797,7 @@ HGP is a genuine construction, but it should not be conflated with an operation 
 | **Conditions** | The coefficient algebra, involution/transpose convention, lift action, and orthogonality proof must be specified |
 | **Parameter effects** | Depend on base dimensions and lift size; degree and rank bounds require constructor-specific hypotheses |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; nonabelian lifts not admitted |
+| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34) and generalized 2026-11-22 to finite nonabelian groups via explicit multiplication-table or permutation-generator presentations with commuting left/right regular representations $L(x), R(y)$ and antipode involution $g \mapsto g^{-1}$ (§4.44), `transition-defined` |
 | **Partial inverse** | Generally none |
 
 Normal-subgroup lifts are specializations of this layer, not automatically a new primitive.
@@ -811,7 +813,7 @@ Normal-subgroup lifts are specializations of this layer, not automatically a new
 | **Conditions** | The group action, quotient relation, and induced check maps must be explicit |
 | **Parameter effects** | Typically differs from an unconstrained lifted product because the quotient changes qubit and check counts |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `balanced_G(H₁, α₁; H₂, α₂)` admitted 2026-11-11 for finite abelian groups acting by permutations (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`; nonabelian actions not admitted |
+| **Formalization status** | Expression production `balanced_G(H₁, α₁; H₂, α₂)` admitted 2026-11-11 for finite abelian groups acting by permutations (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.35) and generalized 2026-11-22 to finite nonabelian groups with explicit right action $\alpha_1$ on $H_1$ and left action $\alpha_2$ on $H_2$ (§4.44), `transition-defined` |
 | **Partial inverse** | Generally none |
 
 ## 3.5 Group-algebra and two-block constructions
@@ -825,7 +827,7 @@ Normal-subgroup lifts are specializations of this layer, not automatically a new
 | **Conditions** | The exact representation convention must prove $H_XH_Z^T=0$; nonabelian transpose/inversion conventions cannot remain implicit |
 | **Parameter effects** | Block length, check degree, and rank depend on the algebra and representation |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `twoblock_G(a, b)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; $k = 2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ derived |
+| **Formalization status** | Expression production `twoblock_G(a, b)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34) and generalized 2026-11-22 to finite nonabelian groups with $H_X = [L(a) \mid R(b)]$, $H_Z = [R(b^*) \mid L(a^*)]$, and $k = 2|G| - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$ (reducing to $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ when $G$ is abelian; §4.44), `transition-defined` |
 | **Partial inverse** | Generally none |
 
 Generalized bicycle, bivariate bicycle, multivariate bicycle, quadricycle, and related group-action families should normally be recorded as specializations or parameterizations of this constructor rather than unrelated primitives.
@@ -890,6 +892,22 @@ A Tanner construction is a code constructor even when it is described informally
 | **Formalization status** | Expression production `free(Q)` admitted 2026-11-19 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.43), `transition-defined` |
 | **Partial inverse** | Not applicable |
 
+## 3.7c Pair-partition relative-permutation constructor (`L-PAIR-PARTITION`)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Admitted lower-level constructor (`transition-defined`, 2026-11-22) |
+| **Input** | Lift size $p \ge 1$ and paired block matrices $B_X \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_X \times L}$ and $B_Z \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_Z \times L}$ ($L \ge 2$ even) of relative permutation / affine maps over $\mathbb{Z}_p$ (CPM-PP with unit slope $a = 1$, or APM-PP with general unit slopes $\gcd(a, p) = 1$) |
+| **Output** | A CSS code state on $n = L \cdot p$ qubits ($p$ lift qubits per block column) |
+| **Operation** | Assemble the $X$ and $Z$ block parity-check matrices from the $p \times p$ affine permutation blocks $A(a, b)$ ($v \equiv a u + b \pmod p$) and retain an independent display with canonically minted identifiers |
+| **Conditions** | Even block-column count $L \ge 2$, unit slopes $\gcd(a, p) = 1$, and for each block-row pair $(r, s)$ a pair partition of $\{0, \dots, L - 1\}$ into $L/2$ column pairs with matching relative affine maps $A(a^X_{r, c}, b^X_{r, c})\, A(a^Z_{s, c}, b^Z_{s, c})^T$ so that $H_X H_Z^T = 0$ over $\mathbb{F}_2$ (Okada–Kasai, arXiv:2607.14091v4 Thm 4) |
+| **Parameter effects** | $n = L \cdot p$ exact, $k = L \cdot p - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$ by rank bookkeeping over the retained display; distance hypotheses remain conditional (for CPM-PP, the structural factorial ceiling $d \le (J+1)!$ of Thm 3 is an external bound a consumer may cite, while APM-PP escapes that ceiling; ledger starts at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g) |
+| **Primitive / derived** | Lower-level expression constructor |
+| **Formalization status** | Expression production `pair_partition(p; B_X, B_Z)` admitted 2026-11-22 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.46), `transition-defined`, mechanized in `machine/constructors.py` and `lean/CodeCalculus/` (`Term.lean`, `Constructors.lean`, `Eval.lean`, `ConstructorAssembly.lean`, `ConstructorInstances.lean`) |
+| **Partial inverse** | None in general |
+
+---
+
 ## 3.8 Named specializations and new families
 
 Pair-partition CPM, GALA, Cornucopia, and related named constructions should initially be represented as specializations of more general typed constructors when possible.
@@ -897,10 +915,10 @@ Pair-partition CPM, GALA, Cornucopia, and related named constructions should ini
 **Note.** arXiv 2607.14091v4 §VII supports this reading from within
 the family itself: its APM-PP extension (Thm 4) pairs equal *relative affine
 maps* where the CPM construction pairs equal differences, so the general
-typed constructor is "pair-partition over relative permutation maps," with
-CPM-PP and APM-PP as specializations sharing one CSS-orthogonality proof
-shape. See PRIOR_ART.md §1 (Okada–Kasai v4
-specifics).
+typed constructor is `L-PAIR-PARTITION` ("pair-partition over relative
+permutation maps," §3.7c, admitted 2026-11-22), with CPM-PP and APM-PP as
+specializations sharing one CSS-orthogonality proof shape. See PRIOR_ART.md §1
+(Okada–Kasai v4 specifics).
 
 A named family deserves its own operation only when it has at least one of the following:
 
@@ -924,6 +942,29 @@ identifier is minted** for that family-level rule. (The single-code map
 $\bar\Gamma(C)$ itself is constructor-candidate material and is not evaluated
 by any calculus term in this release; identifier allocation for it is left for
 another PR.)
+
+---
+
+**Specialization record (rung 3, transition-defined) — `PP-SCALE` (explicit extension of a pair-partition code).** Source: Kasai, *Increasing Quantum LDPC Code Distance through Explicit Extensions*, arXiv submit/8406448 (2026-11-21), read 2026-11-22. This is a specialization of the general *pair equal relative permutation maps* constructor (PRIOR_ART.md §1, Okada–Kasai v4 Thm 4), not a new primitive; it earns a record under §3.8 on four of the five criteria:
+
+- **Distinct input type.** A PP-presented CSS code `C₀` (equivalently a typed PP-parameter bundle `B = (M, Q, (e_j), λ, θ, conventions)` output by the extraction meta-procedure) plus a target size `P ≥ 2`. The bundle is constructor-side data, not part of `C = (Q, X, Z, pres, used)`.
+- **Distinct state update.** Construction of a *new* CSS state on `L·P` qubits: `Q'` a fresh namespace (canonically minted, disjoint from `used₀`), `X'/Z'` the rows assembled from `A(a,b)` blocks per (1) with slopes `a_q(P) = ∏_j r_j(P)^{Q_{qj}} (mod P)` (`r_j^{e_j}=1`) and shifts `b(P) = G(P) θ (mod P)` (`G = V C` from the SNF of the shift congruence matrix), `pres'` the generated display, `used'` all minted ids. No mutation of `C₀`.
+- **Distinct CSS-orthogonality proof.** The PP conditions (2) at `P`, together with SNF invertibility over the integers, imply `H_X H_Z^T = 0` for every `P ≥ 2` (paper §2.1). This is a different proof shape from the direct-sum or graft orthogonality arguments.
+- **Distinct parameter theorem.** The Smith-normal-form parametrization of slopes and shifts with fixed coordinates `θ`, `λ`, `e_j`, and the reproduction check at `P₀` (paper §2.1, (3)–(5), Algorithms 1–2). The construction is total given a valid bundle: no candidate screening by distance.
+
+**Conditions (applicability premises).** (i) `C₀` is PP-presented and all original slopes are units; (ii) the PP conditions (2) hold at `P₀`; (iii) the SNF reproduction check passes ((3) and (5) reproduce the original arrays); (iv) `P ≥ 2`; (v) positive dimension `k = L·P − rank H_X − rank H_Z > 0`, checked separately (the paper states this is not automatic); (vi) generated rows independent as claimed. Absence of a derivation for (v) is part of the semantics (partial big-step), not a failure.
+
+**Parameter effects.** `n' = L·P`; `k' = L·P − rank_X' − rank_Z'` (rank bookkeeping over the retained display); `w' = L` (carries — each natural row has one 1 in each of the $L$ block columns, so row weight is the block-column count $L$); `d_X'`, `d_Z'`, `d'` have no generic formula and are `not yet defined` unless supplied as priced hypotheses; `r'` and Tanner connectivity are recomputed from the generated presentation. No automatic distance cell.
+
+**Judgment cells (per evaluation, scoped).** `w` carries; `n`, `k`, `r`, Tanner connectivity do not carry (recomputed); `d_X`/`d_Z`/`d` are `not yet defined` by default and become `conditional` when a verified interval `[d_lo, d_hi]` is supplied (recorded as a trusted upper/lower bound; the consumer checks input shape, not truth, per the priced-hypothesis boundary). The paper's verified intervals (e.g. `34 ≤ d ≤ 70`) enter as `upper_bound` claims only.
+
+**Family-level structural bound (separate, no operation ID).** The paper's conjecture of a finite, size-independent structural upper bound `B` with improvement toward it as `P` grows is a *conditional family-level rule* over PP-scale families with fixed parameters, analogous to `JUDGMENT_LAYER.md` §2j. Under §3.8, **no taxonomy operation identifier is minted** for it. If admitted, it is recorded as a conditional rule with `B` as a trusted (conjectural) input, scoped as an upper ceiling, with monotonicity explicitly not assumed. Family closure and amplified lower bounds remain `unavailable` (`design/SCOPE.md` §4, issue #541).
+
+**Formalization status.** Transition-defined (rung 3, 2026-11-22): grammar production `pp_scale(e; P)` added to `TERM_LANGUAGE.md` §1–§2; transition card at `OPERATIONAL_SEMANTICS.md` §2; dated hand derivation at `OPERATIONAL_SEMANTICS.md` §4.47 (Kasai §2.1 orthogonality argument in calculus notation, with the `k > 0` premise, canonical minting, and fresh-namespace update explicit); obligation entry `OBL-PP-SCALE` recorded in `OBLIGATIONS.md`; mechanized in `machine/constructors.py` and `lean/CodeCalculus/` (`Term.lean`, `Constructors.lean`, `Eval.lean`, `ConstructorAssembly.lean`, `ConstructorInstances.lean`).
+
+**Partial inverse.** None in general. Recovering `P₀` or the original code from a generated code is not unique (permutation equivalence; the paper notes normalization choices define different families).
+
+**Price-provider boundary.** The extraction meta-procedure (Algorithm 1) is admitted only as a source of constructor parameters, analogous to `A-CONCAT` tower factorization admitted only as a price provider (`design/SCOPE.md`). It is not a term production and not a state transformation; exposing it as a term would require an extended state carrying pair partitions and SNF data, which is not in `C`.
 
 ---
 

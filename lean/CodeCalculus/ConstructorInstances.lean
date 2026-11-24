@@ -1,4 +1,4 @@
-import CodeCalculus.ConstructorOverlap
+import CodeCalculus.BalancedOverlap
 
 /-!
 # Kernel-checked instances of the typed constructors
@@ -15,7 +15,15 @@ retained-display theorem with the overlap hypothesis discharged by kernel
 evaluation on the instance. For `A-DOUBLE`, `L-TANNER`, `L-TILE`, and
 `L-NESTED-CSS` the
 overlap is a premise of the rule, discharged the same way inside the
-`_eval` theorem. Agreement on these instances is evidence about the transcription,
+`_eval` theorem. For the three group constructors over a group given by
+its multiplication table (`twoblock_s3`, `lift_s3`, `balanced_s3`)
+well-formedness is the general theorem of the production
+(`evalExpr_twoblockTable_wf`, `evalExpr_liftTable_wf`,
+`evalExpr_balancedTable_wf`). `s3_gens_table` says that the table Lean
+generates from two permutation generators of `S_3` is the consumer's, and
+`twoblock_s3_gens` evaluates the two-block production on it.
+`nonassociative_table_refused` and `balanced_s3_left_action_refused` are two
+inputs the consumer refuses, failing the Lean typing checks. Agreement on these instances is evidence about the transcription,
 not a proof that the two implementations agree on every input.
 -/
 
@@ -603,6 +611,241 @@ theorem pushout_pair_n : pushout_pair.Q.length = 5 := by decide
 
 theorem pushout_pair_k : stateK pushout_pair = 3 := by
   rw [stateK_of_wf pushout_pair pushout_pair_wellFormed]
+  decide
+
+def pair_partition_cpm2 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 3, 4, 7] },
+    { id := 1, sector := Sector.X, support := [1, 2, 5, 6] },
+    { id := 2, sector := Sector.Z, support := [0, 3, 4, 7] },
+    { id := 3, sector := Sector.Z, support := [1, 2, 5, 6] }
+  ],
+  used := [0, 1, 2, 3]
+}
+
+theorem pair_partition_cpm2_state : pairPartitionState 2 [[(1, 0), (1, 1), (1, 0), (1, 1)]] [[(1, 0), (1, 1), (1, 0), (1, 1)]] = pair_partition_cpm2 := by decide
+
+theorem pair_partition_cpm2_eval : EvalExpr (StateExpr.pairPartition 2 [[(1, 0), (1, 1), (1, 0), (1, 1)]] [[(1, 0), (1, 1), (1, 0), (1, 1)]]) pair_partition_cpm2 :=
+  pair_partition_cpm2_state ▸ EvalExpr.pairPartition (by decide) (by decide) (by decide)
+
+theorem pair_partition_cpm2_wellFormed : EncodingWellFormed pair_partition_cpm2 :=
+  evalExpr_pairPartition_wf pair_partition_cpm2_eval
+
+theorem pair_partition_cpm2_n : pair_partition_cpm2.Q.length = 8 := by decide
+
+theorem pair_partition_cpm2_k : stateK pair_partition_cpm2 = 4 := by
+  rw [stateK_of_wf pair_partition_cpm2 pair_partition_cpm2_wellFormed]
+  decide
+
+def pair_partition_apm3 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 3, 7, 10] },
+    { id := 1, sector := Sector.X, support := [2, 5, 6, 9] },
+    { id := 2, sector := Sector.X, support := [1, 4, 8, 11] },
+    { id := 3, sector := Sector.Z, support := [1, 4, 6, 9] },
+    { id := 4, sector := Sector.Z, support := [0, 3, 8, 11] },
+    { id := 5, sector := Sector.Z, support := [2, 5, 7, 10] }
+  ],
+  used := [0, 1, 2, 3, 4, 5]
+}
+
+theorem pair_partition_apm3_state : pairPartitionState 3 [[(2, 0), (2, 0), (2, 1), (2, 1)]] [[(2, 1), (2, 1), (2, 0), (2, 0)]] = pair_partition_apm3 := by decide
+
+theorem pair_partition_apm3_eval : EvalExpr (StateExpr.pairPartition 3 [[(2, 0), (2, 0), (2, 1), (2, 1)]] [[(2, 1), (2, 1), (2, 0), (2, 0)]]) pair_partition_apm3 :=
+  pair_partition_apm3_state ▸ EvalExpr.pairPartition (by decide) (by decide) (by decide)
+
+theorem pair_partition_apm3_wellFormed : EncodingWellFormed pair_partition_apm3 :=
+  evalExpr_pairPartition_wf pair_partition_apm3_eval
+
+theorem pair_partition_apm3_n : pair_partition_apm3.Q.length = 12 := by decide
+
+theorem pair_partition_apm3_k : stateK pair_partition_apm3 = 6 := by
+  rw [stateK_of_wf pair_partition_apm3 pair_partition_apm3_wellFormed]
+  decide
+
+def pp_scale_cpm4 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  rows := [
+    { id := 4, sector := Sector.X, support := [0, 4, 6, 10] },
+    { id := 5, sector := Sector.X, support := [1, 5, 7, 11] },
+    { id := 6, sector := Sector.X, support := [2, 3, 8, 9] },
+    { id := 7, sector := Sector.Z, support := [0, 4, 6, 10] },
+    { id := 8, sector := Sector.Z, support := [1, 5, 7, 11] },
+    { id := 9, sector := Sector.Z, support := [2, 3, 8, 9] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+
+theorem pp_scale_cpm4_state : ppScaleState pair_partition_cpm2 3 [[(1, 0), (1, 1), (1, 0), (1, 1)]] [[(1, 0), (1, 1), (1, 0), (1, 1)]] = pp_scale_cpm4 := by decide
+
+theorem pp_scale_cpm4_eval : EvalExpr (StateExpr.ppScale (StateExpr.base pair_partition_cpm2) 3 [[(1, 0), (1, 1), (1, 0), (1, 1)]] [[(1, 0), (1, 1), (1, 0), (1, 1)]]) pp_scale_cpm4 :=
+  pp_scale_cpm4_state ▸ EvalExpr.ppScale pair_partition_cpm2_wellFormed (by decide) (by decide) (by decide)
+    (EvalExpr.base _)
+
+theorem pp_scale_cpm4_wellFormed : EncodingWellFormed pp_scale_cpm4 :=
+  evalExpr_ppScale_wf pp_scale_cpm4_eval
+
+theorem pp_scale_cpm4_n : pp_scale_cpm4.Q.length = 12 := by decide
+
+theorem pp_scale_cpm4_k : stateK pp_scale_cpm4 = 6 := by
+  rw [stateK_of_wf pp_scale_cpm4 pp_scale_cpm4_wellFormed]
+  decide
+
+def s3_table : List (List Nat) := [[0, 1, 2, 3, 4, 5], [1, 2, 0, 4, 5, 3], [2, 0, 1, 5, 3, 4], [3, 5, 4, 0, 2, 1], [4, 3, 5, 1, 0, 2], [5, 4, 3, 2, 1, 0]]
+
+theorem s3_table_nonabelian :
+    tableMul s3_table 1 3 ≠ tableMul s3_table 3 1 := by decide
+
+def twoblock_s3 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 2, 6, 9] },
+    { id := 1, sector := Sector.X, support := [0, 1, 7, 10] },
+    { id := 2, sector := Sector.X, support := [1, 2, 8, 11] },
+    { id := 3, sector := Sector.X, support := [3, 5, 6, 9] },
+    { id := 4, sector := Sector.X, support := [3, 4, 7, 10] },
+    { id := 5, sector := Sector.Z, support := [0, 3, 6, 7] },
+    { id := 6, sector := Sector.Z, support := [1, 4, 7, 8] },
+    { id := 7, sector := Sector.Z, support := [2, 5, 6, 8] },
+    { id := 8, sector := Sector.Z, support := [0, 3, 9, 10] },
+    { id := 9, sector := Sector.Z, support := [1, 4, 10, 11] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+
+theorem twoblock_s3_state : tableTwoblockState s3_table [0, 1] [0, 3] = twoblock_s3 := by decide
+
+theorem twoblock_s3_eval : EvalExpr (StateExpr.twoblockTable s3_table [0, 1] [0, 3]) twoblock_s3 :=
+  twoblock_s3_state ▸ EvalExpr.twoblockTable (by decide) (by decide) (by decide) (by decide)
+
+theorem twoblock_s3_wellFormed : EncodingWellFormed twoblock_s3 :=
+  evalExpr_twoblockTable_wf twoblock_s3_eval
+
+theorem twoblock_s3_n : twoblock_s3.Q.length = 12 := by decide
+
+theorem twoblock_s3_k : stateK twoblock_s3 = 2 := by
+  rw [stateK_of_wf twoblock_s3 twoblock_s3_wellFormed]
+  decide
+
+def lift_s3 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 2, 12] },
+    { id := 1, sector := Sector.X, support := [0, 1, 13] },
+    { id := 2, sector := Sector.X, support := [1, 2, 14] },
+    { id := 3, sector := Sector.X, support := [3, 5, 15] },
+    { id := 4, sector := Sector.X, support := [3, 4, 16] },
+    { id := 5, sector := Sector.X, support := [4, 5, 17] },
+    { id := 6, sector := Sector.X, support := [6, 8, 15] },
+    { id := 7, sector := Sector.X, support := [6, 7, 16] },
+    { id := 8, sector := Sector.X, support := [9, 11, 12] },
+    { id := 9, sector := Sector.X, support := [9, 10, 13] },
+    { id := 10, sector := Sector.Z, support := [0, 9, 12, 13] },
+    { id := 11, sector := Sector.Z, support := [1, 10, 13, 14] },
+    { id := 12, sector := Sector.Z, support := [2, 11, 12, 14] },
+    { id := 13, sector := Sector.Z, support := [3, 6, 15, 16] },
+    { id := 14, sector := Sector.Z, support := [4, 7, 16, 17] },
+    { id := 15, sector := Sector.Z, support := [5, 8, 15, 17] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+}
+
+theorem lift_s3_state : tableLiftState s3_table [[[0, 1]]] [[[0], [3]]] = lift_s3 := by decide
+
+theorem lift_s3_eval : EvalExpr (StateExpr.liftTable s3_table [[[0, 1]]] [[[0], [3]]]) lift_s3 :=
+  lift_s3_state ▸ EvalExpr.liftTable (by decide) (by decide) (by decide) (by decide)
+
+theorem lift_s3_wellFormed : EncodingWellFormed lift_s3 :=
+  evalExpr_liftTable_wf lift_s3_eval
+
+theorem lift_s3_n : lift_s3.Q.length = 18 := by decide
+
+theorem lift_s3_k : stateK lift_s3 = 2 := by
+  rw [stateK_of_wf lift_s3 lift_s3_wellFormed]
+  decide
+
+def s3_right : List (List Nat) := [[0, 1, 2, 3, 4, 5], [1, 2, 0, 5, 3, 4], [2, 0, 1, 4, 5, 3], [3, 4, 5, 0, 1, 2], [4, 5, 3, 2, 0, 1], [5, 3, 4, 1, 2, 0]]
+
+def s3_left : List (List Nat) := [[0, 1, 2, 3, 4, 5], [1, 2, 0, 4, 5, 3], [2, 0, 1, 5, 3, 4], [3, 5, 4, 0, 2, 1], [4, 3, 5, 1, 0, 2], [5, 4, 3, 2, 1, 0]]
+
+def balanced_s3 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 2, 6, 9] },
+    { id := 1, sector := Sector.X, support := [0, 1, 7, 10] },
+    { id := 2, sector := Sector.X, support := [1, 2, 8, 11] },
+    { id := 3, sector := Sector.X, support := [3, 5, 6, 9] },
+    { id := 4, sector := Sector.X, support := [3, 4, 7, 10] },
+    { id := 5, sector := Sector.Z, support := [0, 3, 6, 7] },
+    { id := 6, sector := Sector.Z, support := [1, 4, 7, 8] },
+    { id := 7, sector := Sector.Z, support := [2, 5, 6, 8] },
+    { id := 8, sector := Sector.Z, support := [0, 3, 9, 10] },
+    { id := 9, sector := Sector.Z, support := [1, 4, 10, 11] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+
+theorem balanced_s3_state : tableBalancedState s3_table
+      [[true, false, true, false, false, false], [true, true, false, false, false, false], [false, true, true, false, false, false], [false, false, false, true, false, true], [false, false, false, true, true, false], [false, false, false, false, true, true]] s3_right s3_right
+      [[true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true], [true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true]] s3_left s3_left = balanced_s3 := by decide
+
+theorem balanced_s3_eval : EvalExpr (StateExpr.balancedTable s3_table
+      [[true, false, true, false, false, false], [true, true, false, false, false, false], [false, true, true, false, false, false], [false, false, false, true, false, true], [false, false, false, true, true, false], [false, false, false, false, true, true]] s3_right s3_right
+      [[true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true], [true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true]] s3_left s3_left) balanced_s3 :=
+  balanced_s3_state ▸ EvalExpr.balancedTable (by decide) (by decide)
+
+theorem balanced_s3_wellFormed : EncodingWellFormed balanced_s3 :=
+  evalExpr_balancedTable_wf balanced_s3_eval
+
+theorem balanced_s3_n : balanced_s3.Q.length = 12 := by decide
+
+theorem balanced_s3_k : stateK balanced_s3 = 2 := by
+  rw [stateK_of_wf balanced_s3 balanced_s3_wellFormed]
+  decide
+
+theorem nonassociative_table_refused :
+    tableGroupTyped [[0, 1, 2], [1, 0, 1], [2, 2, 0]] = false := by decide
+
+theorem balanced_s3_left_action_refused :
+    tableBalancedTyped s3_table
+      [[true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true], [true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true]] s3_left s3_left
+      [[true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true], [true, false, false, true, false, false], [false, true, false, false, true, false], [false, false, true, false, false, true]] s3_left s3_left = false := by decide
+
+theorem s3_gens_table :
+    gensTable 3 [[1, 2, 0], [1, 0, 2]] =
+      [[0, 1, 2, 3, 4, 5], [1, 0, 4, 5, 2, 3], [2, 3, 0, 1, 5, 4], [3, 2, 5, 4, 0, 1], [4, 5, 1, 0, 3, 2], [5, 4, 3, 2, 1, 0]] := by decide
+
+def twoblock_s3_gens : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 4, 6, 8] },
+    { id := 1, sector := Sector.X, support := [1, 5, 7, 10] },
+    { id := 2, sector := Sector.X, support := [1, 2, 6, 8] },
+    { id := 3, sector := Sector.X, support := [0, 3, 9, 11] },
+    { id := 4, sector := Sector.X, support := [3, 4, 7, 10] },
+    { id := 5, sector := Sector.Z, support := [0, 2, 6, 9] },
+    { id := 6, sector := Sector.Z, support := [1, 4, 7, 8] },
+    { id := 7, sector := Sector.Z, support := [0, 2, 8, 11] },
+    { id := 8, sector := Sector.Z, support := [3, 5, 9, 10] },
+    { id := 9, sector := Sector.Z, support := [1, 4, 6, 10] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+
+theorem twoblock_s3_gens_state : tableTwoblockState (gensTable 3 [[1, 2, 0], [1, 0, 2]]) [0, 3] [0, 2] = twoblock_s3_gens := by decide
+
+theorem twoblock_s3_gens_eval : EvalExpr (StateExpr.twoblockTable (gensTable 3 [[1, 2, 0], [1, 0, 2]]) [0, 3] [0, 2]) twoblock_s3_gens :=
+  twoblock_s3_gens_state ▸ EvalExpr.twoblockTable (by decide) (by decide) (by decide) (by decide)
+
+theorem twoblock_s3_gens_wellFormed : EncodingWellFormed twoblock_s3_gens :=
+  evalExpr_twoblockTable_wf twoblock_s3_gens_eval
+
+theorem twoblock_s3_gens_n : twoblock_s3_gens.Q.length = 12 := by decide
+
+theorem twoblock_s3_gens_k : stateK twoblock_s3_gens = 2 := by
+  rw [stateK_of_wf twoblock_s3_gens twoblock_s3_gens_wellFormed]
   decide
 
 end CodeCalculus.ConstructorInstances

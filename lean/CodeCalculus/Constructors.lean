@@ -52,9 +52,17 @@ def naturalRows (n : Nat) (vs : List (Sector × List Bool)) : List (Sector × Li
 /-- The state with qubits `0, …, n - 1`, no rows, and no used identifier. -/
 def emptyState (n : Nat) : CodeState := { Q := List.range n, rows := [], used := [] }
 
+/-- The state with qubits `0, …, n - 1`, no rows, and initial used identifiers `used0`. -/
+def emptyStateWithUsed (n : Nat) (used0 : List Nat) : CodeState :=
+  { Q := List.range n, rows := [], used := used0 }
+
 /-- The constructed state: the retained display of the natural rows. -/
 def constructedState (n : Nat) (vs : List (Sector × List Bool)) : CodeState :=
   (naturalRows n vs).foldl retainStep (emptyState n)
+
+/-- The constructed state with identifiers canonically minted starting from `used0`. -/
+def constructedStateFrom (used0 : List Nat) (n : Nat) (vs : List (Sector × List Bool)) : CodeState :=
+  (naturalRows n vs).foldl retainStep (emptyStateWithUsed n used0)
 
 /-! ## Binary matrices and index pairs -/
 
@@ -699,6 +707,84 @@ def pushoutState (s1 s2 sS : CodeState) (psi1 psi2 : List (Nat × Nat)) : CodeSt
   constructedState (pushoutClasses s1 s2 sS psi1 psi2).length
     (pushoutVectors s1 s2 sS psi1 psi2)
 
+
+/-! ## `L-PAIR-PARTITION` and `PP-SCALE` -/
+
+/-- A nonempty rectangular matrix of affine descriptors `(a, b)` with even column
+    count `L ≥ 2` and unit slopes `gcd(a, p) = 1`. -/
+def affineMatrixTyped (p : Nat) : List (List (Nat × Nat)) → Bool
+  | [] => false
+  | r :: rs =>
+      decide (2 ≤ r.length) && decide (r.length % 2 = 0) &&
+      rs.all (fun r' => r'.length == r.length) &&
+      (r :: rs).all (fun r' => r'.all (fun ab => decide (Nat.gcd ab.1 p = 1)))
+
+/-- The inverse of a unit `a` modulo `p`, found by search: the least `x < p`
+    with `a · x ≡ 1 (mod p)`, and `0` when there is none. -/
+def modInv (p a : Nat) : Nat :=
+  ((List.range p).find? (fun x => (a * x) % p == 1 % p)).getD 0
+
+/-- The relative affine map of an `X` block `(a_X, b_X)` and a `Z` block
+    `(a_Z, b_Z)` in one block column: `A(a_X, b_X) A(a_Z, b_Z)ᵀ = A(α, β)` with
+    `α = a_X a_Z⁻¹` and `β = a_Z⁻¹ (b_X - b_Z)` modulo `p`. -/
+def relAffine (p : Nat) (x z : Nat × Nat) : Nat × Nat :=
+  let zi := modInv p z.1
+  ((x.1 * zi) % p, (zi * (x.2 % p + (p - z.2 % p))) % p)
+
+/-- The relative affine maps of an `X` block row and a `Z` block row, one per
+    block column. -/
+def relAffineRow (p : Nat) (rx rz : List (Nat × Nat)) : List (Nat × Nat) :=
+  List.zipWith (relAffine p) rx rz
+
+/-- Every entry of the list occurs an even number of times. A list has this
+    property exactly when its positions split into pairs with equal entries. -/
+def evenMultiplicity (l : List (Nat × Nat)) : Bool :=
+  l.all (fun x => (l.filter (fun y => y == x)).length % 2 == 0)
+
+/-- The pair-partition premise of the `L-PAIR-PARTITION` card (applicability
+    (ii)): for every `X` block row and every `Z` block row, the block columns
+    split into pairs on which the relative affine maps coincide. -/
+def pairPartitionPaired (p : Nat) (BX BZ : List (List (Nat × Nat))) : Bool :=
+  BX.all (fun rx => BZ.all (fun rz => evenMultiplicity (relAffineRow p rx rz)))
+
+/-- Typing of `pair_partition(p; B_X, B_Z)`: the shapes and unit slopes of
+    applicability (i), and the pair partition of applicability (ii). -/
+def pairPartitionTyped (p : Nat) (BX BZ : List (List (Nat × Nat))) : Bool :=
+  decide (1 ≤ p) && affineMatrixTyped p BX && affineMatrixTyped p BZ &&
+  matCols BX == matCols BZ && pairPartitionPaired p BX BZ
+
+/-- The number of qubits of `pair_partition(p; B_X, B_Z)`: `L · p`. -/
+def pairPartitionQubits (p : Nat) (BX : List (List (Nat × Nat))) : Nat :=
+  matCols BX * p
+
+/-- Lift row `u < p` of a block row `[(a_0, b_0), …, (a_{L-1}, b_{L-1})]` over
+    `L · p` qubits: qubit `(c, v)` at `c · p + v` is `true` iff
+    `v = (a_c · u + b_c) mod p`. -/
+def affineBlockRow (p : Nat) (row : List (Nat × Nat)) (u : Nat) : List Bool :=
+  row.flatMap (fun ab =>
+    (List.range p).map (fun v => decide (v = (ab.1 * u + ab.2) % p)))
+
+/-- The natural rows of `pair_partition(p; B_X, B_Z)`. -/
+def pairPartitionVectors (p : Nat) (BX BZ : List (List (Nat × Nat))) :
+    List (Sector × List Bool) :=
+  BX.flatMap (fun r => (List.range p).map (fun u => (Sector.X, affineBlockRow p r u))) ++
+  BZ.flatMap (fun s => (List.range p).map (fun u => (Sector.Z, affineBlockRow p s u)))
+
+/-- The state update of `L-PAIR-PARTITION`. -/
+def pairPartitionState (p : Nat) (BX BZ : List (List (Nat × Nat))) : CodeState :=
+  constructedState (pairPartitionQubits p BX) (pairPartitionVectors p BX BZ)
+
+/-- The state update of `PP-SCALE`: fresh namespace `0 .. L·P - 1`, natural rows
+    from the scaled affine blocks at target size `P`, and identifiers canonically
+    minted starting from `s0.used`. -/
+def ppScaleState (s0 : CodeState) (P : Nat) (BX BZ : List (List (Nat × Nat))) : CodeState :=
+  constructedStateFrom s0.used (pairPartitionQubits P BX) (pairPartitionVectors P BX BZ)
+
+/-- Typing and positive-dimension premise (`k' > 0`, i.e. retained independent
+    display has strictly fewer rows than `L · P`) for `pp_scale(e; P)`. -/
+def ppScaleTyped (s0 : CodeState) (P : Nat) (BX BZ : List (List (Nat × Nat))) : Bool :=
+  decide (2 ≤ P) && pairPartitionTyped P BX BZ &&
+  decide ((ppScaleState s0 P BX BZ).rows.length < pairPartitionQubits P BX)
 
 /-! ## Retention of factor rows by `A-CONCAT` -/
 

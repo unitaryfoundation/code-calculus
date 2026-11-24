@@ -404,7 +404,10 @@ def export_challenge_entry(parent, state, ledger, name, construction, date,
             from machine.priced_calculus import certified_distance as _cd
         except Exception:
             _cd = None
-        _dists = _cd(state) if _cd is not None else None
+        try:
+            _dists = _cd(state) if _cd is not None else None
+        except Exception:
+            _dists = None
         if _dists is not None:
             exported["distance"]["certified"] = _dists
             exported["distance"]["certified_distance"] = _dists.get("d")

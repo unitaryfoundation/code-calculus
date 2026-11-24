@@ -1199,4 +1199,337 @@ theorem evalExpr_concat_wf {eO eI : StateExpr} {blocks repsX repsZ : List (List 
   cases h with
   | concat hO hI hty _ _ _ => exact wf_concatState _ _ blocks repsX repsZ hO hI hty
 
+/-! ## Nonabelian finite groups: `L-GROUP-ALGEBRA` and `L-LIFTED` (§4.44)
+
+Generalization of `L-GROUP-ALGEBRA` and `L-LIFTED` from finite abelian groups
+given by cyclic orders to arbitrary finite groups `G` (issue #565,
+`OBL-NONABELIAN-GROUP-INPUTS`, `spec/OPERATIONAL_SEMANTICS.md` §4.44).
+Left regular matrices `L(x)[h, k] = x(h k⁻¹)` and right regular matrices
+`R(y)[h, k] = y(k⁻¹ h)` commute over `𝔽₂` via the two-sided bijection
+`φ_{h, h'}(k) = h k⁻¹ h'` with inverse `ψ_{h, h'}(k') = h' (k')⁻¹ h`. -/
+
+theorem filter_length_le_of_bijection {α : Type} [DecidableEq α] (L : List α) (hnd : L.Nodup)
+    (φ ψ : α → α) (hφ_mem : ∀ x ∈ L, φ x ∈ L) (hψφ : ∀ x ∈ L, ψ (φ x) = x)
+    (F G : α → Bool) (hFG : ∀ x ∈ L, F x = G (φ x)) :
+    (L.filter F).length ≤ (L.filter G).length := by
+  have h1 : ((L.filter F).map φ).Nodup := by
+    apply nodup_map_of_inj_on φ _ (nodup_filter_cf F L hnd)
+    intro x hx y hy hxy
+    have hx' := (List.mem_filter.mp hx).1
+    have hy' := (List.mem_filter.mp hy).1
+    rw [← hψφ x hx', ← hψφ y hy', hxy]
+  have h2 : ∀ z ∈ (L.filter F).map φ, z ∈ L.filter G := by
+    intro z hz
+    obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hz
+    have hx' := List.mem_filter.mp hx
+    refine List.mem_filter.mpr ⟨hφ_mem x hx'.1, ?_⟩
+    rw [← hFG x hx'.1]
+    exact hx'.2
+  have := length_le_of_nodup_subset_gen _ _ h1 (nodup_filter_cf G L hnd) h2
+  rw [List.length_map] at this
+  exact this
+
+/-- Counting over a repeat-free list is invariant under a two-sided bijection. -/
+theorem filter_length_bijection {α : Type} [DecidableEq α] (L : List α) (hnd : L.Nodup)
+    (φ ψ : α → α) (hφ_mem : ∀ x ∈ L, φ x ∈ L) (hψ_mem : ∀ x ∈ L, ψ x ∈ L)
+    (hψφ : ∀ x ∈ L, ψ (φ x) = x) (hφψ : ∀ x ∈ L, φ (ψ x) = x)
+    (F G : α → Bool) (hFG : ∀ x ∈ L, F x = G (φ x)) :
+    (L.filter F).length = (L.filter G).length := by
+  apply Nat.le_antisymm (filter_length_le_of_bijection L hnd φ ψ hφ_mem hψφ F G hFG)
+  apply filter_length_le_of_bijection L hnd ψ φ hψ_mem hφψ G F
+  intro x hx
+  rw [hFG (ψ x) (hψ_mem x hx), hφψ x hx]
+
+theorem length_cayleyLeftRow (G : FiniteGroup) (x : List Nat) (h : Nat) :
+    (cayleyLeftRow G x h).length = G.order := by
+  unfold cayleyLeftRow
+  rw [List.length_map, List.length_range]
+
+theorem length_cayleyRightRow (G : FiniteGroup) (y : List Nat) (h : Nat) :
+    (cayleyRightRow G y h).length = G.order := by
+  unfold cayleyRightRow
+  rw [List.length_map, List.length_range]
+
+theorem cayleyCoeff_inv_left (G : FiniteGroup) (x : List Nat) {u v : Nat}
+    (hu : u < G.order) (hv : v < G.order) :
+    cayleyCoeff G (cayleyInv G x) (G.mul u (G.inv v)) =
+      cayleyCoeff G x (G.mul v (G.inv u)) := by
+  unfold cayleyCoeff cayleyInv
+  rw [List.filter_map, List.length_map]
+  have hc : x.filter ((fun t => t % G.order == G.mul u (G.inv v)) ∘
+        (fun t => G.inv (t % G.order))) =
+      x.filter (fun t => t % G.order == G.mul v (G.inv u)) := by
+    apply List.filter_congr
+    intro t _
+    have hpos : 0 < G.order := Nat.lt_of_le_of_lt (Nat.zero_le _) G.h_e
+    have ht : t % G.order < G.order := Nat.mod_lt t hpos
+    have hit : G.inv (t % G.order) < G.order := G.h_inv_lt _ ht
+    show (G.inv (t % G.order) % G.order == G.mul u (G.inv v)) =
+      (t % G.order == G.mul v (G.inv u))
+    rw [Nat.mod_eq_of_lt hit]
+    apply beq_congr_of_iff
+    constructor
+    · intro h
+      have hi := congrArg G.inv h
+      rw [G.inv_inv ht, G.inv_mul hu (G.h_inv_lt v hv), G.inv_inv hv] at hi
+      exact hi
+    · intro h
+      rw [h, G.inv_mul hv (G.h_inv_lt u hu), G.inv_inv hu]
+  rw [hc]
+
+theorem cayleyCoeff_inv_right (G : FiniteGroup) (y : List Nat) {u v : Nat}
+    (hu : u < G.order) (hv : v < G.order) :
+    cayleyCoeff G (cayleyInv G y) (G.mul (G.inv u) v) =
+      cayleyCoeff G y (G.mul (G.inv v) u) := by
+  unfold cayleyCoeff cayleyInv
+  rw [List.filter_map, List.length_map]
+  have hc : y.filter ((fun t => t % G.order == G.mul (G.inv u) v) ∘
+        (fun t => G.inv (t % G.order))) =
+      y.filter (fun t => t % G.order == G.mul (G.inv v) u) := by
+    apply List.filter_congr
+    intro t _
+    have hpos : 0 < G.order := Nat.lt_of_le_of_lt (Nat.zero_le _) G.h_e
+    have ht : t % G.order < G.order := Nat.mod_lt t hpos
+    have hit : G.inv (t % G.order) < G.order := G.h_inv_lt _ ht
+    show (G.inv (t % G.order) % G.order == G.mul (G.inv u) v) =
+      (t % G.order == G.mul (G.inv v) u)
+    rw [Nat.mod_eq_of_lt hit]
+    apply beq_congr_of_iff
+    constructor
+    · intro h
+      have hi := congrArg G.inv h
+      rw [G.inv_inv ht, G.inv_mul (G.h_inv_lt u hu) hv, G.inv_inv hu] at hi
+      exact hi
+    · intro h
+      rw [h, G.inv_mul (G.h_inv_lt v hv) hu, G.inv_inv hv]
+  rw [hc]
+
+/-- `⟨L(a)_h, R(b*)_{h'}⟩ = ⟨R(b)_h, L(a*)_{h'}⟩` for every finite group `G`,
+    abelian or nonabelian (§4.44). -/
+theorem dotPar_cayley_swap (G : FiniteGroup) (a b : List Nat) {h h' : Nat}
+    (hh : h < G.order) (hh' : h' < G.order) :
+    dotPar (cayleyLeftRow G a h) (cayleyRightRow G (cayleyInv G b) h') =
+      dotPar (cayleyRightRow G b h) (cayleyLeftRow G (cayleyInv G a) h') := by
+  unfold cayleyLeftRow cayleyRightRow
+  rw [dotPar_map_map_gen, dotPar_map_map_gen]
+  apply filter_length_bijection (List.range G.order) (nodup_range_cf G.order)
+    (G.phi h h') (G.phi h' h)
+  · intro k hk
+    exact List.mem_range.mpr (G.phi_lt hh hh' (List.mem_range.mp hk))
+  · intro k hk
+    exact List.mem_range.mpr (G.phi_lt hh' hh (List.mem_range.mp hk))
+  · intro k hk
+    exact G.phi_symm_inv hh hh' (List.mem_range.mp hk)
+  · intro k hk
+    exact G.phi_symm_inv hh' hh (List.mem_range.mp hk)
+  · intro k hk
+    have hk' : k < G.order := List.mem_range.mp hk
+    have hpk : G.phi h h' k < G.order := G.phi_lt hh hh' hk'
+    rw [cayleyCoeff_inv_right G b hk' hh', cayleyCoeff_inv_left G a hh' hpk,
+      G.inv_phi_mul_right hh hh' hk', G.phi_mul_inv_right hh hh' hk', Bool.and_comm]
+
+/-- `⟨R(y*)_h, L(x*)_{h'}⟩ = ⟨L(x)_h, R(y)_{h'}⟩` for every finite group `G`,
+    abelian or nonabelian (§4.44). -/
+theorem dotPar_cayley_inv_inv (G : FiniteGroup) (x y : List Nat) {h h' : Nat}
+    (hh : h < G.order) (hh' : h' < G.order) :
+    dotPar (cayleyRightRow G (cayleyInv G y) h) (cayleyLeftRow G (cayleyInv G x) h') =
+      dotPar (cayleyLeftRow G x h) (cayleyRightRow G y h') := by
+  unfold cayleyLeftRow cayleyRightRow
+  rw [dotPar_map_map_gen, dotPar_map_map_gen]
+  symm
+  apply filter_length_bijection (List.range G.order) (nodup_range_cf G.order)
+    (G.phi h h') (G.phi h' h)
+  · intro k hk
+    exact List.mem_range.mpr (G.phi_lt hh hh' (List.mem_range.mp hk))
+  · intro k hk
+    exact List.mem_range.mpr (G.phi_lt hh' hh (List.mem_range.mp hk))
+  · intro k hk
+    exact G.phi_symm_inv hh hh' (List.mem_range.mp hk)
+  · intro k hk
+    exact G.phi_symm_inv hh' hh (List.mem_range.mp hk)
+  · intro k hk
+    have hk' : k < G.order := List.mem_range.mp hk
+    have hpk : G.phi h h' k < G.order := G.phi_lt hh hh' hk'
+    rw [cayleyCoeff_inv_right G y hpk hh, cayleyCoeff_inv_left G x hh' hpk,
+      G.inv_mul_phi hh hh' hk', G.phi_mul_inv_right hh hh' hk', Bool.and_comm]
+
+/-- §4.44 for `L-GROUP-ALGEBRA`: the natural `X`- and `Z`-rows over any
+    finite group `G` (abelian or nonabelian) have pairwise even overlap. -/
+theorem cayleyTwoblock_naturalOrthogonal (G : FiniteGroup) (a b : List Nat) :
+    NaturalOrthogonal (naturalRows (2 * G.order) (cayleyTwoblockVectors G a b)) := by
+  unfold cayleyTwoblockVectors
+  apply naturalOrthogonal_of_cross
+  · intro v hv
+    obtain ⟨h, _, rfl⟩ := List.mem_map.mp hv
+    rw [List.length_append, length_cayleyLeftRow, length_cayleyRightRow, Nat.two_mul]
+  · intro v hv
+    obtain ⟨h, _, rfl⟩ := List.mem_map.mp hv
+    rw [List.length_append, length_cayleyRightRow, length_cayleyLeftRow, Nat.two_mul]
+  · intro vx hvx vz hvz
+    obtain ⟨h, hh, rfl⟩ := List.mem_map.mp hvx
+    obtain ⟨h', hh', rfl⟩ := List.mem_map.mp hvz
+    rw [dotPar_append _ _ _ _ (by rw [length_cayleyLeftRow, length_cayleyRightRow]),
+      dotPar_cayley_swap G a b (List.mem_range.mp hh) (List.mem_range.mp hh')]
+    omega
+
+/-- Well-formedness of `L-GROUP-ALGEBRA` over an arbitrary finite group `G`. -/
+theorem wf_cayleyTwoblockState (G : FiniteGroup) (a b : List Nat) :
+    EncodingWellFormed (cayleyTwoblockState G a b) :=
+  wf_constructedState _ _ (cayleyTwoblock_naturalOrthogonal G a b)
+
+theorem length_cayleyLiftBlock (G : FiniteGroup) (m n : Nat) (f : Nat × Nat → List Bool)
+    (hf : ∀ p, (f p).length = G.order) :
+    ((indexPairs m n).flatMap f).length = m * n * G.order := by
+  rw [length_flatMap_const f _ _ (fun p _ => hf p), length_indexPairs]
+
+theorem length_cayleyLiftXVector (G : FiniteGroup) (A B : List (List (List Nat)))
+    (aj : Nat × Nat) (h : Nat) :
+    (cayleyLiftXVector G A B aj h).length = cayleyLiftQubits G A B := by
+  unfold cayleyLiftXVector cayleyLiftQubits
+  rw [List.length_append,
+    length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyLeftRow ..; exact List.length_replicate),
+    length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyRightRow ..; exact List.length_replicate),
+    ← Nat.add_mul, Nat.mul_comm]
+
+theorem length_cayleyLiftZVector (G : FiniteGroup) (A B : List (List (List Nat)))
+    (ib : Nat × Nat) (h : Nat) :
+    (cayleyLiftZVector G A B ib h).length = cayleyLiftQubits G A B := by
+  unfold cayleyLiftZVector cayleyLiftQubits
+  rw [List.length_append,
+    length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyRightRow ..; exact List.length_replicate),
+    length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyLeftRow ..; exact List.length_replicate),
+    ← Nat.add_mul, Nat.mul_comm]
+
+/-- §4.44 for `L-LIFTED`: the natural `X`- and `Z`-rows over any finite
+    group `G` (abelian or nonabelian) have pairwise even overlap. -/
+theorem cayleyLift_naturalOrthogonal (G : FiniteGroup) (A B : List (List (List Nat))) :
+    NaturalOrthogonal (naturalRows (cayleyLiftQubits G A B) (cayleyLiftVectors G A B)) := by
+  unfold cayleyLiftVectors
+  apply naturalOrthogonal_of_cross
+  · intro v hv
+    obtain ⟨aj, _, hm⟩ := List.mem_flatMap.mp hv
+    obtain ⟨h, _, rfl⟩ := List.mem_map.mp hm
+    exact length_cayleyLiftXVector G A B aj h
+  · intro v hv
+    obtain ⟨ib, _, hm⟩ := List.mem_flatMap.mp hv
+    obtain ⟨h, _, rfl⟩ := List.mem_map.mp hm
+    exact length_cayleyLiftZVector G A B ib h
+  · intro vx hvx vz hvz
+    obtain ⟨aj, haj, hmx⟩ := List.mem_flatMap.mp hvx
+    obtain ⟨h, hh, rfl⟩ := List.mem_map.mp hmx
+    obtain ⟨ib, hib, hmz⟩ := List.mem_flatMap.mp hvz
+    obtain ⟨h', hh', rfl⟩ := List.mem_map.mp hmz
+    obtain ⟨a, j⟩ := aj
+    obtain ⟨i, b⟩ := ib
+    have haj' := mem_indexPairs.mp haj
+    have hib' := mem_indexPairs.mp hib
+    unfold cayleyLiftXVector cayleyLiftZVector
+    rw [dotPar_append _ _ _ _ (by
+      rw [length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyLeftRow ..; exact List.length_replicate),
+        length_cayleyLiftBlock G _ _ _ (fun _ => by split; exact length_cayleyRightRow ..; exact List.length_replicate)])]
+    rw [dotPar_point_blocks G.order _ _ (i, j)
+        (mem_indexPairs.mpr ⟨hib'.1, haj'.2⟩) (fun ij => ij.2 = j) (fun ij => ij.1 = i)
+        (fun ij => cayleyLeftRow G (cayleyEntry A a ij.1) h)
+        (fun ij => cayleyRightRow G (cayleyEntry B b ij.2) h')
+        (fun _ => length_cayleyLeftRow ..) (fun _ => length_cayleyRightRow ..)
+        (fun p => ⟨fun hp => Prod.ext hp.2 hp.1, fun hp => by rw [hp]; exact ⟨rfl, rfl⟩⟩),
+      dotPar_point_blocks G.order _ _ (a, b)
+        (mem_indexPairs.mpr ⟨haj'.1, hib'.2⟩) (fun ab => ab.1 = a) (fun ab => ab.2 = b)
+        (fun ab => cayleyRightRow G (cayleyInv G (cayleyEntry B ab.2 j)) h)
+        (fun ab => cayleyLeftRow G (cayleyInv G (cayleyEntry A ab.1 i)) h')
+        (fun _ => length_cayleyRightRow ..) (fun _ => length_cayleyLeftRow ..)
+        (fun p => ⟨fun hp => Prod.ext hp.1 hp.2, fun hp => by rw [hp]; exact ⟨rfl, rfl⟩⟩),
+      dotPar_cayley_inv_inv G (cayleyEntry A a i) (cayleyEntry B b j)
+        (List.mem_range.mp hh) (List.mem_range.mp hh')]
+    show (dotPar (cayleyLeftRow G (cayleyEntry A a i) h) (cayleyRightRow G (cayleyEntry B b j) h') +
+      dotPar (cayleyLeftRow G (cayleyEntry A a i) h) (cayleyRightRow G (cayleyEntry B b j) h')) % 2 = 0
+    omega
+
+/-- Well-formedness of `L-LIFTED` over an arbitrary finite group `G`. -/
+theorem wf_cayleyLiftState (G : FiniteGroup) (A B : List (List (List Nat))) :
+    EncodingWellFormed (cayleyLiftState G A B) :=
+  wf_constructedState _ _ (cayleyLift_naturalOrthogonal G A B)
+
+/-- Concrete nonabelian finite group `S₃` (order 6) with elements
+    `0=id, 1=r, 2=r², 3=s, 4=rs, 5=r²s` (`r³ = s² = 1`, `sr = r²s`). -/
+def s3Mul : Nat → Nat → Nat
+  | 0, b => b
+  | 1, 0 => 1 | 1, 1 => 2 | 1, 2 => 0 | 1, 3 => 4 | 1, 4 => 5 | 1, 5 => 3
+  | 2, 0 => 2 | 2, 1 => 0 | 2, 2 => 1 | 2, 3 => 5 | 2, 4 => 3 | 2, 5 => 4
+  | 3, 0 => 3 | 3, 1 => 5 | 3, 2 => 4 | 3, 3 => 0 | 3, 4 => 2 | 3, 5 => 1
+  | 4, 0 => 4 | 4, 1 => 3 | 4, 2 => 5 | 4, 3 => 1 | 4, 4 => 0 | 4, 5 => 2
+  | 5, 0 => 5 | 5, 1 => 4 | 5, 2 => 3 | 5, 3 => 2 | 5, 4 => 1 | 5, 5 => 0
+  | _, _ => 0
+
+def s3Inv : Nat → Nat
+  | 0 => 0 | 1 => 2 | 2 => 1 | 3 => 3 | 4 => 4 | 5 => 5 | _ => 0
+
+private theorem s3_mul_lt_fin : ∀ (a b : Fin 6), s3Mul a.val b.val < 6 := by decide
+private theorem s3_inv_lt_fin : ∀ (a : Fin 6), s3Inv a.val < 6 := by decide
+private theorem s3_assoc_fin :
+    ∀ (a b c : Fin 6), s3Mul (s3Mul a.val b.val) c.val = s3Mul a.val (s3Mul b.val c.val) := by
+  decide
+private theorem s3_mul_e_fin : ∀ (a : Fin 6), s3Mul a.val 0 = a.val := by decide
+private theorem s3_e_mul_fin : ∀ (a : Fin 6), s3Mul 0 a.val = a.val := by decide
+private theorem s3_mul_inv_fin : ∀ (a : Fin 6), s3Mul a.val (s3Inv a.val) = 0 := by decide
+private theorem s3_inv_mul_fin : ∀ (a : Fin 6), s3Mul (s3Inv a.val) a.val = 0 := by decide
+
+/-- `S₃` as a verified `FiniteGroup` (nonabelian: `s3Mul 1 3 = 4 ≠ 5 = s3Mul 3 1`). -/
+def s3Group : FiniteGroup where
+  order := 6
+  mul := s3Mul
+  inv := s3Inv
+  e := 0
+  h_e := by omega
+  h_mul_lt := fun a b ha hb => s3_mul_lt_fin ⟨a, ha⟩ ⟨b, hb⟩
+  h_inv_lt := fun a ha => s3_inv_lt_fin ⟨a, ha⟩
+  h_assoc := fun a b c ha hb hc => s3_assoc_fin ⟨a, ha⟩ ⟨b, hb⟩ ⟨c, hc⟩
+  h_mul_e := fun a ha => s3_mul_e_fin ⟨a, ha⟩
+  h_e_mul := fun a ha => s3_e_mul_fin ⟨a, ha⟩
+  h_mul_inv := fun a ha => s3_mul_inv_fin ⟨a, ha⟩
+  h_inv_mul := fun a ha => s3_inv_mul_fin ⟨a, ha⟩
+
+/-- Witness that `s3Group` is genuinely nonabelian. -/
+theorem s3Group_nonabelian : s3Group.mul 1 3 ≠ s3Group.mul 3 1 := by decide
+
+/-- Kernel-checked well-formedness of a nonabelian two-block code over `S₃`
+    (`n = 12`, `a = 1 + r`, `b = 1 + s`). -/
+theorem s3_twoblock_wf : EncodingWellFormed (cayleyTwoblockState s3Group [0, 1] [0, 3]) :=
+  wf_cayleyTwoblockState s3Group [0, 1] [0, 3]
+
+/-- Every evaluation of `lift_G(A, B)` over a group given by its
+    multiplication table yields a well-formed state. -/
+theorem evalExpr_liftTable_wf {t : List (List Nat)} {A B : List (List (List Nat))}
+    {s : CodeState} (h : EvalExpr (StateExpr.liftTable t A B) s) :
+    EncodingWellFormed s := by
+  cases h
+  exact wf_cayleyLiftState (tableGroup t) A B
+
+/-- Every evaluation of `twoblock_G(a, b)` over a group given by its
+    multiplication table yields a well-formed state. -/
+theorem evalExpr_twoblockTable_wf {t : List (List Nat)} {a b : List Nat} {s : CodeState}
+    (h : EvalExpr (StateExpr.twoblockTable t a b) s) : EncodingWellFormed s := by
+  cases h
+  exact wf_cayleyTwoblockState (tableGroup t) a b
+
+
+/-- The `n` of an evaluation of `lift_G(A, B)` over a group given by its
+    multiplication table: `|G| (n_A n_B + m_A m_B)`. -/
+theorem evalExpr_liftTable_n {t : List (List Nat)} {A B : List (List (List Nat))}
+    {s : CodeState} (h : EvalExpr (StateExpr.liftTable t A B) s) :
+    s.Q.length = t.length * (cayleyMatCols A * cayleyMatCols B + A.length * B.length) := by
+  cases h with
+  | liftTable hG _ _ _ =>
+    show (constructedState _ _).Q.length = _
+    rw [constructedState_n, cayleyLiftQubits, tableGroup_order hG]
+
+/-- The `n` of an evaluation of `twoblock_G(a, b)` over a group given by its
+    multiplication table: `2 |G|`. -/
+theorem evalExpr_twoblockTable_n {t : List (List Nat)} {a b : List Nat} {s : CodeState}
+    (h : EvalExpr (StateExpr.twoblockTable t a b) s) : s.Q.length = 2 * t.length := by
+  cases h with
+  | twoblockTable hG _ _ _ =>
+    show (constructedState _ _).Q.length = _
+    rw [constructedState_n, tableGroup_order hG]
+
 end CodeCalculus

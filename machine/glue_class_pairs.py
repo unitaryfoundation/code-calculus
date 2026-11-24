@@ -12,7 +12,9 @@ the glued logicals to look for a re-exposed class, evaluates the class-pair
 formula from factor data and seam data alone, and compares it with the
 exact-distance oracle on the glued state. Agreement is evidence that the
 derivation is transcribed as stated, not a proof (AGENTS.md). Oracle-side
-only: nothing here is a consumer path.
+only: nothing here is a consumer path.  This module imports the exact-distance
+oracle at module level; it is a verifier-side tool and must not be imported by
+consumer modules (machine.priced_calculus, machine.planner, machine.entrypoints).
 """
 
 import argparse

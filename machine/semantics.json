@@ -36,12 +36,12 @@
         {
           "symbol": "lift(G; B_X, B_Z)",
           "id": "L-LIFTED",
-          "meaning": "Lifted product over a finite abelian group G."
+          "meaning": "Lifted product over a finite group G (abelian or nonabelian)."
         },
         {
           "symbol": "twoblock(G; a, b)",
           "id": "L-GROUP-ALGEBRA",
-          "meaning": "Two-block group-algebra code over a finite abelian group G."
+          "meaning": "Two-block group-algebra code over a finite group G (abelian or nonabelian)."
         },
         {
           "symbol": "concat(e_O, e_I; L)",
@@ -61,7 +61,7 @@
         {
           "symbol": "balanced(G; H1, act1, H2, act2)",
           "id": "L-BALANCED",
-          "meaning": "Balanced product of two binary matrices equivariant under a finite abelian group G."
+          "meaning": "Balanced product of two binary matrices equivariant under a finite group G (abelian or nonabelian)."
         },
         {
           "symbol": "tanner(n; Lambda_X, Lambda_Z, E_X, E_Z)",
@@ -610,7 +610,7 @@
       "premises": [
         {
           "predicate": "well_typed_inputs",
-          "formula": "G a finite abelian group given by cyclic orders; A and B rectangular matrices over F_2[G], entries finite sets of exponent tuples"
+          "formula": "G a finite group (abelian given by cyclic orders, or nonabelian given by an explicit multiplication table or permutation generators); A and B rectangular matrices over F_2[G], entries finite subsets of G"
         },
         {
           "predicate": "ambient_membership",
@@ -619,11 +619,11 @@
       ],
       "update": {
         "Q": "fresh 0..n-1 with n = |G| (nA nB + mA mB); left qubit (i, j, g) at (i nB + j)|G| + idx(g), right qubit (a, b, g) at nA nB |G| + (a mB + b)|G| + idx(g)",
-        "rows": "natural X-row (a, j, h): row h of L(A[a][i]) on the left qubits (i, j, .) and row h of L(B[b][j]^*) on the right qubits (a, b, .); natural Z-row (i, b, h): row h of L(B[b][j]) on the left and row h of L(A[a][i]^*) on the right; displayed rows are the retained independent display per sector (section 4.34)",
+        "rows": "natural X-row (a, j, h): row h of L(A[a][i]) on the left qubits (i, j, .) and row h of R(B[b][j]^*) on the right qubits (a, b, .); natural Z-row (i, b, h): row h of R(B[b][j]) on the left and row h of L(A[a][i]^*) on the right (where L(x)[h, k] = 1 iff h k^-1 in x and R(y)[h, k] = 1 iff k^-1 h in y, with R = L when G is abelian); displayed rows are the retained independent display per sector (sections 4.34 and 4.44)",
         "used": "the canonically minted identifiers"
       },
-      "inapplicable_when": "Malformed input only; every well-typed input evaluates. The trivial group gives L-HGP.",
-      "standing": "transition specified 2026-11-11, transition-defined; output well-formed by the commutativity of F_2[G] (section 4.34); n exact, k by rank bookkeeping; no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "inapplicable_when": "Malformed input only; every well-typed input evaluates. The trivial group gives L-HGP, and abelian cyclic orders coincide with R = L.",
+      "standing": "transition specified 2026-11-11 and generalized to finite nonabelian groups 2026-11-22, transition-defined; output well-formed by L(x) R(y) = R(y) L(x) over F_2[G] (sections 4.34 and 4.44); n exact, k by rank bookkeeping; no automatic distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-LIFTED"
     },
     {
@@ -632,7 +632,7 @@
       "premises": [
         {
           "predicate": "well_typed_inputs",
-          "formula": "G a finite abelian group given by cyclic orders; a and b elements of F_2[G]"
+          "formula": "G a finite group (abelian given by cyclic orders, or nonabelian given by an explicit multiplication table or permutation generators); a and b elements of F_2[G]"
         },
         {
           "predicate": "ambient_membership",
@@ -641,11 +641,11 @@
       ],
       "update": {
         "Q": "fresh 0..2|G|-1; left qubit (0, g) at idx(g), right qubit (1, g) at |G| + idx(g)",
-        "rows": "natural X-row h: row h of L(a) on the left and row h of L(b) on the right; natural Z-row h: row h of L(b)^T on the left and row h of L(a)^T on the right, so the check matrices are [L(a) | L(b)] and [L(b)^T | L(a)^T]; displayed rows are the retained independent display per sector (section 4.34)",
+        "rows": "natural X-row h: row h of L(a) on the left and row h of R(b) on the right; natural Z-row h: row h of R(b)^T = R(b^*) on the left and row h of L(a)^T = L(a^*) on the right, so the check matrices are [L(a) | R(b)] and [R(b)^T | L(a)^T] (with R = L when G is abelian); displayed rows are the retained independent display per sector (sections 4.34 and 4.44)",
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only; every well-typed input evaluates. Equal row for row to lift_G((a), (b^*)).",
-      "standing": "transition specified 2026-11-11, transition-defined; output well-formed, k = 2(|G| - rank[L(a) | L(b)]) derived (section 4.34); no distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11 and generalized to finite nonabelian groups 2026-11-22, transition-defined; output well-formed, k = 2|G| - rank[L(a) | R(b)] - rank[L(b) | R(a)] in general (reducing to 2(|G| - rank[L(a) | L(b)]) when G is abelian; sections 4.34 and 4.44); no automatic distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-GROUP-ALGEBRA"
     },
     {
@@ -732,7 +732,7 @@
       "premises": [
         {
           "predicate": "well_typed_inputs",
-          "formula": "G a finite abelian group given by cyclic orders; H1 and H2 rectangular binary matrices; each action gives one row permutation and one column permutation per cyclic generator, commuting, of order dividing the generator's order, with H[g a][g i] = H[a][i]"
+          "formula": "G a finite group (abelian given by cyclic orders, or nonabelian given by an explicit multiplication table or permutation generators); H1 and H2 rectangular binary matrices; alpha1 a right action of G on H1 and alpha2 a left action of G on H2, with H1[alpha1_row(g)(a)][alpha1_col(g)(i)] = H1[a][i] and H2[alpha2_row(g)(b)][alpha2_col(g)(j)] = H2[b][j]"
         },
         {
           "predicate": "ambient_membership",
@@ -740,12 +740,12 @@
         }
       ],
       "update": {
-        "Q": "fresh 0..n-1, one label per orbit of (x, y) -> (g x, g^-1 y) on the column-index pairs, then on the row-index pairs, each family in the order of the least pair of an orbit",
-        "rows": "one natural X-row per orbit of the pairs (a, j) and one natural Z-row per orbit of the pairs (i, b): the hypergraph-product maps descended to orbits (section 4.35); displayed rows are the retained independent display per sector (section 4.34)",
+        "Q": "fresh 0..n-1, one label per orbit of (x, y) -> (alpha1(g)(x), alpha2(g)^-1(y)) on the column-index pairs, then on the row-index pairs, each family in the order of the least pair of an orbit",
+        "rows": "one natural X-row per orbit of the pairs (a, j) and one natural Z-row per orbit of the pairs (i, b): the hypergraph-product maps descended to orbits (sections 4.35 and 4.44); displayed rows are the retained independent display per sector (section 4.34)",
         "used": "the canonically minted identifiers"
       },
-      "inapplicable_when": "Malformed input only (permutations that do not form an action, or a matrix that is not equivariant); every well-typed input evaluates. The trivial group gives L-HGP row for row.",
-      "standing": "transition specified 2026-11-11, transition-defined; output well-formed because the product differentials descend to the orbit quotients (section 4.35); n the number of orbits, k by rank bookkeeping; no distance rule",
+      "inapplicable_when": "Malformed input only (permutations that do not form a right/left group action, or a matrix that is not equivariant); every well-typed input evaluates. The trivial group gives L-HGP row for row.",
+      "standing": "transition specified 2026-11-11 and generalized to finite nonabelian groups 2026-11-22, transition-defined; output well-formed because the product differentials descend to the orbit quotients (sections 4.35 and 4.44); n the number of orbits, k by rank bookkeeping; no automatic distance rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-BALANCED"
     },
     {
@@ -908,6 +908,71 @@
       "inapplicable_when": "Non-morphism qubit maps or pushed-forward rows that do not commute give no derivation.",
       "standing": "transition specified 2026-11-19, transition-defined; output well-formed and n = |Q_1 |_| _{Q_S} Q_2| (section 4.43); k by rank bookkeeping; no distance rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7A-PUSHOUT"
+    },
+    {
+      "id": "L-PAIR-PARTITION",
+      "form": "EvalExpr(pair_partition(p; B_X, B_Z), S)",
+      "premises": [
+        {
+          "predicate": "typed_affine_blocks",
+          "formula": "p >= 1, B_X and B_Z are nonempty rectangular block matrices with even column count L >= 2, and every slope a has gcd(a, p) = 1"
+        },
+        {
+          "predicate": "pair_partition_orthogonality",
+          "formula": "for every block-row pair (r, s) the L block columns partition into L/2 pairs with equal relative affine maps so that the natural X and Z rows have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..n-1, n = L * p",
+        "rows": "retained independent display of the paired affine-permutation block rows (section 4.46)",
+        "used": "the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-unit slopes, non-paired relative affine maps, or non-commuting natural rows give no derivation.",
+      "standing": "transition specified 2026-11-22, transition-defined; output well-formed and n = L * p (section 4.46); k by rank bookkeeping; no automatic distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-PAIR-PARTITION"
+    },
+    {
+      "id": "PP-SCALE",
+      "form": "EvalExpr(pp_scale(e; P), S)",
+      "premises": [
+        {
+          "predicate": "pp_presented",
+          "formula": "C_0 is well-formed and PP-presented"
+        },
+        {
+          "predicate": "unit_slopes",
+          "formula": "original and target slopes are units"
+        },
+        {
+          "predicate": "pp_conditions",
+          "formula": "PP conditions (2) hold at P_0 and P"
+        },
+        {
+          "predicate": "snf_reproduction",
+          "formula": "SNF reproduction check passes at P_0"
+        },
+        {
+          "predicate": "target_size",
+          "formula": "P >= 2"
+        },
+        {
+          "predicate": "positive_dimension",
+          "formula": "k' = L * P - rank(H_X') - rank(H_Z') > 0"
+        },
+        {
+          "predicate": "natural_rows_commute",
+          "formula": "generated natural X and Z rows have pairwise even overlap"
+        }
+      ],
+      "update": {
+        "Q": "fresh 0..L*P-1",
+        "rows": "retained independent display assembled from A(a, b) blocks with slopes a_q(P) and shifts b(P) (section 4.47)",
+        "used": "used_0 union the canonically minted identifiers"
+      },
+      "inapplicable_when": "Non-PP-presented input, failed SNF reproduction check, P < 2, k' <= 0, or non-commuting generated rows give no derivation.",
+      "standing": "transition specified 2026-11-22, transition-defined; output well-formed and n = L * P (section 4.47); k by rank bookkeeping; w = L carries; no automatic distance rule",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7PP-SCALE"
+
     }
   ],
   "layout_cells": {
@@ -1147,6 +1212,25 @@
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
         "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "L-PAIR-PARTITION": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..L*p-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.46",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "PP-SCALE": {
+        "child_layout": "none inherited: a constructor has no parent; a layout on the constructed qubits 0..L*P-1 must be supplied",
+        "radius": "r = max { diam(s) : s a displayed row } over the constructed display, exact, when a layout is supplied; no radius otherwise",
+        "direction": "none: no parent to compare with",
+        "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.47",
+
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       }
     }

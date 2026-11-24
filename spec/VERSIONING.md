@@ -496,9 +496,74 @@ set / term language). By dated maintainer decision
 expression constructors (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md`
 §2 cards, §4.43; `JUDGMENT_LAYER.md` §2g, §2d.5; `CLAIMS.md`), and the
 Kan-extension candidate remains refused. They carry no automatic distance
-rule beyond §2g (`DistanceLedger.for_constructed`). Existing §5 release rows
+Rule beyond §2g (`DistanceLedger.for_constructed`). Existing §5 release rows
 are not edited, and `discharged-through` values do not advance (re-discharge
 obligations of §4 apply).
+
+**Dated note (2026-11-22, `v0.4.0` target).** Axis: 2 (operation set / term
+language) and 3 (conditional interval cell and family-level ceiling). The
+dated maintainer decision is recorded in the decision log (2026-11-22):
+`L-PAIR-PARTITION`
+(`pair_partition(p; B_X, B_Z)`) is admitted and `PP-SCALE` (`pp_scale(e; P)`)
+is promoted, both as `transition-defined` expression constructors
+(`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 cards, §4.46–§4.47;
+`JUDGMENT_LAYER.md` §2d.5, §2g, §2l; `CLAIMS.md`; `OBLIGATIONS.md`
+`OBL-PP-SCALE` and `OBL-WELL-FORMEDNESS-PRESERVATION`). Existing §5 release
+rows are not edited, and `discharged-through` values do not advance
+(re-discharge obligations of §4 apply).
+
+**Dated note (2026-11-23, `stdCSS-4` / `v0.4.0` candidate scope; machine-side).**
+The consumer capabilities of software `v0.3.1` are staged on the `stdCSS-4`
+row under the §8 staged-admission rule: (1) objective-aware search, in which
+`bounded_sector_search` and `plan` select the ranking objective (distance,
+check weight, n, k, an axis/targets dict, or a callable); (2) applicability
+diagnostics, in which `bounded_sector_search` reports per-move-family
+`enabled`, `enumerated` and first-drop-reason counts; (3) constructor
+screening and separation, in which typed constructor specifications enter the
+objective-filtered pool with a `structural_profile`, and sector swaps are
+reported as presentation-only candidates and never as improvements; and (4)
+stop and budget reporting, in which `bounded_sector_search` names its stop
+reason and the budget it declined, and `run_campaign` records a `stop_reason`.
+None of these changes an axis, an admitted rung, or an obligation status, and
+none advances a `discharged-through` value. Each is a new advertised consumer
+capability. Under §8 it may ship in the `v0.3.1` PATCH only as a staged
+admission on the `stdCSS-4` row, as this note stages it; without this note it
+would be a MINOR criterion.
+
+**Dated note (2026-11-22, `v0.4.0` target).** Axes: 2 (operation set / term
+language) and 3 (judgment set / distance ledger).
+1. **Nonabelian finite group inputs (Axis 2, `OBL-NONABELIAN-GROUP-INPUTS`):**
+   `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED` are generalized from finite
+   abelian groups given by cyclic orders to arbitrary finite groups $G$
+   (presented by cyclic orders, an explicit multiplication table, or
+   permutation generators; `TAXONOMY.md` §1 and §3.3–§3.5; `TERM_LANGUAGE.md`
+   §1, §2, §7; `OPERATIONAL_SEMANTICS.md` §2 cards and §4.44;
+   `lean/CodeCalculus/ConstructorOverlap.lean`). Left and right regular
+   representations $L(x)$ and $R(y)$ commute over $\mathbb{F}_2$, and for
+   abelian groups $R(y) = L(y)$ entry for entry, so the extension is strictly
+   conservative on the abelian fragment.
+2. **Conditional constructor distance cells and witness lifting (Axis 3,
+   `OBL-CONDITIONAL-CONSTRUCTOR-CELLS`):** `JUDGMENT_LAYER.md` §2g and §2g.1
+   and `OPERATIONAL_SEMANTICS.md` §4.45 define conditional lower-bound cells
+   and deterministic factor-to-child witness lifting for `L-HGP`,
+   `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, and `A-DOUBLE`
+   (`lean/CodeCalculus/PricedInterval.lean`; `machine/intervals.py`;
+   `machine/constructors.py`).
+3. **Admission of `L-PAIR-PARTITION` (Axis 2):** `L-PAIR-PARTITION`
+   (`pair_partition(p; B_X, B_Z)`) is admitted as a `transition-defined`
+   expression constructor (`TERM_LANGUAGE.md` §1–§2;
+   `OPERATIONAL_SEMANTICS.md` §2 card, §4.46; `JUDGMENT_LAYER.md` §2d.5, §2g;
+   `CLAIMS.md`; `OBLIGATIONS.md` `OBL-WELL-FORMEDNESS-PRESERVATION`). It carries
+   no automatic distance rule beyond §2g (`DistanceLedger.for_constructed`).
+4. **Re-discharge obligations (§4):** Per §4, this axis-2/axis-3 change does not
+   edit existing §5 release rows and does not automatically advance
+   `discharged-through` values on pre-existing obligations; re-discharge of
+   `OBL-WELL-FORMEDNESS-PRESERVATION` on the widened nonabelian domain is
+   supplied by §4.44 and `cayleyTwoblock_naturalOrthogonal`,
+   `cayleyLift_naturalOrthogonal`, and `cayleyBalanced_naturalOrthogonal`,
+   while all other tracked obligations retain
+   their existing `discharged-through` markers until the `v0.4.0` release audit.
+
 
 ## 6. Item-level conventions and owners
 
@@ -552,13 +617,33 @@ a calculus line names a mathematical object; a software release names a build.
 
 | Bump | When |
 | --- | --- |
-| **PATCH** (`v0.1.x`) | No change to any calculus axis, admitted rung, or obligation status. Documentation fixes, transcription fixes, CI/pinned-replay re-pinning, consumer bug fixes that do not alter admitted semantics, accepted machine-side candidates (§5.1), Lean hygiene. All validation gates (lint, pytest, fixture conformance, priced harness, `lake build`) green. |
+| **PATCH** (`v0.1.x`) | No change to any calculus axis, admitted rung, or obligation status, except a staged admission under the rule below. Documentation fixes, transcription fixes, CI/pinned-replay re-pinning, consumer bug fixes that do not alter admitted semantics, accepted machine-side candidates (§5.1), Lean hygiene. All validation gates (lint, pytest, fixture conformance, priced harness, `lake build`) green. |
 | **MINOR** (`v0.2.0`) | A new calculus ordinal/row (conservative addition), or admission of new conditional cells as `transition-defined`, or an advanced `discharged-through`, or a new advertised consumer capability. Normally accompanied by a `stdCSS-(n+1)` row (§5). |
 | **MAJOR** (`v1.0.0`) | A new calculus line (new state model), a non-conservative change breaking existing derivations, removal of an admitted operation, or — by convention — all in-scope obligations discharged and the soundness metatheorem mechanized. |
 
-**Invariant.** A software MINOR never lands without a corresponding calculus-row
-change, or an explicit note that the change is machine-only (in which case it
-is a PATCH). This keeps the line number meaningful ("which calculus").
+**Staged admissions may ride a PATCH.** A PATCH may carry axis-2 or axis-3
+content (new productions, new conditional cells, and the rungs and obligations
+minted with them), together with the consumer capabilities that realize it,
+when all of the following hold:
+
+1. a dated note in this file already stages that content on the next §5
+   release row, with its operation or judgment set stated;
+2. each consumer capability the PATCH ships is named in a dated §5.1 note as
+   staged on that same row; a capability not so named is a MINOR under the
+   table above;
+3. the PATCH appends no §5 row and advances no `discharged-through` value;
+4. the §4 re-discharge obligations are deferred to the audit of that next
+   MINOR;
+5. the changelog records the staging and the label decision.
+
+The PATCH records no calculus-row fact of its own. The ordinal bump and the
+row append fall due together at the next MINOR, which is the release that
+records the staged content.
+
+**Invariant.** A software MINOR lands together with the calculus-row change it
+records: a new §5 row, a new ordinal, or an advanced `discharged-through`. A
+release with no such change is a PATCH, and a PATCH never appends a §5 row.
+This keeps the line number meaningful ("which calculus").
 
 **Tagging and publishing are maintainer-only** (AGENTS.md *Hard rules*). A
 release is prepared (four-axis pin recorded, changelog drafted, `discharged-

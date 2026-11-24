@@ -26,12 +26,34 @@ lake build
  `twoblock`, and `concat` are the four typed constructors admitted
  2026-11-11, with rules `EvalExpr.hgp`, `lift`, `twoblock`, and `concat`. `StateExpr.product`, `double`, `balanced`, `tanner`, and
  `tile` are the five admitted the same day, with rules of
- the same names.
+ the same names. `StateExpr.liftTable`, `twoblockTable`, and
+ `balancedTable` are the productions of `L-LIFTED`, `L-GROUP-ALGEBRA`,
+ and `L-BALANCED` with the group given by its multiplication table
+ (`spec/OPERATIONAL_SEMANTICS.md` §4.44), with rules of the same names.
  - `Constructors.lean`: the state updates of the nine typed constructors,
  as the retained display of their natural rows (`constructedState`,
  `hgpState`, `liftState`, `twoblockState`, `concatState`,
  `productState`, `doubleState`, `balancedState`, `tannerState`,
  `tileState`).
+ - `CayleyGroups.lean`: the definitions of the three group constructors
+ over an arbitrary finite group: the structure `FiniteGroup`, the left
+ and right regular rows, the right and left actions, and the states
+ `cayleyTwoblockState`, `cayleyLiftState`, and `cayleyBalancedState`.
+ Definitions only. They sit ahead of `Eval.lean` so that the evaluation
+ relation can name them.
+ - `CayleyTables.lean`: a group as raw data. `tableGroupTyped` is the
+ typing check of a multiplication table (nonempty and square with
+ entries in range, a two-sided identity, two-sided inverses,
+ associativity), `tableGroup` the `FiniteGroup` of a table that passes
+ it, and `tableLiftState`, `tableTwoblockState`, and
+ `tableBalancedState` the states of the three table productions. The
+ actions of `balancedTable` are one permutation per group element
+ (`tableRightActionTyped`, `tableLeftActionTyped`,
+ `tableEquivariantTyped`). A group given by permutation generators has
+ no production: it is the table `gensTable d gens`, which the table
+ productions carry. No theorem says that `gensTable` is the table of the
+ generated group, and the extension of an action from the generators to
+ the group is not transcribed.
  - `ConstructorWellFormedness.lean`: the retained display is a sequence of
  additions, so natural rows with pairwise even overlap give a
  well-formed state (`wf_constructedState`); `n` for the four.
@@ -44,7 +66,12 @@ lake build
  group and every algebra input, and `concat_naturalOrthogonal` for
  well-formed factors and typed blocks and representatives. Their
  well-formedness theorems (`evalExpr_lift_wf`, `evalExpr_twoblock_wf`,
- `evalExpr_concat_wf`) take no hypothesis.
+ `evalExpr_concat_wf`) take no hypothesis. The same over an arbitrary
+ finite group (`cayleyLift_naturalOrthogonal`,
+ `cayleyTwoblock_naturalOrthogonal`), so every evaluation of a table
+ production yields a well-formed state (`evalExpr_liftTable_wf`,
+ `evalExpr_twoblockTable_wf`), with `n` (`evalExpr_liftTable_n`,
+ `evalExpr_twoblockTable_n`).
  - `ConstructorRank.lean`: `k` of a constructed state from the natural
  rows, with no hypothesis (`stateK_constructedState`); the rank lemmas
  for mask lists it rests on; and `k = 2 k_C` for `A-DOUBLE` with the
@@ -69,7 +96,11 @@ lake build
  (`evalExpr_balanced_wellFormed`). It carries the group
  action of exponent tuples (`actF`, `actF_gadd`, `actF_gneg`), the
  invariance of an equivariant matrix (`matEntry_actF`), and the least
- pair of an orbit (`pairRep_mem`, `pairRep_act`).
+ pair of an orbit (`pairRep_mem`, `pairRep_act`). The same over an
+ arbitrary finite group with a right and a left action
+ (`cayleyBalanced_naturalOrthogonal`), so every evaluation of
+ `balancedTable` yields a well-formed state
+ (`evalExpr_balancedTable_wf`), with `n` (`evalExpr_balancedTable_n`).
  - `ConstructorRankNatural.lean`: `k` of `L-BALANCED`, `L-TANNER`, and
  `L-TILE` as `n` minus the ranks of the two matrices of natural rows
  (`balancedState_k_closed`, `tannerState_k_closed`,
@@ -99,7 +130,12 @@ lake build
  `machine/experiments/constructor_lean_instances.py`. Instances of the
  eleven constructors whose Lean states equal the consumer's, by kernel
  `decide`, and `nested_steane_eq_tanner`, the equality of the
- `L-NESTED-CSS` and `L-TANNER` states on the Steane instance.
+ `L-NESTED-CSS` and `L-TANNER` states on the Steane instance. For the
+ table productions: `twoblock_s3`, `lift_s3`, and `balanced_s3` over
+ `S_3`, two inputs the consumer refuses that fail the Lean typing checks
+ (`nonassociative_table_refused`, `balanced_s3_left_action_refused`),
+ and `s3_gens_table`, the equality of `gensTable` with the consumer's
+ table on two generators of `S_3`.
  - `Invariants.lean` / `WellFormedness.lean` — well-formedness (I1–I5).
  - `Soundness.lean` — annotated-judgment soundness metatheorem.
  - `TermSoundness.lean` — the metatheorem over the evaluation of a closed

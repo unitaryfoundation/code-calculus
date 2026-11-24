@@ -781,21 +781,6 @@ theorem filter_length_bij {α : Type} [DecidableEq α] (L : List α) (hnd : L.No
 
 /-! ## The overlap -/
 
-/-- The number of pairs `(a, j)` of the orbit `c` with `j = o.2` and
-    `H₁[a, o.1]`: the entry of the `X`-row of `c` at the left qubit `o`,
-    before reduction modulo 2. -/
-def cntXL (repX : Nat × Nat → Nat × Nat) (H1 : List (List Bool)) (m1 n2 : Nat)
-    (c o : Nat × Nat) : Nat :=
-  ((indexPairs m1 n2).filter (fun p =>
-    repX p == c && p.2 == o.2 && matEntry H1 p.1 o.1)).length
-
-/-- The number of pairs `(a, j)` of the orbit `c` with `a = o.1` and
-    `H₂[o.2, j]`: the entry of the `X`-row of `c` at the right qubit `o`. -/
-def cntXR (repX : Nat × Nat → Nat × Nat) (H2 : List (List Bool)) (m1 n2 : Nat)
-    (c o : Nat × Nat) : Nat :=
-  ((indexPairs m1 n2).filter (fun p =>
-    repX p == c && p.1 == o.1 && matEntry H2 o.2 p.2)).length
-
 section Overlap
 
 variable {os : List Nat} {m1 n1 m2 n2 : Nat} {R1 C1 R2 C2 : List (Nat → Nat)}
@@ -1131,5 +1116,411 @@ theorem evalExpr_balanced_wellFormed {orders : List Nat} {H1 H2 : List (List Boo
     EncodingWellFormed s := by
   cases h with
   | balanced hty _ => exact wf_balancedState orders H1 rows1 cols1 H2 rows2 cols2 hty
+
+/-! ## Nonabelian finite groups: `L-BALANCED` (§4.44)
+
+Generalization of `L-BALANCED` from finite abelian groups given by cyclic
+orders to arbitrary finite groups `G : FiniteGroup` (issue #565,
+`OBL-NONABELIAN-GROUP-INPUTS`, `spec/OPERATIONAL_SEMANTICS.md` §4.44).
+Given a right action `α₁` of `G` on `H₁` (`α₁(g h) = α₁(h) ∘ α₁(g)`) and a
+left action `α₂` of `G` on `H₂` (`α₂(g h) = α₂(g) ∘ α₂(h)`), the inverse
+action `g ↦ α₂(g⁻¹)` is a right action on `H₂`, so the diagonal map
+`Φ_g(x, y) = (α₁(g)(x), α₂(g⁻¹)(y))` is a right action of `G` on index pairs
+whose orbits yield well-formed balanced-product CSS codes. -/
+
+namespace FiniteRightAction
+
+theorem act_inv {G : FiniteGroup} {size : Nat} (A : FiniteRightAction G size)
+    {g x : Nat} (hg : g < G.order) (hx : x < size) :
+    A.act (G.inv g) (A.act g x) = x := by
+  rw [← A.h_mul g (G.inv g) x hg (G.h_inv_lt g hg) hx, G.h_mul_inv g hg, A.h_e x hx]
+
+theorem act_inv' {G : FiniteGroup} {size : Nat} (A : FiniteRightAction G size)
+    {g x : Nat} (hg : g < G.order) (hx : x < size) :
+    A.act g (A.act (G.inv g) x) = x := by
+  rw [← A.h_mul (G.inv g) g x (G.h_inv_lt g hg) hg hx, G.h_inv_mul g hg, A.h_e x hx]
+
+theorem act_inj {G : FiniteGroup} {size : Nat} (A : FiniteRightAction G size)
+    {g x y : Nat} (hg : g < G.order) (hx : x < size) (hy : y < size)
+    (h : A.act g x = A.act g y) : x = y := by
+  have hi := congrArg (A.act (G.inv g)) h
+  rw [A.act_inv hg hx, A.act_inv hg hy] at hi
+  exact hi
+
+end FiniteRightAction
+
+section CayleyOrbits
+
+variable {G : FiniteGroup} {m n : Nat}
+  {A1 : FiniteRightAction G m} {A2 : FiniteRightAction G n}
+
+theorem cayleyPairAct_lt {g : Nat} (hg : g < G.order)
+    (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    (cayleyPairAct A1 A2 g p).1 < m ∧ (cayleyPairAct A1 A2 g p).2 < n :=
+  ⟨A1.h_lt g p.1 hg hp1, A2.h_lt g p.2 hg hp2⟩
+
+theorem cayleyPairAct_mul {g h : Nat} (hg : g < G.order) (hh : h < G.order)
+    (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    cayleyPairAct A1 A2 h (cayleyPairAct A1 A2 g p) =
+      cayleyPairAct A1 A2 (G.mul g h) p := by
+  show (A1.act h (A1.act g p.1), A2.act h (A2.act g p.2)) =
+    (A1.act (G.mul g h) p.1, A2.act (G.mul g h) p.2)
+  rw [A1.h_mul g h p.1 hg hh hp1, A2.h_mul g h p.2 hg hh hp2]
+
+theorem cayleyPairAct_inv {g : Nat} (hg : g < G.order)
+    (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    cayleyPairAct A1 A2 (G.inv g) (cayleyPairAct A1 A2 g p) = p := by
+  show (A1.act (G.inv g) (A1.act g p.1), A2.act (G.inv g) (A2.act g p.2)) = p
+  rw [A1.act_inv hg hp1, A2.act_inv hg hp2]
+
+theorem cayleyPairAct_inv' {g : Nat} (hg : g < G.order)
+    (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    cayleyPairAct A1 A2 g (cayleyPairAct A1 A2 (G.inv g) p) = p := by
+  show (A1.act g (A1.act (G.inv g) p.1), A2.act g (A2.act (G.inv g) p.2)) = p
+  rw [A1.act_inv' hg hp1, A2.act_inv' hg hp2]
+
+theorem cayleyPairRep_mem (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    ∃ g, g < G.order ∧ cayleyPairRep G A1 A2 p = cayleyPairAct A1 A2 g p := by
+  rcases foldl_pairMin_mem ((List.range G.order).map (fun g => cayleyPairAct A1 A2 g p)) p
+    with h | h
+  · refine ⟨G.e, G.h_e, ?_⟩
+    show cayleyPairRep G A1 A2 p = (A1.act G.e p.1, A2.act G.e p.2)
+    rw [A1.h_e p.1 hp1, A2.h_e p.2 hp2]
+    exact h
+  · obtain ⟨g, hg, hgeq⟩ := List.mem_map.mp h
+    exact ⟨g, List.mem_range.mp hg, hgeq.symm⟩
+
+theorem cayleyPairRep_le {g : Nat} (hg : g < G.order) (p : Nat × Nat) :
+    pairLe (cayleyPairRep G A1 A2 p) (cayleyPairAct A1 A2 g p) :=
+  foldl_pairMin_le_mem _ _ _ (List.mem_map.mpr ⟨g, List.mem_range.mpr hg, rfl⟩)
+
+theorem cayleyPairRep_act {g : Nat} (hg : g < G.order)
+    (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    cayleyPairRep G A1 A2 (cayleyPairAct A1 A2 g p) = cayleyPairRep G A1 A2 p := by
+  have hq := cayleyPairAct_lt (A1 := A1) (A2 := A2) hg p hp1 hp2
+  apply pairLe_antisymm
+  · obtain ⟨h, hh, hrep⟩ := cayleyPairRep_mem (A1 := A1) (A2 := A2) p hp1 hp2
+    have e : cayleyPairAct A1 A2 h p =
+        cayleyPairAct A1 A2 (G.mul (G.inv g) h) (cayleyPairAct A1 A2 g p) := by
+      rw [← cayleyPairAct_mul (G.h_inv_lt g hg) hh _ hq.1 hq.2,
+        cayleyPairAct_inv hg p hp1 hp2]
+    rw [hrep, e]
+    exact cayleyPairRep_le (G.h_mul_lt _ _ (G.h_inv_lt g hg) hh) _
+  · obtain ⟨h, hh, hrep⟩ := cayleyPairRep_mem (A1 := A1) (A2 := A2) _ hq.1 hq.2
+    rw [hrep, cayleyPairAct_mul hg hh p hp1 hp2]
+    exact cayleyPairRep_le (G.h_mul_lt g h hg hh) _
+
+theorem cayleyPairRep_idem (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    cayleyPairRep G A1 A2 (cayleyPairRep G A1 A2 p) = cayleyPairRep G A1 A2 p := by
+  obtain ⟨g, hg, hrep⟩ := cayleyPairRep_mem (A1 := A1) (A2 := A2) p hp1 hp2
+  rw [hrep, cayleyPairRep_act hg p hp1 hp2]
+  exact hrep
+
+theorem cayleyPairRep_lt (p : Nat × Nat) (hp1 : p.1 < m) (hp2 : p.2 < n) :
+    (cayleyPairRep G A1 A2 p).1 < m ∧ (cayleyPairRep G A1 A2 p).2 < n := by
+  obtain ⟨g, hg, hrep⟩ := cayleyPairRep_mem (A1 := A1) (A2 := A2) p hp1 hp2
+  rw [hrep]
+  exact cayleyPairAct_lt hg p hp1 hp2
+
+theorem cayleyPairAct_mem_indexPairs {g : Nat} (hg : g < G.order) (p : Nat × Nat)
+    (hp : p ∈ indexPairs m n) : cayleyPairAct A1 A2 g p ∈ indexPairs m n := by
+  obtain ⟨a, j⟩ := p
+  have hp' := mem_indexPairs.mp hp
+  exact mem_indexPairs.mpr ⟨A1.h_lt g a hg hp'.1, A2.h_lt g j hg hp'.2⟩
+
+end CayleyOrbits
+
+theorem cayleyCntXL_rep {G : FiniteGroup} {m1 n1 n2 : Nat} {H1 : List (List Bool)}
+    {R1 : FiniteRightAction G m1} {C1 : FiniteRightAction G n1}
+    {C2 : FiniteRightAction G n2}
+    (hE1 : ∀ g a i, g < G.order → a < m1 → i < n1 →
+      matEntry H1 (R1.act g a) (C1.act g i) = matEntry H1 a i)
+    (c : Nat × Nat) (i j : Nat) (hi : i < n1) (hj : j < n2) :
+    cntXL (cayleyPairRep G R1 C2) H1 m1 n2 c (cayleyPairRep G C1 C2 (i, j)) =
+      cntXL (cayleyPairRep G R1 C2) H1 m1 n2 c (i, j) := by
+  obtain ⟨g, hg, hrep⟩ := cayleyPairRep_mem (A1 := C1) (A2 := C2) (i, j) hi hj
+  rw [hrep]
+  have hbij := filter_length_bij (indexPairs m1 n2) (nodup_indexPairs m1 n2)
+    (cayleyPairAct R1 C2 g) (cayleyPairAct R1 C2 (G.inv g))
+    (fun p hp => cayleyPairAct_mem_indexPairs hg p hp)
+    (fun p hp => cayleyPairAct_mem_indexPairs (G.h_inv_lt g hg) p hp)
+    (fun p hp => by
+      obtain ⟨a, j'⟩ := p
+      have hp' := mem_indexPairs.mp hp
+      exact cayleyPairAct_inv hg (a, j') hp'.1 hp'.2)
+    (fun p hp => by
+      obtain ⟨a, j'⟩ := p
+      have hp' := mem_indexPairs.mp hp
+      exact cayleyPairAct_inv' hg (a, j') hp'.1 hp'.2)
+    (fun p => cayleyPairRep G R1 C2 p == c && p.2 == C2.act g j &&
+      matEntry H1 p.1 (C1.act g i))
+  refine hbij.symm.trans (congrArg List.length (List.filter_congr (fun p hp => ?_)))
+  obtain ⟨a, j'⟩ := p
+  have hp' := mem_indexPairs.mp hp
+  show (cayleyPairRep G R1 C2 (cayleyPairAct R1 C2 g (a, j')) == c &&
+      C2.act g j' == C2.act g j && matEntry H1 (R1.act g a) (C1.act g i)) =
+    (cayleyPairRep G R1 C2 (a, j') == c && j' == j && matEntry H1 a i)
+  rw [cayleyPairRep_act hg (a, j') hp'.1 hp'.2, hE1 g a i hg hp'.1 hi,
+    beq_congr_of_iff (a := C2.act g j') (b := C2.act g j) (c := j') (d := j)
+      ⟨fun h => C2.act_inj hg hp'.2 hj h, fun h => by rw [h]⟩]
+
+theorem cayleyCntXR_rep {G : FiniteGroup} {m1 m2 n2 : Nat} {H2 : List (List Bool)}
+    {R1 : FiniteRightAction G m1} {R2 : FiniteRightAction G m2}
+    {C2 : FiniteRightAction G n2}
+    (hE2 : ∀ g b j, g < G.order → b < m2 → j < n2 →
+      matEntry H2 (R2.act g b) (C2.act g j) = matEntry H2 b j)
+    (c : Nat × Nat) (a0 b0 : Nat) (ha0 : a0 < m1) (hb0 : b0 < m2) :
+    cntXR (cayleyPairRep G R1 C2) H2 m1 n2 c (cayleyPairRep G R1 R2 (a0, b0)) =
+      cntXR (cayleyPairRep G R1 C2) H2 m1 n2 c (a0, b0) := by
+  obtain ⟨g, hg, hrep⟩ := cayleyPairRep_mem (A1 := R1) (A2 := R2) (a0, b0) ha0 hb0
+  rw [hrep]
+  have hbij := filter_length_bij (indexPairs m1 n2) (nodup_indexPairs m1 n2)
+    (cayleyPairAct R1 C2 g) (cayleyPairAct R1 C2 (G.inv g))
+    (fun p hp => cayleyPairAct_mem_indexPairs hg p hp)
+    (fun p hp => cayleyPairAct_mem_indexPairs (G.h_inv_lt g hg) p hp)
+    (fun p hp => by
+      obtain ⟨a, j'⟩ := p
+      have hp' := mem_indexPairs.mp hp
+      exact cayleyPairAct_inv hg (a, j') hp'.1 hp'.2)
+    (fun p hp => by
+      obtain ⟨a, j'⟩ := p
+      have hp' := mem_indexPairs.mp hp
+      exact cayleyPairAct_inv' hg (a, j') hp'.1 hp'.2)
+    (fun p => cayleyPairRep G R1 C2 p == c && p.1 == R1.act g a0 &&
+      matEntry H2 (R2.act g b0) p.2)
+  refine hbij.symm.trans (congrArg List.length (List.filter_congr (fun p hp => ?_)))
+  obtain ⟨a, j'⟩ := p
+  have hp' := mem_indexPairs.mp hp
+  show (cayleyPairRep G R1 C2 (cayleyPairAct R1 C2 g (a, j')) == c &&
+      R1.act g a == R1.act g a0 && matEntry H2 (R2.act g b0) (C2.act g j')) =
+    (cayleyPairRep G R1 C2 (a, j') == c && a == a0 && matEntry H2 b0 j')
+  rw [cayleyPairRep_act hg (a, j') hp'.1 hp'.2, hE2 g b0 j' hg hb0 hp'.2,
+    beq_congr_of_iff (a := R1.act g a) (b := R1.act g a0) (c := a) (d := a0)
+      ⟨fun h => R1.act_inj hg hp'.1 ha0 h, fun h => by rw [h]⟩]
+
+/-- §4.44 for `L-BALANCED`: the natural `X`- and `Z`-rows over any finite
+    group `G` (abelian or nonabelian) with equivariant right action `(R1, C1)`
+    on `H1` and left action `(R2, C2)` on `H2` have pairwise even overlap. -/
+theorem cayleyBalanced_overlap (G : FiniteGroup) (H1 H2 : List (List Bool))
+    (R1 : FiniteRightAction G H1.length) (C1 : FiniteRightAction G (matCols H1))
+    (R2 : FiniteLeftAction G H2.length) (C2 : FiniteLeftAction G (matCols H2))
+    (hE1 : ∀ g a i, g < G.order → a < H1.length → i < matCols H1 →
+      matEntry H1 (R1.act g a) (C1.act g i) = matEntry H1 a i)
+    (hE2 : ∀ g b j, g < G.order → b < H2.length → j < matCols H2 →
+      matEntry H2 (R2.act g b) (C2.act g j) = matEntry H2 b j)
+    (c e : Nat × Nat) (he : e ∈ indexPairs (matCols H1) H2.length) :
+    dotPar (cayleyBalancedXVector G H1 H2 R1 C1 R2 C2 c)
+      (cayleyBalancedZVector G H1 H2 R1 C1 R2 C2 e) % 2 = 0 := by
+  obtain ⟨i, b⟩ := e
+  have he' := mem_indexPairs.mp he
+  have hE2R : ∀ g b0 j, g < G.order → b0 < H2.length → j < matCols H2 →
+      matEntry H2 (R2.toRight.act g b0) (C2.toRight.act g j) = matEntry H2 b0 j :=
+    fun g b0 j hg hb0 hj => hE2 (G.inv g) b0 j (G.h_inv_lt g hg) hb0 hj
+  unfold cayleyBalancedXVector cayleyBalancedZVector
+  rw [dotPar_append _ _ _ _ (by rw [List.length_map, List.length_map]),
+    dotPar_map_map_gen, dotPar_map_map_gen]
+  have hL := filter_odd_and_odd (cntXL (cayleyPairRep G R1 C2.toRight) H1 H1.length (matCols H2) c)
+    (fun o => ((List.range (matCols H2)).filter (fun j =>
+      matEntry H2 b j && cayleyPairRep G C1 C2.toRight (i, j) == o)).length)
+    (cayleyOrbitReps G C1 C2.toRight)
+  have hR := filter_odd_and_odd (cntXR (cayleyPairRep G R1 C2.toRight) H2 H1.length (matCols H2) c)
+    (fun o => ((List.range H1.length).filter (fun a =>
+      matEntry H1 a i && cayleyPairRep G R1 R2.toRight (a, b) == o)).length)
+    (cayleyOrbitReps G R1 R2.toRight)
+  have hleftnd : (cayleyOrbitReps G C1 C2.toRight).Nodup :=
+    nodup_filter_cf _ _ (nodup_indexPairs _ _)
+  have hrightnd : (cayleyOrbitReps G R1 R2.toRight).Nodup :=
+    nodup_filter_cf _ _ (nodup_indexPairs _ _)
+  have sL1 := sum_fiber (cntXL (cayleyPairRep G R1 C2.toRight) H1 H1.length (matCols H2) c)
+    (fun j => matEntry H2 b j) (fun j => cayleyPairRep G C1 C2.toRight (i, j))
+    (cayleyOrbitReps G C1 C2.toRight) hleftnd (List.range (matCols H2)) (fun j hj => by
+      have hj' := List.mem_range.mp hj
+      have hlt := cayleyPairRep_lt (A1 := C1) (A2 := C2.toRight) (i, j) he'.1 hj'
+      exact List.mem_filter.mpr ⟨mem_indexPairs.mpr hlt,
+        beq_iff_eq.mpr (cayleyPairRep_idem (A1 := C1) (A2 := C2.toRight) (i, j) he'.1 hj')⟩)
+  have sL2 : (List.range (matCols H2)).map (fun j => if matEntry H2 b j then
+        cntXL (cayleyPairRep G R1 C2.toRight) H1 H1.length (matCols H2) c
+          (cayleyPairRep G C1 C2.toRight (i, j)) else 0) =
+      (List.range (matCols H2)).map (fun j => (if matEntry H2 b j then 1 else 0) *
+        ((indexPairs H1.length (matCols H2)).filter (fun p =>
+          (cayleyPairRep G R1 C2.toRight p == c && matEntry H1 p.1 i) && (p.2 == j))).length) :=
+    List.map_congr_left (fun j hj => by
+      rw [cayleyCntXL_rep hE1 c i j he'.1 (List.mem_range.mp hj)]
+      have eq' : cntXL (cayleyPairRep G R1 C2.toRight) H1 H1.length (matCols H2) c (i, j) =
+          ((indexPairs H1.length (matCols H2)).filter (fun p =>
+            (cayleyPairRep G R1 C2.toRight p == c && matEntry H1 p.1 i) && (p.2 == j))).length :=
+        congrArg List.length (List.filter_congr (fun p _ => by
+          show (cayleyPairRep G R1 C2.toRight p == c && p.2 == j && matEntry H1 p.1 i) =
+            ((cayleyPairRep G R1 C2.toRight p == c && matEntry H1 p.1 i) && (p.2 == j))
+          cases (cayleyPairRep G R1 C2.toRight p == c) <;> cases (p.2 == j) <;>
+            cases (matEntry H1 p.1 i) <;> rfl))
+      rw [eq']
+      cases matEntry H2 b j with
+      | true => exact (Nat.one_mul _).symm
+      | false => exact (Nat.zero_mul _).symm)
+  have sL3 := sum_fiber (fun j => if matEntry H2 b j then 1 else 0)
+    (fun p : Nat × Nat => cayleyPairRep G R1 C2.toRight p == c && matEntry H1 p.1 i) Prod.snd
+    (List.range (matCols H2)) (nodup_range_cf (matCols H2))
+    (indexPairs H1.length (matCols H2)) (fun p hp => by
+      obtain ⟨a, j⟩ := p
+      exact List.mem_range.mpr (mem_indexPairs.mp hp).2)
+  have sR1 := sum_fiber (cntXR (cayleyPairRep G R1 C2.toRight) H2 H1.length (matCols H2) c)
+    (fun a => matEntry H1 a i) (fun a => cayleyPairRep G R1 R2.toRight (a, b))
+    (cayleyOrbitReps G R1 R2.toRight) hrightnd (List.range H1.length) (fun a ha => by
+      have ha' := List.mem_range.mp ha
+      have hlt := cayleyPairRep_lt (A1 := R1) (A2 := R2.toRight) (a, b) ha' he'.2
+      exact List.mem_filter.mpr ⟨mem_indexPairs.mpr hlt,
+        beq_iff_eq.mpr (cayleyPairRep_idem (A1 := R1) (A2 := R2.toRight) (a, b) ha' he'.2)⟩)
+  have sR2 : (List.range H1.length).map (fun a => if matEntry H1 a i then
+        cntXR (cayleyPairRep G R1 C2.toRight) H2 H1.length (matCols H2) c
+          (cayleyPairRep G R1 R2.toRight (a, b)) else 0) =
+      (List.range H1.length).map (fun a => (if matEntry H1 a i then 1 else 0) *
+        ((indexPairs H1.length (matCols H2)).filter (fun p =>
+          (cayleyPairRep G R1 C2.toRight p == c && matEntry H2 b p.2) && (p.1 == a))).length) :=
+    List.map_congr_left (fun a ha => by
+      rw [cayleyCntXR_rep hE2R c a b (List.mem_range.mp ha) he'.2]
+      have eq' : cntXR (cayleyPairRep G R1 C2.toRight) H2 H1.length (matCols H2) c (a, b) =
+          ((indexPairs H1.length (matCols H2)).filter (fun p =>
+            (cayleyPairRep G R1 C2.toRight p == c && matEntry H2 b p.2) && (p.1 == a))).length :=
+        congrArg List.length (List.filter_congr (fun p _ => by
+          show (cayleyPairRep G R1 C2.toRight p == c && p.1 == a && matEntry H2 b p.2) =
+            ((cayleyPairRep G R1 C2.toRight p == c && matEntry H2 b p.2) && (p.1 == a))
+          cases (cayleyPairRep G R1 C2.toRight p == c) <;> cases (p.1 == a) <;>
+            cases (matEntry H2 b p.2) <;> rfl))
+      rw [eq']
+      cases matEntry H1 a i with
+      | true => exact (Nat.one_mul _).symm
+      | false => exact (Nat.zero_mul _).symm)
+  have sR3 := sum_fiber (fun a => if matEntry H1 a i then 1 else 0)
+    (fun p : Nat × Nat => cayleyPairRep G R1 C2.toRight p == c && matEntry H2 b p.2) Prod.fst
+    (List.range H1.length) (nodup_range_cf H1.length)
+    (indexPairs H1.length (matCols H2)) (fun p hp => by
+      obtain ⟨a, j⟩ := p
+      exact List.mem_range.mpr (mem_indexPairs.mp hp).1)
+  have hsame : (indexPairs H1.length (matCols H2)).map (fun p : Nat × Nat =>
+        if cayleyPairRep G R1 C2.toRight p == c && matEntry H2 b p.2 then
+          (if matEntry H1 p.1 i then 1 else 0) else 0) =
+      (indexPairs H1.length (matCols H2)).map (fun p : Nat × Nat =>
+        if cayleyPairRep G R1 C2.toRight p == c && matEntry H1 p.1 i then
+          (if matEntry H2 b p.2 then 1 else 0) else 0) :=
+    List.map_congr_left (fun p _ => by
+      cases (cayleyPairRep G R1 C2.toRight p == c) <;> cases (matEntry H2 b p.2) <;>
+        cases (matEntry H1 p.1 i) <;> rfl)
+  rw [sL1, sL2, sL3] at hL
+  rw [sR1, sR2, sR3, hsame] at hR
+  dsimp only
+  omega
+
+/-- §4.44 for `L-BALANCED`: natural `X`- and `Z`-rows have pairwise even overlap
+    over any finite group `G`. -/
+theorem cayleyBalanced_naturalOrthogonal (G : FiniteGroup) (H1 H2 : List (List Bool))
+    (R1 : FiniteRightAction G H1.length) (C1 : FiniteRightAction G (matCols H1))
+    (R2 : FiniteLeftAction G H2.length) (C2 : FiniteLeftAction G (matCols H2))
+    (hE1 : ∀ g a i, g < G.order → a < H1.length → i < matCols H1 →
+      matEntry H1 (R1.act g a) (C1.act g i) = matEntry H1 a i)
+    (hE2 : ∀ g b j, g < G.order → b < H2.length → j < matCols H2 →
+      matEntry H2 (R2.act g b) (C2.act g j) = matEntry H2 b j) :
+    NaturalOrthogonal (naturalRows (cayleyBalancedQubits G H1 H2 R1 C1 R2 C2)
+      (cayleyBalancedVectors G H1 H2 R1 C1 R2 C2)) := by
+  unfold cayleyBalancedVectors
+  apply naturalOrthogonal_of_cross
+  · intro v hv
+    obtain ⟨c, _, rfl⟩ := List.mem_map.mp hv
+    unfold cayleyBalancedXVector cayleyBalancedQubits
+    rw [List.length_append, List.length_map, List.length_map]
+  · intro v hv
+    obtain ⟨c, _, rfl⟩ := List.mem_map.mp hv
+    unfold cayleyBalancedZVector cayleyBalancedQubits
+    rw [List.length_append, List.length_map, List.length_map]
+  · intro vx hvx vz hvz
+    obtain ⟨c, _, rfl⟩ := List.mem_map.mp hvx
+    obtain ⟨e', he', rfl⟩ := List.mem_map.mp hvz
+    exact cayleyBalanced_overlap G H1 H2 R1 C1 R2 C2 hE1 hE2 c e'
+      (List.mem_filter.mp he').1
+
+/-- Well-formedness of `L-BALANCED` over an arbitrary finite group `G`. -/
+theorem wf_cayleyBalancedState (G : FiniteGroup) (H1 H2 : List (List Bool))
+    (R1 : FiniteRightAction G H1.length) (C1 : FiniteRightAction G (matCols H1))
+    (R2 : FiniteLeftAction G H2.length) (C2 : FiniteLeftAction G (matCols H2))
+    (hE1 : ∀ g a i, g < G.order → a < H1.length → i < matCols H1 →
+      matEntry H1 (R1.act g a) (C1.act g i) = matEntry H1 a i)
+    (hE2 : ∀ g b j, g < G.order → b < H2.length → j < matCols H2 →
+      matEntry H2 (R2.act g b) (C2.act g j) = matEntry H2 b j) :
+    EncodingWellFormed (cayleyBalancedState G H1 H2 R1 C1 R2 C2) :=
+  wf_constructedState _ _
+    (cayleyBalanced_naturalOrthogonal G H1 H2 R1 C1 R2 C2 hE1 hE2)
+
+/-- Right regular action of `S₃` on itself: `x · g = x g`. -/
+def s3RightAction : FiniteRightAction s3Group 6 where
+  act := fun g x => s3Mul x g
+  h_lt := fun g x hg hx => s3Group.h_mul_lt x g hx hg
+  h_e := fun x hx => s3Group.h_mul_e x hx
+  h_mul := fun g h x hg hh hx => (s3Group.h_assoc x g h hx hg hh).symm
+
+/-- Left regular action of `S₃` on itself: `g · y = g y`. -/
+def s3LeftAction : FiniteLeftAction s3Group 6 where
+  act := fun g y => s3Mul g y
+  h_lt := fun g y hg hy => s3Group.h_mul_lt g y hg hy
+  h_e := fun y hy => s3Group.h_e_mul y hy
+  h_mul := fun g h y hg hh hy => s3Group.h_assoc g h y hg hh hy
+
+/-- Left regular matrix `L(1 + r)` over `S₃` (right-`S₃`-equivariant). -/
+def s3H1 : List (List Bool) := (List.range 6).map (cayleyLeftRow s3Group [0, 1])
+
+/-- Right regular matrix `R(1 + s)` over `S₃` (left-`S₃`-equivariant). -/
+def s3H2 : List (List Bool) := (List.range 6).map (cayleyRightRow s3Group [0, 3])
+
+private theorem s3H1_equiv_fin : ∀ (g a i : Fin 6),
+    matEntry s3H1 (s3Mul a.val g.val) (s3Mul i.val g.val) = matEntry s3H1 a.val i.val := by
+  decide
+
+private theorem s3H2_equiv_fin : ∀ (g b j : Fin 6),
+    matEntry s3H2 (s3Mul g.val b.val) (s3Mul g.val j.val) = matEntry s3H2 b.val j.val := by
+  decide
+
+/-- Kernel-checked well-formedness of a nonabelian balanced-product code over
+    `S₃` (`H₁ = L(1 + r)` with right regular action, `H₂ = R(1 + s)` with left
+    regular action). -/
+theorem s3_balanced_wf :
+    EncodingWellFormed (cayleyBalancedState s3Group s3H1 s3H2
+      s3RightAction s3RightAction s3LeftAction s3LeftAction) :=
+  wf_cayleyBalancedState s3Group s3H1 s3H2
+    s3RightAction s3RightAction s3LeftAction s3LeftAction
+    (fun g a i hg ha hi => s3H1_equiv_fin ⟨g, hg⟩ ⟨a, ha⟩ ⟨i, hi⟩)
+    (fun g b j hg hb hj => s3H2_equiv_fin ⟨g, hg⟩ ⟨b, hb⟩ ⟨j, hj⟩)
+
+/-- Every evaluation of `balanced_G(H₁, α₁; H₂, α₂)` over a group given by
+    its multiplication table yields a well-formed state. The equivariance
+    hypotheses of `wf_cayleyBalancedState` are read off the typing check. -/
+theorem evalExpr_balancedTable_wf {t : List (List Nat)} {H1 H2 : List (List Bool)}
+    {rows1 cols1 rows2 cols2 : List (List Nat)} {s : CodeState}
+    (h : EvalExpr (StateExpr.balancedTable t H1 rows1 cols1 H2 rows2 cols2) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | balancedTable hty _ =>
+    unfold tableBalancedTyped at hty
+    simp only [Bool.and_eq_true] at hty
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨hG, _⟩, _⟩, hR1⟩, hC1⟩, hR2⟩, hC2⟩, hE1⟩, hE2⟩ := hty
+    unfold tableEquivariantTyped at hE1 hE2
+    apply wf_cayleyBalancedState
+    · intro g a i hg ha hi
+      rw [tableGroup_order hG] at hg
+      rw [tableRightAction_act hG hR1, tableRightAction_act hG hC1]
+      exact eq_of_beq (all_range (all_range (all_range hE1 hg) ha) hi)
+    · intro g b j hg hb hj
+      rw [tableGroup_order hG] at hg
+      rw [tableLeftAction_act hG hR2, tableLeftAction_act hG hC2]
+      exact eq_of_beq (all_range (all_range (all_range hE2 hg) hb) hj)
+
+
+/-- The `n` of an evaluation of `balanced_G(H₁, α₁; H₂, α₂)` over a group
+    given by its multiplication table: the number of orbits of the pairs of
+    column indices plus the number of orbits of the pairs of row indices. -/
+theorem evalExpr_balancedTable_n {t : List (List Nat)} {H1 H2 : List (List Bool)}
+    {rows1 cols1 rows2 cols2 : List (List Nat)} {s : CodeState}
+    (h : EvalExpr (StateExpr.balancedTable t H1 rows1 cols1 H2 rows2 cols2) s) :
+    s.Q.length = tableBalancedQubits t H1 rows1 cols1 H2 rows2 cols2 := by
+  cases h
+  exact constructedState_n _ _
 
 end CodeCalculus

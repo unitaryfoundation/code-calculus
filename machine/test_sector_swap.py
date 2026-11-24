@@ -345,11 +345,16 @@ class PlannerIntegrationTests(unittest.TestCase):
         ledger = exact_ledger(state)
         found = bounded_sector_search(state, ledger, "X", budget=6)
         self.assertTrue(found["sector_swap"]["applied"])
-        self.assertEqual(found["candidates"][0]["sequence"],
+        # The swap is presentation-only: reported separately, never counted
+        # as an improving candidate (qldpc-challenge #7116).
+        self.assertEqual(found["presentation_candidates"][0]["sequence"],
                          [{"op": "E-LOCAL-HADAMARD", "qubits": [0, 1, 2, 3]}])
-        self.assertEqual(found["candidates"][0]["ledger"].sector["X"], Interval(2, 2))
+        self.assertEqual(found["presentation_candidates"][0]["ledger"].sector["X"],
+                         Interval(2, 2))
+        self.assertNotIn("E-LOCAL-HADAMARD",
+                         [c["operation"]["op"] for c in found["candidates"]])
         self.assertGreaterEqual(found["evaluated"], 1)
-        for candidate in found["candidates"][1:]:
+        for candidate in found["candidates"]:
             self.assertEqual(candidate["sequence"][0]["op"], "E-LOCAL-HADAMARD")
             self.assertIsNone(candidate["sector_swap"])
         without = bounded_sector_search(state, ledger, "X", budget=6, sector_swap=False)

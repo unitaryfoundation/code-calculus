@@ -36,6 +36,17 @@ LEAN_NAMES = {
     "L-FREE": ("free", "freeState"),
     "A-PULLBACK": ("pullback", "pullbackState"),
     "A-PUSHOUT": ("pushout", "pushoutState"),
+    "L-PAIR-PARTITION": ("pairPartition", "pairPartitionState"),
+    "PP-SCALE": ("ppScale", "ppScaleState"),
+
+}
+
+# Taxonomy ID -> (Lean production, Lean state update) of the three group
+# constructors with the group given by its multiplication table.
+TABLE_PRODUCTIONS = {
+    "L-LIFTED": ("liftTable", "tableLiftState"),
+    "L-GROUP-ALGEBRA": ("twoblockTable", "tableTwoblockState"),
+    "L-BALANCED": ("balancedTable", "tableBalancedState"),
 }
 
 
@@ -81,6 +92,27 @@ class ConstructorLeanTests(unittest.TestCase):
                         r"theorem \w+_state : %s (.|\n)*?:= by decide" % re.escape(update))
                     self.assertIn("EvalExpr (StateExpr.%s " % name, instances)
 
+    def test_group_constructors_have_a_table_production(self):
+        term = lean_source("Term.lean")
+        evaluation = lean_source("Eval.lean")
+        updates = lean_source("CayleyTables.lean")
+        instances = OUTPUT.read_text()
+        for taxonomy_id, (name, update) in TABLE_PRODUCTIONS.items():
+            with self.subTest(constructor=taxonomy_id):
+                self.assertIn(taxonomy_id, ADMITTED_CONSTRUCTORS)
+                self.assertRegex(term, r"\|\s+%s\s+:" % name)
+                self.assertRegex(evaluation, r"\|\s+%s\s+\{" % name)
+                self.assertIn("EvalExpr (StateExpr.%s " % name, evaluation)
+                self.assertIn("| StateExpr.%s " % name, evaluation)
+                self.assertRegex(updates, r"def %s\b" % update)
+                self.assertRegex(
+                    instances,
+                    r"theorem \w+_state : %s (.|\n)*?:= by decide" % re.escape(update))
+                self.assertIn("EvalExpr (StateExpr.%s " % name, instances)
+        self.assertIn("theorem s3_gens_table", instances)
+        self.assertIn("theorem nonassociative_table_refused", instances)
+        self.assertIn("theorem balanced_s3_left_action_refused", instances)
+
     def test_well_formedness_theorems_are_present(self):
         text = lean_source("ConstructorOrthogonality.lean")
         for theorem in ("evalExpr_hgp_wf", "hgp_naturalOrthogonal",
@@ -90,7 +122,8 @@ class ConstructorLeanTests(unittest.TestCase):
         for theorem in ("evalExpr_lift_wf", "evalExpr_twoblock_wf",
                         "evalExpr_concat_wf", "lift_naturalOrthogonal",
                         "twoblock_naturalOrthogonal",
-                        "concat_naturalOrthogonal"):
+                        "concat_naturalOrthogonal",
+                        "evalExpr_liftTable_wf", "evalExpr_twoblockTable_wf"):
             self.assertIn("theorem %s" % theorem, overlap)
         assembly = lean_source("ConstructorAssembly.lean")
         for theorem in ("evalExpr_product_wf", "evalExpr_double_wf",
@@ -99,8 +132,14 @@ class ConstructorLeanTests(unittest.TestCase):
                         "evalExpr_cone_wf",
                         "evalExpr_empty_wf", "evalExpr_free_wf",
                         "evalExpr_pullback_wf", "evalExpr_pushout_wf",
+                        "evalExpr_pairPartition_wf", "evalExpr_ppScale_wf",
+                        "evalExpr_pairPartition_paired",
+                        "sixMaps_no_derivation",
+
                         "product_naturalOrthogonal"):
             self.assertIn("theorem %s" % theorem, assembly)
+        self.assertIn("theorem evalExpr_balancedTable_wf",
+                      lean_source("BalancedOverlap.lean"))
         self.assertIn("theorem wf_constructedState",
                       lean_source("ConstructorWellFormedness.lean"))
 

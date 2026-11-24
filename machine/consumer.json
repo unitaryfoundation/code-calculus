@@ -113,6 +113,21 @@
    "claimed_rule": "Records existence of Hsin's §3.3 conditional transfer-theorem slot with no usable automatic distance bound or k formula beyond §2c/§2g defaults; parent logicals descend along pi, Tate cohomology counts new logicals, and distance bounds require sourced inputs or validated child witnesses.",
    "consumer_check": "Checked on the consumer side (A-QUOTIENT has no admitted calculus transition): require a free group action and sector-preserving single-qudit Cliffords only (machine/quotient_specialization.py); reject fixed points, sector-swapping Cliffords (route to E-LOCAL-HADAMARD / deferred general-stabilizer extended-state layer), and sector-mixing Cliffords. Require a nonempty source string for any supplied count or lower bound; never compute distances.",
    "source": "spec/JUDGMENT_LAYER.md §2i"
+  },
+  "conditional_constructor_cell": {
+   "for": "L-HGP, L-NESTED-CSS, A-CONCAT, A-PRODUCT, and A-DOUBLE conditional distance cells and factor-to-child witness lifting (JUDGMENT_LAYER.md §2g, §2g.1; OPERATIONAL_SEMANTICS.md §4.45).",
+   "fields": [
+    "constructor",
+    "source",
+    "d1/d2/d1_T/d2_T (L-HGP)",
+    "d_ker_HZ/d_ker_HX (L-NESTED-CSS)",
+    "k_in/outer/inner/outer_block (A-CONCAT)",
+    "display_certificate/d_X/d_Z/left/right (A-PRODUCT)",
+    "parent/conjugate/wiring/twisted_certificate/d_X/d_Z (A-DOUBLE)"
+   ],
+   "claimed_rule": "Raises constructed-root lower endpoints conditionally from consumer-supplied sourced factor/classical bounds (L-HGP, L-NESTED-CSS, A-CONCAT, A-PRODUCT, A-DOUBLE); deterministic factor-to-child lifted witnesses tighten upper endpoints only after passing validate_witness on the constructed state; any lower endpoint exceeding a validated witness weight is refused (no_derivation).",
+   "consumer_check": "Require positive integer bounds (or inf where permitted for L-HGP), a nonempty source string, and an explicit display_certificate (A-PRODUCT) or twisted_certificate (A-DOUBLE with non-empty wiring); never validate the truth of supplied factor lower bounds, only input shape and consistency with validated witnesses.",
+   "source": "spec/JUDGMENT_LAYER.md §2g.1"
   }
  },
  "interval_rules": {

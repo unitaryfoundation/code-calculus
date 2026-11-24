@@ -62,8 +62,16 @@ class TestBoundedSectorSearch(unittest.TestCase):
         self.assertIn("budget_used", result)
         self.assertIn("evaluated", result)
         self.assertIn("exhausted", result)
+        self.assertIn("stop_reason", result)
+        self.assertIn("budget_declined", result)
         self.assertIn("candidates", result)
         self.assertLessEqual(result["budget_used"], result["budget"])
+        self.assertIn(result["stop_reason"],
+                      {"budget-exhausted", "frontier-exhausted",
+                       "max-depth-reached"})
+        expected_declined = (0 if result["exhausted"]
+                             else result["budget"] - result["budget_used"])
+        self.assertEqual(result["budget_declined"], expected_declined)
 
     def test_no_distance_recomputation(self):
         # The search only consults the carried ledger; replacing the exact-
@@ -79,6 +87,25 @@ class TestBoundedSectorSearch(unittest.TestCase):
         ledger = _ledger()
         result = bounded_sector_search(state, ledger, "Z", budget=1)
         self.assertTrue(result["budget_used"] <= 1)
+        self.assertEqual(result["stop_reason"], "budget-exhausted")
+        self.assertEqual(result["budget_declined"], 0)
+
+    def test_frontier_exhaustion_declines_remaining_budget(self):
+        state = _no_improvement_state()
+        ledger = _ledger()
+        result = bounded_sector_search(state, ledger, "Z", budget=10)
+        self.assertFalse(result["exhausted"])
+        self.assertEqual(result["stop_reason"], "frontier-exhausted")
+        self.assertEqual(result["budget_declined"], 10)
+
+    def test_max_depth_reached_declines_remaining_budget(self):
+        state = _state()
+        ledger = _ledger()
+        result = bounded_sector_search(state, ledger, "Z", budget=10)
+        self.assertFalse(result["exhausted"])
+        self.assertEqual(result["stop_reason"], "max-depth-reached")
+        self.assertEqual(result["budget_declined"],
+                         result["budget"] - result["budget_used"])
 
     def test_search_status_helper(self):
         self.assertEqual(search_status([]), "no survivor found")
@@ -127,10 +154,15 @@ class TestBoundedSectorSearch(unittest.TestCase):
         ledger = DistanceLedger(Interval(0, 3),
                                 {"X": Interval(2, 2), "Z": Interval(0, 3)})
         result = bounded_sector_search(state, ledger, "Z", budget=10)
-        self.assertTrue(result["candidates"])
+        # A sector swap is a presentation symmetry: it is reported under
+        # presentation_candidates and is never counted as an improvement
+        # (qldpc-challenge #7116). The old contract counted it in ``candidates``.
+        self.assertTrue(result["presentation_candidates"])
+        self.assertTrue(all(c["operation"]["op"] != "E-LOCAL-HADAMARD"
+                            for c in result["candidates"]))
         parent_z = ledger.sector["Z"]
         tighter = False
-        for c in result["candidates"]:
+        for c in result["presentation_candidates"] + result["candidates"]:
             cz = c["ledger"].sector["Z"]
             if (cz.lower is not None and (parent_z.lower is None or cz.lower > parent_z.lower)
                     or cz.upper is not None and (parent_z.upper is None or cz.upper < parent_z.upper)):

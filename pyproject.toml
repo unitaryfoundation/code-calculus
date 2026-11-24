@@ -1,3 +1,7 @@
+[project]
+name = "code-calculus"
+requires-python = ">=3.10"
+
 [tool.pytest.ini_options]
 testpaths = ["machine"]
 python_files = ["test_*.py"]

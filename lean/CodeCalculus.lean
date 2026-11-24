@@ -39,6 +39,8 @@ import CodeCalculus.GlueExtraction
 import CodeCalculus.CertificateChecker
 import CodeCalculus.CertificateInstances
 import CodeCalculus.Constructors
+import CodeCalculus.CayleyGroups
+import CodeCalculus.CayleyTables
 import CodeCalculus.ConstructorWellFormedness
 import CodeCalculus.ConstructorOrthogonality
 import CodeCalculus.ConstructorAssembly

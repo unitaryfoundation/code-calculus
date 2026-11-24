@@ -841,4 +841,228 @@ theorem ofOption_minOpt (a b : Option Nat) :
     ExtNat.ofOption (minOpt a b) = ExtNat.min (ExtNat.ofOption a) (ExtNat.ofOption b) := by
   cases a <;> cases b <;> rfl
 
+/-! ### Conditional distance cells for admitted constructors (`JUDGMENT_LAYER.md` §2g.1, §4.45)
+
+Soundness of constructed ledgers (`constructedLedger`) and of the five
+conditional constructor cells (`L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`,
+`A-DOUBLE`) combining supplied conditional lower-bound hypotheses with validated
+factor-to-child witness upper endpoints (`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`,
+issue #567). -/
+
+/-- Product on `Option Nat` (where `none` is `+∞` for positive code distances). -/
+def mulOpt : Option Nat → Option Nat → Option Nat
+  | none, _ => none
+  | _, none => none
+  | some a, some b => some (a * b)
+
+theorem mulOpt_some_le {a b : Nat} {da db : Option Nat}
+    (ha : leOpt (some a) da) (hb : leOpt (some b) db) :
+    leOpt (some (a * b)) (mulOpt da db) := by
+  cases da with
+  | none => simp [mulOpt, leOpt]
+  | some xa =>
+      cases db with
+      | none => simp [mulOpt, leOpt]
+      | some xb =>
+          simp [mulOpt, leOpt] at ha hb ⊢
+          exact Nat.mul_le_mul ha hb
+
+/-- Constructed-state ledger (`JUDGMENT_LAYER.md` §2g, §2g.1): sector lower
+    endpoints come from supplied bounds or conditional constructor cells,
+    sector upper endpoints come from validated witnesses (or `none` for `+∞`),
+    and full endpoints combine the sectors via `minOpt`. -/
+def constructedLedger (lX lZ uX uZ : Option Nat) : DistanceLedger :=
+  { full := Interval.mk (minOpt lX lZ) (minOpt uX uZ)
+  , x := Interval.mk lX uX
+  , z := Interval.mk lZ uZ }
+
+/-- Soundness of `constructedLedger` whenever sector lower endpoints bound
+    the true sector distances below, validated witness weights bound them
+    above, and `δ.full = min(δ.x, δ.z)`. -/
+theorem constructedLedger_sound (δ : ExactDist)
+    (hmin : δ.full = minOpt δ.x δ.z)
+    {lX lZ uX uZ : Option Nat}
+    (hlX : leOpt lX δ.x) (huX : leOpt δ.x uX)
+    (hlZ : leOpt lZ δ.z) (huZ : leOpt δ.z uZ) :
+    LedgerSound δ (constructedLedger lX lZ uX uZ) := by
+  refine ⟨?_, ⟨hlX, huX⟩, ⟨hlZ, huZ⟩⟩
+  rw [hmin]
+  exact ⟨minOpt_monotone hlX hlZ, minOpt_monotone huX huZ⟩
+
+/-- `L-HGP` conditional distance cell (§2g.1, §4.45):
+    `d_X ≥ min(d₂, d₁ᵀ)`, `d_Z ≥ min(d₁, d₂ᵀ)`, upper bounds from lifted witnesses. -/
+def hgpConditionalLedger (d1 d1T d2 d2T uX uZ : Option Nat) : DistanceLedger :=
+  constructedLedger (minOpt d2 d1T) (minOpt d1 d2T) uX uZ
+
+theorem hgpConditionalLedger_sound (δ : ExactDist)
+    (hmin : δ.full = minOpt δ.x δ.z)
+    {d1 d1T d2 d2T d1L d1TL d2L d2TL uX uZ : Option Nat}
+    (h1 : leOpt d1L d1) (h1T : leOpt d1TL d1T)
+    (h2 : leOpt d2L d2) (h2T : leOpt d2TL d2T)
+    (hcellX : leOpt (minOpt d2 d1T) δ.x)
+    (hcellZ : leOpt (minOpt d1 d2T) δ.z)
+    (huX : leOpt δ.x uX) (huZ : leOpt δ.z uZ) :
+    LedgerSound δ (hgpConditionalLedger d1L d1TL d2L d2TL uX uZ) :=
+  constructedLedger_sound δ hmin
+    (leOpt_trans (minOpt_monotone h2 h1T) hcellX) huX
+    (leOpt_trans (minOpt_monotone h1 h2T) hcellZ) huZ
+
+/-- `L-NESTED-CSS` conditional distance cell (§2g.1, §4.45):
+    `d_X ≥ d(ker H_Z)`, `d_Z ≥ d(ker H_X)`, upper bounds from lifted witnesses. -/
+def nestedConditionalLedger (dKerHZ dKerHX uX uZ : Option Nat) : DistanceLedger :=
+  constructedLedger dKerHZ dKerHX uX uZ
+
+theorem nestedConditionalLedger_sound (δ : ExactDist)
+    (hmin : δ.full = minOpt δ.x δ.z)
+    {dKerHZ dKerHX dKerHZL dKerHXL uX uZ : Option Nat}
+    (hZ : leOpt dKerHZL dKerHZ) (hX : leOpt dKerHXL dKerHX)
+    (hcellX : leOpt dKerHZ δ.x) (hcellZ : leOpt dKerHX δ.z)
+    (huX : leOpt δ.x uX) (huZ : leOpt δ.z uZ) :
+    LedgerSound δ (nestedConditionalLedger dKerHZL dKerHXL uX uZ) :=
+  constructedLedger_sound δ hmin
+    (leOpt_trans hZ hcellX) huX
+    (leOpt_trans hX hcellZ) huZ
+
+/-- Effective active-block lower bound `max(⌈d_O / k_in⌉, d_block)` for
+    `A-CONCAT` with inner logical dimension `k_in ≥ 1` and optional outer
+    block-distance bound `d_block` (`JUDGMENT_LAYER.md` §2g.1, §4.45). -/
+def concatEffOut (dOut kIn dBlock : Nat) : Nat :=
+  max ((dOut + kIn - 1) / kIn) dBlock
+
+theorem concatEffOut_k1 (dOut : Nat) : concatEffOut dOut 1 0 = dOut := by
+  unfold concatEffOut
+  have h : (dOut + 1 - 1) / 1 = dOut := by omega
+  rw [h]
+  omega
+
+theorem concatEffOut_monotone {dOut1 dOut2 kIn dBlock1 dBlock2 : Nat}
+    (hO : dOut1 ≤ dOut2) (hB : dBlock1 ≤ dBlock2) :
+    concatEffOut dOut1 kIn dBlock1 ≤ concatEffOut dOut2 kIn dBlock2 := by
+  unfold concatEffOut
+  have hdiv : (dOut1 + kIn - 1) / kIn ≤ (dOut2 + kIn - 1) / kIn :=
+    Nat.div_le_div_right (by omega)
+  omega
+
+/-- Block-adjusted product `max(⌈d_O / k_in⌉, d_block) · d_I` on `Option Nat`. -/
+def effMulOpt (dOut : Option Nat) (kIn dBlock : Nat) (dIn : Option Nat) : Option Nat :=
+  match dOut, dIn with
+  | none, _ => none
+  | _, none => none
+  | some a, some b => some (concatEffOut a kIn dBlock * b)
+
+theorem effMulOpt_some_le {a kIn db1 db2 b : Nat} {da dIn : Option Nat}
+    (ha : leOpt (some a) da) (hdb : db1 ≤ db2) (hb : leOpt (some b) dIn) :
+    leOpt (some (concatEffOut a kIn db1 * b)) (effMulOpt da kIn db2 dIn) := by
+  cases da with
+  | none => simp [effMulOpt, leOpt]
+  | some xa =>
+      cases dIn with
+      | none => simp [effMulOpt, leOpt]
+      | some xb =>
+          simp [effMulOpt, leOpt] at ha hb ⊢
+          exact Nat.mul_le_mul (concatEffOut_monotone ha hdb) hb
+
+/-- `A-CONCAT` conditional distance cell (§2g.1, §4.45):
+    `d_σ ≥ max(⌈ℓ_{O,σ} / k_in⌉, ℓ_{block,σ}) · ℓ_{I,σ}` (reducing to
+    `ℓ_{O,σ} · ℓ_{I,σ}` when `k_in = 1` and `ℓ_{block,σ} = 0`), with upper
+    bounds from validated lifted witnesses. -/
+def concatConditionalLedger (kIn dOutX dOutZ dBlockX dBlockZ dInX dInZ : Nat)
+    (uX uZ : Option Nat) : DistanceLedger :=
+  constructedLedger
+    (some (concatEffOut dOutX kIn dBlockX * dInX))
+    (some (concatEffOut dOutZ kIn dBlockZ * dInZ))
+    uX uZ
+
+theorem concatConditionalLedger_k1_eq (dOutX dOutZ dInX dInZ : Nat) (uX uZ : Option Nat) :
+    concatConditionalLedger 1 dOutX dOutZ 0 0 dInX dInZ uX uZ =
+      constructedLedger (some (dOutX * dInX)) (some (dOutZ * dInZ)) uX uZ := by
+  simp [concatConditionalLedger, concatEffOut_k1]
+
+theorem concatConditionalLedger_sound (δO δI δC : ExactDist)
+    (hmin : δC.full = minOpt δC.x δC.z)
+    {kIn dOutX dOutZ dBlockX dBlockZ dBlockExactX dBlockExactZ dInX dInZ : Nat}
+    {uX uZ : Option Nat}
+    (hOX : leOpt (some dOutX) δO.x) (hOZ : leOpt (some dOutZ) δO.z)
+    (hBX : dBlockX ≤ dBlockExactX) (hBZ : dBlockZ ≤ dBlockExactZ)
+    (hIX : leOpt (some dInX) δI.x) (hIZ : leOpt (some dInZ) δI.z)
+    (hcellX : leOpt (effMulOpt δO.x kIn dBlockExactX δI.x) δC.x)
+    (hcellZ : leOpt (effMulOpt δO.z kIn dBlockExactZ δI.z) δC.z)
+    (huX : leOpt δC.x uX) (huZ : leOpt δC.z uZ) :
+    LedgerSound δC
+      (concatConditionalLedger kIn dOutX dOutZ dBlockX dBlockZ dInX dInZ uX uZ) :=
+  constructedLedger_sound δC hmin
+    (leOpt_trans (effMulOpt_some_le hOX hBX hIX) hcellX) huX
+    (leOpt_trans (effMulOpt_some_le hOZ hBZ hIZ) hcellZ) huZ
+
+/-- `A-PRODUCT` display-specific direct Audoux–Couvreur conditional distance cell
+    (§2g.1, §4.45): `d_X ≥ ℓ_X`, `d_Z ≥ ℓ_Z` from a display-certified overlap
+    lower bound, with upper bounds from validated lifted witnesses. -/
+def productDirectConditionalLedger (lX lZ uX uZ : Option Nat) : DistanceLedger :=
+  constructedLedger lX lZ uX uZ
+
+theorem productDirectConditionalLedger_sound (δP : ExactDist)
+    (hmin : δP.full = minOpt δP.x δP.z)
+    {lX lZ cX cZ uX uZ : Option Nat}
+    (hX : leOpt lX cX) (hZ : leOpt lZ cZ)
+    (hcellX : leOpt cX δP.x) (hcellZ : leOpt cZ δP.z)
+    (huX : leOpt δP.x uX) (huZ : leOpt δP.z uZ) :
+    LedgerSound δP (productDirectConditionalLedger lX lZ uX uZ) :=
+  constructedLedger_sound δP hmin
+    (leOpt_trans hX hcellX) huX
+    (leOpt_trans hZ hcellZ) huZ
+
+/-- `A-PRODUCT` multiplicative display-certified special case (§2g.1, §4.45):
+    `d_X ≥ d_{A,X} · d_{B,X}`, `d_Z ≥ d_{A,Z} · d_{B,Z}` when the display
+    certificate certifies multiplicative distance scaling (not automatic from
+    factor distances alone), with upper bounds from validated lifted witnesses. -/
+def productConditionalLedger (dAX dAZ dBX dBZ : Nat) (uX uZ : Option Nat) :
+    DistanceLedger :=
+  constructedLedger (some (dAX * dBX)) (some (dAZ * dBZ)) uX uZ
+
+theorem productConditionalLedger_sound (δA δB δP : ExactDist)
+    (hmin : δP.full = minOpt δP.x δP.z)
+    {dAX dAZ dBX dBZ : Nat} {uX uZ : Option Nat}
+    (hAX : leOpt (some dAX) δA.x) (hAZ : leOpt (some dAZ) δA.z)
+    (hBX : leOpt (some dBX) δB.x) (hBZ : leOpt (some dBZ) δB.z)
+    (hcellX : leOpt (mulOpt δA.x δB.x) δP.x)
+    (hcellZ : leOpt (mulOpt δA.z δB.z) δP.z)
+    (huX : leOpt δP.x uX) (huZ : leOpt δP.z uZ) :
+    LedgerSound δP (productConditionalLedger dAX dAZ dBX dBZ uX uZ) :=
+  constructedLedger_sound δP hmin
+    (leOpt_trans (mulOpt_some_le hAX hBX) hcellX) huX
+    (leOpt_trans (mulOpt_some_le hAZ hBZ) hcellZ) huZ
+
+/-- `A-DOUBLE` empty-wiring conditional distance cell (§2g.1, §4.45):
+    direct sector carry without `conjugate`, sector-minimum carry with `conjugate`,
+    and upper bounds from validated lifted witnesses. -/
+def doubleConditionalLedger (conjugate : Bool) (dCX dCZ uX uZ : Option Nat) :
+    DistanceLedger :=
+  if conjugate then
+    constructedLedger (minOpt dCX dCZ) (minOpt dCX dCZ) uX uZ
+  else
+    constructedLedger dCX dCZ uX uZ
+
+theorem doubleConditionalLedger_sound (conjugate : Bool) (δC δD : ExactDist)
+    (hmin : δD.full = minOpt δD.x δD.z)
+    {dCX dCZ uX uZ : Option Nat}
+    (hCX : leOpt dCX δC.x) (hCZ : leOpt dCZ δC.z)
+    (hcell : if conjugate then
+        leOpt (minOpt δC.x δC.z) δD.x ∧ leOpt (minOpt δC.x δC.z) δD.z
+      else
+        leOpt δC.x δD.x ∧ leOpt δC.z δD.z)
+    (huX : leOpt δD.x uX) (huZ : leOpt δD.z uZ) :
+    LedgerSound δD (doubleConditionalLedger conjugate dCX dCZ uX uZ) := by
+  cases conjugate with
+  | false =>
+      simp only [doubleConditionalLedger, Bool.false_eq_true, ↓reduceIte] at hcell ⊢
+      exact constructedLedger_sound δD hmin
+        (leOpt_trans hCX hcell.1) huX
+        (leOpt_trans hCZ hcell.2) huZ
+  | true =>
+      simp only [doubleConditionalLedger, ↓reduceIte] at hcell ⊢
+      have hminC : leOpt (minOpt dCX dCZ) (minOpt δC.x δC.z) := minOpt_monotone hCX hCZ
+      exact constructedLedger_sound δD hmin
+        (leOpt_trans hminC hcell.1) huX
+        (leOpt_trans hminC hcell.2) huZ
+
 end CodeCalculus

@@ -187,6 +187,19 @@
       "contract_status": "transition-defined"
     },
     {
+      "id": "L-PAIR-PARTITION",
+      "name": "Pair-partition relative-permutation construction (CPM-PP / APM-PP)",
+      "layer": "lower-level-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "PP-SCALE",
+      "name": "Explicit extension (size scaling) of a pair-partition code",
+      "layer": "lower-level-constructor",
+      "contract_status": "transition-defined"
+    },
+    {
+
       "id": "X-GAUGE-FIX",
       "name": "Gauge fixing",
       "layer": "extended-state-model",

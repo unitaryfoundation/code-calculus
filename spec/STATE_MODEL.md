@@ -372,6 +372,8 @@ well-formedness obligation; I3 by the partial-inverse laws.
 | `L-FREE` | the supplied finite $Q \subset \mathbb{N}$ (sorted) | empty (`rows = []`) | none | $\varnothing$ |
 | `A-PULLBACK` | fresh $0,\ldots,n-1$, $n=|Q_1\times_{Q_I} Q_2|$ | the retained display of the pulled-back rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
 | `A-PUSHOUT` | fresh $0,\ldots,n-1$, $n=|Q_1\sqcup_{Q_S} Q_2|$ | the retained display of the pushed-forward rows of $C_1$ then $C_2$ (§4.43) | mint canonically from the empty used set | the minted IDs |
+| `L-PAIR-PARTITION` | fresh $0,\ldots,n-1$, $n=L\cdot p$ | the retained display of the paired affine-permutation block rows (§4.46) | mint canonically from the empty used set | the minted IDs |
+| `PP-SCALE` | fresh $0,\ldots,n-1$, $n=L\cdot P$ | the retained display of the SNF-scaled affine-permutation block rows (§4.47) | mint canonically from $\mathsf{used}_0$ | $\mathsf{used}_0$ union the minted IDs |
 | `C-SEQUENCE` | composed | composed | composed | union, in order |
 
 `C-DIRECT-SUM` requires the summands' **qubit namespaces to be disjoint and

@@ -475,6 +475,11 @@ def exprSize : StateExpr → Nat
   | .free _ => 1
   | .pullback e1 e2 eI _ _ => 1 + exprSize e1 + exprSize e2 + exprSize eI
   | .pushout e1 e2 eS _ _ => 1 + exprSize e1 + exprSize e2 + exprSize eS
+  | .liftTable _ _ _ => 1
+  | .twoblockTable _ _ _ => 1
+  | .balancedTable _ _ _ _ _ _ _ => 1
+  | .pairPartition _ _ _ => 1
+  | .ppScale e0 _ _ _ => 1 + exprSize e0
 
 theorem evalExpr_unique {e : StateExpr} {s1 s2 : CodeState}
     (h1 : EvalExpr e s1) (h2 : EvalExpr e s2) : s1 = s2 := by
@@ -518,6 +523,14 @@ theorem evalExpr_unique {e : StateExpr} {s1 s2 : CodeState}
       cases h2 with
       | pushout _ _ _ _ _ _ _ _ h2a h2b h2c =>
           rw [ih1 h2a, ih2 h2b, ih3 h2c]
+  | liftTable _ _ _ _ => cases h2; rfl
+  | twoblockTable _ _ _ _ => cases h2; rfl
+  | balancedTable _ _ => cases h2; rfl
+  | pairPartition _ _ _ => cases h2; rfl
+  | ppScale _ _ _ _ _ ih0 =>
+      cases h2 with
+      | ppScale _ _ _ _ h2a =>
+          rw [ih0 h2a]
 
 /-- Determinism of `EvalTerm`: a closed term evaluates to at most one state. -/
 theorem evalTerm_unique {term : ClosedTerm} {t1 t2 : CodeState}
@@ -542,6 +555,7 @@ def ExprBaseWF : StateExpr → Prop
   | .double e _ _ => ExprBaseWF e
   | .pullback e1 e2 eI _ _ => ExprBaseWF e1 ∧ ExprBaseWF e2 ∧ ExprBaseWF eI
   | .pushout e1 e2 eS _ _ => ExprBaseWF e1 ∧ ExprBaseWF e2 ∧ ExprBaseWF eS
+  | .ppScale e0 _ _ _ => ExprBaseWF e0
   | _ => True
 
 /-- Every evaluation of a state expression whose embedded base states are
@@ -580,6 +594,16 @@ theorem wf_of_evalExpr {e : StateExpr} {s : CodeState}
       exact evalExpr_pullback_wf (EvalExpr.pullback h1 h2 hI hty hm1 hm2 hcomm hcap he1 he2 heI)
   | pushout h1 h2 hS hty hm1 hm2 hcomm hcap he1 he2 heS =>
       exact evalExpr_pushout_wf (EvalExpr.pushout h1 h2 hS hty hm1 hm2 hcomm hcap he1 he2 heS)
+  | liftTable hG hA hB hcap =>
+      exact evalExpr_liftTable_wf (EvalExpr.liftTable hG hA hB hcap)
+  | twoblockTable hG ha hb hcap =>
+      exact evalExpr_twoblockTable_wf (EvalExpr.twoblockTable hG ha hb hcap)
+  | balancedTable hty hcap =>
+      exact evalExpr_balancedTable_wf (EvalExpr.balancedTable hty hcap)
+  | pairPartition hty hcomm hcap =>
+      exact evalExpr_pairPartition_wf (EvalExpr.pairPartition hty hcomm hcap)
+  | ppScale h0 hty hcomm hcap he0 =>
+      exact evalExpr_ppScale_wf (EvalExpr.ppScale h0 hty hcomm hcap he0)
 
 /-- General `n` lemma for `A-CONCAT` on arbitrary sub-expressions. -/
 theorem evalExpr_concat_n_gen {eO eI : StateExpr} {blocks repsX repsZ : List (List Nat)}
@@ -1558,6 +1582,26 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
                 boolsToMask (balancedXVector orders H1 rows1 cols1 H2 rows2 cols2 c))) -
               rankBitmasks ((orbitReps orders cols1 rows2 (matCols H1) H2.length).map (fun c =>
                 boolsToMask (balancedZVector orders H1 rows1 cols1 H2 rows2 cols2 c))))))
+  -- The three group constructors over a group given by its multiplication
+  -- table (§4.44): `n` only. No `k` row: over a nonabelian group the
+  -- two-block formula `2 (|G| - rank)` fails (§4.44, the `D₄` instance).
+  | instLiftTableN (t : List (List Nat)) (A B : List (List (List Nat))) (s : CodeState)
+      (h : EvalExpr (StateExpr.liftTable t A B) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (t.length *
+            (cayleyMatCols A * cayleyMatCols B + A.length * B.length))))
+  | instTwoblockTableN (t : List (List Nat)) (a b : List Nat) (s : CodeState)
+      (h : EvalExpr (StateExpr.twoblockTable t a b) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (2 * t.length)))
+  | instBalancedTableN (t : List (List Nat)) (H1 H2 : List (List Bool))
+      (rows1 cols1 rows2 cols2 : List (List Nat)) (s : CodeState)
+      (h : EvalExpr (StateExpr.balancedTable t H1 rows1 cols1 H2 rows2 cols2) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (tableBalancedQubits t H1 rows1 cols1 H2 rows2 cols2)))
   | instTannerN (n : Nat) (LX LZ : List (List Bool))
       (viewsX viewsZ : List (List Nat)) (s : CodeState)
       (h : EvalExpr (StateExpr.tanner n LX LZ viewsX viewsZ) s) :
@@ -2238,6 +2282,15 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
   | instBalancedK orders H1 H2 rows1 cols1 rows2 cols2 s h =>
       refine ⟨ExtNat.finite (stateK s), rfl, ?_⟩
       simp only [extAexprValue, evalExpr_balanced_k h]
+  | instLiftTableN t A B s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_liftTable_n h]
+  | instTwoblockTableN t a b s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_twoblockTable_n h]
+  | instBalancedTableN t H1 H2 rows1 cols1 rows2 cols2 s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_balancedTable_n h]
   | instTannerN n LX LZ viewsX viewsZ s h =>
       refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
       simp only [extAexprValue, evalExpr_tanner_n h]
@@ -2807,6 +2860,10 @@ theorem ExtDerives.weaken {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
       exact ExtDerives.instBalancedN orders H1 H2 rows1 cols1 rows2 cols2 s h
   | instBalancedK orders H1 H2 rows1 cols1 rows2 cols2 s h =>
       exact ExtDerives.instBalancedK orders H1 H2 rows1 cols1 rows2 cols2 s h
+  | instLiftTableN t A B s h => exact ExtDerives.instLiftTableN t A B s h
+  | instTwoblockTableN t a b s h => exact ExtDerives.instTwoblockTableN t a b s h
+  | instBalancedTableN t H1 H2 rows1 cols1 rows2 cols2 s h =>
+      exact ExtDerives.instBalancedTableN t H1 H2 rows1 cols1 rows2 cols2 s h
   | instTannerN n LX LZ viewsX viewsZ s h =>
       exact ExtDerives.instTannerN n LX LZ viewsX viewsZ s h
   | instTannerK n LX LZ viewsX viewsZ s h =>
@@ -3217,6 +3274,11 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
       intro _; exact ExtDerives.instBalancedN orders H1 H2 rows1 cols1 rows2 cols2 s h
   | instBalancedK orders H1 H2 rows1 cols1 rows2 cols2 s h =>
       intro _; exact ExtDerives.instBalancedK orders H1 H2 rows1 cols1 rows2 cols2 s h
+  | instLiftTableN t A B s h => intro _; exact ExtDerives.instLiftTableN t A B s h
+  | instTwoblockTableN t a b s h =>
+      intro _; exact ExtDerives.instTwoblockTableN t a b s h
+  | instBalancedTableN t H1 H2 rows1 cols1 rows2 cols2 s h =>
+      intro _; exact ExtDerives.instBalancedTableN t H1 H2 rows1 cols1 rows2 cols2 s h
   | instTannerN n LX LZ viewsX viewsZ s h =>
       intro _; exact ExtDerives.instTannerN n LX LZ viewsX viewsZ s h
   | instTannerK n LX LZ viewsX viewsZ s h =>

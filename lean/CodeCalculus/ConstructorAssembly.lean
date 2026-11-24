@@ -641,5 +641,75 @@ theorem evalExpr_pushout_n {s1 s2 sS : CodeState}
       cases heS
       exact constructedState_n _ _
 
+/-- `L-PAIR-PARTITION`: every evaluation yields a well-formed state. -/
+theorem evalExpr_pairPartition_wf {p : Nat} {BX BZ : List (List (Nat × Nat))}
+    {s : CodeState} (h : EvalExpr (StateExpr.pairPartition p BX BZ) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | pairPartition _ hcomm _ =>
+      exact wf_constructedState _ _ (naturalOrthogonal_of_commuteBool hcomm)
+
+/-- The `n` of an evaluation of `pair_partition(p; B_X, B_Z)`: `L · p`. -/
+theorem evalExpr_pairPartition_n {p : Nat} {BX BZ : List (List (Nat × Nat))}
+    {s : CodeState} (h : EvalExpr (StateExpr.pairPartition p BX BZ) s) :
+    s.Q.length = matCols BX * p := by
+  cases h
+  exact constructedState_n _ _
+
+/-- An evaluation of `pair_partition(p; B_X, B_Z)` satisfies the pair-partition
+    premise of the card. -/
+theorem evalExpr_pairPartition_paired {p : Nat} {BX BZ : List (List (Nat × Nat))}
+    {s : CodeState} (h : EvalExpr (StateExpr.pairPartition p BX BZ) s) :
+    pairPartitionPaired p BX BZ = true := by
+  cases h with
+  | pairPartition hty _ _ =>
+      simp only [pairPartitionTyped, Bool.and_eq_true] at hty
+      exact hty.2
+
+/-- The six affine maps of `ℤ₃`, each used once against the identity block. -/
+def sixMapsBX : List (List (Nat × Nat)) :=
+  [[(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)]]
+
+/-- Six identity blocks. -/
+def sixMapsBZ : List (List (Nat × Nat)) :=
+  [[(1, 0), (1, 0), (1, 0), (1, 0), (1, 0), (1, 0)]]
+
+/-- The natural rows of the six-maps input commute: the six relative maps sum
+    to twice the all-ones block. -/
+theorem sixMaps_commute :
+    naturalCommuteBool (naturalRows (pairPartitionQubits 3 sixMapsBX)
+      (pairPartitionVectors 3 sixMapsBX sixMapsBZ)) = true := by decide
+
+/-- The six relative maps are pairwise distinct, so no pair partition exists. -/
+theorem sixMaps_not_paired : pairPartitionPaired 3 sixMapsBX sixMapsBZ = false := by
+  decide
+
+/-- Commutation does not imply the pair-partition premise: the six-maps input
+    commutes and has no derivation. -/
+theorem sixMaps_no_derivation (s : CodeState) :
+    ¬ EvalExpr (StateExpr.pairPartition 3 sixMapsBX sixMapsBZ) s := by
+  intro h
+  have hp := evalExpr_pairPartition_paired h
+  rw [sixMaps_not_paired] at hp
+  exact Bool.false_ne_true hp
+
+/-- `PP-SCALE`: every evaluation yields a well-formed state. -/
+theorem evalExpr_ppScale_wf {e0 : StateExpr} {P : Nat}
+    {BX BZ : List (List (Nat × Nat))} {s : CodeState}
+    (h : EvalExpr (StateExpr.ppScale e0 P BX BZ) s) :
+    EncodingWellFormed s := by
+  cases h with
+  | ppScale _ _ hcomm _ _ =>
+      exact wf_constructedStateFrom _ _ _ (naturalOrthogonal_of_commuteBool hcomm)
+
+/-- The `n` of an evaluation of `pp_scale(e; P)`: `L · P`, independent of
+    the input expression `e0`. -/
+theorem evalExpr_ppScale_n {e0 : StateExpr} {P : Nat}
+    {BX BZ : List (List (Nat × Nat))} {s : CodeState}
+    (h : EvalExpr (StateExpr.ppScale e0 P BX BZ) s) :
+    s.Q.length = matCols BX * P := by
+  cases h with
+  | ppScale _ _ _ _ _ =>
+      exact constructedStateFrom_n _ _ _
 
 end CodeCalculus

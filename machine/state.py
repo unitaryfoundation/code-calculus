@@ -234,6 +234,9 @@ class CodeState:
         if not isinstance(support, (list, tuple)):
             raise Malformed("C-ADD-CHECK support must be a list or tuple")
         support = tuple(support)
+        # Validate labels before sorting: mixed types would otherwise crash
+        # sorted() with a TypeError instead of a Malformed refusal.
+        support_mask(support)
         if support != tuple(sorted(support)):
             raise NoDerivation("C-ADD-CHECK support must be sorted")
         if len(set(support)) != len(support):
@@ -434,6 +437,8 @@ class CodeState:
                 raise Malformed("E-GLUE seam check sector must be X or Z")
             if not isinstance(support, (list, tuple)):
                 raise Malformed("E-GLUE seam check support must be a list or tuple")
+            support = tuple(support)
+            support_mask(support)
             support = tuple(sorted(support))
             if len(set(support)) != len(support):
                 raise Malformed("E-GLUE seam check support may not repeat qubits")
@@ -620,6 +625,7 @@ class CodeState:
             if not isinstance(support, (list, tuple)):
                 raise Malformed("E-EXTEND added support must be a list or tuple")
             support = tuple(support)
+            support_mask(support)
             if support != tuple(sorted(support)):
                 raise NoDerivation("E-EXTEND added support must be sorted")
             if len(set(support)) != len(support):

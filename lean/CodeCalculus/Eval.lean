@@ -2,6 +2,7 @@ import CodeCalculus.ChoiceFree
 import CodeCalculus.State
 import CodeCalculus.Term
 import CodeCalculus.Constructors
+import CodeCalculus.CayleyTables
 import CodeCalculus.WellFormedBool
 
 namespace CodeCalculus
@@ -185,6 +186,47 @@ inductive EvalExpr : StateExpr → CodeState → Prop where
       (hcap : MintsWithinCapacity [] (pushoutState s1 s2 sS psi1 psi2).rows.length) :
       EvalExpr e1 s1 → EvalExpr e2 s2 → EvalExpr eS sS →
       EvalExpr (StateExpr.pushout e1 e2 eS psi1 psi2) (pushoutState s1 s2 sS psi1 psi2)
+  /-- `L-LIFTED` over a group given by its multiplication table: every
+      well-typed table and pair of matrices evaluates. -/
+  | liftTable {t : List (List Nat)} {A B : List (List (List Nat))}
+      (hG : tableGroupTyped t = true)
+      (hA : tableMatrixTyped t A = true) (hB : tableMatrixTyped t B = true)
+      (hcap : MintsWithinCapacity [] (tableLiftState t A B).rows.length) :
+      EvalExpr (StateExpr.liftTable t A B) (tableLiftState t A B)
+  /-- `L-GROUP-ALGEBRA` over a group given by its multiplication table. -/
+  | twoblockTable {t : List (List Nat)} {a b : List Nat}
+      (hG : tableGroupTyped t = true)
+      (ha : tableElementTyped t a = true) (hb : tableElementTyped t b = true)
+      (hcap : MintsWithinCapacity [] (tableTwoblockState t a b).rows.length) :
+      EvalExpr (StateExpr.twoblockTable t a b) (tableTwoblockState t a b)
+  /-- `L-BALANCED` over a group given by its multiplication table: every
+      well-typed input evaluates. -/
+  | balancedTable {t : List (List Nat)} {H1 H2 : List (List Bool)}
+      {rows1 cols1 rows2 cols2 : List (List Nat)}
+      (hty : tableBalancedTyped t H1 rows1 cols1 H2 rows2 cols2 = true)
+      (hcap : MintsWithinCapacity []
+        (tableBalancedState t H1 rows1 cols1 H2 rows2 cols2).rows.length) :
+      EvalExpr (StateExpr.balancedTable t H1 rows1 cols1 H2 rows2 cols2)
+        (tableBalancedState t H1 rows1 cols1 H2 rows2 cols2)
+  /-- `L-PAIR-PARTITION`: paired affine/circulant permutation blocks over lift
+      size `p` whose natural rows have pairwise even overlap. -/
+  | pairPartition {p : Nat} {BX BZ : List (List (Nat × Nat))}
+      (hty : pairPartitionTyped p BX BZ = true)
+      (hcomm : naturalCommuteBool (naturalRows (pairPartitionQubits p BX)
+        (pairPartitionVectors p BX BZ)) = true)
+      (hcap : MintsWithinCapacity [] (pairPartitionState p BX BZ).rows.length) :
+      EvalExpr (StateExpr.pairPartition p BX BZ) (pairPartitionState p BX BZ)
+  /-- `PP-SCALE`: explicit extension of a well-formed PP-presented CSS state
+      to target lift size `P ≥ 2` with `k' > 0` and commuting generated rows. -/
+  | ppScale {e0 : StateExpr} {s0 : CodeState} {P : Nat}
+      {BX BZ : List (List (Nat × Nat))}
+      (h0 : EncodingWellFormed s0)
+      (hty : ppScaleTyped s0 P BX BZ = true)
+      (hcomm : naturalCommuteBool (naturalRows (pairPartitionQubits P BX)
+        (pairPartitionVectors P BX BZ)) = true)
+      (hcap : MintsWithinCapacity s0.used (ppScaleState s0 P BX BZ).rows.length) :
+      EvalExpr e0 s0 →
+      EvalExpr (StateExpr.ppScale e0 P BX BZ) (ppScaleState s0 P BX BZ)
 
 
 /-- A displayed generator is one whose identifier names a live row. -/
@@ -757,6 +799,42 @@ noncomputable def denoteExpr : StateExpr → Option CodeState
             some (pushoutState s1 s2 sS psi1 psi2)
           else none
       | _, _, _ => none
+  | StateExpr.liftTable t A B =>
+      if tableGroupTyped t = true ∧ tableMatrixTyped t A = true ∧
+         tableMatrixTyped t B = true ∧
+         MintsWithinCapacity [] (tableLiftState t A B).rows.length then
+        some (tableLiftState t A B)
+      else none
+  | StateExpr.twoblockTable t a b =>
+      if tableGroupTyped t = true ∧ tableElementTyped t a = true ∧
+         tableElementTyped t b = true ∧
+         MintsWithinCapacity [] (tableTwoblockState t a b).rows.length then
+        some (tableTwoblockState t a b)
+      else none
+  | StateExpr.balancedTable t H1 rows1 cols1 H2 rows2 cols2 =>
+      if tableBalancedTyped t H1 rows1 cols1 H2 rows2 cols2 = true ∧
+         MintsWithinCapacity []
+           (tableBalancedState t H1 rows1 cols1 H2 rows2 cols2).rows.length then
+        some (tableBalancedState t H1 rows1 cols1 H2 rows2 cols2)
+      else none
+  | StateExpr.pairPartition p BX BZ =>
+      if pairPartitionTyped p BX BZ = true ∧
+         naturalCommuteBool (naturalRows (pairPartitionQubits p BX)
+           (pairPartitionVectors p BX BZ)) = true ∧
+         MintsWithinCapacity [] (pairPartitionState p BX BZ).rows.length then
+        some (pairPartitionState p BX BZ)
+      else none
+  | StateExpr.ppScale e0 P BX BZ =>
+      match denoteExpr e0 with
+      | some s0 =>
+          if EncodingWellFormed s0 ∧
+             ppScaleTyped s0 P BX BZ = true ∧
+             naturalCommuteBool (naturalRows (pairPartitionQubits P BX)
+               (pairPartitionVectors P BX BZ)) = true ∧
+             MintsWithinCapacity s0.used (ppScaleState s0 P BX BZ).rows.length then
+            some (ppScaleState s0 P BX BZ)
+          else none
+      | none => none
 
 
 open Classical in
@@ -929,6 +1007,36 @@ theorem eval_denoteExpr {e : StateExpr} {s : CodeState}
       · rfl
       · rename_i hNot
         exact absurd ⟨h1, h2, hS, hty, hm1, hm2, hcomm, hcap⟩ hNot
+  | liftTable hG hA hB hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hG, hA, hB, hcap⟩ hNot
+  | twoblockTable hG ha hb hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hG, ha, hb, hcap⟩ hNot
+  | balancedTable hty hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcap⟩ hNot
+  | pairPartition hty hcomm hcap =>
+      simp only [denoteExpr]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨hty, hcomm, hcap⟩ hNot
+  | ppScale h0 hty hcomm hcap _ ih0 =>
+      simp only [denoteExpr, ih0]
+      split
+      · rfl
+      · rename_i hNot
+        exact absurd ⟨h0, hty, hcomm, hcap⟩ hNot
 
 
 /-- The denotation's `some` branch has a derivation (spec §1a). -/
@@ -1158,6 +1266,56 @@ theorem denoteExpr_some_eval : ∀ (e : StateExpr) (s : CodeState),
               exact EvalExpr.pushout hw1 hw2 hwS hty hm1 hm2 hcomm hcap
                 (ih1 s1 h1) (ih2 s2 h2) (ihS sS hS)
             · exact absurd hEq (by simp)
+  | liftTable t A B =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hG, hA, hB, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.liftTable hG hA hB hcap
+      · exact absurd hEq (by simp)
+  | twoblockTable t a b =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hG, ha, hb, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.twoblockTable hG ha hb hcap
+      · exact absurd hEq (by simp)
+  | balancedTable t H1 rows1 cols1 H2 rows2 cols2 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.balancedTable hty hcap
+      · exact absurd hEq (by simp)
+  | pairPartition p BX BZ =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      split at hEq
+      · rename_i hP
+        obtain ⟨hty, hcomm, hcap⟩ := hP
+        cases hEq
+        exact EvalExpr.pairPartition hty hcomm hcap
+      · exact absurd hEq (by simp)
+  | ppScale e0 P BX BZ ih0 =>
+      intro s hEq
+      simp only [denoteExpr] at hEq
+      cases h0 : denoteExpr e0
+      · simp only [h0] at hEq
+        exact absurd hEq (by simp)
+      · rename_i s0
+        simp only [h0] at hEq
+        split at hEq
+        · rename_i hP
+          obtain ⟨hw0, hty, hcomm, hcap⟩ := hP
+          cases hEq
+          exact EvalExpr.ppScale hw0 hty hcomm hcap (ih0 s0 h0)
+        · exact absurd hEq (by simp)
 
 
 /-- The derived denotation is adequate for the expression relation. -/

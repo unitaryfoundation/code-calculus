@@ -45,9 +45,6 @@ class Interval:
     def staged_check(self, state, *args, **kwargs):
         return self.staged_distance_check(state, *args, **kwargs)
 
-    def has_deep_witness(self):
-        return self._has_deep_witness()
-
     def as_json(self):
         return {
             "lower": "inf" if self.lower is None else self.lower,
@@ -99,26 +96,36 @@ def _copy_conditions(conditions):
         return [_copy_small_mapping(c) for c in conditions]
     return conditions
 
+# Labels a witness may carry for the depth of the search that found it
+# (`witness_confidence` in machine/entrypoints.py maps a trial count to one).
+WITNESS_CONFIDENCE_LABELS = ("deep", "screened")
+
+
 class DistanceLedger:
     """Consumer-side distance intervals, separate from CodeState."""
 
     def __init__(self, full, sector, witnesses=None, conditions=None):
         self.full = full
         self.sector = dict(sector)
-        self.witnesses = {"X": list((witnesses or {}).get("X", [])),
-                          "Z": list((witnesses or {}).get("Z", []))}
-        for side in ("X", "Z"):
-            for witness in self.witnesses[side]:
-                if isinstance(witness, dict):
-                    witness.setdefault("confidence", "deep")
-        self.conditions = list(conditions or [])
+        # Copy the caller's witness and condition entries, so that the ledger
+        # never aliases data owned by the caller.  A witness keeps the
+        # confidence label it was given and gets none otherwise: the label
+        # describes how deep the search that found the witness went, and the
+        # ledger has no basis for inventing one (issue #632).
+        self.witnesses = _copy_witnesses({
+            "X": (witnesses or {}).get("X", []),
+            "Z": (witnesses or {}).get("Z", []),
+        })
+        self.conditions = _copy_conditions(conditions or [])
 
     @classmethod
-    def for_constructed(cls, state, lower_bounds=None):
+    def for_constructed(cls, state, lower_bounds=None, witnesses=None, constructor_cell=None, intervals=None):
         """The ledger of a freshly constructed state (spec/JUDGMENT_LAYER.md
-        section 2g): every interval starts at [0, +inf); a sector or full
-        lower endpoint is raised only by a supplied bound with a source, and
-        upper endpoints come only from witnesses validated in the state.
+        sections 2g and 2g.1, spec/OPERATIONAL_SEMANTICS.md section 4.45):
+        every interval starts at [0, +inf); a sector or full lower endpoint is
+        raised only by a supplied bound with a source or an admitted
+        conditional constructor cell, and upper endpoints come only from
+        witnesses validated in the constructed state.
         """
         if not isinstance(state, CodeState):
             raise Malformed("for_constructed takes a CodeState")
@@ -135,16 +142,201 @@ class DistanceLedger:
                 conditions.append({"cell": "input lower bound", "property": key,
                                    "source": raw["source"]})
                 raw = raw.get("value", 0)
+            elif raw != 0 or not isinstance(raw, int) or isinstance(raw, bool):
+                # An unsourced bare number would raise the endpoint without an
+                # `input lower bound` condition, making it indistinguishable
+                # from a proved bound (JUDGMENT_LAYER.md §2c). Zero is the
+                # default and needs no record.
+                raise Malformed(
+                    "a supplied lower bound needs a source: use "
+                    "{'value': n, 'source': '...'}"
+                )
             if not isinstance(raw, int) or isinstance(raw, bool) or raw < 0:
                 raise Malformed("supplied lower bounds must be nonnegative integers")
             values[key] = raw
-        return cls(Interval(values["d"], None),
-                   {"X": Interval(values["X"], None), "Z": Interval(values["Z"], None)},
-                   conditions=conditions)
+
+        if constructor_cell is not None:
+            if not isinstance(constructor_cell, dict):
+                raise Malformed("constructor_cell must be an object")
+            c_name = constructor_cell.get("constructor")
+            source = constructor_cell.get("source")
+            if not isinstance(source, str) or not source.strip():
+                raise Malformed("a conditional constructor cell needs a non-empty source")
+
+            def _pos_int(val, label):
+                if not isinstance(val, int) or isinstance(val, bool) or val < 1:
+                    raise Malformed("%s must be a positive integer" % label)
+                return val
+
+            def _pos_or_inf(val, label):
+                if val is None or val == "inf":
+                    return None
+                return _pos_int(val, label)
+
+            if c_name == "L-HGP":
+                d1 = _pos_or_inf(constructor_cell.get("d1"), "L-HGP d1")
+                d2 = _pos_or_inf(constructor_cell.get("d2"), "L-HGP d2")
+                d1_t = _pos_or_inf(constructor_cell.get("d1_T"), "L-HGP d1_T")
+                d2_t = _pos_or_inf(constructor_cell.get("d2_T"), "L-HGP d2_T")
+                cell_x = _min_upper(d2, d1_t)
+                cell_z = _min_upper(d1, d2_t)
+                if cell_x is None or cell_z is None:
+                    raise Malformed("L-HGP conditional cell requires at least one finite bound per sector")
+                cell_d = min(cell_x, cell_z)
+            elif c_name == "L-NESTED-CSS":
+                raw_x = constructor_cell.get("d_ker_HZ", constructor_cell.get("d_X"))
+                raw_z = constructor_cell.get("d_ker_HX", constructor_cell.get("d_Z"))
+                cell_x = _pos_int(raw_x, "L-NESTED-CSS d_ker_HZ")
+                cell_z = _pos_int(raw_z, "L-NESTED-CSS d_ker_HX")
+                cell_d = min(cell_x, cell_z)
+            elif c_name == "A-CONCAT":
+                outer_b = constructor_cell.get("outer") or {}
+                inner_b = constructor_cell.get("inner") or {}
+                block_b = constructor_cell.get("outer_block") or {}
+                k_in = _pos_int(constructor_cell.get("k_in", 1), "A-CONCAT k_in")
+                d_ox = _pos_int(constructor_cell.get("d_out_X", outer_b.get("X")), "A-CONCAT d_out_X")
+                d_oz = _pos_int(constructor_cell.get("d_out_Z", outer_b.get("Z")), "A-CONCAT d_out_Z")
+                d_ix = _pos_int(constructor_cell.get("d_in_X", inner_b.get("X")), "A-CONCAT d_in_X")
+                d_iz = _pos_int(constructor_cell.get("d_in_Z", inner_b.get("Z")), "A-CONCAT d_in_Z")
+                raw_bx = constructor_cell.get("d_block_X", block_b.get("X"))
+                raw_bz = constructor_cell.get("d_block_Z", block_b.get("Z"))
+                d_bx = _pos_int(raw_bx, "A-CONCAT d_block_X") if raw_bx is not None else 0
+                d_bz = _pos_int(raw_bz, "A-CONCAT d_block_Z") if raw_bz is not None else 0
+                eff_ox = max((d_ox + k_in - 1) // k_in, d_bx)
+                eff_oz = max((d_oz + k_in - 1) // k_in, d_bz)
+                cell_x = eff_ox * d_ix
+                cell_z = eff_oz * d_iz
+                cell_d = min(cell_x, cell_z)
+            elif c_name == "A-PRODUCT":
+                cert = constructor_cell.get("display_certificate")
+                if not cert or (isinstance(cert, str) and not cert.strip()):
+                    raise NoDerivation(
+                        "A-PRODUCT conditional distance cell requires an explicit display_certificate")
+                if "d_X" in constructor_cell or "d_Z" in constructor_cell:
+                    cell_x = _pos_int(constructor_cell.get("d_X"), "A-PRODUCT d_X")
+                    cell_z = _pos_int(constructor_cell.get("d_Z"), "A-PRODUCT d_Z")
+                    cell_d = min(cell_x, cell_z)
+                else:
+                    left_b = constructor_cell.get("left") or {}
+                    right_b = constructor_cell.get("right") or {}
+                    d_ax = _pos_int(constructor_cell.get("d_A_X", left_b.get("X")), "A-PRODUCT d_A_X")
+                    d_az = _pos_int(constructor_cell.get("d_A_Z", left_b.get("Z")), "A-PRODUCT d_A_Z")
+                    d_bx = _pos_int(constructor_cell.get("d_B_X", right_b.get("X")), "A-PRODUCT d_B_X")
+                    d_bz = _pos_int(constructor_cell.get("d_B_Z", right_b.get("Z")), "A-PRODUCT d_B_Z")
+                    cell_x = d_ax * d_bx
+                    cell_z = d_az * d_bz
+                    cell_d = min(cell_x, cell_z)
+            elif c_name == "A-DOUBLE":
+                wiring = constructor_cell.get("wiring")
+                wiring_empty = constructor_cell.get("wiring_empty", not bool(wiring))
+                if not wiring_empty:
+                    if not constructor_cell.get("twisted_certificate"):
+                        raise NoDerivation(
+                            "A-DOUBLE conditional distance cell with non-empty wiring requires an explicit twisted_certificate")
+                    cell_x = _pos_int(constructor_cell.get("d_X"), "A-DOUBLE twisted d_X")
+                    cell_z = _pos_int(constructor_cell.get("d_Z"), "A-DOUBLE twisted d_Z")
+                    cell_d = min(cell_x, cell_z)
+                else:
+                    parent_b = constructor_cell.get("parent") or {}
+                    d_cx = _pos_int(constructor_cell.get("d_C_X", parent_b.get("X")), "A-DOUBLE d_C_X")
+                    d_cz = _pos_int(constructor_cell.get("d_C_Z", parent_b.get("Z")), "A-DOUBLE d_C_Z")
+                    conj = constructor_cell.get("conjugate", False)
+                    if not isinstance(conj, bool):
+                        raise Malformed("A-DOUBLE conjugate must be a boolean")
+                    if conj:
+                        cell_x = min(d_cx, d_cz)
+                        cell_z = min(d_cx, d_cz)
+                    else:
+                        cell_x = d_cx
+                        cell_z = d_cz
+                    cell_d = min(cell_x, cell_z)
+            else:
+                raise Malformed("unsupported conditional constructor cell %r" % (c_name,))
+
+            values["X"] = max(values["X"], cell_x)
+            values["Z"] = max(values["Z"], cell_z)
+            values["d"] = max(values["d"], cell_d)
+            conditions.append({
+                "cell": "%s conditional distance cell" % c_name,
+                "status": "conditional",
+                "source": source,
+                "bounds": {"X": cell_x, "Z": cell_z, "d": cell_d},
+            })
+
+        validated_witnesses = {"X": [], "Z": []}
+        uppers = {"X": None, "Z": None, "d": None}
+        intervals = intervals or {}
+        if not isinstance(intervals, dict):
+            raise Malformed("supplied intervals must be an object")
+        for key in ("X", "Z", "d"):
+            if key not in intervals:
+                continue
+            spec = intervals[key]
+            if not isinstance(spec, dict):
+                raise Malformed("a supplied interval must be an object with lower, upper, source")
+            if not isinstance(spec.get("source"), str) or not spec["source"].strip():
+                raise Malformed("a supplied interval needs a source")
+            lo = spec.get("lower", spec.get("value", 0))
+            up = spec.get("upper")
+            if not isinstance(lo, int) or isinstance(lo, bool) or lo < 0:
+                raise Malformed("supplied lower bounds must be nonnegative integers")
+            if up is not None and (not isinstance(up, int) or isinstance(up, bool) or up < 0):
+                raise Malformed("supplied upper bounds must be nonnegative integers")
+            values[key] = max(values.get(key, 0), lo)
+            uppers[key] = _min_upper(uppers.get(key), up)
+            conditions.append({"cell": "supplied distance interval", "property": key,
+                               "status": "conditional", "source": spec["source"]})
+        if witnesses is not None:
+            if not isinstance(witnesses, dict) or not set(witnesses).issubset({"X", "Z"}):
+                raise Malformed("constructed witnesses must be a dict keyed by 'X' and/or 'Z'")
+            for side in ("X", "Z"):
+                seen = set()
+                for entry in witnesses.get(side, ()):
+                    if isinstance(entry, dict):
+                        raw_sup = entry.get("support")
+                        w_source = entry.get("source", "constructed witness")
+                        conf = entry.get("confidence")
+                        if conf is not None and conf not in WITNESS_CONFIDENCE_LABELS:
+                            raise Malformed("witness confidence must be one of %s"
+                                            % ", ".join(WITNESS_CONFIDENCE_LABELS))
+                    else:
+                        raw_sup = entry
+                        w_source = "constructed witness"
+                        conf = None
+                    if not isinstance(raw_sup, (list, tuple, set, frozenset)):
+                        raise Malformed("witness support must be a list of qubit labels")
+                    labels = []
+                    for q in raw_sup:
+                        if isinstance(q, bool) or not isinstance(q, int) or q < 0:
+                            raise Malformed("witness qubit labels must be nonnegative integers")
+                        labels.append(q)
+                    support = tuple(sorted(labels))
+                    weight = len(support)
+                    validate_witness(state, side, support, weight)
+                    if support not in seen:
+                        record = {
+                            "support": list(support),
+                            "value": weight,
+                            "source": w_source,
+                        }
+                        if conf is not None:
+                            record["confidence"] = conf
+                        validated_witnesses[side].append(record)
+                        seen.add(support)
+                    uppers[side] = _min_upper(uppers[side], weight)
+
+        full_upper = _min_upper(_min_upper(uppers["X"], uppers["Z"]), uppers["d"])
+        sec_x = _transport_interval(values["X"], uppers["X"])
+        sec_z = _transport_interval(values["Z"], uppers["Z"])
+        full_iv = _transport_interval(values["d"], full_upper)
+        return cls(full_iv, {"X": sec_x, "Z": sec_z},
+                   witnesses=validated_witnesses, conditions=conditions)
 
     @classmethod
     def from_challenge(cls, state, document, lower_bounds=None):
         lower_bounds = lower_bounds or {}
+        if not isinstance(lower_bounds, dict):
+            raise Malformed("supplied lower bounds must be an object")
         witnesses = {"X": [], "Z": []}
         conditions = []
         uppers = {"X": None, "Z": None}
@@ -155,8 +347,7 @@ class DistanceLedger:
                 weight = item["value"]
                 validate_witness(state, side, support, weight)
                 witnesses[side].append({"support": list(support), "value": weight,
-                                        "source": "qldpc-challenge witness",
-                                        "confidence": "deep"})
+                                        "source": "qldpc-challenge witness"})
                 uppers[side] = weight
         except (KeyError, TypeError) as exc:
             raise Malformed("challenge distance witness is incomplete: %s" % exc)
@@ -164,10 +355,16 @@ class DistanceLedger:
         for side in ("X", "Z"):
             raw = lower_bounds.get(side, 0)
             if isinstance(raw, dict):
-                if raw.get("source"):
-                    conditions.append({"cell": "input lower bound", "property": side,
-                                       "source": raw["source"]})
+                if not isinstance(raw.get("source"), str) or not raw["source"].strip():
+                    raise Malformed("a supplied lower bound needs a source")
+                conditions.append({"cell": "input lower bound", "property": side,
+                                   "source": raw["source"]})
                 raw = raw.get("value", 0)
+            elif raw != 0 or not isinstance(raw, int) or isinstance(raw, bool):
+                raise Malformed(
+                    "a supplied lower bound needs a source: use "
+                    "{'value': n, 'source': '...'}"
+                )
             if not isinstance(raw, int) or isinstance(raw, bool) or raw < 0:
                 raise Malformed("supplied lower bounds must be nonnegative integers")
             try:
@@ -176,10 +373,16 @@ class DistanceLedger:
                 raise Malformed("supplied lower bound contradicts the witness: %s" % exc)
         d_lower = lower_bounds.get("d", 0)
         if isinstance(d_lower, dict):
-            if d_lower.get("source"):
-                conditions.append({"cell": "input lower bound", "property": "d",
-                                   "source": d_lower["source"]})
+            if not isinstance(d_lower.get("source"), str) or not d_lower["source"].strip():
+                raise Malformed("a supplied lower bound needs a source")
+            conditions.append({"cell": "input lower bound", "property": "d",
+                               "source": d_lower["source"]})
             d_lower = d_lower.get("value", 0)
+        elif d_lower != 0 or not isinstance(d_lower, int) or isinstance(d_lower, bool):
+            raise Malformed(
+                "a supplied lower bound needs a source: use "
+                "{'value': n, 'source': '...'}"
+            )
         if not isinstance(d_lower, int) or isinstance(d_lower, bool) or d_lower < 0:
             raise Malformed("supplied lower bounds must be nonnegative integers")
         side_min_lower = min(
@@ -210,12 +413,16 @@ class DistanceLedger:
         )
 
     def record_witness(self, state, side, support, source="consumer witness",
-                       confidence="deep", trials=None, depth=None):
+                       confidence=None, trials=None, depth=None):
+        if confidence is not None and confidence not in WITNESS_CONFIDENCE_LABELS:
+            raise Malformed("witness confidence must be one of %s"
+                            % ", ".join(WITNESS_CONFIDENCE_LABELS))
         support = tuple(sorted(support))
         weight = len(support)
         validate_witness(state, side, support, weight)
-        entry = {"support": list(support), "value": weight,
-                 "source": source, "confidence": confidence}
+        entry = {"support": list(support), "value": weight, "source": source}
+        if confidence is not None:
+            entry["confidence"] = confidence
         if trials is not None:
             entry["trials"] = trials
         if depth is not None:
@@ -232,9 +439,11 @@ class DistanceLedger:
             except NoDerivation:
                 continue
             if support not in seen:
-                valid.append({"support": list(support), "value": witness["value"],
-                              "source": witness.get("source", "consumer witness"),
-                              "confidence": witness.get("confidence", "deep")})
+                kept = {"support": list(support), "value": witness["value"],
+                        "source": witness.get("source", "consumer witness")}
+                if witness.get("confidence") is not None:
+                    kept["confidence"] = witness["confidence"]
+                valid.append(kept)
                 seen.add(support)
         return valid
 
@@ -254,6 +463,8 @@ class DistanceLedger:
         extinction_factor = None
         if not isinstance(hypothesis, dict) or not isinstance(observations, dict):
             raise Malformed("hypotheses and observations must be objects")
+        if not isinstance(operation, dict) or not isinstance(operation.get("op"), str):
+            raise Malformed("operation must be an object with a string 'op'")
         out = self.copy()
         op = operation["op"]
         if op == "C-SKIP":
@@ -726,15 +937,24 @@ class DistanceLedger:
         return out
 
     def decide(self, target):
-        if not isinstance(target, int) or isinstance(target, bool):
-            raise Malformed("target must be a nonnegative integer")
+        if (not isinstance(target, int) or isinstance(target, bool)
+                or target < 1):
+            raise Malformed("target must be a positive integer")
         if self.full.lower is None or self.full.lower >= target:
             return "certify"
+        # spec/JUDGMENT_LAYER.md section 2b: `prune` when the upper endpoint
+        # is finite and below the target, and nothing else.  The verdict reads
+        # the interval only.  A witness confidence label is a record of search
+        # depth and does not gate it (issue #632): every upper endpoint in a
+        # ledger already comes from a validated witness or a licensed rule.
         if self.full.upper is not None and self.full.upper < target:
-            if not self._has_deep_witness():
-                return "re-measure"
             return "prune"
         return "re-measure"
+
+    def has_deep_witness(self):
+        """Whether some carried witness is labeled ``deep``.  Descriptive:
+        no verdict reads it."""
+        return self._has_deep_witness()
 
     def _has_deep_witness(self):
         for side in ("X", "Z"):

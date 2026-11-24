@@ -82,6 +82,56 @@ def _run_challenge_verifier(challenge_root, document, directory, label):
     }
 
 
+def exact_distance_decision_gap(target, consumer_verdict, exact_distance, source,
+                               distance_key="exact_distance"):
+    """Compare a consumer verdict with the verdict an exact distance settles.
+
+    Experiment-only and post-hoc.  It records what a settled distance *would*
+    decide; it does not enter the consumer, recompute a distance on the
+    consumer path, or upgrade any claim.  Agreement is evidence, never
+    confirmation (README Status).
+
+    The interval may be too coarse to decide, in which case the consumer
+    reports ``re-measure``; that is ``undecided``, not a contradiction.  Only
+    a ``certify`` against a settled ``prune`` (or the reverse) is a
+    ``contradicts``.  Three mutually exclusive outcomes are reported:
+    ``agrees``, ``undecided``, ``contradicts``.
+    """
+    if (not isinstance(target, int) or isinstance(target, bool) or target < 1):
+        raise ValueError("target must be a positive integer")
+    if (not isinstance(exact_distance, int) or isinstance(exact_distance, bool)
+            or exact_distance < 1):
+        raise ValueError("exact_distance must be a positive integer")
+    settled = "certify" if exact_distance >= target else "prune"
+    if consumer_verdict == "re-measure":
+        outcome = "undecided"
+    elif consumer_verdict == settled:
+        outcome = "agrees"
+    else:
+        outcome = "contradicts"
+    result = {
+        "target": target,
+        "consumer_verdict": consumer_verdict,
+        distance_key: exact_distance,
+        "exact_distance": exact_distance,
+        "reference_distance": exact_distance,
+        "settled_verdict": settled,
+        "agrees": outcome == "agrees",
+        "undecided": outcome == "undecided",
+        "contradicts": outcome == "contradicts",
+        "outcome": outcome,
+        "decision": outcome,
+        "status": outcome,
+        "agreement": outcome,
+        "exact_distance_source": source,
+        "note": (
+            "Evidence only. Agreement does not validate the consumer path "
+            "or upgrade any claim status."
+        ),
+    }
+    return result
+
+
 def run_addition_replay(challenge_root, output_dir):
     parent_path = Path(challenge_root) / "codes" / "10-2-3-b.json"
     parent = json.loads(parent_path.read_text())
@@ -121,6 +171,10 @@ def run_addition_replay(challenge_root, output_dir):
         "operation": operation,
         "child_parameters": {"n": final_state.n(), "k": final_state.k()},
         "child_exact_distance_validation_only": measured_child,
+        "exact_distance_decision_gap": exact_distance_decision_gap(
+            3, ledger.decide(3), measured_child["d"],
+            "experiment-only post-hoc exhaustive enumeration of the child",
+        ),
         "bounded_witness_search_candidates": {"X": tries_x, "Z": tries_z},
         "consumer_trace": trace,
         "challenge_verifier": verifier,
@@ -210,6 +264,18 @@ def run_deletion_replay(challenge_root, output_dir):
         "consumer_trace": trace,
         "final_interval": ledger.as_json()["d"],
         "verdict_for_target_4": ledger.decide(4),
+        "exact_distance_decision_gap": exact_distance_decision_gap(
+            4, ledger.decide(4), child2["distance"]["d"],
+            "challenge entry's stated distance (n=119 exceeds the experiment "
+            "oracle's ceiling); not an oracle run on the consumer path",
+            distance_key="reference_distance",
+        ),
+        "reference_distance_decision_gap": exact_distance_decision_gap(
+            4, ledger.decide(4), child2["distance"]["d"],
+            "challenge entry's stated distance (n=119 exceeds the experiment "
+            "oracle's ceiling); not an oracle run on the consumer path",
+            distance_key="reference_distance",
+        ),
         "exact_distance_remeasurements": 0,
         "challenge_verifier": verifier,
         "interpretation": (
@@ -279,6 +345,10 @@ def run_graft_replay(challenge_root, output_dir):
         "bounded_witness_search_candidates": bounded_search,
         "consumer_trace": trace,
         "child_exact_distance_validation_only": measured_child,
+        "exact_distance_decision_gap": exact_distance_decision_gap(
+            3, ledger.decide(3), measured_child["d"],
+            "experiment-only post-hoc exhaustive enumeration of the child",
+        ),
         "sector_wise_comparison": sector_wise,
         "challenge_verifier": verifier,
         "interpretation": (

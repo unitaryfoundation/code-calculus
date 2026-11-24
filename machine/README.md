@@ -62,6 +62,35 @@ proofs.
  is the stronger one for the target and records the reason and the
  full-distance invariance; `plan(..., sector_swap=True)` offers it as a
  candidate and `bounded_sector_search` applies it first.
+- **Applicability diagnostics (issues #592, qldpc-challenge #7116):** `bounded_sector_search`
+  always returns an `"applicability"` record (also fillable in place via
+  `diagnostics=new_applicability_record()`). It reports, per move family,
+  `enabled`, `enumerated`, and the first stage that rejected each candidate
+  (`apply_fail`, `bare_qubit`, `disconnected`, `derive_fail`, `min_upper`,
+  `deep_refuted`, `screened`, `dominated`, `over_budget`, `survived`,
+  `improving`). `plan()` fills the same record
+  inline, so accounting costs one increment per drop rather than a second
+  replay. A family with `enabled: false` (e.g. `P-REBASE` by default) was
+  never tested — distinct from one that failed. This is search control: it
+  moves no ledger endpoint and discharges no obligation.
+- **Objective-aware search (qldpc-challenge #7116):** `bounded_sector_search(...,
+  objective=...)` selects the axis on which a candidate counts as improving:
+  `"distance"` (default, the carried sector interval), `"weight"` (maximum
+  displayed check weight), `"n"`, `"k"`, a dict with `axis` and optional
+  `targets` (e.g. a missing-n set), or a callable. `plan` orders candidates
+  by the same objective so a weight/n-improving child is seen within the
+  budget. The distance objective cannot see a weight or n gain, so campaigns
+  targeting those axes must pass the matching objective explicitly.
+- **Presentation and constructor separation:** a sector swap is a presentation
+  symmetry (§4.27) and is returned under `"presentation_candidates"`, never in
+  `"improving"`. `constructor_specs=...` evaluates typed constructors through
+  `constructor_candidates()`, filters them by the same objective, and returns
+  each with a `structural_profile` (`connected`, `blocks`, `block_sizes`) from
+  `constructors.py`; that profile mirrors the gate's direct-sum screen before
+  a child is staged. A constructed ledger still starts at `[0, +inf)` with no
+  automatic distance rule. `_extend_candidates` now checks the commutation
+  and independence premises before yielding single-qubit additions, removing
+  candidates that could only fail `apply_operation`.
 - `constructors.py` (`priced_calculus.construct`): evaluates the nine typed
  constructors admitted 2026-11-11 (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`,
  `A-CONCAT`; `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`,

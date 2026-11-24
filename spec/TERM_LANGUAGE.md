@@ -25,10 +25,11 @@ $$
 e ::= \mathrm{hgp}(H_1, H_2) \mid \mathrm{lift}_G(A, B) \mid \mathrm{twoblock}_G(a, b) \mid \mathrm{concat}(e_O, e_I; \vec B)
 $$
 
-where $H_1$ and $H_2$ are binary matrices, $G$ is a finite abelian group given
-by its cyclic orders, $A$ and $B$ are matrices and $a$ and $b$ elements of the
-group algebra $\mathbb{F}_2[G]$, and $\vec B$ is a block partition of the outer
-state's qubits (`OPERATIONAL_SEMANTICS.md` §2 cards).
+where $H_1$ and $H_2$ are binary matrices, $G$ is a finite group given either
+by its abelian cyclic orders or (since 2026-11-22) by an explicit multiplication
+table or permutation-generator presentation, $A$ and $B$ are matrices and $a$
+and $b$ elements of the group algebra $\mathbb{F}_2[G]$, and $\vec B$ is a block
+partition of the outer state's qubits (`OPERATIONAL_SEMANTICS.md` §2 cards).
 
 Since 2026-11-11 the other five accepted constructors extend
 the expressions by
@@ -41,10 +42,11 @@ The typed inputs are finite objects, defined on the cards of
 `OPERATIONAL_SEMANTICS.md` §2. In `product`, $e_A$ and $e_B$ are state
 expressions. In `double`, $w$ is a wiring map from the displayed row
 identifiers of the value of $e$ to subsets of their supports and $s$ is an
-optional sector-duality flag. In `balanced`, $G$ is a finite abelian group
-given by its cyclic orders, $H_1$ and $H_2$ are binary matrices, and
-$\alpha_1$ and $\alpha_2$ are actions of $G$ on their row and column indices
-by permutations. In `tanner`, $n$ is a qubit count, $\Lambda_X$ and
+optional sector-duality flag. In `balanced`, $G$ is a finite group given by its
+abelian cyclic orders or (since 2026-11-22) by an explicit multiplication table
+or permutation-generator presentation, $H_1$ and $H_2$ are binary matrices, and
+$\alpha_1$ (a right action on $H_1$) and $\alpha_2$ (a left action on $H_2$) are
+equivariant actions of $G$ on their row and column indices by permutations. In `tanner`, $n$ is a qubit count, $\Lambda_X$ and
 $\Lambda_Z$ are binary matrices of local checks, and $\iota_X$ and $\iota_Z$
 are lists of vertex embeddings. In `tile`, $\tau$ is a list of tiles,
 $\alpha$ a list of placements on sites, and $\beta$ the boundary rules (site
@@ -72,6 +74,21 @@ $\phi_i : Q_i \to Q_I$ are CSS code morphisms from the values of $e_1, e_2$
 to the value of $e_I$, and $\psi_i : Q_S \to Q_i$ are CSS code morphisms
 from the value of $e_S$ to the values of $e_1, e_2$ (`OPERATIONAL_SEMANTICS.md`
 §2 cards).
+
+Since 2026-11-22 the expressions also include the pair-partition relative-permutation
+constructor and its explicit size-scaling specialization
+
+$$
+e ::= \mathrm{pair\_partition}(p; B_X, B_Z) \mid \mathrm{pp\_scale}(e; P)
+$$
+
+where in `pair_partition` $p \ge 1$ is a lift size and $B_X, B_Z$ are block matrices
+of affine permutation descriptors $(a, b) \in \mathbb{Z}_p^\times \times \mathbb{Z}_p$
+with an even block-column count $L \ge 2$ (`OPERATIONAL_SEMANTICS.md` §2 card, §4.46),
+and in `pp_scale` $e$ is a state expression whose value is a PP-presented CSS code and
+$P \ge 2$ is a target lift size (`OPERATIONAL_SEMANTICS.md` §2 card, §4.47,
+`OBL-PP-SCALE`). The PP-parameter bundle (pair partition, Smith-normal-form data,
+fixed shift vector) is constructor-side data, not part of $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$.
 
 $$
 m \;::=\; \mathrm{skip}
@@ -111,12 +128,12 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `P-REBASE` | command | $m ::= \mathrm{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
 | `C-COLUMN-CNOT` | command | $m ::= \mathrm{cnotSwap}_U$ | `cnotSwap(U)`, $U\in\mathrm{GL}(Q,2)$ (admitted 2026-11-18) |
 | `L-HGP` | expression-constructor | $e ::= \mathrm{hgp}(H_1,H_2)$ | `hgp(H₁, H₂)`, two binary matrices (admitted 2026-11-11) |
-| `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B)$ | `lift_G(A, B)`, $G$ a finite abelian group by cyclic orders, $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11) |
-| `L-GROUP-ALGEBRA` | expression-constructor | $e ::= \mathrm{twoblock}_G(a,b)$ | `twoblock_G(a, b)`, $a, b \in \mathbb{F}_2[G]$ (admitted 2026-11-11) |
+| `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B)$ | `lift_G(A, B)`, $G$ a finite group (abelian by cyclic orders, or nonabelian via an explicit multiplication table / permutation generators), $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11; generalized 2026-11-22) |
+| `L-GROUP-ALGEBRA` | expression-constructor | $e ::= \mathrm{twoblock}_G(a,b)$ | `twoblock_G(a, b)`, $a, b \in \mathbb{F}_2[G]$ for a finite group $G$ (abelian or nonabelian, with explicit left/right regular representations) (admitted 2026-11-11; generalized 2026-11-22) |
 | `A-CONCAT` | expression-constructor | $e ::= \mathrm{concat}(e_O, e_I; \vec B)$ | `concat(e_O, e_I; blocks)`, CSS outer and inner factors with a block partition (admitted 2026-11-11) |
 | `A-PRODUCT` | expression-constructor | $e ::= \mathrm{product}(e_A, e_B)$ | `product(e_A, e_B)`, the CSS tensor product of two well-formed CSS states (admitted 2026-11-11) |
 | `A-DOUBLE` | expression-constructor | $e ::= \mathrm{double}_{w,s}(e)$ | `double(e; wiring[, conjugate])`, the two-sheet cover under a wiring map; no derivation unless the lifted rows commute (admitted 2026-11-11) |
-| `L-BALANCED` | expression-constructor | $e ::= \mathrm{balanced}_G(H_1,\alpha_1;H_2,\alpha_2)$ | `balanced_G(H₁, α₁; H₂, α₂)`, binary matrices equivariant under permutation actions of a finite abelian group (admitted 2026-11-11) |
+| `L-BALANCED` | expression-constructor | $e ::= \mathrm{balanced}_G(H_1,\alpha_1;H_2,\alpha_2)$ | `balanced_G(H₁, α₁; H₂, α₂)`, binary matrices equivariant under permutation actions of a finite group (abelian or nonabelian, with explicit left/right actions) (admitted 2026-11-11; generalized 2026-11-22) |
 | `L-TANNER` | expression-constructor | $e ::= \mathrm{tanner}(n;\Lambda_X,\Lambda_Z;\iota_X,\iota_Z)$ | `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)`, local checks on the two vertex classes of an incidence structure; no derivation unless the local checks of the two classes commute (admitted 2026-11-11) |
 | `L-TILE` | expression-constructor | $e ::= \mathrm{tile}(\tau;\alpha;\beta)$ | `tile(tiles; placements; boundary rules)`; no derivation unless the placed rows of the two sectors commute (admitted 2026-11-11) |
 | `L-NESTED-CSS` | expression-constructor | $e ::= \mathrm{nested}(H_X,H_Z)$ | `nested(H_X, H_Z)`, two binary parity-check matrices with equally many columns; no derivation unless every row of the one has even overlap with every row of the other (admitted 2026-11-13) |
@@ -125,6 +142,9 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `L-FREE` | expression-constructor | $e ::= \mathrm{free}(Q)$ | `free(Q)`, the check-free CSS code on a finite qubit-label set $Q \subset \mathbb{N}$ (admitted 2026-11-19) |
 | `A-PULLBACK` | expression-constructor | $e ::= \mathrm{pullback}(e_1, e_2, e_I; \phi_1, \phi_2)$ | `pullback(e₁, e₂, e_I; φ₁, φ₂)`, fiber product along CSS code morphisms $\phi_i : C_i \to I$; no derivation unless $\phi_i$ are CSS code morphisms and the pulled-back rows commute (admitted 2026-11-19) |
 | `A-PUSHOUT` | expression-constructor | $e ::= \mathrm{pushout}(e_1, e_2, e_S; \psi_1, \psi_2)$ | `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`, amalgamated sum along CSS code morphisms $\psi_i : S \to C_i$; no derivation unless $\psi_i$ are CSS code morphisms and the pushed-forward rows commute (admitted 2026-11-19)
+| `L-PAIR-PARTITION` | expression-constructor | $e ::= \mathrm{pair\_partition}(p; B_X, B_Z)$ | `pair_partition(p; B_X, B_Z)`, paired affine/circulant permutation block matrices over lift size $p \ge 1$ with even column count $L \ge 2$; no derivation unless the paired relative affine maps match on each block-row pair so the natural rows commute (admitted 2026-11-22) |
+| `PP-SCALE` | expression-constructor | $e ::= \mathrm{pp\_scale}(e; P)$ | `pp_scale(e; P)`, explicit extension of a PP-presented CSS code $e$ to target lift size $P \ge 2$; no derivation unless the input is PP-presented with unit slopes, the PP conditions and SNF reproduction check pass, $k' > 0$, and the generated rows commute (promoted 2026-11-22) |
+
 | `C-SEQUENCE` | command | $m ::= m_1;m_2$ | `m₁ ; m₂` |
 | `P-RELABEL` | presentation-operation | **none** | — |
 
@@ -283,6 +303,34 @@ decidable applicability premises whose failure is a no-derivation. All four
 are `transition-defined`, their output well-formedness is derived at
 `OPERATIONAL_SEMANTICS.md` §4.43, and they carry no automatic distance rule in
 `JUDGMENT_LAYER.md` §2g. The Kan-extension candidate remains refused.
+
+**Generalization of `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED` to finite nonabelian groups (2026-11-22).**
+On 2026-11-22 the group input $G$ of `lift_G(A, B)`, `twoblock_G(a, b)`, and
+`balanced_G(H_1, \alpha_1; H_2, \alpha_2)` was generalized from finite abelian
+groups by cyclic orders to arbitrary finite groups (abelian by cyclic orders, or
+nonabelian via an explicit multiplication table or permutation-generator
+presentation), with explicit left and right regular representations $L(x), R(y)$,
+antipode involution $g \mapsto g^{-1}$, and right/left permutation actions
+$\alpha_1, \alpha_2$ (`OPERATIONAL_SEMANTICS.md` §2 cards, §4.44;
+`OBL-NONABELIAN-GROUP-INPUTS`). Abelian cyclic-order inputs are preserved
+conservatively ($R(y) = L(y)$ when $G$ is abelian). Conditional distance
+lower-bound cells and consumer-side factor-to-child witness lifting for
+`L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, and `A-DOUBLE` are recorded in
+`OPERATIONAL_SEMANTICS.md` §4.45 and `JUDGMENT_LAYER.md` §2g.1
+(`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`).
+
+**Admission of `L-PAIR-PARTITION` and promotion of `PP-SCALE` (2026-11-22).**
+The pair-partition relative-permutation constructor `pair_partition(p; B_X, B_Z)`
+and the explicit size-scaling specialization `pp_scale(e; P)` gained expression
+productions (§1, §2). Both are `transition-defined` (`OPERATIONAL_SEMANTICS.md`
+§2 cards, §4.46–§4.47; `OBL-PP-SCALE`): `L-PAIR-PARTITION` assembles $X$ and $Z$
+parity checks from paired circulant/affine permutation blocks over lift size
+$p \ge 1$ under the relative-affine pair-partition premise, while `PP-SCALE`
+evaluates the Smith-normal-form slope/shift parametrization of a PP-presented
+code $C_0$ at target size $P \ge 2$ on a fresh namespace with identifiers
+canonically minted disjoint from $\mathsf{used}_0$ and applicability premise
+$k' > 0$. Neither computes a distance (`JUDGMENT_LAYER.md` §2g, §2l).
+
 
 ## 8. Contexts
 

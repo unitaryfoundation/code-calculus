@@ -8,7 +8,10 @@ as Lean terms, with theorems that
 
 - the Lean state update (`hgpState`, `liftState`, `twoblockState`,
   `concatState`, `productState`, `doubleState`, `balancedState`,
-  `tannerState`, `tileState` of `lean/CodeCalculus/Constructors.lean`)
+  `tannerState`, `tileState` of `lean/CodeCalculus/Constructors.lean`, and
+  `tableLiftState`, `tableTwoblockState`, `tableBalancedState` of
+  `lean/CodeCalculus/CayleyTables.lean` for a group given by its
+  multiplication table)
   equals the consumer's state, row for row and identifier for identifier;
 - the constructor expression evaluates to it under `EvalExpr`;
 - the state is well-formed, with `n` and `k` as the consumer reports them.
@@ -31,6 +34,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from machine.certificates import identifier_rank, lean_state_term  # noqa: E402
+from machine.constructors import _group_spec  # noqa: E402
+from machine.state import Malformed  # noqa: E402
 from machine.priced_calculus import (  # noqa: E402
     CodeState,
     Row,
@@ -56,7 +61,15 @@ retained-display theorem with the overlap hypothesis discharged by kernel
 evaluation on the instance. For `A-DOUBLE`, `L-TANNER`, `L-TILE`, and
 `L-NESTED-CSS` the
 overlap is a premise of the rule, discharged the same way inside the
-`_eval` theorem. Agreement on these instances is evidence about the transcription,
+`_eval` theorem. For the three group constructors over a group given by
+its multiplication table (`twoblock_s3`, `lift_s3`, `balanced_s3`)
+well-formedness is the general theorem of the production
+(`evalExpr_twoblockTable_wf`, `evalExpr_liftTable_wf`,
+`evalExpr_balancedTable_wf`). `s3_gens_table` says that the table Lean
+generates from two permutation generators of `S_3` is the consumer's, and
+`twoblock_s3_gens` evaluates the two-block production on it.
+`nonassociative_table_refused` and `balanced_s3_left_action_refused` are two
+inputs the consumer refuses, failing the Lean typing checks. Agreement on these instances is evidence about the transcription,
 not a proof that the two implementations agree on every input.
 """
 
@@ -95,6 +108,40 @@ DOUBLE_WIRING = {"a1": [0, 1]}
 BALANCED_GROUP = (3,)
 BALANCED_SHIFT = [1, 2, 0]
 
+# S_3 by its multiplication table: 0 = id, 1 = r, 2 = r^2, 3 = s, 4 = rs,
+# 5 = r^2 s, with r^3 = s^2 = 1 and s r = r^2 s.
+S3_TABLE = [[0, 1, 2, 3, 4, 5], [1, 2, 0, 4, 5, 3], [2, 0, 1, 5, 3, 4],
+            [3, 5, 4, 0, 2, 1], [4, 3, 5, 1, 0, 2], [5, 4, 3, 2, 1, 0]]
+S3_A = [0, 1]
+S3_B = [0, 3]
+S3_LIFT_A = [[S3_A]]
+S3_LIFT_B = [[[0], [3]]]
+# S_3 by permutation generators: a 3-cycle and a transposition. The consumer
+# lists the generated permutations in lexicographic order, so its element
+# indices differ from those of S3_TABLE.
+# A table that is closed and has an identity and inverses but is not
+# associative: (1 1) 2 = 2 and 1 (1 2) = 0.
+NONASSOCIATIVE_TABLE = [[0, 1, 2], [1, 0, 1], [2, 2, 0]]
+S3_GENERATORS = [[1, 2, 0], [1, 0, 2]]
+S3_GENS_A = [0, 3]
+S3_GENS_B = [0, 2]
+
+
+def s3_balanced_inputs():
+    """`H1 = L(1 + r)` under the right regular action and `H2 = R(1 + s)`
+    under the left regular action, each action one permutation per group
+    element."""
+    ell = len(S3_TABLE)
+    inverse = [next(h for h in range(ell) if S3_TABLE[g][h] == 0)
+               for g in range(ell)]
+    h1 = [[int(S3_TABLE[h][inverse[k]] in S3_A) for k in range(ell)]
+          for h in range(ell)]
+    h2 = [[int(S3_TABLE[inverse[k]][h] in S3_B) for k in range(ell)]
+          for h in range(ell)]
+    right = [[S3_TABLE[x][g] for x in range(ell)] for g in range(ell)]
+    left = [[S3_TABLE[g][y] for y in range(ell)] for g in range(ell)]
+    return h1, h2, right, left
+
 
 def toric_views(length):
     """Stars and faces of the toric code on a length x length torus."""
@@ -131,6 +178,15 @@ GLUED_IDENTIFICATIONS = [(0, 4), (5, 1), (2, 6), (3, 7)]
 GLUED_REMOVED = [(1, "Z", 0)]
 
 
+def consumer_refuses(request):
+    """Whether the consumer refuses the request as malformed."""
+    try:
+        construct(request)
+    except Malformed:
+        return True
+    return False
+
+
 def nat_list(values):
     return "[%s]" % ", ".join(str(v) for v in values)
 
@@ -148,6 +204,13 @@ def bool_matrix(matrix):
 def algebra_matrix(matrix):
     return "[%s]" % ", ".join(
         "[%s]" % ", ".join(nat_lists(entry) for entry in row) for row in matrix)
+
+
+def table_algebra_matrix(matrix):
+    """A matrix over F_2[G] for G given by its table: an entry is a list of
+    group elements."""
+    return "[%s]" % ", ".join(
+        "[%s]" % ", ".join(nat_list(entry) for entry in row) for row in matrix)
 
 
 def bool_term(value):
@@ -184,6 +247,12 @@ def removed_term(removed):
 def pair_map_term(mapping):
     return "[%s]" % ", ".join(
         "(%d, %d)" % (src, dst) for src, dst in sorted(mapping.items()))
+
+
+def affine_matrix_term(matrix):
+    return "[%s]" % ", ".join(
+        "[%s]" % ", ".join("(%d, %d)" % (a, b) for a, b in row)
+        for row in matrix)
 
 
 def mask_support(mask):
@@ -460,8 +529,128 @@ def generate():
         result,
         "evalExpr_pushout_wf pushout_pair_eval"))
 
+    # L-PAIR-PARTITION (CPM-PP): 4-column paired circulant blocks at lift size p = 2.
+    cpm_bx = [[(1, 0), (1, 1), (1, 0), (1, 1)]]
+    cpm_bz = [[(1, 0), (1, 1), (1, 0), (1, 1)]]
+    result = construct({"constructor": "L-PAIR-PARTITION", "p": 2,
+                        "blocks_x": cpm_bx, "blocks_z": cpm_bz})
+    cpm_args = "2 %s %s" % (affine_matrix_term(cpm_bx), affine_matrix_term(cpm_bz))
+    blocks.append(instance(
+        "pair_partition_cpm2",
+        "pairPartitionState %s" % cpm_args,
+        "StateExpr.pairPartition %s" % cpm_args,
+        "EvalExpr.pairPartition (by decide) (by decide) (by decide)",
+        result,
+        "evalExpr_pairPartition_wf pair_partition_cpm2_eval"))
+
+    # L-PAIR-PARTITION (APM-PP): 4-column paired non-circulant affine blocks
+    # (unit slope a = 2 mod 3) at lift size p = 3.
+    apm_bx = [[(2, 0), (2, 0), (2, 1), (2, 1)]]
+    apm_bz = [[(2, 1), (2, 1), (2, 0), (2, 0)]]
+    result_apm = construct({"constructor": "L-PAIR-PARTITION", "p": 3,
+                            "blocks_x": apm_bx, "blocks_z": apm_bz})
+    apm_args = "3 %s %s" % (affine_matrix_term(apm_bx), affine_matrix_term(apm_bz))
+    blocks.append(instance(
+        "pair_partition_apm3",
+        "pairPartitionState %s" % apm_args,
+        "StateExpr.pairPartition %s" % apm_args,
+        "EvalExpr.pairPartition (by decide) (by decide) (by decide)",
+        result_apm,
+        "evalExpr_pairPartition_wf pair_partition_apm3_eval"))
+
+    # PP-SCALE: explicit extension of pair_partition_cpm2 from P0 = 2 to P = 3.
+    c0_pp = result["state"]
+    result_scaled = construct({"constructor": "PP-SCALE", "state": c0_pp, "P": 3,
+                               "blocks_x": cpm_bx, "blocks_z": cpm_bz})
+    scale_tail = "3 %s %s" % (affine_matrix_term(cpm_bx), affine_matrix_term(cpm_bz))
+    blocks.append(instance(
+        "pp_scale_cpm4",
+        "ppScaleState pair_partition_cpm2 %s" % scale_tail,
+        "StateExpr.ppScale (StateExpr.base pair_partition_cpm2) %s" % scale_tail,
+        "EvalExpr.ppScale pair_partition_cpm2_wellFormed (by decide) (by decide) (by decide)\n"
+        "    (EvalExpr.base _)",
+        result_scaled,
+        "evalExpr_ppScale_wf pp_scale_cpm4_eval"))
+
+    # Section 4.44: the three group constructors over S_3 given by its
+    # multiplication table.
+    blocks.append("def s3_table : List (List Nat) := %s" % nat_lists(S3_TABLE))
+    blocks.append(
+        "theorem s3_table_nonabelian :\n"
+        "    tableMul s3_table 1 3 ≠ tableMul s3_table 3 1 := by decide")
+    group = {"table": S3_TABLE}
+    result = construct({"constructor": "L-GROUP-ALGEBRA", "group": group,
+                        "a": S3_A, "b": S3_B})
+    args = "s3_table %s %s" % (nat_list(S3_A), nat_list(S3_B))
+    blocks.append(instance(
+        "twoblock_s3", "tableTwoblockState %s" % args,
+        "StateExpr.twoblockTable %s" % args,
+        "EvalExpr.twoblockTable (by decide) (by decide) (by decide) (by decide)",
+        result, "evalExpr_twoblockTable_wf twoblock_s3_eval"))
+    result = construct({"constructor": "L-LIFTED", "group": group,
+                        "A": S3_LIFT_A, "B": S3_LIFT_B})
+    args = "s3_table %s %s" % (table_algebra_matrix(S3_LIFT_A),
+                               table_algebra_matrix(S3_LIFT_B))
+    blocks.append(instance(
+        "lift_s3", "tableLiftState %s" % args, "StateExpr.liftTable %s" % args,
+        "EvalExpr.liftTable (by decide) (by decide) (by decide) (by decide)",
+        result, "evalExpr_liftTable_wf lift_s3_eval"))
+    h1, h2, right, left = s3_balanced_inputs()
+    result = construct({"constructor": "L-BALANCED", "group": group,
+                        "H1": h1, "action1": {"rows": right, "cols": right},
+                        "H2": h2, "action2": {"rows": left, "cols": left}})
+    blocks.append("def s3_right : List (List Nat) := %s" % nat_lists(right))
+    blocks.append("def s3_left : List (List Nat) := %s" % nat_lists(left))
+    args = "s3_table\n      %s s3_right s3_right\n      %s s3_left s3_left" % (
+        bool_matrix(h1), bool_matrix(h2))
+    blocks.append(instance(
+        "balanced_s3", "tableBalancedState %s" % args,
+        "StateExpr.balancedTable %s" % args,
+        "EvalExpr.balancedTable (by decide) (by decide)", result,
+        "evalExpr_balancedTable_wf balanced_s3_eval"))
+
+    # Two inputs the consumer refuses fail the Lean typing checks: a table
+    # that is not associative, and a left action where `L-BALANCED` reads a
+    # right action.
+    if not consumer_refuses({"constructor": "L-GROUP-ALGEBRA",
+                             "group": {"table": NONASSOCIATIVE_TABLE},
+                             "a": [0], "b": [0]}):
+        raise AssertionError("the consumer accepts the non-associative table")
+    blocks.append(
+        "theorem nonassociative_table_refused :\n"
+        "    tableGroupTyped %s = false := by decide"
+        % nat_lists(NONASSOCIATIVE_TABLE))
+    if not consumer_refuses({"constructor": "L-BALANCED", "group": group,
+                             "H1": h2, "action1": {"rows": left, "cols": left},
+                             "H2": h2, "action2": {"rows": left, "cols": left}}):
+        raise AssertionError("the consumer accepts a left action as action1")
+    blocks.append(
+        "theorem balanced_s3_left_action_refused :\n"
+        "    tableBalancedTyped s3_table\n"
+        "      %s s3_left s3_left\n"
+        "      %s s3_left s3_left = false := by decide"
+        % (bool_matrix(h2), bool_matrix(h2)))
+
+    # Section 4.44: a group given by permutation generators is the table it
+    # generates, and the table productions carry it.
+    gens = nat_lists(S3_GENERATORS)
+    blocks.append(
+        "theorem s3_gens_table :\n"
+        "    gensTable 3 %s =\n      %s := by decide"
+        % (gens, nat_lists(_group_spec({"generators": S3_GENERATORS})["table"])))
+    result = construct({"constructor": "L-GROUP-ALGEBRA",
+                        "group": {"generators": S3_GENERATORS},
+                        "a": S3_GENS_A, "b": S3_GENS_B})
+    args = "(gensTable 3 %s) %s %s" % (gens, nat_list(S3_GENS_A),
+                                       nat_list(S3_GENS_B))
+    blocks.append(instance(
+        "twoblock_s3_gens", "tableTwoblockState %s" % args,
+        "StateExpr.twoblockTable %s" % args,
+        "EvalExpr.twoblockTable (by decide) (by decide) (by decide) (by decide)",
+        result, "evalExpr_twoblockTable_wf twoblock_s3_gens_eval"))
+
     parts = [
-        "import CodeCalculus.ConstructorOverlap",
+        "import CodeCalculus.BalancedOverlap",
         "",
         "/-!\n%s\n-/" % HEADER.strip(),
         "",

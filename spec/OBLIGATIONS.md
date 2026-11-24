@@ -668,7 +668,7 @@ value claim was corrected 2026-09-30 independently of this entry.
 **Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`;
 constructor instances `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`
 (2026-11-11), `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`,
-`A-DOUBLE` (2026-11-11), `L-NESTED-CSS` (2026-11-13), and `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (2026-11-19).
+`A-DOUBLE` (2026-11-11), `L-NESTED-CSS` (2026-11-13), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (2026-11-19), and `L-PAIR-PARTITION`, `PP-SCALE` (2026-11-22).
 
 **Semantic-contract field:** admission rule item 4 (`state-sound`).
 
@@ -676,25 +676,31 @@ constructor instances `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`
 `C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-DIRECT-SUM`, `C-SEQUENCE`);
 `proved` for the four typed constructors admitted 2026-11-11 (`L-HGP`,
 `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`; hand derivation
-[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.34:
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.34, generalized to
+finite nonabelian groups for `L-LIFTED` and `L-GROUP-ALGEBRA` in §4.44:
 the retained display is independent and spans, and the natural rows of each
 constructor have pairwise even overlap); `proved` for the five typed
-constructors admitted the same day by (`L-BALANCED`, `L-TANNER`,
-`L-TILE`, `A-PRODUCT`, `A-DOUBLE`; hand derivation §4.35: the overlap is
+constructors admitted the same day (`L-BALANCED`, `L-TANNER`,
+`L-TILE`, `A-PRODUCT`, `A-DOUBLE`; hand derivation §4.35, generalized to
+finite nonabelian groups for `L-BALANCED` in §4.44: the overlap is
 derived for `A-PRODUCT` and `L-BALANCED` and is an applicability premise of
 the other three), `A-PRODUCT` under repair (a) (see above); `proved` for
-`L-NESTED-CSS`, admitted 2026-11-13 by (hand derivation §4.36:
+`L-NESTED-CSS`, admitted 2026-11-13 (hand derivation §4.36:
 the overlap is the applicability premise); `proved` for `L-EMPTY`, `L-FREE`,
-`A-PULLBACK`, and `A-PUSHOUT`, admitted 2026-11-19 by (hand
-derivation §4.43). The instance is
+`A-PULLBACK`, and `A-PUSHOUT`, admitted 2026-11-19 (hand
+derivation §4.43); `proved` for `L-PAIR-PARTITION`, admitted 2026-11-22 (hand
+derivation §4.46: paired relative-affine orthogonality and retained display;
+Lean `evalExpr_pairPartition_wf`), and `PP-SCALE`, promoted 2026-11-22 (hand
+derivation §4.47; Lean `evalExpr_ppScale_wf`). The instance is
 `open` for any later-layer constructor not yet admitted.
 
 **Ledger status:** MVP instances proved by dated hand derivation
 `spec/OPERATIONAL_SEMANTICS.md` §4.7; statement fixed against
 the conventions above. The later-layer constructor instance is `proved` for
-the nine constructors admitted 2026-11-11 (§4.34 and §4.35), for
-`L-NESTED-CSS` (§4.36), and for `L-EMPTY`, `L-FREE`,
-`A-PULLBACK`, and `A-PUSHOUT` (§4.43).
+the nine constructors admitted 2026-11-11 (§4.34, §4.35, and §4.44), for
+`L-NESTED-CSS` (§4.36), for `L-EMPTY`, `L-FREE`,
+`A-PULLBACK`, and `A-PUSHOUT` (§4.43), for `L-PAIR-PARTITION` (§4.46), and for
+`PP-SCALE` (§4.47).
 
 **Discharged through:** `stdCSS-3` (discharged for all admitted operations and
 constructors: kernel five §4.7, `E-GRAFT` §4.12, six Gate 6 CSS cells
@@ -728,7 +734,11 @@ the four admitted constructors (
 `ConstructorOrthogonality.lean`): the retained display is well-formed when
 the natural rows have pairwise even overlap, and that overlap is proved for
 all four: for `L-HGP` in `ConstructorOrthogonality.lean`, and for
-`L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT` in `ConstructorOverlap.lean`, so every evaluation of the four yields a well-formed state
+`L-LIFTED`, `L-GROUP-ALGEBRA`, and `A-CONCAT` in `ConstructorOverlap.lean`
+(including the nonabelian Cayley-table left/right regular representation overlap
+`cayleyTwoblock_naturalOrthogonal`, `cayleyLift_naturalOrthogonal`,
+`wf_cayleyTwoblockState`, `wf_cayleyLiftState`, and `s3_twoblock_wf`), so every
+evaluation of the four yields a well-formed state
 with no hypothesis. Of the closed forms for $k$, those of
 `L-GROUP-ALGEBRA` and of `A-DOUBLE` with the empty wiring are proved
 (`ConstructorRankTyped.lean`, `ConstructorRank.lean`), that of `A-CONCAT`
@@ -1842,7 +1852,13 @@ the consumer records sources without validating their truth. **Extended
 2026-10-23:** the two further `C-ADD-CHECK` inputs (sector-aware
 gauging prices; direct-sum extinction) now have typed meanings in §2c and a
 computed structural side, so the typed-meaning record matches the consumer's
-optional-input set.
+optional-input set. **Extended 2026-11-22:** conditional constructor distance
+cells (`JUDGMENT_LAYER.md` §2g.1; `machine/consumer.json`
+`conditional_constructor_cell`) for `L-HGP`, `L-NESTED-CSS`, `A-CONCAT`,
+`A-PRODUCT`, and `A-DOUBLE` carry explicit `source` strings and (where
+required) display/twisted certificates; the consumer validates input shape and
+consistency against validated lifted witnesses, never the truth of supplied
+factor lower bounds.
 
 **Statement.** Give each supplied lower bound, exact deletion/exposure price,
 and minimum-weight-class enumeration a typed meaning that states what fact it
@@ -2259,6 +2275,287 @@ there would be a false hypothesis that the consumer, by design, does not
 detect. Shared-interface splits (pieces overlapping on qubits) are outside
 the statement; there re-exposed classes exist and the hardness boundary
 applies.
+
+---
+
+## `OBL-PP-SCALE` — Output well-formedness and orthogonality of the `PP-SCALE` constructor
+
+**Taxonomy IDs:** `PP-SCALE` (specialization of `L-PAIR-PARTITION`, `TAXONOMY.md` §3.8).
+
+**Semantic-contract field:** admission rule item 4 (`state-sound`); priced-hypothesis
+boundary (`OBL-PRICED-INPUT-SEMANTICS`) for supplied distance intervals.
+
+**Claim shape:** `preservation` and `equality` (parameter bookkeeping) — **Evidence status:** `proved` for the output well-formedness that follows from premise (vi) (pairwise even overlap of the generated natural rows) and `wf_constructedStateFrom`; the claim that the PP conditions at $P_0$ give orthogonality at every $P \ge 2$ is `proposed (classical)` (cited from Kasai 2026 §2.1, not derived here; the SNF argument in §4.47 steps 1–2 is P-dependent and not shown). Conditional interval cell `conditional`; family-level ceiling `conjectural`.
+
+**Classification:** theorem (constructor well-formedness instance).
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (2026-11-22).
+
+**Intended mechanization status:** Hand derivation at `OPERATIONAL_SEMANTICS.md`
+§4.47; Lean production `StateExpr.ppScale`, transition rule `EvalExpr.ppScale`,
+state update `ppScaleState`, well-formedness theorem `evalExpr_ppScale_wf`, and
+qubit-count theorem `evalExpr_ppScale_n` in `lean/CodeCalculus/` (`Term.lean`,
+`Constructors.lean`, `ConstructorWellFormedness.lean`, `Eval.lean`,
+`ConstructorAssembly.lean`, `ConstructorInstances.lean`, no `sorry`); Python
+consumer evaluation `pp_scale_code` in `machine/constructors.py` with tests in
+`machine/test_constructors.py`.
+
+**Statement.** For every well-formed PP-presented CSS state $C_0$ and target
+lift size $P \ge 2$ satisfying the applicability premises (i)–(vi) of the
+`PP-SCALE` card (`OPERATIONAL_SEMANTICS.md` §2), the constructed state
+$C' = \mathrm{pp\_scale}(C_0; P)$ is a well-formed CSS state on
+$n' = L \cdot P$ qubits with $H_X' (H_Z')^T = 0 \pmod 2$; row identifiers are
+canonically minted starting from $\mathsf{used}_0$ (disjoint from
+$\mathsf{used}_0$, with $\mathsf{used}'$ the union);
+$k' = L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z') > 0$; $w' = L$
+carries (each natural row has one 1 in each of the $L$ block columns); and $d, d_X, d_Z$ are `not yet defined`
+unless a verified interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied, in
+which case the ledger carries the conditional cell (`JUDGMENT_LAYER.md` §2g, §2l).
+
+**Hypotheses.** $C_0$ well-formed and PP-presented; original and target slopes
+units; PP conditions (2) at $P_0$ and $P$; SNF reproduction check passes at
+$P_0$; $P \ge 2$; $k' > 0$; generated natural rows have pairwise even overlap.
+
+**Conclusion.** $C'$ satisfies I1–I5 and ambient containment on
+$\{0, \dots, L \cdot P - 1\}$; the parameter effects above hold; no automatic
+distance rule is attached beyond the supplied interval.
+
+**Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION` (§4.34 retained-display
+theorem, §4.44 pair-partition relative-affine orthogonality);
+`OBL-PRICED-INPUT-SEMANTICS`.
+
+**Known edge cases and counterexamples.** $k' \le 0$: no derivation (partial
+big-step). Failed SNF reproduction check at $P_0$ or non-commuting blocks: no
+derivation. Non-unit slope or $P < 2$: malformed or no derivation per card.
+
+## `OBL-NONABELIAN-GROUP-INPUTS` — Nonabelian group inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED`
+
+**Taxonomy IDs:** `L-LIFTED`, `L-GROUP-ALGEBRA`, `L-BALANCED`.
+
+**Semantic-contract field:** admission rule item 4 (`state-sound`) and item 5
+(`logical-parameter-honest`) for finite nonabelian group inputs.
+
+**Claim shape:** `preservation` (output well-formedness on every well-typed
+finite group input, abelian or nonabelian) and `exact` ($n$ and $k$ closed
+forms / rank bookkeeping).
+
+**Classification:** definition and theorem (constructor well-formedness and
+conservative extension of the abelian cyclic-order fragment).
+
+**Evidence status:** `proved` (hand derivation
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.44, 2026-11-22).
+
+**Introduced in:** `v0.4.0` target (2026-11-22, axis 2).
+
+**Intended mechanization status:** machine-checked in Lean 4
+(`lean/CodeCalculus/ConstructorOverlap.lean` and
+`lean/CodeCalculus/BalancedOverlap.lean`, no `sorry`, no `native_decide`):
+general nonabelian left/right regular representation orthogonality
+`cayleyTwoblock_naturalOrthogonal` and `cayleyLift_naturalOrthogonal` via the
+involution-bijection lemma `filter_length_bijection`, output well-formedness
+`wf_cayleyTwoblockState` and `wf_cayleyLiftState`, nonabelian balanced-product
+right/left action orbit orthogonality and well-formedness
+`cayleyBalanced_naturalOrthogonal` and `wf_cayleyBalancedState`, and
+kernel-checked nonabelian $S_3$ (order 6) instances `s3_twoblock_wf` and
+`s3_balanced_wf`. The definitions are in `lean/CodeCalculus/CayleyGroups.lean`.
+The Lean term grammar carries the multiplication-table presentation as the
+productions `liftTable`, `twoblockTable`, and `balancedTable`
+(`lean/CodeCalculus/Term.lean`, `Eval.lean`; typing checks in
+`CayleyTables.lean`), every evaluation of which is well-formed
+(`evalExpr_liftTable_wf`, `evalExpr_twoblockTable_wf`,
+`evalExpr_balancedTable_wf`), with $n$ and no $k$ row. Their states equal the
+consumer's on three $S_3$ instances (`twoblock_s3`, `lift_s3`, `balanced_s3`
+in `ConstructorInstances.lean`), which is evidence about the transcription on
+those instances only. The permutation-generator presentation has no Lean
+production: a group given by generators is the table `gensTable d gens`, with
+no theorem that this is the table of the generated group, and the actions of
+`balancedTable` are given per group element only. No Lean theorem relates a
+table production on the table of an abelian group to the cyclic-order
+production. Executable consumer
+implementation in
+`machine/constructors.py` (`_group_spec`, `_left_lift_rows`,
+`_right_lift_rows`, `lifted_product`, `two_block_code`, `balanced_product`)
+verified in `machine/test_constructors.py`.
+
+**Statement.** Let $G$ be a finite group of order $\ell \ge 1$, presented either
+as a finite abelian group by cyclic orders $(o_1, \ldots, o_r)$, by an explicit
+$\ell \times \ell$ multiplication table satisfying closure, associativity,
+unique identity, and two-sided inverses, or by permutation generators in $S_d$
+generating $G$ in lexicographic order. Define the antipode involution
+$x^* = \{g^{-1} : g \in x\}$ on $\mathbb{F}_2[G]$ and the left and right regular
+representations $L(x)[h, k] = 1 \iff h k^{-1} \in x$ and
+$R(y)[h, k] = 1 \iff k^{-1} h \in y$.
+
+1. For every $x, y \in \mathbb{F}_2[G]$, $L(x)^T = L(x^*)$, $R(y)^T = R(y^*)$,
+   and $L(x) R(y) = R(y) L(x)$ over $\mathbb{F}_2$ because for every
+   $h, h' \in G$ the bijection $\phi_{h, h'}(k) = h k^{-1} h'$ with two-sided
+   inverse $\psi_{h, h'}(k') = h' (k')^{-1} h$ maps the left-block overlap
+   $\{k \in G : h k^{-1} \in x \wedge k^{-1} h' \in y\}$ bijectively onto the
+   right-block overlap $\{k' \in G : k' (h')^{-1} \in x \wedge h^{-1} k' \in y\}$.
+2. Consequently, every evaluation of `L-LIFTED` (`lift_G(A, B)` with left-action
+   blocks $L(A[a, i])$, $L(A[a, i]^*)$ and right-action blocks $R(B[b, j]^*)$,
+   $R(B[b, j])$) and `L-GROUP-ALGEBRA` (`twoblock_G(a, b)` with
+   $H_X = [L(a) \mid R(b)]$ and $H_Z = [R(b^*) \mid L(a^*)] = \text{lift}_G((a), (b^*))$)
+   produces pairwise-orthogonal natural $X$- and $Z$-rows and a well-formed CSS
+   state satisfying I1–I5, with
+   $k = 2\ell - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$
+   for `L-GROUP-ALGEBRA` (reducing to $2(\ell - \mathrm{rank}[L(a) \mid L(b)])$
+   when $G$ is abelian).
+3. When $G$ is abelian, $R(y) = L(y)$ entry for entry, so `L-LIFTED` and
+   `L-GROUP-ALGEBRA` coincide identically with their §4.34 definitions on cyclic
+   orders.
+4. For `L-BALANCED` (`balanced_G(H_1, \alpha_1; H_2, \alpha_2)`), when $\alpha_1$
+   is a right action of $G$ on $H_1$ ($\alpha_1(g h) = \alpha_1(h) \circ \alpha_1(g)$)
+   and $\alpha_2$ is a left action of $G$ on $H_2$
+   ($\alpha_2(g h) = \alpha_2(g) \circ \alpha_2(h)$) under which $H_1$ and $H_2$
+   are equivariant, the diagonal map
+   $\Phi_g(x, y) = (\alpha_1(g)(x), \alpha_2(g)^{-1}(y))$ is a right action of
+   $G$ ($\Phi_h \circ \Phi_g = \Phi_{g h}$) that commutes with the hypergraph-product
+   differentials $\partial_2^P$ and $\partial_1^P$, so the orbit quotients satisfy
+   $\bar\partial_1 \bar\partial_2 = 0$ over $\mathbb{F}_2$ and the output state is
+   well-formed.
+
+**Hypotheses.** Well-typed finite group presentation (cyclic orders, valid
+Cayley table, or permutation generators); for `L-BALANCED`, valid right/left
+group homomorphisms and matrix equivariance.
+
+**Conclusion.** Output states satisfy I1–I5, ambient containment, and exact $n$
+and $k$ counts on every finite group input; abelian cyclic-order inputs are
+preserved without change.
+
+**Dependencies.** [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.34,
+§4.35, §4.44; `OBL-WELL-FORMEDNESS-PRESERVATION`.
+
+**Known edge cases and counterexamples.** In a nonabelian group $G$, replacing
+$R(b)$ by $L(b)$ in $[L(a) \mid R(b)]$ breaks orthogonality whenever
+$a b \neq b a$ in $\mathbb{F}_2[G]$ (for example in $S_3$ with $a = \{(1\,2)\}$
+and $b = \{(1\,2\,3)\}$, $L(a) L(b) \neq L(b) L(a)$ whereas
+$L(a) R(b) = R(b) L(a)$ holds identically). Moreover, the abelian closed form
+$k = 2(|G| - \mathrm{rank}[L(a) \mid R(b)])$ is **false** over general
+nonabelian groups: over $D_4$ (order 8) with $a = \{1, 3, 5, 7\}$ and
+$b = \{2, 3, 5, 6\}$, $\mathrm{rank}[L(a) \mid R(b)] = 4$ while
+$\mathrm{rank}[R(b^*) \mid L(a^*)] = \mathrm{rank}[L(b) \mid R(a)] = 3$,
+giving odd $k = 16 - 4 - 3 = 9 \neq 8$. A multiplication table violating
+associativity or inverse uniqueness, or permutations in `L-BALANCED` violating
+the homomorphism law $\alpha_1(g h) = \alpha_1(h) \circ \alpha_1(g)$ or
+$\alpha_2(g h) = \alpha_2(g) \circ \alpha_2(h)$, is rejected at input validation.
+
+---
+
+## `OBL-CONDITIONAL-CONSTRUCTOR-CELLS` — Conditional distance cells and factor-to-child witness lifting for admitted constructors
+
+**Taxonomy IDs:** `L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`.
+
+**Semantic-contract field:** admission rule item 6 (`sector-distance-honest`)
+and item 7 (`full-distance-honest`) at constructor roots (`JUDGMENT_LAYER.md`
+§2g and §2g.1).
+
+**Claim shape:** `lower-bound` (conditional on externally supplied factor or
+classical lower bounds, with `status: "conditional"` and named `source`) and
+`upper-bound` (earned by deterministic factor-to-child witness lifting
+validated on the constructed state).
+
+**Classification:** conditional judgment-cell specification and witness-lifting
+soundness theorem.
+
+**Evidence status:** `conditional` for the lower-bound cells (the constructor
+computes no distance and the consumer validates input shape and consistency with
+witnesses, not the truth of supplied classical or factor lower bounds; classical
+proofs cited from Tillich–Zémor 2014, Steane 1996, Grassl–Beth 1999,
+Bravyi–Hastings 2014 / Audoux–Couvreur 2019, and §4.45); `proved` for the
+validity of the lifted witnesses on the constructed state (§4.45) and for interval
+soundness under the cell hypotheses (`lean/CodeCalculus/PricedInterval.lean`).
+
+**Introduced in:** `v0.4.0` target (2026-11-22, axis 3).
+
+**Intended mechanization status:** machine-checked in Lean 4
+(`lean/CodeCalculus/PricedInterval.lean`, no `sorry`, no `native_decide`):
+`constructedLedger`, `hgpConditionalLedger`, `nestedConditionalLedger`,
+`concatConditionalLedger` (with `concatEffOut` for general `k_in ≥ 1` and
+outer block-distance bounds), `productDirectConditionalLedger`,
+`productConditionalLedger`, `doubleConditionalLedger`, and their soundness
+theorems `constructedLedger_sound`, `hgpConditionalLedger_sound`,
+`nestedConditionalLedger_sound`, `concatConditionalLedger_sound`,
+`productDirectConditionalLedger_sound`, `productConditionalLedger_sound`, and
+`doubleConditionalLedger_sound`; executable consumer implementation in
+`machine/intervals.py` (`DistanceLedger.for_constructed`) and
+`machine/constructors.py` (`lift_hgp_witnesses`, `lift_nested_witnesses`,
+`lift_concat_witnesses`, `lift_product_witnesses`, `lift_double_witnesses`),
+tested in `machine/test_constructors.py`.
+
+**Statement.** At a constructed root (`JUDGMENT_LAYER.md` §2g.1 and
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.45):
+
+1. **Conditional lower-bound cells:** When a constructor cell is supplied with
+   positively signed input bounds and a non-empty `source`:
+   - `L-HGP`: from classical distances $(d_1, d_1^T, d_2, d_2^T)$ of
+     $(\ker H_1, \ker H_1^T, \ker H_2, \ker H_2^T)$ (with $+\infty$ for a trivial
+     kernel), $d_X \ge \min(d_2, d_1^T)$, $d_Z \ge \min(d_1, d_2^T)$, and
+     $d \ge \min(d_1, d_2, d_1^T, d_2^T)$ when $k > 0$.
+   - `L-NESTED-CSS`: from classical distances $(d(\ker H_Z), d(\ker H_X))$ (or
+     coset distances $(d^\perp_Z, d^\perp_X)$), $d_X \ge d(\ker H_Z)$ and
+     $d_Z \ge d(\ker H_X)$.
+   - `A-CONCAT`: from outer and inner sector lower bounds
+     $(\ell_{O,X}, \ell_{O,Z})$, $(\ell_{I,X}, \ell_{I,Z})$, inner logical
+     count $k_{\mathrm{in}}$, and optional outer block-distance bounds
+     $(\ell_{\mathrm{block},X}, \ell_{\mathrm{block},Z})$,
+     $d_\sigma \ge \max(\lceil \ell_{O,\sigma}/k_{\mathrm{in}}\rceil, \ell_{\mathrm{block},\sigma}) \cdot \ell_{I,\sigma}$
+     (equaling $\ell_{O,\sigma} \cdot \ell_{I,\sigma}$ when $k_{\mathrm{in}} = 1$)
+     and $d \ge \min(d_X, d_Z)$.
+   - `A-PRODUCT`: under an explicit display-specific homological-product
+     certificate (`display_certificate`) for the chosen displays of $A$ and $B$,
+     accepts either direct sourced Audoux–Couvreur lower bounds
+     $d_X \ge \ell_X, d_Z \ge \ell_Z$ (`d_X`, `d_Z`), or multiplicative
+     display-certified factor bounds
+     $d_X \ge \underline d_{A,X}\underline d_{B,X}$ and
+     $d_Z \ge \underline d_{A,Z}\underline d_{B,Z}$ when the display certificate
+     licenses multiplicative scaling (multiplicative scaling is not automatic
+     from factor distances alone).
+   - `A-DOUBLE`: for the empty wiring $w = \varnothing$, from parent sector lower
+     bounds $(\underline d_{C,X}, \underline d_{C,Z})$,
+     $d_X \ge \underline d_{C,X}$, $d_Z \ge \underline d_{C,Z}$ when $s$ is
+     absent and $d_X \ge \min(\underline d_{C,X}, \underline d_{C,Z})$,
+     $d_Z \ge \min(\underline d_{C,X}, \underline d_{C,Z})$ when
+     $s = \text{conjugate}$; for a non-empty wiring $w \neq \varnothing$, only an
+     explicit twisted-double certificate is accepted.
+2. **Factor-to-child witness lifting:** Each of the five constructors admits a
+   deterministic witness-lifting procedure (§4.45) that maps nontrivial kernel vectors
+   or validated factor witnesses to candidate logical supports on the constructed
+   state. Every lifted candidate that passes `validate_witness` on the constructed
+   state is a genuine logical operator of the child code and tightens the upper
+   endpoint of its sector (and full) distance interval.
+3. **Refusal on contradiction:** If any supplied or derived conditional lower
+   endpoint exceeds the weight of a validated witness in the same sector (or full
+   distance), `DistanceLedger.for_constructed` raises `NoDerivation`.
+
+**Hypotheses.** The constructed state $C$ is well-formed (`OBL-WELL-FORMEDNESS-PRESERVATION`);
+any conditional lower-bound cell carries positive integer bounds and a non-empty
+`source` string; any lifted or supplied witness passes `validate_witness(C, \sigma, S)`.
+
+**Conclusion.** Whenever the conditional cell hypotheses hold for the input
+factors/matrices and the validated witnesses belong to the constructed state, the
+resulting ledger satisfies `LedgerSound` ($d_X(C) \in [\underline d_X, \overline d_X]$,
+$d_Z(C) \in [\underline d_Z, \overline d_Z]$, $d(C) \in [\underline d, \overline d]$).
+
+**Dependencies.** [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.34,
+§4.35, §4.36, §4.45; [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2g, §2g.1;
+`OBL-WELL-FORMEDNESS-PRESERVATION`.
+
+**Known edge cases and counterexamples.** For `A-CONCAT` with $k_{\mathrm{in}} > 1$,
+multiple qubits of a single outer logical operator can reside in the same inner
+block, so the naive product $d_{O,\sigma} \cdot d_{I,\sigma}$ is false in
+general (for example, concatenating `[[4, 2, 2]]` with `[[4, 2, 2]]` using
+$k_{\mathrm{in}} = 2$ and blocks `[(0, 1), (2, 3)]` gives $d_X = d_Z = 2 = \lceil 2/2\rceil \cdot 2 < 2 \cdot 2$,
+and an over-claimed bound of $4$ is caught and refused by the lifted weight-2
+witness). For `A-PRODUCT`, the output state
+depends on the chosen displays of $A$ and $B$ up to an invertible linear map on
+the outer blocks $Q_A^Z \times Q_B^X$ and $Q_A^X \times Q_B^Z$ (§4.35), so a
+product distance bound is a display-specific conditional hypothesis and does not
+transfer across display changes (`P-REBASE`). For `A-DOUBLE` with a non-empty
+wiring $w \neq \varnothing$, sheet-0 and sheet-1 incidences are coupled and can
+annihilate or reduce logical weights, so the empty-wiring inheritance rule does
+not apply without an explicit twisted-double certificate.
+
 
 ---
 

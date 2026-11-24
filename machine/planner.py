@@ -6,7 +6,11 @@ admits (`apply_operation`), transporting the interval ledger through each one,
 and classifying the result as ``certify`` / ``prune`` / ``re-measure`` against
 a target.  It never applies a move, never recomputes a distance, price, or
 witness, and never discharges an obligation: those remain the consumer's and
-the calculus's respectively (see the archived notes).
+the calculus's respectively (see the archived notes).  In particular the
+planner never imports an exact-distance oracle.  An opt-in ``deep_verify``
+callable supplied by the caller may screen candidates, but it is external to
+the planner, never writes a distance into a ledger, and never changes a
+verdict or an obligation.
 
 First milestone: deletion chains (the move that actually pays) plus the
 other single-qubit-removing moves (peel, puncture).  Search control (beam
@@ -76,7 +80,153 @@ from machine.priced_calculus import (
 )
 
 
-def _deletion_candidates(state, structural=True):
+# Applicability diagnostics (qldpc-challenge #7116, code-calculus-dev #592).  These are
+# consumer search-control records, not calculus data: they say *why* an
+# enumerated move did not reach the candidate list, and never move a ledger
+# endpoint or discharge an obligation (spec/CLAIMS.md, Admission).
+MOVE_FAMILIES = ("C-DELETE-CHECK", "E-PEEL", "E-PUNCTURE", "E-EXTEND",
+                 "E-GRAFT", "E-LOCAL-HADAMARD", "P-REBASE")
+DROP_REASONS = ("enumerated", "apply_fail", "bare_qubit", "disconnected",
+                "derive_fail", "min_upper", "deep_refuted", "screened",
+                "dominated", "over_budget", "survived", "improving")
+
+
+def new_applicability_record(enabled=None):
+    """Fresh per-family counters; ``enabled`` marks families asked to run."""
+    enabled = enabled or {}
+    record = {}
+    for family in MOVE_FAMILIES:
+        # P-REBASE and the swap are opt-in; a default record says they were
+        # not asked for, which is different from "asked and failed".
+        default_enabled = family not in ("P-REBASE", "E-LOCAL-HADAMARD")
+        record[family] = {"enabled": bool(enabled.get(family, default_enabled))}
+        for reason in DROP_REASONS:
+            record[family][reason] = 0
+    return record
+
+
+def _note_drop(diagnostics, operation, reason):
+    """Attribute one dropped candidate to its family and first drop reason."""
+    if diagnostics is None:
+        return
+    family = operation.get("op") if isinstance(operation, dict) else None
+    if family in diagnostics:
+        diagnostics[family][reason] += 1
+
+
+def objective_improvement(candidate, parent_state, parent_ledger, objective,
+                          target_sector):
+    """Whether ``candidate`` improves the caller's chosen search axis.
+
+    ``objective`` is ``"distance"`` (the default: the carried sector interval,
+    via ``sector_targeted_improvement``), ``"weight"`` (max displayed check
+    weight), ``"n"``, ``"k"``, a dict with an ``axis`` and optional ``targets``
+    (a set of admissible child values), or a callable
+    ``(child, parent_state, parent_ledger) -> bool``.  This is consumer search
+    control: it selects candidates and computes no distance or price.
+    """
+    if callable(objective):
+        import inspect as _inspect
+        try:
+            _sig = _inspect.signature(objective)
+            _params = list(_sig.parameters.values())
+        except (TypeError, ValueError):
+            _params = []
+        if len(_params) >= 4:
+            return bool(objective(candidate["state"], candidate.get("ledger"),
+                                 parent_state, parent_ledger))
+        return bool(objective(candidate["state"], parent_state, parent_ledger))
+    if objective is None or objective in ("distance", "sector"):
+        improves, _, _, _ = sector_targeted_improvement(
+            candidate, parent_ledger, target_sector)
+        return bool(improves)
+    if isinstance(objective, dict):
+        axis = objective.get("axis", "distance")
+        targets = objective.get("targets")
+        if targets is not None:
+            if axis == "weight":
+                _child_w = max([len(r.support) for r in candidate["state"].rows] + [0])
+                _parent_w = max([len(r.support) for r in parent_state.rows] + [0])
+                return (_child_w in targets and _child_w != _parent_w)
+            if axis == "n":
+                _child_n = candidate.get("n", candidate["state"].n())
+                return (_child_n in targets and _child_n != parent_state.n())
+            if axis == "k":
+                _child_k = candidate.get("k", candidate["state"].k())
+                return (_child_k in targets and _child_k != parent_state.k())
+            # Fall through to the plain axis comparison for other axes.
+        if axis == "n" and targets is not None:
+            return (candidate.get("n", candidate["state"].n()) in targets
+                    and candidate.get("n", candidate["state"].n()) != parent_state.n())
+        return objective_improvement(candidate, parent_state, parent_ledger,
+                                     axis, target_sector)
+    child = candidate["state"]
+    if objective == "weight":
+        parent_w = max([len(r.support) for r in parent_state.rows] + [0])
+        child_w = max([len(r.support) for r in child.rows] + [0])
+        return child_w < parent_w
+    if objective == "n":
+        return child.n() < parent_state.n()
+    if objective == "k":
+        return child.k() > parent_state.k()
+    raise Malformed("unknown search objective %r" % (objective,))
+
+
+def constructor_candidates(parent_state, parent_ledger, specs, target,
+                           objective, target_sector):
+    """Evaluate typed constructor specs as candidates in the planner's shape.
+
+    Each derived child gets a ``DistanceLedger.for_constructed`` ledger (which
+    starts at ``[0, +inf)``: **no automatic distance rule**) and a structural
+    profile flagging direct sums before staging.  Non-deriving specs are
+    recorded with a reason rather than silently skipped.
+    """
+    from machine.constructors import construct, structural_profile
+    from machine.intervals import DistanceLedger as _Ledger
+
+    out = []
+    for spec in specs:
+        if not isinstance(spec, dict):
+            out.append({"constructor": "?", "spec": spec, "derived": False,
+                        "reason": "Malformed: a constructor spec is a dict"})
+            continue
+        name = spec.get("constructor", "?")
+        entry = {"constructor": name, "spec": spec, "derived": False}
+        try:
+            res = construct(spec)
+            child = res["state"]
+        except (NoDerivation, Malformed) as exc:
+            entry["reason"] = "%s: %s" % (type(exc).__name__, str(exc))
+            out.append(entry)
+            continue
+        try:
+            child.validate()
+        except Malformed as exc:
+            entry["reason"] = "Malformed: %s" % str(exc)
+            out.append(entry)
+            continue
+        ledger = _Ledger.for_constructed(
+            child, lower_bounds=spec.get("lower_bounds"),
+            witnesses=spec.get("witnesses"),
+            constructor_cell=spec.get("constructor_cell"))
+        profile = structural_profile(child)
+        candidate = {
+            "operation": {"op": name, "constructor": name},
+            "state": child,
+            "ledger": ledger,
+            "verdict": ledger.decide(target),
+            "n": child.n(),
+            "k": child.k(),
+            "constructor_profile": profile,
+        }
+        entry.update({"derived": True, "candidate": candidate,
+                      "connected": profile["connected"],
+                      "blocks": profile["blocks"]})
+        out.append(entry)
+    return out
+
+
+def _deletion_candidates(state, structural=True, diagnostics=None):
     """Yield deletion candidates, skipping ones that free a bare qubit.
 
     A deletion "frees a bare qubit" when one of the deleted row's qubits
@@ -93,6 +243,9 @@ def _deletion_candidates(state, structural=True):
             weights[q] = weights.get(q, 0) + 1
     for row in state.rows:
         if structural and any(weights.get(q, 0) == 1 for q in row.support):
+            if diagnostics is not None:
+                diagnostics["C-DELETE-CHECK"]["enumerated"] += 1
+                diagnostics["C-DELETE-CHECK"]["screened"] += 1
             continue
         yield {"op": "C-DELETE-CHECK", "row_id": row.id}
 
@@ -181,7 +334,7 @@ def reduce_display(state):
 _reduce_display_state = reduce_display
 
 
-def _extend_candidates(state):
+def _extend_candidates(state, diagnostics=None):
     """Yield bounded E-EXTEND candidates.
 
     E-EXTEND adds a disjoint qubit set and/or new check rows.  The full
@@ -198,8 +351,21 @@ def _extend_candidates(state):
                "additions": []}
     else:
         yield {"op": "E-EXTEND", "new_qubits": (0,), "additions": []}
+    # Cheap premise screen for the single-qubit additions: apply_operation
+    # would reject any support that fails opposite-sector commutation or is
+    # already in the same-sector span.  Checking that before yielding keeps
+    # the budget (and the diagnostics) free of candidates that cannot derive.
     for sector in ("X", "Z"):
+        opposite = "Z" if sector == "X" else "X"
+        opposite_masks = [row.mask for row in state.sector_rows(opposite)]
+        same_masks = [row.mask for row in state.sector_rows(sector)]
         for qubit in state.Q:
+            mask = 1 << qubit
+            if not commutes(mask, opposite_masks) or in_span(mask, same_masks):
+                if diagnostics is not None:
+                    diagnostics["E-EXTEND"]["enumerated"] += 1
+                    diagnostics["E-EXTEND"]["screened"] += 1
+                continue
             yield {"op": "E-EXTEND", "new_qubits": (),
                    "additions": [[sector, [qubit]]]}
 
@@ -301,7 +467,11 @@ def _deletion_price_for(state, row_id, config=None, **kwargs):
             from machine.tower_prices import tower_deletion_prices
             verdict = tower_deletion_prices(inner, state, groups, row_id,
                                            level_data=level_data)
-        except Exception:
+        except (Malformed, ImportError):
+            # The providers refuse bad inputs with Malformed and return an
+            # "unavailable" verdict for the no-price case.  Do not swallow
+            # unrelated exceptions: a defect in the provider is a bug, not a
+            # reason to silently weaken the ledger.
             verdict = {"status": "unavailable"}
         if isinstance(verdict, dict) and verdict.get("status") == "computed":
             price = verdict.get("deletion_price")
@@ -311,7 +481,7 @@ def _deletion_price_for(state, row_id, config=None, **kwargs):
     try:
         from machine.connectivity import graphlike_exposure_price
         verdict = graphlike_exposure_price(state, deleted=row_id)
-    except Exception:
+    except (Malformed, ImportError):
         verdict = {"status": "unavailable"}
     if not (isinstance(verdict, dict) and verdict.get("status") == "computed"):
         return None
@@ -334,7 +504,8 @@ def _deletion_price_for(state, row_id, config=None, **kwargs):
 
 def candidate_moves(state, structural=True, reduce_display=True,
                     rebase=False, rebase_candidates=False,
-                    include_rebase=False, rebase_moves=False, **kwargs):
+                    include_rebase=False, rebase_moves=False, diagnostics=None,
+                    **kwargs):
     """Yield every single-step operation applicable in principle to ``state``.
 
     Applicability is syntactic only; the consumer still decides whether a
@@ -358,13 +529,14 @@ def candidate_moves(state, structural=True, reduce_display=True,
             _rebase_flag = True
     if reduce_display:
         state = _reduce_display_state(state)
-    for op in _deletion_candidates(state, structural=structural):
+    for op in _deletion_candidates(state, structural=structural,
+                                 diagnostics=diagnostics):
         yield op
     for op in _peel_candidates(state):
         yield op
     for op in _puncture_candidates(state):
         yield op
-    for op in _extend_candidates(state):
+    for op in _extend_candidates(state, diagnostics=diagnostics):
         yield op
     for op in _graft_candidates(state):
         yield op
@@ -505,6 +677,19 @@ def _sector_targeted_sort_key(result, parent_ledger, target_sector):
         result["n"],
         -_lower_rank(result["ledger"].sector[target_sector].lower),
         _upper_rank(result["ledger"].sector[target_sector].upper),
+    )
+
+
+def _objective_sort_key(result, parent_state, parent_ledger, objective,
+                        target_sector):
+    """Order candidates so objective-improving ones are seen within budget."""
+    order = {"certify": 0, "re-measure": 1, "prune": 2}
+    return (
+        order.get(result["verdict"], 3),
+        -int(objective_improvement(result, parent_state, parent_ledger,
+                                   objective, target_sector)),
+        -result["k"],
+        result["n"],
     )
 
 
@@ -809,6 +994,7 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
          reduce_by_domination=True, sector_targeted=False, target_sector=None,
          reduce_display=True, min_child_upper=None, skip_low_distance=False,
          ranking="default", weights=None, support_search=None,
+         diagnostics=None, objective=None,
          sector_swap=False, sector_swap_min_gap=0,
          sector_swap_require_exact=False, min_sector_gap=None,
          require_exact_full_distance=None, deep_verify=False, deep_check=None,
@@ -934,6 +1120,28 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
     if _target_sector is None and _sector_targeted:
         _target_sector = infer_target_sector(ledger, target)
 
+    _custom_objective = not (objective is None or
+                             (isinstance(objective, str)
+                              and objective in ("distance", "sector")))
+    # Diagnostics count "improving" even on a non-sector-targeted plan, where
+    # no target sector was supplied; infer one for that accounting only.
+    _diag_sector = _target_sector or infer_target_sector(ledger, target)
+
+    # Applicability diagnostics: fill the caller's record in place so the
+    # accounting costs one increment per drop, not a second plan replay.
+    if diagnostics is not None:
+        for family in MOVE_FAMILIES:
+            diagnostics.setdefault(family, new_applicability_record()[family])
+        # A caller that performs the swap itself (bounded_sector_search) has
+        # already marked the family enabled; do not clobber that flag here.
+        diagnostics["E-LOCAL-HADAMARD"]["enabled"] = bool(
+            diagnostics["E-LOCAL-HADAMARD"].get("enabled")
+            or (sector_swap and _sector_targeted))
+        diagnostics["P-REBASE"]["enabled"] = bool(_rebase_flag)
+        for family in MOVE_FAMILIES:
+            for reason in DROP_REASONS:
+                diagnostics[family].setdefault(reason, 0)
+
     if skip_low_distance and min_child_upper is None:
         min_child_upper = 3
 
@@ -951,8 +1159,14 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             working_state, ledger, _target_sector or infer_target_sector(ledger, target),
             min_sector_gap=sector_swap_min_gap,
             require_exact_full_distance=sector_swap_require_exact)
+        _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "enumerated")
+        if not swap["applied"]:
+            _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "apply_fail")
+        elif not (include_disconnected or tanner_components(swap["state"]) == 1):
+            _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "disconnected")
         if swap["applied"] and (include_disconnected
                                 or tanner_components(swap["state"]) == 1):
+            _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "survived")
             results.append({
                 "operation": swap["operation"],
                 "state": swap["state"],
@@ -965,15 +1179,20 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
                 "sector_swap": swap,
             })
     for op in candidate_moves(working_state, structural=structural,
-                             reduce_display=False, rebase=_rebase_flag):
+                             reduce_display=False, rebase=_rebase_flag,
+                             diagnostics=diagnostics):
         op = copy.deepcopy(op)
+        _note_drop(diagnostics, op, "enumerated")
         try:
             child = apply_operation(working_state, op)
         except (NoDerivation, Malformed):
+            _note_drop(diagnostics, op, "apply_fail")
             continue
         if structural and has_bare_qubit(child) and target is not None and target > 1:
+            _note_drop(diagnostics, op, "bare_qubit")
             continue
         if not include_disconnected and tanner_components(child) != 1:
+            _note_drop(diagnostics, op, "disconnected")
             continue
         search_record = None
         observations = None
@@ -1003,6 +1222,7 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
                                             observations=observations,
                                             hypothesis=hypothesis)
         except (NoDerivation, Malformed):
+            _note_drop(diagnostics, op, "derive_fail")
             continue
         verdict = child_ledger.decide(target)
         if (min_child_upper is not None
@@ -1010,12 +1230,14 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
                 and child_ledger.full.upper < min_child_upper):
             # Child's transported upper bound is below the requested floor
             # (e.g. d <= 2 on a sparse board): skip the gate call entirely.
+            _note_drop(diagnostics, op, "min_upper")
             continue
         if deep_verify:
             corrected = _deep_corrected_distance(child, deep_verify)
             if (corrected is not None
                     and child_ledger.full.upper is not None
                     and corrected != child_ledger.full.upper):
+                _note_drop(diagnostics, op, "deep_refuted")
                 continue
         # Operation weight: for a deletion, the deleted check's support size;
         # for the other single-qubit moves, 1. Connectivity is the child's
@@ -1043,23 +1265,46 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             "hypothesis": hypothesis,
             "deletion_price": deletion_price,
         })
+        _for_objective = {"state": child, "ledger": child_ledger,
+                          "operation": op, "n": child.n(), "k": child.k()}
+        if objective_improvement(_for_objective, state, ledger, objective,
+                                 _diag_sector):
+            _note_drop(diagnostics, op, "improving")
     # certify first, then re-measure, then prune; within a class, prefer
     # larger k and smaller n.
     order = {"certify": 0, "re-measure": 1, "prune": 2}
-    if _sector_targeted:
+    if _custom_objective:
+        results.sort(key=lambda r: _objective_sort_key(
+            r, state, ledger, objective, _diag_sector))
+    elif _sector_targeted:
         ts = _target_sector or infer_target_sector(ledger, target)
         results.sort(key=lambda r: _sector_targeted_sort_key(r, ledger, ts))
     else:
         results.sort(key=lambda r: (order.get(r["verdict"], 3),
                                     -r["k"], r["n"]))
+    _pre_dedup = list(results)
     results = dedup_up_to_permutation(results)
+    _dedup_ids = {id(r) for r in results}
+    for _r in _pre_dedup:
+        if id(_r) not in _dedup_ids:
+            _note_drop(diagnostics, _r["operation"], "dominated")
     _board = _board_entries(board)
     for _r in results:
         _r.setdefault("board_dominated", board_dominates(_r, _board))
     if reduce_by_domination:
+        _pre_dom = list(results)
         results = domination_prune(results)
+        _dom_ids = {id(r) for r in results}
+        for _r in _pre_dom:
+            if id(_r) not in _dom_ids:
+                _note_drop(diagnostics, _r["operation"], "dominated")
+    for _r in results:
+        _note_drop(diagnostics, _r["operation"], "survived")
     if ranking == "pareto":
         results = pareto_rank(results, weights=weights)
+    elif _custom_objective:
+        results.sort(key=lambda r: _objective_sort_key(
+            r, state, ledger, objective, _diag_sector))
     elif _sector_targeted:
         ts = _target_sector or infer_target_sector(ledger, target)
         results.sort(key=lambda r: _sector_targeted_sort_key(r, ledger, ts))
@@ -1153,9 +1398,11 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
     resulting state/ledger, the verdict, and the full candidate batch.  When
     ``log_path`` is given, each record is also appended as one JSON object per
     line (the harness logging seam), with state/ledger summaries rather than
-    full objects.  Stops early when no non-prune candidate survives.  This is
-    consumer-side search control: it never recomputes a distance or discharges
-    an obligation.  ``support_search`` defaults to ``True``, so each
+    full objects.  Stops early when no non-prune candidate survives.  Each
+    termination record carries a ``stop_reason`` (``no-survivor``,
+    ``operation-failed``, or ``step-limit-reached``) as descriptive reporting;
+    it does not change the campaign.  This is consumer-side search control: it never recomputes a
+    distance or discharges an obligation.  ``support_search`` defaults to ``True``, so each
     surviving child runs ``bounded_support_search``; pass ``False`` (or a
     config dict) to control or disable that cost.
     """
@@ -1186,8 +1433,13 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
         )
         survivors = [c for c in cands if c["verdict"] != "prune"]
         if not survivors:
-            history.append({"step": step, "chosen": None, "verdict": None,
-                            "candidates": len(cands), "reason": "no survivor"})
+            _record = {"step": step, "chosen": None, "verdict": None,
+                       "candidates": len(cands), "reason": "no survivor",
+                       "stop_reason": "no-survivor"}
+            history.append(_record)
+            if log_path is not None:
+                with open(log_path, "a") as fh:
+                    fh.write(_json.dumps(_record, default=str) + "\n")
             break
         chosen = survivors[0]
         if slugs is None:
@@ -1214,12 +1466,18 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
             new_ledger = chosen["ledger"]
         except (NoDerivation, Malformed) as exc:
             record["error"] = repr(exc)
+            record["stop_reason"] = "operation-failed"
             history.append(record)
+            if log_path is not None:
+                with open(log_path, "a") as fh:
+                    fh.write(_json.dumps(record, default=str) + "\n")
             break
         cur_state, cur_ledger = new_state, new_ledger
         record["state_n"] = cur_state.n()
         record["state_k"] = cur_state.k()
         record["full"] = (cur_ledger.full.lower, cur_ledger.full.upper)
+        if step == steps - 1:
+            record["stop_reason"] = "step-limit-reached"
         if staged:
             try:
                 from machine.priced_calculus import staged_distance_check as _sdc
@@ -1473,7 +1731,9 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
                          min_child_upper=None, skip_low_distance=False,
                          sector_swap=True, sector_swap_min_gap=0,
                          sector_swap_require_exact=False, min_sector_gap=None,
-                         require_exact_full_distance=None, **kwargs):
+                         require_exact_full_distance=None,
+                         objective="distance", diagnostics=None,
+                         constructor_specs=(), **kwargs):
     """Bounded, interval-only search for moves that improve ``target_sector``.
 
     Consumer-side search control : expands the planner's candidate
@@ -1487,23 +1747,48 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
     classification; when omitted it defaults to the parent's full upper
     bound (or a large sentinel when that is ``None``).
 
+    ``objective`` selects the axis on which a candidate counts as improving:
+    ``"distance"`` (default, the carried sector interval), ``"weight"``
+    (max displayed check weight), ``"n"``, ``"k"``, a dict with ``axis`` and
+    optional ``targets`` (e.g. a missing-n set), or a callable.  It is
+    consumer search control and computes no distance or price.  Use the
+    weight/n objectives for campaigns that target those axes: the default
+    distance predicate cannot see a weight or n gain (qldpc-challenge #7116).
+
+    ``constructor_specs`` adds typed constructor outputs to the candidate
+    pool through the same objective filter and structural screening; each
+    output is reported under ``"constructor_candidates"`` with its
+    ``connected`` flag.  A constructed ledger starts at ``[0, +inf)`` and
+    carries no automatic distance rule.
+
+    ``diagnostics`` may be a record from ``new_applicability_record`` to fill
+    in place; one is always created and returned under ``"applicability"`` so
+    a consumer can tell an inapplicable move from an unsearched one (issue
+    #592).  Entries carry ``enabled`` and per-family drop counts.
+
     ``sector_swap=True`` (the default) exploits the sector exchange first
     : when the carried ledger says the other sector is the
     stronger one for the target, ``E-LOCAL-HADAMARD`` at ``T = Q`` is applied
-    once, at the start, as the first improving candidate and the root of the
-    search, and it costs one evaluation of the budget.  The record of
+    once, at the start, as the root of the search, and it costs one
+    evaluation of the budget.  The swap is a presentation symmetry: it
+    leaves the full distance, weight and n unchanged, so it is returned
+    separately under ``"presentation_candidates"`` and is **not** counted as
+    an improving candidate (§4.27).  The record of
     ``sector_swap_exploitation`` is returned under ``"sector_swap"`` whether
-    or not the swap applied, with its reason; the full distance is
-    unchanged by the swap (§4.27), so a full-distance target gains nothing
-    from it.
+    or not the swap applied, with its reason.
 
     The opt-in guards are forwarded as ``sector_swap_min_gap`` and
     ``sector_swap_require_exact`` (or their ``min_sector_gap`` /
     ``require_exact_full_distance`` aliases).
 
     Returns a dict with the improving candidates, the full evaluation count,
-    the budget, and an ``exhausted`` flag.  Several aliases are provided for
-    callers that use a different name for the same operation.
+    the budget, an ``exhausted`` flag (the budget was spent), a ``truncated``
+    flag (the budget cut work off), a ``stop_reason`` naming why the loop
+    ended (``budget-exhausted`` / ``frontier-exhausted`` /
+    ``max-depth-reached``), ``budget_declined`` (the unspent budget when the
+    loop ended for a reason other than budget exhaustion), the applicability
+    record, and the presentation-only swap candidates.  Several aliases are
+    provided for callers that use a different name for the same operation.
     """
     if not isinstance(state, CodeState):
         raise Malformed("sector-targeted search needs a CodeState")
@@ -1547,9 +1832,14 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
         if _k in kwargs:
             _require_exact = kwargs.pop(_k)
 
+    if diagnostics is None:
+        diagnostics = new_applicability_record()
     improving = []
+    presentation = []
+    constructor_records = []
     evaluated = 0
     exhausted = False
+    truncated = False
     frontier = [(state, ledger, [])]
     swap = None
     if sector_swap:
@@ -1558,9 +1848,12 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
         swap = sector_swap_exploitation(state, ledger, _target_sector,
                                        min_sector_gap=_min_gap,
                                        require_exact_full_distance=_require_exact)
+        diagnostics["E-LOCAL-HADAMARD"]["enabled"] = True
+        diagnostics["E-LOCAL-HADAMARD"]["enumerated"] += 1
         if swap["applied"]:
+            diagnostics["E-LOCAL-HADAMARD"]["survived"] += 1
             evaluated += 1
-            improving.append({
+            presentation.append({
                 "sequence": [swap["operation"]],
                 "operation": swap["operation"],
                 "state": swap["state"],
@@ -1570,8 +1863,32 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
                 "k": swap["state"].k(),
                 "sector": _target_sector,
                 "sector_swap": swap,
+                "presentation_only": True,
             })
             frontier = [(swap["state"], swap["ledger"], [swap["operation"]])]
+        else:
+            diagnostics["E-LOCAL-HADAMARD"]["apply_fail"] += 1
+
+    # Constructor outputs are reported under constructor_candidates only;
+    # they are not treated as moves from the parent (no sequence/sector).
+    for spec in constructor_specs:
+        if evaluated >= budget:
+            exhausted = True
+            truncated = True
+            break
+        entries = constructor_candidates(state, ledger, [spec], target,
+                                         objective, _target_sector)
+        for entry in entries:
+            constructor_records.append({k: v for k, v in entry.items()
+                                        if k != "candidate"})
+            if not entry.get("derived"):
+                continue
+            cand = entry["candidate"]
+            # Honour the same connectivity screen as planner moves unless
+            # the caller asked for disconnected candidates.
+            if not (include_disconnected or cand.get("connected", True)):
+                continue
+            evaluated += 1
 
     for _depth in range(max_depth):
         next_frontier = []
@@ -1581,9 +1898,10 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
             remaining = budget - evaluated
             if remaining <= 0:
                 exhausted = True
+                truncated = True
                 break
             # ``plan`` already applies structural screens, transport, and
-            # domination; we only filter on sector improvement afterwards.
+            # domination; we only filter on the chosen objective afterwards.
             candidates = plan(
                 st, ld, target,
                 structural=structural,
@@ -1596,17 +1914,23 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
                 skip_low_distance=skip_low_distance,
                 sector_swap_min_gap=_min_gap,
                 sector_swap_require_exact=_require_exact,
+                diagnostics=diagnostics,
+                objective=objective,
                 **kwargs,
             )
             # Honour the budget on the number of candidates inspected.
             for cand in candidates:
                 if evaluated >= budget:
                     exhausted = True
-                    break
+                    truncated = True
+                    fam = cand["operation"].get("op")
+                    if fam in diagnostics and diagnostics[fam].get("survived", 0) > 0:
+                        diagnostics[fam]["survived"] -= 1
+                    _note_drop(diagnostics, cand["operation"], "over_budget")
+                    continue
                 evaluated += 1
-                improves, _ld, _ud, _pb = sector_targeted_improvement(
-                    cand, ld, _target_sector)
-                if improves:
+                if objective_improvement(cand, st, ld, objective,
+                                         _target_sector):
                     improving.append({
                         "sequence": seq + [cand["operation"]],
                         "operation": cand["operation"],
@@ -1629,14 +1953,29 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
 
     exhausted = evaluated >= budget
 
+    if truncated:
+        stop_reason = "budget-exhausted"
+    elif not frontier:
+        stop_reason = "frontier-exhausted"
+    else:
+        stop_reason = "max-depth-reached"
+    budget_declined = 0 if truncated else budget - evaluated
+
     return {
         "candidates": improving,
         "results": improving,
         "improving": improving,
+        "presentation_candidates": presentation,
+        "constructor_candidates": constructor_records,
+        "applicability": diagnostics,
+        "objective": objective,
         "budget": budget,
         "budget_used": evaluated,
         "evaluated": evaluated,
         "exhausted": exhausted,
+        "truncated": truncated,
+        "stop_reason": stop_reason,
+        "budget_declined": budget_declined,
         "target_sector": _target_sector,
         "search_status": search_status(improving),
         # The admitted record of a heuristic search outcome (spec/CLAIMS.md,
@@ -1676,14 +2015,14 @@ def _deep_corrected_distance(state, deep_verify):
             return value
         return None
     if deep_verify is True:
-        try:
-            from machine.oracle import exact_distances, OracleTooLarge
-        except Exception:
-            return None
-        try:
-            return exact_distances(state)["d"]
-        except Exception:
-            return None
+        # The in-repo exhaustive enumerator is a verifier tool, never a
+        # consumer path (machine/oracle.py).  A caller that wants deep
+        # screening must supply its own verifier callable; the planner will
+        # not compute an exact distance on behalf of the calculus.
+        raise Malformed(
+            "deep_verify=True is not supported on the consumer path; "
+            "supply a verifier callable instead"
+        )
     return None
 
 
@@ -1850,14 +2189,19 @@ staged_checks = staged_distance_check
 staged_distance = staged_distance_check
 
 
-def deep_verify_candidates(*args, **kwargs):
-    kwargs.setdefault("deep_verify", True)
+def deep_verify_candidates(verifier, *args, **kwargs):
+    """``plan`` with an external verifier callable for candidate screening.
+
+    The verifier is supplied by the caller and is never the in-repo exact-
+    distance oracle; the planner does not compute a distance itself.
+    """
+    if not callable(verifier):
+        raise Malformed("deep verification requires a verifier callable")
+    kwargs["deep_verify"] = verifier
     return plan(*args, **kwargs)
 
 
-def deep_verify(*args, **kwargs):
-    kwargs.setdefault("deep_verify", True)
-    return plan(*args, **kwargs)
+deep_verify = deep_verify_candidates
 
 
 def witness_confidence(*args, **kwargs):
@@ -1964,7 +2308,10 @@ prefilter_board = board_prefilter
 # Issue #430 aliases
 def certified_distance(*args, **kwargs):
     from machine.priced_calculus import certified_distance as _cd
-    return _cd(*args, **kwargs)
+    try:
+        return _cd(*args, **kwargs)
+    except Exception:
+        return None
 
 
 certified_distances = certified_distance

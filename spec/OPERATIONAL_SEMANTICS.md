@@ -245,62 +245,74 @@ are derived in §4.34. No distance rule is attached (§4.34, *Distances*).
 
 ### `L-LIFTED`
 
-**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11;
-`transition-defined`).
+**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11; generalized to
+finite nonabelian groups 2026-11-22; `transition-defined`).
 
 $$
 \mathrm{EvalExpr}(\mathrm{lift}_G(A, B), S)
 $$
 
-Typed inputs: a finite abelian group
-$G = \mathbb{Z}_{\ell_1} \times \cdots \times \mathbb{Z}_{\ell_r}$ given by
-its cyclic orders (the empty product is the trivial group), and base
-matrices $A \in \mathbb{F}_2[G]^{m_A \times n_A}$ and
-$B \in \mathbb{F}_2[G]^{m_B \times n_B}$, an entry being a finite set of
-exponent tuples read modulo the orders, with repeated terms cancelling.
-Write $\ell = |G|$, fix the enumeration of $G$ by exponent tuples in
-lexicographic order with $\mathrm{idx}(g)$ the position of $g$, write
-$L(x)$ for the regular representation of $x \in \mathbb{F}_2[G]$ (the
-$\ell \times \ell$ binary matrix with $L(x)[h, h'] = 1$ exactly when
-$h - h'$ is a term of $x$), and $x^{*}$ for the image of $x$ under the
-involution that negates every term. Applicability: well-typed inputs only.
+Typed inputs: a finite group $G$ of order $\ell = |G|$, given either as a finite
+abelian group $G = \mathbb{Z}_{\ell_1} \times \cdots \times \mathbb{Z}_{\ell_r}$
+by its cyclic orders (the empty product is the trivial group, enumerated by
+exponent tuples in lexicographic order) or (since 2026-11-22) as a finite
+(possibly nonabelian) group by an explicit $\ell \times \ell$ multiplication
+table on $\{0, \dots, \ell - 1\}$ (or permutation generators generating a finite
+group table in lexicographic closure order), and base matrices
+$A \in \mathbb{F}_2[G]^{m_A \times n_A}$ and
+$B \in \mathbb{F}_2[G]^{m_B \times n_B}$, an entry being a finite list/set of
+elements of $G$ with repeated terms cancelling modulo $2$. With $\mathrm{idx}(g)$
+the enumeration index of $g \in G$ and $g^{-1}$ its group inverse, write
+$x^* = \sum_{g \in x} g^{-1}$ for the antipode involution on $\mathbb{F}_2[G]$,
+$L(x)$ for the **left regular representation** of $x \in \mathbb{F}_2[G]$ (the
+$\ell \times \ell$ binary matrix with $L(x)[h, k] = 1$ iff $h k^{-1}$ is a term
+of $x$, so $L(x)^T = L(x^*)$), and $R(y)$ for the **right regular
+representation** of $y \in \mathbb{F}_2[G]$ (the $\ell \times \ell$ binary
+matrix with $R(y)[h, k] = 1$ iff $k^{-1} h$ is a term of $y$, so
+$R(y)^T = R(y^*)$). When $G$ is abelian, $h k^{-1} = k^{-1} h$ (written
+additively as $h - k$), so $R(y) = L(y)$ entry for entry and abelian inputs are
+preserved conservatively. Applicability: well-typed inputs only (a table that violates closure, associativity, identity, or invertibility is malformed at the encoding).
 State update: the qubits are the left triples $(i, j, g)$ at label
 $(i n_B + j)\ell + \mathrm{idx}(g)$ and the right triples $(a, b, g)$ at
 label $n_A n_B \ell + (a m_B + b)\ell + \mathrm{idx}(g)$, so that
 $n = \ell (n_A n_B + m_A m_B)$. The natural $X$-rows, one per triple
 $(a, j, h)$, carry row $h$ of $L(A[a, i])$ on the left qubits $(i, j, g)$,
-$g \in G$, for every $i$, and row $h$ of $L(B[b, j]^{*})$ on the right qubits
+$g \in G$, for every $i$, and row $h$ of $R(B[b, j]^{*})$ on the right qubits
 $(a, b, g)$ for every $b$; the natural $Z$-rows, one per triple $(i, b, h)$,
-carry row $h$ of $L(B[b, j])$ on the left qubits $(i, j, g)$ for every $j$
+carry row $h$ of $R(B[b, j])$ on the left qubits $(i, j, g)$ for every $j$
 and row $h$ of $L(A[a, i]^{*})$ on the right qubits $(a, b, g)$ for every
 $a$. The displayed rows are the retained display with canonically minted
 identifiers, $X$-rows first. Over the trivial group the transition is
 `hgp(A, B)` read with entries $\{()\}$ for $1$ and $\varnothing$ for $0$.
-Output well-formedness and $n$ are derived in §4.34; $k$ is the rank
-bookkeeping of the output, with no closed form claimed; no distance rule
-is attached.
+Output well-formedness and $n$ are derived in §4.34 (abelian) and §4.44
+(general finite groups); $k$ is the rank bookkeeping of the output, with no
+closed form claimed; no automatic distance rule is attached.
 
 ### `L-GROUP-ALGEBRA`
 
-**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11;
-`transition-defined`).
+**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11; generalized to
+finite nonabelian groups 2026-11-22; `transition-defined`).
 
 $$
 \mathrm{EvalExpr}(\mathrm{twoblock}_G(a, b), S)
 $$
 
-Typed inputs: a finite abelian group $G$ as for `L-LIFTED` and two elements
-$a, b \in \mathbb{F}_2[G]$. Applicability: well-typed inputs only. State
-update: $n = 2\ell$, the left qubits $(0, g)$ at label $\mathrm{idx}(g)$ and
-the right qubits $(1, g)$ at label $\ell + \mathrm{idx}(g)$; the natural
-$X$-row $h$ carries row $h$ of $L(a)$ on the left and row $h$ of $L(b)$ on
-the right, and the natural $Z$-row $h$ carries row $h$ of $L(b)^{T}$ on the
-left and row $h$ of $L(a)^{T}$ on the right, so that the natural check
-matrices are $[L(a) \mid L(b)]$ and $[L(b)^{T} \mid L(a)^{T}]$; the displayed
-rows are the retained display with canonically minted identifiers. The
-transition equals, row for row, `lift_G((a), (b^*))` (§4.34). Output
-well-formedness and $k = 2(\ell - \mathrm{rank}[L(a) \mid L(b)])$ are
-derived in §4.34; no distance rule is attached.
+Typed inputs: a finite group $G$ (abelian by cyclic orders, or nonabelian via an
+explicit multiplication table or permutation-generator presentation) as for
+`L-LIFTED`, and two elements $a, b \in \mathbb{F}_2[G]$. Applicability:
+well-typed inputs only. State update: $n = 2\ell$, the left qubits $(0, g)$ at
+label $\mathrm{idx}(g)$ and the right qubits $(1, g)$ at label
+$\ell + \mathrm{idx}(g)$; the natural $X$-row $h$ carries row $h$ of $L(a)$ on
+the left and row $h$ of $R(b)$ on the right, and the natural $Z$-row $h$ carries
+row $h$ of $R(b)^{T} = R(b^*)$ on the left and row $h$ of $L(a)^{T} = L(a^*)$ on
+the right, so that the natural check matrices are $H_X = [L(a) \mid R(b)]$ and
+$H_Z = [R(b)^{T} \mid L(a)^{T}]$ (which reduces to $[L(a) \mid L(b)]$ and
+$[L(b)^T \mid L(a)^T]$ when $G$ is abelian); the displayed rows are the retained
+display with canonically minted identifiers. The transition equals, row for row,
+`lift_G((a), (b^*))` (§4.34, §4.44). Output well-formedness and
+$k = 2\ell - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$
+(reducing to $2(\ell - \mathrm{rank}[L(a) \mid L(b)])$ when $G$ is abelian) are
+derived in §4.34 and §4.44; no automatic distance rule is attached.
 
 ### `A-CONCAT`
 
@@ -416,28 +428,33 @@ factorization question (§4.35).
 
 ### `L-BALANCED`
 
-**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11;
-`transition-defined`).
+**Introduced in:** `stdCSS-3` candidate (admitted 2026-11-11; generalized to
+finite nonabelian groups 2026-11-22; `transition-defined`).
 
 $$
 \mathrm{EvalExpr}(\mathrm{balanced}_G(H_1, \alpha_1; H_2, \alpha_2), S)
 $$
 
-Typed inputs: a finite abelian group $G$ given by its cyclic orders, as for
+Typed inputs: a finite group $G$ (abelian by cyclic orders, or nonabelian via an
+explicit multiplication table or permutation-generator presentation), as for
 `L-LIFTED`; binary matrices $H_1 \in \mathbb{F}_2^{m_1 \times n_1}$ and
-$H_2 \in \mathbb{F}_2^{m_2 \times n_2}$; and for each $H_c$ an action
-$\alpha_c$ of $G$, given by one permutation of the row indices and one
-permutation of the column indices of $H_c$ for each cyclic generator. The
-permutations of one index set must commute, the permutation of a generator
-must have order dividing that generator's cyclic order, and $H_c$ must be
-equivariant: $H_c[g a, g i] = H_c[a, i]$ for every generator $g$, row $a$,
-and column $i$. An input that fails one of these is malformed at the
-encoding. Applicability: well-typed inputs only. State update: $G$ acts on
-a pair $(x, y)$ of an index of $H_1$ and an index of $H_2$ by
-$g (x, y) = (g x, g^{-1} y)$, so that its orbits are the classes of the
-relation $(g x, y) \sim (x, g y)$. The qubits are the orbits of the pairs
-$(i, j)$ of two column indices, then the orbits of the pairs $(a, b)$ of two
-row indices, each family in the order of the least pair of an orbit, pairs
+$H_2 \in \mathbb{F}_2^{m_2 \times n_2}$; a right permutation action $\alpha_1$
+of $G$ on the row and column index sets of $H_1$
+($\alpha_1(g h) = \alpha_1(h) \circ \alpha_1(g)$) and a left permutation action
+$\alpha_2$ of $G$ on the row and column index sets of $H_2$
+($\alpha_2(g h) = \alpha_2(g) \circ \alpha_2(h)$), given by one row permutation
+and one column permutation per generator (or per group element). When $G$ is
+abelian, right and left actions coincide and the cyclic-generator permutations
+commute with orders dividing the cyclic orders. Each $H_c$ must be equivariant:
+$H_c[\alpha_c^{\mathrm{row}}(g)(a), \alpha_c^{\mathrm{col}}(g)(i)] = H_c[a, i]$
+for every $g \in G$, row $a$, and column $i$. An input that fails one of these
+is malformed at the encoding. Applicability: well-typed inputs only. State
+update: $G$ acts on the right on a pair $(x, y)$ of an index of $H_1$ and an
+index of $H_2$ by $(x, y) \cdot g = (\alpha_1(g)(x), \alpha_2(g)^{-1}(y))$, so
+that its orbits are the classes of the relation
+$(\alpha_1(g)(x), y) \sim (x, \alpha_2(g)(y))$. The qubits are the orbits of the
+pairs $(i, j)$ of two column indices, then the orbits of the pairs $(a, b)$ of
+two row indices, each family in the order of the least pair of an orbit, pairs
 compared lexicographically; $n$ is the number of these orbits. There is
 one natural $X$-row for each orbit of the pairs $(a, j)$ of a row index of
 $H_1$ and a column index of $H_2$, and one natural $Z$-row for each orbit of
@@ -449,9 +466,9 @@ $Z$-row of an orbit with least pair $(i, b)$ contains the qubit orbit $o$
 exactly when an odd number of the qubits of $\zeta(i, b)$ lie in $o$. The
 displayed rows are the retained display with canonically minted
 identifiers. Over the trivial group the transition is `hgp(H₁, H₂)`, row
-for row. Output well-formedness and $n$ are derived in §4.35; $k$ is the
-rank bookkeeping of the output, with no closed form claimed. No distance
-rule is attached.
+for row. Output well-formedness and $n$ are derived in §4.35 and §4.44; $k$ is
+the rank bookkeeping of the output, with no closed form claimed. No automatic
+distance rule is attached.
 
 ### `L-TANNER`
 
@@ -660,6 +677,90 @@ $(\psi_i)_*(\mathrm{supp}(r))$ lies in the $\sigma$-row space of $C_i$; and
 overlap ($X \perp Z$). A failed premise gives no derivation. Output
 well-formedness and $n$ are derived in §4.43; $k$ is the rank bookkeeping of
 the output. No distance rule is attached.
+
+### `L-PAIR-PARTITION`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (admitted 2026-11-22;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{pair\_partition}(p;\, B_X, B_Z),\, S)
+$$
+
+Typed inputs: a lift size $p \ge 1$ and two block matrices
+$B_X \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_X \times L}$ and
+$B_Z \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_Z \times L}$ with
+$J_X, J_Z \ge 1$ and an even number of block columns $L \ge 2$. Each block
+descriptor $(a, b)$ specifies the $p \times p$ affine permutation matrix
+$A(a, b)$ over $\mathbb{Z}_p$ with entry $(A(a, b))_{u, v} = 1$ iff
+$v \equiv a u + b \pmod p$ (when $a = 1$, $A(1, b)$ is the circulant
+permutation matrix of CPM-PP; for general unit $a \in \mathbb{Z}_p^\times$ with
+$\gcd(a, p) = 1$, it is an APM-PP block). State update: the qubits are the
+pairs $(c, v)$ of a block column $c \in \{0, \dots, L - 1\}$ and a lift
+coordinate $v \in \{0, \dots, p - 1\}$ at label $c p + v$, so
+$n = L \cdot p$. The natural $X$-rows are, for each $r \in \{0, \dots, J_X - 1\}$
+and $u \in \{0, \dots, p - 1\}$ in lexicographic order, the row supported on
+$\{c p + ((a^X_{r, c} u + b^X_{r, c}) \bmod p) : 0 \le c < L\}$ where
+$(a^X_{r, c}, b^X_{r, c}) = B_X[r, c]$; the natural $Z$-rows are, for each
+$s \in \{0, \dots, J_Z - 1\}$ and $u \in \{0, \dots, p - 1\}$ in lexicographic
+order, the row supported on
+$\{c p + ((a^Z_{s, c} u + b^Z_{s, c}) \bmod p) : 0 \le c < L\}$ where
+$(a^Z_{s, c}, b^Z_{s, c}) = B_Z[s, c]$. The displayed rows are the retained
+independent display (§4.34) with canonically minted identifiers from empty
+`used`. Applicability: (i) $p \ge 1$, $L \ge 2$ is even, and every slope $a$ in
+$B_X, B_Z$ is a unit modulo $p$ ($\gcd(a, p) = 1$); and (ii) for every
+block-row pair $(r, s)$, the $L$ block columns partition into $L/2$ pairs
+$\{c_1, c_2\}$ on which the relative affine maps
+$A(a^X_{r, c}, b^X_{r, c})\, A(a^Z_{s, c}, b^Z_{s, c})^T$ coincide, so that the
+natural $X$- and $Z$-rows have pairwise even overlap ($H_X H_Z^T = 0 \pmod 2$).
+A failed premise gives no derivation. Output well-formedness and $n = L \cdot p$
+are derived in §4.46; $k$ is the rank bookkeeping of the output. No automatic
+distance rule is attached.
+
+### `PP-SCALE`
+
+**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (promoted 2026-11-22;
+`transition-defined`).
+
+$$
+\mathrm{EvalExpr}(\mathrm{pp\_scale}(e;\, P),\, S)
+$$
+
+Typed inputs: a state expression $e$ evaluating to a well-formed CSS state
+$C_0$ that is **PP-presented** (accompanied by a typed PP-parameter bundle
+$B = (M, Q, (e_j), \lambda, \theta, \text{conventions})$ extracted from $C_0$ at
+base size $P_0$, or its evaluated target block matrices $B_X(P), B_Z(P)$ over
+$\mathbb{Z}_P$), together with a target lift size $P \ge 2$. State update:
+construct a **new** CSS state $C'$ on $n' = L \cdot P$ qubits
+$Q' = \{0, \dots, L \cdot P - 1\}$. From the bundle $B$ at target size $P$, the
+slopes are $a_q(P) = \prod_j r_j(P)^{\mathcal{Q}_{qj}} \pmod P$ (with $r_j(P)^{e_j} \equiv 1 \pmod P$)
+and the shifts are $b(P) = G(P)\,\theta \pmod P$ (where $G = V C$ from the Smith
+normal form of the shift congruence matrix); the natural $X$- and $Z$-rows are
+assembled from the resulting $A(a, b)$ blocks as in `L-PAIR-PARTITION`. The
+displayed rows $\mathsf{pres}'$ are the retained independent display (§4.34)
+with identifiers **canonically minted starting from $\mathsf{used}_0$** (the
+first elements of the fixed enumeration not in $\mathsf{used}_0$), and
+$\mathsf{used}'$ is the union of $\mathsf{used}_0$ with all newly minted
+identifiers. No mutation of $C_0$ occurs. The minted identifiers are kept
+disjoint from $\mathsf{used}_0$ even though the qubit namespace restarts at $0$
+and is therefore not disjoint from $C_0$'s namespace: this preserves identifier
+uniqueness under any later combination, while the non-disjoint (restarted)
+qubit namespace reflects that $C'$ is a scaled code rather than a direct
+summand of $C_0$, so `C-DIRECT-SUM` does not apply. Applicability: (i) $C_0$ is
+well-formed and PP-presented, and all original and target slopes are units;
+(ii) the PP conditions (2) hold at $P_0$ (and hence at $P$, by the SNF
+parametrization of §4.47); (iii) when an SNF bundle at $P_0$ is supplied, the
+SNF reproduction check at $P_0$ passes; (iv) $P \ge 2$ and $L \ge 2$ is even;
+(v) positive logical dimension
+$k' = L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z') > 0$, checked
+separately (not automatic); and (vi) the generated natural $X$- and $Z$-rows
+have pairwise even overlap ($H_X' (H_Z')^T = 0 \pmod 2$). Absence of a
+derivation when $k' \le 0$ is part of the partial big-step semantics, not a
+failure. Output well-formedness, $n' = L \cdot P$, and $k'$ by rank bookkeeping
+are derived in §4.47; $w' = L$ carries (each natural row has one 1 in each of the $L$ block columns); $d, d_X, d_Z$
+are `not yet defined` unless supplied as priced hypotheses; $r'$ and Tanner
+connectivity are recomputed over the generated presentation. No automatic
+distance rule is attached.
 
 
 ## 3. The two derivations the rules rest on
@@ -3852,7 +3953,8 @@ the cyclic shift acting on both they find $n = 2L$ and the $k$ of
 `twoblock` over $\mathbb{Z}_L$ with $a = b = 1 + x$.
 
 The construction is the balanced product named at `TAXONOMY.md` §3.4,
-restricted to two-term factors and finite abelian groups. No source
+initially restricted on 2026-11-11 to two-term factors and finite abelian groups
+and generalized on 2026-11-22 to finite nonabelian groups (§4.44). No source
 derivation is reproduced or relied on: the well-formedness argument above
 is self-contained. Over $\mathbb{F}_2$
 the quotient $V_G$ is taken as defined above for every action; for an
@@ -4883,6 +4985,540 @@ start at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g.
 
 The constructor instances of `OBL-WELL-FORMEDNESS-PRESERVATION` are discharged
 by this section for `L-EMPTY`, `L-FREE`, `A-PULLBACK`, and `A-PUSHOUT`. ∎
+
+## 4.44 Nonabelian group inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED` (`OBL-NONABELIAN-GROUP-INPUTS`, `OBL-WELL-FORMEDNESS-PRESERVATION`)
+
+Dated hand derivation, 2026-11-22. Evidence, not a machine-checked proof. It
+covers the generalization of `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED` to
+arbitrary finite (abelian or nonabelian) groups $G$ (§2 cards).
+
+**Group presentation and regular representations.** Let $G$ be a finite group
+of order $\ell = |G|$ with multiplication $(g, h) \mapsto g h$, identity $e$,
+and inverse $g \mapsto g^{-1}$. For $x, y \in \mathbb{F}_2[G]$ (read as subsets
+of $G$, with repeated terms cancelling modulo $2$), the antipode involution is
+$x^* = \{g^{-1} : g \in x\}$, the left regular matrix $L(x) \in \mathbb{F}_2^{\ell \times \ell}$
+has entry $L(x)[h, k] = 1 \iff h k^{-1} \in x$, and the right regular matrix
+$R(y) \in \mathbb{F}_2^{\ell \times \ell}$ has entry
+$R(y)[h, k] = 1 \iff k^{-1} h \in y$. Because
+$(k h^{-1})^{-1} = h k^{-1}$ and $(h^{-1} k)^{-1} = k^{-1} h$ in every group
+$G$, the transposes are
+
+$$
+L(x)^T[h, k] = L(x)[k, h] = (k h^{-1} \in x) = (h k^{-1} \in x^*) = L(x^*)[h, k],
+$$
+
+$$
+R(y)^T[h, k] = R(y)[k, h] = (h^{-1} k \in y) = (k^{-1} h \in y^*) = R(y^*)[h, k].
+$$
+
+When $G$ is abelian, $h k^{-1} = k^{-1} h$, so $R(y) = L(y)$ entry for entry
+and the cyclic-order transitions of §4.34 are unchanged.
+
+**Pairwise even overlap for `L-LIFTED` and `L-GROUP-ALGEBRA` over any finite group.**
+In `lift_G(A, B)`, fix an $X$-row index $(a, j, h)$ and a $Z$-row index
+$(i, b, h')$. The two rows meet only on the single left block $(i, j)$ (indexed
+by $k \in G$) and the single right block $(a, b)$ (indexed by $k' \in G$).
+Write $x = A[a, i]$ and $y = B[b, j]$.
+
+- On the left block $(i, j)$, qubit $k \in G$ lies in both rows iff
+  $L(x)[h, k] = 1$ and $R(y)[h', k] = 1$, that is:
+
+  $$
+  h k^{-1} \in x \quad\text{and}\quad k^{-1} h' \in y.
+  $$
+
+- On the right block $(a, b)$, qubit $k' \in G$ lies in both rows iff
+  $R(y^*)[h, k'] = 1$ and $L(x^*)[h', k'] = 1$; since
+  $(k')^{-1} h \in y^* \iff h^{-1} k' \in y$ and
+  $h' (k')^{-1} \in x^* \iff k' (h')^{-1} \in x$, this is:
+
+  $$
+  k' (h')^{-1} \in x \quad\text{and}\quad h^{-1} k' \in y.
+  $$
+
+Define the two maps $\phi_{h, h'}, \psi_{h, h'} : G \to G$ by
+
+$$
+\phi_{h, h'}(k) = h k^{-1} h', \qquad \psi_{h, h'}(k') = h' (k')^{-1} h.
+$$
+
+By associativity and the anti-homomorphism law $(u v w)^{-1} = w^{-1} v^{-1} u^{-1}$
+in $G$:
+
+$$
+\psi_{h, h'}(\phi_{h, h'}(k)) = h' (h k^{-1} h')^{-1} h
+= h' \bigl((h')^{-1} k h^{-1}\bigr) h = k,
+$$
+
+$$
+\phi_{h, h'}(\psi_{h, h'}(k')) = h (h' (k')^{-1} h)^{-1} h'
+= h \bigl(h^{-1} k' (h')^{-1}\bigr) h' = k'.
+$$
+
+Hence $\phi_{h, h'}$ is a bijection on $G$ with two-sided inverse
+$\psi_{h, h'}$. Moreover, for every $k \in G$, setting $k' = \phi_{h, h'}(k) = h k^{-1} h'$
+gives
+
+$$
+k' (h')^{-1} = (h k^{-1} h') (h')^{-1} = h k^{-1},
+\qquad
+h^{-1} k' = h^{-1} (h k^{-1} h') = k^{-1} h'.
+$$
+
+Thus $\phi_{h, h'}$ restricts to a bijection between the left-block intersection
+$\{k \in G : h k^{-1} \in x \wedge k^{-1} h' \in y\}$ and the right-block
+intersection $\{k' \in G : k' (h')^{-1} \in x \wedge h^{-1} k' \in y\}$. The
+two intersection counts are equal, so their sum is even. By the retained-display
+theorem of §4.34 (`wf_constructedState`), `lift_G(A, B)` is well-formed with
+$n = \ell (n_A n_B + m_A m_B)$.
+
+For `twoblock_G(a, b)`, the natural check matrices $H_X = [L(a) \mid R(b)]$ and
+$H_Z = [R(b)^T \mid L(a)^T] = [R(b^*) \mid L(a^*)]$ are literally row for row
+the $1 \times 1$ lifted product `lift_G((a), (b^*))` (since $(b^*)^* = b$), so
+pairwise even overlap and output well-formedness follow immediately. For the
+logical dimension $k = 2\ell - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$, let
+$J \in \mathbb{F}_2^{\ell \times \ell}$ be the permutation matrix of the
+inversion bijection $g \mapsto g^{-1}$ ($J^2 = I_\ell$). Because
+$(g^{-1} k^{-1})^{-1} = k g$ and $(k^{-1} g^{-1})^{-1} = g k$, conjugating by
+$J$ swaps left and right regular representations with the antipode:
+$J L(x) J = R(x^*) = R(x)^T$ and $J R(y) J = L(y^*) = L(y)^T$. Therefore
+
+$$
+[R(b)^T \mid L(a)^T] = J\,[L(b) \mid R(a)]\,\begin{bmatrix} J & 0 \\ 0 & J \end{bmatrix},
+\qquad
+\mathrm{rank}(H_Z) = \mathrm{rank}[R(b)^T \mid L(a)^T] = \mathrm{rank}[L(b) \mid R(a)],
+$$
+
+giving the exact dimension
+
+$$
+k = 2\ell - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)].
+$$
+
+When $G$ is abelian, $R = L$, so swapping the two column blocks gives
+$\mathrm{rank}[L(b) \mid L(a)] = \mathrm{rank}[L(a) \mid L(b)]$ and recovers
+the abelian closed form $k = 2(\ell - \mathrm{rank}[L(a) \mid L(b)])$ of
+§4.34. When $G$ is nonabelian, $\mathrm{rank}[L(a) \mid R(b)]$ and
+$\mathrm{rank}[L(b) \mid R(a)]$ need not agree (and $k$ can even be odd): for
+example, over the dihedral group $D_4$ of order $8$ ($r^4 = s^2 = 1$,
+$s r = r^3 s$, elements $0,\dots,3$ rotations and $4,\dots,7$ reflections) with
+$a = \{r, r^3, r s, r^3 s\}$ and $b = \{r^2, r^3, r s, r^2 s\}$, the two-block
+code is well-formed with $\mathrm{rank}(H_X) = 4$, $\mathrm{rank}(H_Z) = 3$,
+and $k = 16 - 4 - 3 = 9 \neq 2(8 - 4) = 8$. Hence over general nonabelian
+groups $k$ is computed by rank bookkeeping (equivalently
+$2\ell - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$), not
+by the abelian equality $\dim X = \dim Z$.
+
+**`L-BALANCED` over any finite group.** Let $\alpha_1$ be a right permutation
+action of $G$ on the rows and columns of $H_1$
+($\alpha_1(g h) = \alpha_1(h) \circ \alpha_1(g)$) and $\alpha_2$ a left
+permutation action of $G$ on the rows and columns of $H_2$
+($\alpha_2(g h) = \alpha_2(g) \circ \alpha_2(h)$). On any product of an
+$H_1$-index set and an $H_2$-index set, define
+$\Phi_g(x, y) = (\alpha_1(g)(x), \alpha_2(g)^{-1}(y))$. Then for all $g, h \in G$,
+
+$$
+\Phi_h(\Phi_g(x, y))
+= \bigl(\alpha_1(h)(\alpha_1(g)(x)),\; \alpha_2(h)^{-1}(\alpha_2(g)^{-1}(y))\bigr)
+= \bigl(\alpha_1(g h)(x),\; (\alpha_2(g) \circ \alpha_2(h))^{-1}(y)\bigr)
+= \Phi_{g h}(x, y),
+$$
+
+and $\Phi_e(x, y) = (x, y)$, so $\Phi$ is a right group action of $G$ on all
+four index-pair sets of `hgp(H₁, H₂)`. Because $H_1$ is equivariant under
+$\alpha_1(g)$ and $H_2$ is equivariant under $\alpha_2(g)^{-1}$, $\Phi_g$
+commutes with both HGP differentials $\partial_1, \partial_2$ on
+$P_2 \to P_1 \to P_0$. Descending to the orbit quotients
+$(P_2)_G \to (P_1)_G \to (P_0)_G$ gives $\bar\partial_1 \bar\partial_2 = 0$, so
+every natural $X$-row and natural $Z$-row of `balanced_G` have even overlap and
+the output is well-formed.
+
+**Lean mechanization.** `lean/CodeCalculus/CayleyGroups.lean` defines the
+finite Cayley-group regular representations `cayleyLeftRow` and
+`cayleyRightRow` and the right and left permutation actions
+(`FiniteRightAction`, `FiniteLeftAction`, `FiniteLeftAction.toRight`).
+`lean/CodeCalculus/ConstructorOverlap.lean` mechanizes
+the two-sided bijection counting lemma `filter_length_bijection`, the
+pairwise even overlap theorems `cayleyTwoblock_naturalOrthogonal` and
+`cayleyLift_naturalOrthogonal`, the well-formedness theorems
+`wf_cayleyTwoblockState` and `wf_cayleyLiftState`, and a kernel-checked
+nonabelian $S_3$ (order 6) instance (`s3_twoblock_wf`), while
+`lean/CodeCalculus/BalancedOverlap.lean` mechanizes the orbit-quotient
+overlap and well-formedness for nonabelian right/left permutation actions
+(`cayleyBalanced_naturalOrthogonal`, `wf_cayleyBalancedState`), and a
+kernel-checked nonabelian $S_3$ balanced-product instance (`s3_balanced_wf`),
+all with no `sorry` or new axioms. The Lean term grammar carries the
+multiplication-table presentation as the productions `liftTable`,
+`twoblockTable`, and `balancedTable` (`lean/CodeCalculus/Term.lean`,
+`Eval.lean`, `CayleyTables.lean`), whose evaluations are well-formed by the
+theorems above. It has no production for the permutation-generator
+presentation, which it reads as the table `gensTable d gens`, and it takes the
+actions of `balancedTable` per group element only. This section discharges
+`OBL-NONABELIAN-GROUP-INPUTS` and the nonabelian instances of
+`OBL-WELL-FORMEDNESS-PRESERVATION`. ∎
+
+## 4.45 Conditional distance cells and witness lifting for admitted constructors (`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`, `OBL-PRICED-INPUT-SEMANTICS`)
+
+Dated hand derivation, 2026-11-22. Evidence, not a machine-checked proof. It
+covers the conditional distance lower-bound cells and deterministic
+factor-to-child witness lifting for `L-HGP`, `L-NESTED-CSS`, `A-CONCAT`,
+`A-PRODUCT`, and `A-DOUBLE` (`JUDGMENT_LAYER.md` §2g, §2g.1).
+
+**Priced-hypothesis boundary (`OBL-PRICED-INPUT-SEMANTICS`).** No constructor
+computes or validates a distance lower bound: the state transition is unchanged,
+and an unpriced constructed ledger starts at $[0, +\infty)$. When a consumer
+supplies sourced factor lower bounds, the judgment layer records the resulting
+lower endpoint as a `conditional` cell. Conversely, deterministic factor-to-child
+witness lifting constructs explicit candidate logical supports in the child
+state and validates them against the child's display (`validate_witness`), so a
+lifted witness tightens an upper endpoint only when it is a verified logical of
+the child state; a supplied lower bound that exceeds a validated witness weight
+is refused with `no_derivation`.
+
+1. **`L-HGP` (`hgp(H₁, H₂)`).** Let $H_1 \in \mathbb{F}_2^{m_1 \times n_1}$ and
+   $H_2 \in \mathbb{F}_2^{m_2 \times n_2}$. By the `L-HGP` card (§2), the
+   $X$-checks are indexed by $(a, j)$ and the $Z$-checks by $(i, b)$, so
+   $Z$-logicals live in $\ker H_X \setminus \mathrm{rowspan}(H_Z)$ and
+   $X$-logicals in $\ker H_Z \setminus \mathrm{rowspan}(H_X)$. Let
+   $d(C_1), d(C_2), d(C_1^T), d(C_2^T) \in \mathbb{N} \cup \{+\infty\}$ denote
+   the classical minimum distances of $\ker H_1, \ker H_2, \ker(H_1^T), \ker(H_2^T)$
+   ($+\infty$ when the corresponding kernel is $\{0\}$).
+   - *Conditional lower-bound cell (Tillich–Zémor 2014):* Under consumer-supplied
+     sourced lower bounds $\ell_1 \le d(C_1)$, $\ell_2 \le d(C_2)$,
+     $\ell_1^T \le d(C_1^T)$, $\ell_2^T \le d(C_2^T)$,
+
+     $$
+     d_X \ge \min(\ell_2, \ell_1^T), \qquad d_Z \ge \min(\ell_1, \ell_2^T),
+     \qquad d \ge \min(d_X, d_Z).
+     $$
+
+   - *Deterministic witness lifting:* For any nonzero $c_1 \in \ker H_1$ and any
+     column $j \in \{0, \dots, n_2 - 1\}$ whose standard basis vector $e_j$ lies
+     outside $\mathrm{rowspan}(H_2)$, the left-block support
+     $c_1 \otimes e_j = \{i n_2 + j : i \in \mathrm{supp}(c_1)\}$ has even
+     overlap with every $X$-row $(a, j')$ (equal to $(H_1 c_1)_a \delta_{j, j'} = 0$)
+     and lies outside $\mathrm{rowspan}(H_Z)$ (since projecting to the left
+     block modulo $\mathrm{im}(H_1^T) \otimes \mathbb{F}_2^{n_2}$ leaves
+     $[c_1] \otimes [e_j] \neq 0$), so it is a valid $Z$-logical witness of
+     weight $\mathrm{wt}(c_1)$. Likewise, for $c_2^T \in \ker(H_2^T) \setminus \{0\}$
+     and $e_a \notin \mathrm{colspan}(H_1)$, the right-block support
+     $e_a \otimes c_2^T = \{n_1 n_2 + a m_2 + b : b \in \mathrm{supp}(c_2^T)\}$
+     is a valid $Z$-logical witness of weight $\mathrm{wt}(c_2^T)$.
+     Symmetrically, $e_i \otimes c_2$ ($c_2 \in \ker H_2 \setminus \{0\}$,
+     $e_i \notin \mathrm{rowspan}(H_1)$) on the left block and
+     $c_1^T \otimes e_b$ ($c_1^T \in \ker(H_1^T) \setminus \{0\}$,
+     $e_b \notin \mathrm{colspan}(H_2)$) on the right block are valid
+     $X$-logical witnesses of weights $\mathrm{wt}(c_2)$ and $\mathrm{wt}(c_1^T)$.
+
+2. **`L-NESTED-CSS` (`nested(H_X, H_Z)`).** By §4.36, an $X$-logical is a vector
+   in $\ker H_Z \setminus \mathrm{rowspan}(H_X) \subseteq \ker H_Z \setminus \{0\}$
+   and a $Z$-logical is a vector in
+   $\ker H_X \setminus \mathrm{rowspan}(H_Z) \subseteq \ker H_X \setminus \{0\}$.
+   - *Conditional lower-bound cell:* Given consumer-supplied sourced bounds
+     $\ell_X \le d(\ker H_Z)$ and $\ell_Z \le d(\ker H_X)$,
+
+     $$
+     d_X \ge \ell_X, \qquad d_Z \ge \ell_Z, \qquad d \ge \min(\ell_X, \ell_Z).
+     $$
+
+   - *Deterministic witness lifting:* Any classical codeword $w_X \in \ker H_Z \setminus \mathrm{rowspan}(H_X)$
+     (resp. $w_Z \in \ker H_X \setminus \mathrm{rowspan}(H_Z)$) is supported directly on
+     $Q = \{0, \dots, n - 1\}$ and validates as an $X$-logical (resp. $Z$-logical)
+     witness of weight $\mathrm{wt}(w_\sigma)$.
+
+3. **`A-CONCAT` (`concat(e_O, e_I; \vec B)`).** Let $O$ be the outer CSS state
+   partitioned into $n_{\mathrm{out}}$ blocks $B_1, \dots, B_{n_{\mathrm{out}}}$
+   of $k_{\mathrm{in}}$ outer qubits each, and $I$ the inner CSS state on
+   $n_{\mathrm{in}}$ qubits with dual logical bases
+   $(\bar X_1, \dots, \bar X_{k_{\mathrm{in}}})$ and
+   $(\bar Z_1, \dots, \bar Z_{k_{\mathrm{in}}})$ (§4.34).
+   - *Conditional lower-bound cell:* Every $\sigma$-logical $v$ of the
+     concatenated code commutes with all inner checks on every block $j$, so its
+     restriction $v^{(j)}$ to block $j$ lies in the inner $\sigma$-normalizer
+     and defines an inner logical coordinate tuple $\hat v^{(j)} \in \mathbb{F}_2^{k_{\mathrm{in}}}$.
+     Commutation with the lifted outer checks implies that the concatenation
+     $\hat v = (\hat v^{(1)}, \dots, \hat v^{(n_{\mathrm{out}})}) \in \mathbb{F}_2^{Q_O}$
+     lies in the outer $\sigma$-normalizer, and $v$ is a concatenated
+     $\sigma$-stabilizer iff $\hat v$ is an outer $\sigma$-stabilizer and each
+     $v^{(j)}$ is an inner $\sigma$-stabilizer. For a non-stabilizer
+     $\sigma$-logical $v$, $\hat v$ is a non-stabilizer outer $\sigma$-logical,
+     so $|\mathrm{supp}(\hat v)| \ge d_\sigma(O)$. Since each active block $j$
+     ($\hat v^{(j)} \neq 0$) contains at most $k_{\mathrm{in}}$ outer qubits of
+     $\mathrm{supp}(\hat v)$ and carries a non-stabilizer inner $\sigma$-logical
+     $v^{(j)}$ of weight $\mathrm{wt}(v^{(j)}) \ge d_\sigma(I)$, the number of
+     active blocks is at least $d_{\mathrm{block},\sigma}(O) \ge \lceil d_\sigma(O) / k_{\mathrm{in}} \rceil$,
+     giving under sourced factor bounds $\ell_\sigma(O) \le d_\sigma(O)$ and
+     $\ell_\sigma(I) \le d_\sigma(I)$ (or block-distance bound
+     $\ell_{\mathrm{block},\sigma}(O) \le d_{\mathrm{block},\sigma}(O)$):
+
+     $$
+     d_\sigma \ge \max\bigl(\lceil \ell_\sigma(O) / k_{\mathrm{in}} \rceil,\; \ell_{\mathrm{block},\sigma}(O)\bigr) \cdot \ell_\sigma(I)
+     \qquad (\text{so } d_\sigma \ge \ell_\sigma(O) \cdot \ell_\sigma(I) \text{ when } k_{\mathrm{in}} = 1).
+     $$
+
+   - *Deterministic witness lifting:* Any outer $\sigma$-logical witness
+     $w_O \subseteq Q_O$ lifts block-by-block through the inner $\sigma$-logical
+     representatives (placing $\bigoplus_{p : B_j[p] \in w_O} \mathrm{rep}_{\sigma, p}$
+     on copy $j$) to a valid concatenated $\sigma$-logical witness of weight at
+     most $\mathrm{wt}(w_O) \cdot \max_p \mathrm{wt}(\mathrm{rep}_{\sigma, p})$.
+
+4. **`A-PRODUCT` (`product(e_A, e_B)`).** In the Audoux–Couvreur total complex
+   $T = A \otimes B$ (§4.35), the degree-2 qubits are
+   $(A_2 \otimes B_0) \oplus (A_1 \otimes B_1) \oplus (A_0 \otimes B_2)$, where
+   the central block $A_1 \otimes B_1$ is indexed by pairs $(i, j) \in Q_A \times Q_B$
+   at labels $m_Z^A m_X^B + i n_B + j$.
+   - *Conditional lower-bound cell:* Under an explicit display-specific
+     certificate (`display_certificate`) and consumer-supplied sourced
+     Audoux–Couvreur lower bounds $\ell_X, \ell_Z$ (directly as `(d_X, d_Z)`,
+     or via multiplicative display-certified factor bounds
+     $\ell_\sigma = \underline d_{A,\sigma} \underline d_{B,\sigma}$ when the
+     display-specific logical-overlap criterion licenses multiplicative
+     scaling; multiplicative scaling is not automatic from factor distances
+     alone), $d_\sigma \ge \ell_\sigma$ and $d \ge \min(\ell_X, \ell_Z)$ are
+     recorded as conditional cells.
+   - *Deterministic witness lifting:* Given a validated $\sigma$-logical witness
+     $w_A \subseteq Q_A$ of $A$ and a validated $\sigma$-logical witness
+     $w_B \subseteq Q_B$ of $B$, their Kronecker product on the central block
+     $A_1 \otimes B_1$,
+
+     $$
+     w_A \times w_B = \{m_Z^A m_X^B + i n_B + j : q_i^A \in w_A,\; q_j^B \in w_B\},
+     $$
+
+     has weight $\mathrm{wt}(w_A) \cdot \mathrm{wt}(w_B)$. Because every
+     opposite-sector natural row restricts on $A_1 \otimes B_1$ to
+     $\mathrm{supp}(r_A) \times \{j\}$ or $\{i\} \times \mathrm{supp}(r_B)$, its
+     overlap with $w_A \times w_B$ is $|w_A \cap \mathrm{supp}(r_A)| \cdot \mathbf{1}_{j \in w_B}$
+     or $\mathbf{1}_{i \in w_A} \cdot |w_B \cap \mathrm{supp}(r_B)|$, both even!
+     By Künneth homology injectivity $[w_A] \otimes [w_B] \neq 0 \in H_2(A \otimes B)$,
+     $w_A \times w_B$ lies outside the same-sector stabilizer span, so it is a
+     valid child $\sigma$-logical witness of weight $\mathrm{wt}(w_A) \cdot \mathrm{wt}(w_B)$.
+
+5. **`A-DOUBLE` (`double_{w,s}(e)`).**
+   - *Conditional lower-bound cell:* Given a consumer-supplied sourced cover
+     lower bound $\ell_\sigma$ (or, for the empty wiring $w = \varnothing$,
+     $\ell_\sigma = \ell_\sigma(C)$ without `conjugate` and
+     $\ell_\sigma = \min(\ell_X(C), \ell_Z(C))$ with `conjugate`, since the empty
+     wiring is two disjoint copies of $C$ or of $C$ and its sector swap, §4.35),
+     the ledger records $d_\sigma \ge \ell_\sigma$.
+   - *Deterministic witness lifting:* For a parent $\sigma$-logical witness
+     $w_C \subseteq Q_C$, its sheet-$0$ embedding $\{ \iota(q) : q \in w_C \}$,
+     its sheet-$1$ embedding $\{ n_C + \iota(q) : q \in w_C \}$ (in sector
+     $\bar\sigma$ when `conjugate` is set), and its two-sheet diagonal lift
+     $\{ \iota(q), n_C + \iota(q) : q \in w_C \}$ are tested via
+     `validate_witness` against the child state and recorded whenever valid.
+
+**Lean mechanization.** `lean/CodeCalculus/PricedInterval.lean` mechanizes
+`constructedLedger` and the conditional constructor ledger builders
+`hgpConditionalLedger`, `nestedConditionalLedger`, `concatConditionalLedger`
+(with general `k_in ≥ 1` and outer block-distance bound via `concatEffOut`,
+reducing to `d_{O,σ} · d_{I,σ}` at `k_in = 1` via
+`concatConditionalLedger_k1_eq`), `productDirectConditionalLedger`,
+`productConditionalLedger`, and `doubleConditionalLedger`, together with their
+interval-soundness theorems (`constructedLedger_sound`,
+`hgpConditionalLedger_sound`, `nestedConditionalLedger_sound`,
+`concatConditionalLedger_sound`, `productDirectConditionalLedger_sound`,
+`productConditionalLedger_sound`, `doubleConditionalLedger_sound`), with no
+`sorry` or new axioms. This section discharges
+`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`. ∎
+
+## 4.46 `L-PAIR-PARTITION`: output well-formedness and parameters (`OBL-WELL-FORMEDNESS-PRESERVATION`)
+
+
+Dated hand derivation, 2026-11-22. Evidence, not a machine-checked proof. It
+covers `L-PAIR-PARTITION` (`pair_partition(p; B_X, B_Z)`), admitted as a
+`transition-defined` expression constructor on this date (§2 card).
+
+**Paired relative-affine orthogonality (Okada–Kasai v4, Thm 4, re-derived).**
+Let $p \ge 1$ be the lift size, $L \ge 2$ an even number of block columns, and
+$B_X \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_X \times L}$,
+$B_Z \in (\mathbb{Z}_p^\times \times \mathbb{Z}_p)^{J_Z \times L}$ two block
+matrices of affine descriptors $(a, b)$ with $\gcd(a, p) = 1$. For a unit
+$a \in \mathbb{Z}_p^\times$ and shift $b \in \mathbb{Z}_p$, let $A(a, b)$ be the
+$p \times p$ binary permutation matrix with $(A(a, b))_{u, v} = 1$ iff
+$v \equiv a u + b \pmod p$. Because $a$ is invertible modulo $p$, the inverse
+map is $v \mapsto a^{-1}(v - b) \equiv a^{-1} v - a^{-1} b \pmod p$, so the
+transpose is again an affine permutation matrix:
+
+$$
+A(a, b)^T = A\bigl(a^{-1} \bmod p,\; (-a^{-1} b) \bmod p\bigr),
+$$
+
+and the product of two affine permutation matrices is
+
+$$
+A(a_1, b_1)\, A(a_2, b_2) = A\bigl(a_1 a_2 \bmod p,\; (a_2 b_1 + b_2) \bmod p\bigr).
+$$
+
+In particular, for block column $c$ and block rows $r$ of $B_X$ and $s$ of
+$B_Z$, with $(a^X_{r, c}, b^X_{r, c}) = B_X[r, c]$ and
+$(a^Z_{s, c}, b^Z_{s, c}) = B_Z[s, c]$, the block inner product is
+
+$$
+A(a^X_{r, c}, b^X_{r, c})\, A(a^Z_{s, c}, b^Z_{s, c})^T
+= A\bigl(\alpha_{r, s, c},\; \beta_{r, s, c}\bigr),
+$$
+
+where the *relative slope* and *relative shift* are
+
+$$
+\alpha_{r, s, c} \equiv a^X_{r, c} (a^Z_{s, c})^{-1} \pmod p,
+\qquad
+\beta_{r, s, c} \equiv (a^Z_{s, c})^{-1} (b^X_{r, c} - b^Z_{s, c}) \pmod p.
+$$
+
+(In the circulant CPM-PP special case $a^X_{r, c} = a^Z_{s, c} = 1$, this
+reduces to $\alpha_{r, s, c} = 1$ and the paired-difference shift
+$\beta_{r, s, c} \equiv b^X_{r, c} - b^Z_{s, c} \pmod p$.) Under the
+pair-partition premise of the card, for each $(r, s)$ the column set
+$\{0, \dots, L - 1\}$ partitions into $L/2$ disjoint pairs
+$M_{r, s} = \{\{c_1, c_2\}, \dots\}$ such that
+$(\alpha_{r, s, c_1}, \beta_{r, s, c_1}) = (\alpha_{r, s, c_2}, \beta_{r, s, c_2})$
+for every pair $\{c_1, c_2\} \in M_{r, s}$. Summing over $c \in \{0, \dots, L - 1\}$
+over $\mathbb{F}_2$ gives the $(r, s)$ block of $H_X H_Z^T$:
+
+$$
+(H_X H_Z^T)_{r, s}
+= \sum_{c=0}^{L - 1} A(a^X_{r, c}, b^X_{r, c})\, A(a^Z_{s, c}, b^Z_{s, c})^T
+= \sum_{\{c_1, c_2\} \in M_{r, s}} \bigl(A(\alpha_{r, s, c_1}, \beta_{r, s, c_1}) + A(\alpha_{r, s, c_2}, \beta_{r, s, c_2})\bigr)
+= 0 \pmod 2.
+$$
+
+Hence every natural $X$-row $(r, u)$ and natural $Z$-row $(s, v)$ have even
+overlap ($0$ or $2$ common qubits in each paired column $\{c_1, c_2\}$).
+
+**Output well-formedness and parameters.** Every natural row is a subset of
+$Q = \{0, \dots, L \cdot p - 1\}$. By the retained-display theorem of §4.34
+(`wf_constructedState` in Lean), the retained independent display with
+canonically minted identifiers from empty `used` satisfies I1–I5 and ambient
+containment (`evalExpr_pairPartition_wf` in `ConstructorAssembly.lean`).
+Parameters: $n = L \cdot p$ exact (`evalExpr_pairPartition_n`);
+$k = L \cdot p - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$ by rank bookkeeping
+over the retained display, with no closed form claimed; $w, \kappa, r$ are
+recomputed over the constructed display (§2d.5, §2g).
+
+**Premises of the Lean rule.** `EvalExpr.pairPartition` carries both
+applicability premises of the card. Premise (i) and premise (ii) are in
+`pairPartitionTyped`: premise (ii) is `pairPartitionPaired`, which asks that,
+for every block-row pair, each relative affine map $(\alpha, \beta)$ occur
+an even number of times among the $L$ block columns. A list splits into pairs
+of equal entries exactly when every entry has even multiplicity, so this is
+the pair partition of the card with the partition left implicit. The rule
+also carries the commutation of the natural rows as a separate premise
+(`naturalCommuteBool`), and well-formedness is proved from that one. The
+implication from premise (ii) to commutation, which is the derivation above,
+is not mechanized. The two premises are not equivalent: for $p = 3$, the block
+row $B_X$ holding the six affine maps of $\mathbb{Z}_3$ once each, against six
+identity blocks in $B_Z$, has commuting natural rows (the six relative maps
+sum to twice the all-ones block) and no pair partition. That input has no
+derivation (`sixMaps_no_derivation` in `ConstructorAssembly.lean`), and the
+consumer refuses it likewise. `PP-SCALE` uses the same typing predicate at
+the target size, so its rule carries the pair partition at $P$ as well.
+
+**Distance cells and ceilings.** No constructor computes a distance; the ledger
+starts at $[0, +\infty)$ per `JUDGMENT_LAYER.md` §2g. For CPM-PP instances
+($a = 1$ everywhere), Okada–Kasai Thm 3 establishes the lift-size-independent
+factorial ceiling $d \le (J + 1)!$ (where $J$ is the column block-degree),
+whereas APM-PP instances with non-identity unit slopes escape that ceiling.
+Both enter only as consumer-supplied/sourced bounds or validated witnesses under
+`OBL-PRICED-INPUT-SEMANTICS`, never as automatic cells.
+
+The constructor instance of `OBL-WELL-FORMEDNESS-PRESERVATION` is discharged
+by this section for `L-PAIR-PARTITION`. ∎
+
+## 4.47 `PP-SCALE`: output well-formedness and the orthogonality argument (`OBL-PP-SCALE`)
+
+Dated hand derivation, 2026-11-22. Evidence, not a machine-checked proof. It
+covers `PP-SCALE` (`pp_scale(e; P)`), promoted from rung 1 to a
+`transition-defined` expression constructor on this date (§2 card).
+
+**Orthogonality argument (Kasai 2026, §2.1, re-derived).** Let $C_0$ be a
+well-formed PP-presented CSS code at base lift size $P_0$ with pair partition
+$M = (M_{r, s})$, Smith-normal-form slope data $(T, U, \mathcal{Q}, (e_j), (\lambda_j))$ (here $\mathcal{Q}$ is the slope-exponent matrix, not the qubit set),
+shift SNF matrix $G = V C$, and fixed integer shift vector $\theta$. For each
+paired block relation in $M_{r, s}$, the relative-affine condition of §4.46 requires:
+(a) the multiplicative slope congruence
+$a^X_{r, c_1} (a^Z_{s, c_1})^{-1} \equiv a^X_{r, c_2} (a^Z_{s, c_2})^{-1} \pmod P$,
+and (b) the additive shift congruence
+$b^X_{r, c_1} - b^Z_{s, c_1} \equiv b^X_{r, c_2} - b^Z_{s, c_2} \pmod P$ (under
+compatible relative slopes). For any target lift size $P \ge 2$:
+
+1. *Slopes:* The parametrization sets
+   $a_q(P) = \prod_j r_j(P)^{Q_{qj}} \pmod P$ where each root $r_j(P) \in \mathbb{Z}_P^\times$
+   satisfies $r_j(P)^{e_j} \equiv 1 \pmod P$ for the SNF invariant factors $e_j$
+   of the slope exponent matrix. Because the unimodular SNF multipliers $U, \mathcal{Q}$
+   are invertible over $\mathbb{Z}$ independently of $P$, the exponent vector of
+   every paired ratio $a^X_{r, c_1} (a^Z_{s, c_1})^{-1} (a^X_{r, c_2})^{-1} a^Z_{s, c_2}$
+   lies in the integer lattice spanned by the $e_j$, so every paired slope ratio
+   evaluates to $\prod_j (r_j(P)^{e_j})^{m_j} \equiv 1 \pmod P$ for every $P \ge 2$.
+2. *Shifts:* The parametrization sets $b(P) = G(P)\,\theta \pmod P$ where
+   $G = V C$ is constructed from the integer Smith normal form of the shift
+   congruence matrix $K$ ($K G \equiv 0 \pmod P$). Because $K G$ vanishes modulo
+   $P$ by SNF invertibility over $\mathbb{Z}$, the shift vector $b(P)$ satisfies
+   the paired-difference congruences $K b(P) \equiv 0 \pmod P$ at every $P \ge 2$.
+
+Consequently, for every $(r, s)$ and every paired column $\{c_1, c_2\} \in M_{r, s}$,
+the two affine permutation blocks $A(a^X_{r, c_1}(P), b^X_{r, c_1}(P))\, A(a^Z_{s, c_1}(P), b^Z_{s, c_1}(P))^T$
+and $A(a^X_{r, c_2}(P), b^X_{r, c_2}(P))\, A(a^Z_{s, c_2}(P), b^Z_{s, c_2}(P))^T$
+are identical at target size $P$. Their sum modulo $2$ vanishes on every pair in
+$M_{r, s}$, giving $H_X'(P)\, H_Z'(P)^T = 0 \pmod 2$ for every $P \ge 2$. This
+is a distinct proof shape from direct-sum orthogonality (disjoint supports) and
+graft orthogonality (coverage guard).
+
+**What this derivation does and does not establish.** Output well-formedness of
+$C'$ follows from applicability premise (vi) (pairwise even overlap of the
+generated natural rows) together with `wf_constructedStateFrom`
+(`ConstructorWellFormedness.lean`); that part is mechanized
+(`evalExpr_ppScale_wf`). The further claim that the PP conditions at the base
+size $P_0$ imply orthogonality at *every* $P \ge 2$ is cited from Kasai 2026,
+\S2.1, and is **not** derived here: steps 1 and 2 above use the
+slope-exponent matrix and the shift congruence matrix $K$, both of which depend
+on $P$ (the roots $r_j(P)$ are taken modulo $P$), so "the integer Smith normal
+form of $K$" is not one fixed object for all $P$, and the inference
+"$K G$ vanishes modulo $P$ by SNF invertibility over $\mathbb{Z}$" is not an
+argument as written. The step may hold in the paper; it is not shown in this
+repository. Consequently `OBL-PP-SCALE` is `proved` only for the well-formedness
+that follows from (vi); the all-$P$ orthogonality statement is `proposed
+(classical)` (cited, not derived).
+
+**Fresh-namespace update and canonical minting.** The output state $C'$ is built
+on the fresh qubit namespace $Q' = \{0, \dots, L \cdot P - 1\}$ of size
+$n' = L \cdot P$. The natural $X$- and $Z$-rows are passed through the retained
+independent display (§4.34), with row identifiers minted canonically starting
+from $\mathsf{used}_0$ (`constructedStateFrom s0.used` in
+`lean/CodeCalculus/Constructors.lean`): each retained row receives the least
+identifier in the fixed 70,000-name enumeration not yet in the running `used`
+set, so every newly minted identifier is disjoint from $\mathsf{used}_0$, and
+$\mathsf{used}'$ is the union of $\mathsf{used}_0$ with the newly minted
+identifiers. No mutation of $C_0$ occurs. By `wf_constructedStateFrom`
+(`ConstructorWellFormedness.lean`), pairwise even overlap of the natural rows
+implies that $C'$ satisfies I1–I5 and ambient containment
+(`evalExpr_ppScale_wf` in `ConstructorAssembly.lean`).
+
+**$k' > 0$ premise (not automatic) and reproduction check.** The logical
+dimension is $k' = L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z')$ by
+rank bookkeeping over the retained display. As Kasai §2.1 notes, positivity
+$k' > 0$ is not automatic at arbitrary $P$; the card carries $k' > 0$ as
+applicability premise (v), so $k' \le 0$ yields no derivation (`NoDerivation` in
+the consumer) rather than a malformed state. At $P = P_0$, evaluating the bundle
+reproduces the original arrays (premise (iii)), checked before admission.
+
+**Parameters and distance cells.** $n' = L \cdot P$ exact (`evalExpr_ppScale_n`);
+$k'$ exact by rank bookkeeping; $w' = L$ carries (each natural row has one 1 in each of the $L$ block columns)
+(each $A(a, b)$ is a permutation matrix with one $1$ per row and column); $r'$
+and Tanner connectivity $\kappa'$ are recomputed from the generated display. No
+automatic distance rule is attached: $d, d_X, d_Z$ are `not yet defined` unless
+a verified interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied as a priced
+hypothesis (`JUDGMENT_LAYER.md` §2g), in which case the consumer records a
+`conditional` cell and checks interval shape only (`OBL-PRICED-INPUT-SEMANTICS`).
+The conjectured finite structural upper bound $B$ is a separate family-level
+rule (`JUDGMENT_LAYER.md` §2l), marked `conjectural`, scoped as an upper ceiling
+with monotonicity not assumed, and mints no taxonomy operation ID.
+
+The obligations `OBL-PP-SCALE` and the `PP-SCALE` constructor instance of
+`OBL-WELL-FORMEDNESS-PRESERVATION` are discharged at the hand-derivation and
+state-well-formedness level by this section. ∎
+
 
 
 

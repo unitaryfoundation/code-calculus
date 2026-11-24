@@ -501,7 +501,8 @@ random states and layouts. A harness run is evidence, never confirmation.
 | `E-EXTEND`, $\Delta\neq\emptyset$ | not inherited: a layout $\lambda'$ on $Q\cup\Delta$ with $\lambda'\vert_Q=\lambda$ must be supplied | carries when supplied, $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})$ `[proved]`; no radius otherwise | $r'\ge r$ when supplied | **conditional**: the supplied layout must be honest; the parent's honesty does not imply it |
 | `E-EXTEND`, $\Delta=\emptyset$ | $\lambda$ | as `C-ADD-CHECK`, once per added row `[proved]` | $r'\ge r$ | preserved `[proved]` |
 | `E-GLUE` | the two factor layouts, blockwise as for `C-DIRECT-SUM`; a merged layout must be supplied | carries, $r=\max(r_A,r_B,\max\{\mathrm{diam}(s):s\ \text{a seam row}\})$ `[proved]` (the direct-sum cell, then one `C-ADD-CHECK` cell per seam check) | $r\ge\max(r_A,r_B)$ | **conditional**: the merged layout must be honest |
-| `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` (constructors, 2026-11-11), `L-NESTED-CSS` (constructor, 2026-11-13), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (constructors, 2026-11-19) | none inherited: there is no parent; a layout on the constructed qubits must be supplied | recomputed when supplied, $r=\max\{\mathrm{diam}_{\lambda}(s):s\in\mathit{rows}\}$ over the constructed display `[proved]` (exact computation, §2d.1; $r=0$ for empty displays); no radius otherwise | none: no parent to compare with | **conditional**: the supplied layout must be honest (§2d.3) |
+| `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` (constructors, 2026-11-11), `L-NESTED-CSS` (constructor, 2026-11-13), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (constructors, 2026-11-19), `L-PAIR-PARTITION`, `PP-SCALE` (constructors, 2026-11-22) | none inherited: there is no parent; a layout on the constructed qubits must be supplied | recomputed when supplied, $r=\max\{\mathrm{diam}_{\lambda}(s):s\in\mathit{rows}\}$ over the constructed display `[proved]` (exact computation, §2d.1; $r=0$ for empty displays); no radius otherwise | none: no parent to compare with | **conditional**: the supplied layout must be honest (§2d.3) |
+
 
 Four entries are recorded as non-transfer cases rather than as monotone cells:
 `E-GRAFT`'s factor-of-two bound, `E-EXTEND`'s supplied layout, `P-REBASE`'s
@@ -722,26 +723,49 @@ The consumer realizes this as `DistanceLedger.for_constructed`.
 
 | Constructor | $n$ | $k$ | $w$, Tanner components, $r$ | $d$, $d_X$, $d_Z$ |
 | --- | --- | --- | --- | --- |
-| `L-HGP` | $n_1 n_2 + m_1 m_2$, exact | $k_1 k_2 + k_1^{T} k_2^{T}$, exact (§4.34) | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | no cell; $[0, +\infty)$ until a sourced bound or a validated witness is supplied; the hypergraph-product distance theorem (Tillich and Zémor 2014) is a source a consumer may name, not a cell |
-| `L-LIFTED` | $|G| (n_A n_B + m_A m_B)$, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
-| `L-GROUP-ALGEBRA` | $2|G|$, exact | $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$, exact (§4.34) | as above | no cell; as above |
-| `A-CONCAT` | $n_{\mathrm{in}} n_{\mathrm{out}}$, exact | $k_O$, exact (§4.34) | as above | no cell; the §2a tower price provider supplies deletion and exposure prices of the constructed state from level data |
-| `A-PRODUCT` | $m_Z^A m_X^B + n_A n_B + m_X^A m_Z^B$, exact | $k_A k_B$, exact (§4.35) | as above | no cell; as above. The distances may depend on the displays of the factors (§4.35) |
-| `A-DOUBLE` | $2 n_C$, exact | rank bookkeeping of the display, exact; $2 k_C$ for the empty wiring (§4.35) | as above | no cell; as above. Nothing is inherited from the input state's ledger |
-| `L-BALANCED` | the number of orbits on the two families of index pairs, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
-| `L-TANNER` | the supplied $n$ | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. No expansion hypothesis is an input |
-| `L-TILE` | the number of site classes, exact | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above |
-| `L-NESTED-CSS` | the common number of columns, exact | $n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$, exact (§4.36) | as above | no cell; as above. The minimum distance of the code checked by $H_Z$ is a lower bound on $d_X$, and that of the code checked by $H_X$ on $d_Z$ (§4.36): each is a source a consumer may name for a supplied bound, not a cell, and neither is an input |
+| `L-HGP` | $n_1 n_2 + m_1 m_2$, exact | $k_1 k_2 + k_1^{T} k_2^{T}$, exact (§4.34) | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_X \ge \min(\ell(C_2), \ell(C_1^T))$ and $d_Z \ge \min(\ell(C_1), \ell(C_2^T))$ from supplied sourced classical factor bounds (Tillich–Zémor 2014); upper endpoints from validated Kronecker witness lifts $c_1 \otimes e_j, e_a \otimes c_2^T, e_i \otimes c_2, c_1^T \otimes e_b$ |
+| `L-LIFTED` | $|G| (n_A n_B + m_A m_B)$, exact (§4.34, §4.44) | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; $[0, +\infty)$ until a sourced bound or validated witness is supplied |
+| `L-GROUP-ALGEBRA` | $2|G|$, exact | $2|G| - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$, exact (reducing to $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ when $G$ is abelian; §4.34, §4.44) | as above | no automatic cell; as above |
+| `A-CONCAT` | $n_{\mathrm{in}} n_{\mathrm{out}}$, exact | $k_O$, exact (§4.34) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_\sigma \ge \max(\lceil \ell_\sigma(O)/k_{\mathrm{in}} \rceil, \ell_{\mathrm{block},\sigma}(O)) \cdot \ell_\sigma(I)$ from supplied sourced outer/inner bounds ($\ell_\sigma(O) \cdot \ell_\sigma(I)$ when $k_{\mathrm{in}}=1$); upper endpoints from validated block-representative lifts of outer logical witnesses; the §2a tower price provider supplies deletion and exposure prices from level data |
+| `A-PRODUCT` | $m_Z^A m_X^B + n_A n_B + m_X^A m_Z^B$, exact | $k_A k_B$, exact (§4.35) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_\sigma \ge \ell_\sigma$ from a display-certified sourced Audoux–Couvreur factor-overlap bound (direct `(d_X, d_Z)`, or multiplicative $\underline d_{A,\sigma}\underline d_{B,\sigma}$ when certified for the chosen displays); upper endpoints from validated central-block Kronecker witness lifts $w_A \times w_B$ of weight $\mathrm{wt}(w_A)\mathrm{wt}(w_B)$. Distances may depend on the factor displays (§4.35) |
+| `A-DOUBLE` | $2 n_C$, exact | rank bookkeeping of the display, exact; $2 k_C$ for the empty wiring (§4.35) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_\sigma \ge \ell_\sigma$ from supplied sourced cover bounds (or $\ell_\sigma(C)$ / $\min(\ell_X(C),\ell_Z(C))$ for the empty wiring); upper endpoints from validated sheet witness lifts |
+| `L-BALANCED` | the number of orbits on the two families of index pairs, exact (§4.35, §4.44) | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; as above |
+| `L-TANNER` | the supplied $n$ | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; as above. No expansion hypothesis is an input |
+| `L-TILE` | the number of site classes, exact | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; as above |
+| `L-NESTED-CSS` | the common number of columns, exact | $n - \mathrm{rank}(H_X) - \mathrm{rank}(H_Z)$, exact (§4.36) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_X \ge \ell(\ker H_Z)$ and $d_Z \ge \ell(\ker H_X)$ from supplied sourced classical kernel distance bounds (§4.36); upper endpoints from validated classical codeword witnesses in $\ker H_{\bar\sigma} \setminus \mathrm{rowspan}(H_\sigma)$ |
 | `L-MAPPING-CONE` | $\dim A_0 + \dim B_1$, exact | rank bookkeeping of the display, exact; equivalently $\dim Z(B) - \dim f_1(Z(A)) + \dim \ker \bar f_0$ (§4.41) | as above | conditional: $d_Z = \min(D_B, D_A)$ and $d_X$ the same for the transposed input; $D_A$, $D_B$ as defined in `OPERATIONAL_SEMANTICS.md` §4.41; lower endpoint $\min(\ell_B, \ell_A)$ from supplied sourced bounds, with $\ell_B$ alone when $\bar f_0$ is injective; upper witnesses from $B$ (§4.41). No constructor computes a distance |
 | `L-EMPTY` | $0$, exact (§4.43) | $0$, exact (§4.43) | $w=0$, $\kappa=0$, $r=0$ when layout supplied | no §2g cell; $[0, +\infty)$ per `DistanceLedger.for_constructed` (semantic $d_X=d_Z=d=+\infty$ at $k=0$, §4.43) |
 | `L-FREE` | $|Q|$, exact (§4.43) | $|Q|$, exact (§4.43) | $w=0$, $\kappa=|Q|$, $r=0$ when layout supplied | no §2g cell; $[0, +\infty)$ per `DistanceLedger.for_constructed` (semantic $d_X=d_Z=d=1$ for $Q\neq\varnothing$, $+\infty$ for $Q=\varnothing$; any singleton witness $\{q\}$ tightens the upper endpoints to $1$, §4.43) |
 | `A-PULLBACK` | $|Q_1 \times_{Q_I} Q_2|$, exact (§4.43) | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. Naive lower bound $d(A\times_C B)\ge\min(d_A,d_B)$ is `false` (`the left-in-papers note` §6.3) |
 | `A-PUSHOUT` | $|Q_1 \sqcup_{Q_S} Q_2|$, exact (§4.43) | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. General pushouts with $S\neq 0$ can drop distance (`the left-in-papers note` claims 3.5, 4.1) |
+| `L-PAIR-PARTITION` | $L \cdot p$, exact (§4.46) | rank bookkeeping of the display, exact, no closed form | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | no cell; $[0, +\infty)$ until a sourced bound or validated witness is supplied (for CPM-PP, the structural factorial ceiling $d \le (J+1)!$ of Okada–Kasai Thm 3 is an external bound a consumer may name; APM-PP escapes that ceiling, §4.46) |
+| `PP-SCALE` | $L \cdot P$, exact (§4.47) | $L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z')$, exact (§4.47) | $w = L$ carries (each natural row has one 1 in each of the $L$ block columns); $r$ and Tanner connectivity recomputed from the generated presentation | `not yet defined` unless a verified interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied, in which case `conditional` (§2l): ledger starts at $[0, +\infty)$ and the supplied interval raises the lower/upper endpoints as a trusted input (consumer checks shape and witness consistency only; no automatic distance rule) |
+
+### 2g.1 Conditional distance cells and factor-to-child witness lifting for admitted constructors (issue #567)
+
+For the five constructors with established parameter theorems (`L-HGP`,
+`L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`), `OPERATIONAL_SEMANTICS.md`
+§4.45 derives both the **conditional lower-bound cells** from consumer-supplied,
+sourced factor hypotheses and the **deterministic factor-to-child witness-lifting
+maps**. In keeping with `OBL-PRICED-INPUT-SEMANTICS`, no constructor computes or
+verifies a distance lower bound: supplied factor bounds are trusted inputs whose
+sources and cell conditions are recorded on the constructed `DistanceLedger`,
+whereas lifted candidate witnesses are validated against the constructed state
+via `validate_witness` (§2c) before tightening any upper endpoint.
+
+| Constructor | Conditional lower-bound cell ($d_X, d_Z, d$) | Sourced factor hypotheses (consumer input) | Deterministic factor-to-child witness lifting (validated via `validate_witness`) | Evidence status |
+| --- | --- | --- | --- | --- |
+| `L-HGP` | $d_X \ge \min(\ell_2, \ell_1^T)$, $d_Z \ge \min(\ell_1, \ell_2^T)$, $d \ge \min(d_X, d_Z)$ | $\ell_1 \le d(\ker H_1)$, $\ell_2 \le d(\ker H_2)$, $\ell_1^T \le d(\ker H_1^T)$, $\ell_2^T \le d(\ker H_2^T)$ (Tillich–Zémor 2014) | Left-block $c_1 \otimes e_j$ ($e_j \notin \mathrm{rowspan}\,H_2$) and right-block $e_a \otimes c_2^T$ ($e_a \notin \mathrm{colspan}\,H_1$) for $Z$; $e_i \otimes c_2$ and $c_1^T \otimes e_b$ for $X$ (`lift_hgp_witnesses`, §4.45) | **`conditional`** (lower bound); **`proved`** (witness validity once checked) |
+| `L-NESTED-CSS` | $d_X \ge \ell_X$, $d_Z \ge \ell_Z$, $d \ge \min(\ell_X, \ell_Z)$ | $\ell_X \le d(\ker H_Z)$, $\ell_Z \le d(\ker H_X)$ (§4.36, §4.45) | Classical codewords $w_X \in \ker H_Z \setminus \mathrm{rowspan}\,H_X$ and $w_Z \in \ker H_X \setminus \mathrm{rowspan}\,H_Z$ directly on $Q$ (`lift_nested_witnesses`, §4.45) | **`conditional`** |
+| `A-CONCAT` | $d_\sigma \ge \max(\lceil \ell_\sigma(O)/k_{\mathrm{in}}\rceil, \ell_{\mathrm{block},\sigma}(O)) \cdot \ell_\sigma(I)$, $d \ge \min(d_X, d_Z)$ | $\ell_\sigma(O) \le d_\sigma(O)$, $\ell_\sigma(I) \le d_\sigma(I)$, optional $\ell_{\mathrm{block},\sigma}(O) \le d_{\mathrm{block},\sigma}(O)$ (§4.45) | Block-by-block lift of each outer $\sigma$-logical witness $w_O$ through the inner dual logical representatives $\mathrm{rep}_{\sigma, p}$ (`lift_concat_witnesses`, §4.45) | **`conditional`** |
+| `A-PRODUCT` | $d_X \ge \ell_X$, $d_Z \ge \ell_Z$, $d \ge \min(\ell_X, \ell_Z)$ | Display-certified sourced Audoux–Couvreur factor-overlap bounds $\ell_X, \ell_Z$ (direct `(d_X, d_Z)`, or multiplicative $\ell_\sigma = \underline d_{A,\sigma}\underline d_{B,\sigma}$ when the display certificate licenses multiplicative scaling; Audoux–Couvreur 2019, §4.45) | Central-block Kronecker lift $w_A \times w_B \subseteq Q_A \times Q_B$ (at offset $m_Z^A m_X^B + i n_B + j$) of weight $\mathrm{wt}(w_A)\mathrm{wt}(w_B)$ (`lift_product_witnesses`, §4.45) | **`conditional`** |
+| `A-DOUBLE` | $d_X \ge \ell_X$, $d_Z \ge \ell_Z$, $d \ge \min(\ell_X, \ell_Z)$ | Sourced cover bounds $\ell_X, \ell_Z$ (or $\ell_\sigma(C)$ / $\min(\ell_X(C),\ell_Z(C))$ for the empty wiring, §4.45) | Sheet-$0$, sheet-$1$ (sector-swapped if `conjugate`), and two-sheet diagonal lifts of parent witnesses $w_C$ (`lift_double_witnesses`, §4.45) | **`conditional`** |
 
 A supplied bound that contradicts a validated witness is a failed premise
 (`no_derivation`), as everywhere in §2b. For `A-DOUBLE`, `L-TANNER`,
-`L-TILE`, `L-NESTED-CSS`, `L-MAPPING-CONE`, `A-PULLBACK`, and `A-PUSHOUT` the cells above are stated for an evaluation: an input whose
+`L-TILE`, `L-NESTED-CSS`, `L-MAPPING-CONE`, `A-PULLBACK`, `A-PUSHOUT`, and `L-PAIR-PARTITION` the cells above are stated for an evaluation: an input whose
 natural rows do not commute (or whose interface maps fail the CSS-morphism premise) has no derivation and no cells.
+
 
 ## 2h. Gate-realization judgment rows: codespace preservation and transport by weakening (admitted 2026-11-18)
 
@@ -907,6 +931,23 @@ paragraph of this section.)
 | Finite-seed $\bar\Gamma(C)$ cohomology / sparsity check | Recorded separately (`machine/experiments/one_shot_level_map_transport.py`: `build_hollowed_tensor_level_map`, `empirical_gamma_bar_probe`, `repetition_tensor_code`) | Checked by `gf2.rank` on finite satisfying seeds (e.g. $2 \times 3$ and $3 \times 3$ toric codes); never upgrades `conditional` or `unavailable` | **`empirical`** (strictly separated from the conditional theorem) |
 
 No constructor evaluates this cell: $\bar\Gamma$ as a single-code map is constructor-candidate material (typed input, identifier allocation, well-formedness obligation), but that ladder step is left for another PR. Here no term denotes $\bar\Gamma(C)$, so no evaluation yields a state these cells describe and no consumer path uses them; the tower-level threshold statement is the only family-level content, and no usable automatic distance bound or $k$ transport rule enters the calculus from this record.
+
+## 2l. PP-SCALE family-level structural upper bound (conjectural, optional)
+
+Recorded as a conditional family-level rule over PP-scale families with fixed
+parameters, analogous to §2j. **No taxonomy operation identifier is minted**
+(`TAXONOMY.md` §3.8). The paper's conjecture of a finite, size-independent
+structural distance upper bound $B$, with improvement toward it as $P$ grows, is
+scoped as an upper ceiling, marked `conjectural`, with monotonicity explicitly
+not assumed. Family closure and amplified lower bounds remain `unavailable`
+(`design/SCOPE.md` §4, issue #541). Admission is a separate maintainer
+decision.
+
+| Property / Quantity | Judgment cell | Imported hypothesis / side condition | Source & Evidence status |
+| --- | --- | --- | --- |
+| Structural distance upper bound ($d, d_X, d_Z$) | upper ceiling $B$ only; monotonicity not assumed | $B$ supplied as a trusted (conjectural) input | Kasai, arXiv submit/8406448 §2.1; **`conjectural`** |
+| Per-state supplied distance interval ($d, d_X, d_Z$) | $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ recorded on the constructed ledger | sourced interval supplied as a priced hypothesis; consumer checks shape and witness consistency only | Kasai, arXiv submit/8406448 §3; **`conditional`** |
+| Amplified family-level lower bound ($d, d_X, d_Z$) | `unavailable` unless a sourced per-state interval is supplied | none | `design/SCOPE.md` §4; **`unavailable`** |
 
 ## 2k. CSS-preserving column CNOT/SWAP transformation (admitted 2026-11-18)
 
