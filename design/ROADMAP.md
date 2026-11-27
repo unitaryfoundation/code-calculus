@@ -40,8 +40,8 @@ conditional carry cells, and hand derivations in
 | `C-SEQUENCE` | 6 — `contract-proved` | `m ::= m₁ ; m₂`; left-to-right composition of premises (`W10`, §1–§2) | Intermediate state feeds $m_2$; structural persistence & single-polarity composition `[proved]` (§4.11; `W13` `unavailable`); conditional step-wise interval composition (`OBL-PRICED-INTERVAL-SOUNDNESS`, §4.13) | §4.6–§4.8, §4.10–§4.11, §4.13, §4.15, §4.17, §4.21–§4.23, §4.37, §4.40 |
 
 Rung 6 records hand-derivation evidence (`proved`). Full machine-checked
-soundness (rung 7 — `mechanized`) remains open, and Gate 7 remains unchecked
-([`spec/GATES.md`](../spec/GATES.md)).
+soundness (rung 7 — `mechanized`) remains open; Gate 7 is ratified for
+`stdCSS-3` (2026-11-26, [`spec/GATES.md`](../spec/GATES.md)).
 
 ---
 
@@ -62,8 +62,10 @@ discharged by hand derivation in §4.32 and mechanized conditionally in
 | `E-GLUE` | 5 — `contract-stated` | Binary-only expression constructor `glue(e₁, e₂; seams)` ([`spec/TERM_LANGUAGE.md`](../spec/TERM_LANGUAGE.md) §1–§2). Both witness fields are defined ([`spec/STATE_MODEL.md`](../spec/STATE_MODEL.md) §1a; [`WitnessFields.lean`](../lean/CodeCalculus/WitnessFields.lean)). Algebraic extraction and family-level `AdmissibleSeam` soundness are mechanized across `ExactGlue*.lean`, `LogicalWitness.lean`, `AdmissibleSeamFamily.lean`, `Gate6Exact.lean`, and `GlueExtraction.lean`; the remaining geometric step (planar move words $\to$ `AdmissibleSeam`) is recorded in [`ADMISSIBLE_SEAM_FAMILY.md`](ADMISSIBLE_SEAM_FAMILY.md). |
 | `E-GRAFT` | 3 — `transition-defined` | Conditional construction extension; `OBL-GRAFT-TRANSITION-SOUNDNESS`, `OBL-PRICED-INTERVAL-SOUNDNESS`, and `OBL-PRICED-INPUT-SEMANTICS` discharged by hand derivation (§4.12–§4.14). |
 | `E-PEEL`, `E-PUNCTURE` | 3 — `transition-defined` | Typed transitions and carry/refutation derivations in [`spec/OPERATIONAL_SEMANTICS.md`](../spec/OPERATIONAL_SEMANTICS.md) §4.28–§4.29; exact peel relations mechanized in [`ExactPeel.lean`](../lean/CodeCalculus/ExactPeel.lean). |
-| `E-EXTEND` | 3 — `transition-defined` | Patch growth / breeding (§4.30). |
-| `E-LOCAL-HADAMARD` | 3 — `transition-defined` | Sector swap on $T = Q$ (§4.27); involution and conjugation laws mechanized in [`DualityAdjunction.lean`](../lean/CodeCalculus/DualityAdjunction.lean). |
+| `E-EXTEND` | 3 — `transition-defined` | Patch growth / breeding (§4.30), with conditional `extend_distance_loss` cell (`OBL-EXTEND-DISTANCE-LOSS`). |
+| `E-LOCAL-HADAMARD` | 3 — `transition-defined` | Sector swap on $T = Q$ and split-subset $\varnothing \subsetneq T \subsetneq Q$ under the splitting guard (§4.27); involution, conjugation, and split-subset distance laws mechanized in [`DualityAdjunction.lean`](../lean/CodeCalculus/DualityAdjunction.lean) and [`SplitHadamard.lean`](../lean/CodeCalculus/SplitHadamard.lean). |
+| `E-SPLIT` | 3 — `transition-defined` | Separating deletion `split(Q_A; R)` derived over `C-DELETE-CHECK` and `C-SEQUENCE` (§4.48; conditional block-interval cell; [`SplitCommand.lean`](../lean/CodeCalculus/SplitCommand.lean)). Two-state projection is refused. |
+| `C-COLUMN-CNOT` | 3 — `transition-defined` | Invertible CSS-preserving column map `cnotSwap(U)` (§4.42; [`ColumnCnot.lean`](../lean/CodeCalculus/ColumnCnot.lean)). |
 | `P-REBASE` | 3 — `transition-defined` | Presentation rebasing `rebase(τ; M)` (§4.26, discharging `OBL-REBASE-GENERATION`); rank preservation mechanized in [`RebaseRankSector.lean`](../lean/CodeCalculus/RebaseRankSector.lean). |
 
 ### Expression constructors (rung 3 — `transition-defined`)
@@ -72,17 +74,22 @@ All expression constructors below are admitted at rung 3 with productions in
 [`spec/TERM_LANGUAGE.md`](../spec/TERM_LANGUAGE.md) §1–§2, cards in
 [`spec/OPERATIONAL_SEMANTICS.md`](../spec/OPERATIONAL_SEMANTICS.md) §2, and
 default distance intervals $[0, +\infty)$ per
-[`spec/JUDGMENT_LAYER.md`](../spec/JUDGMENT_LAYER.md) §2g (no automatic
+[`spec/JUDGMENT_LAYER.md`](../spec/JUDGMENT_LAYER.md) §2g (with conditional
+distance cells and witness lifting at §2g.1; no automatic unconditional
 distance lower-bound rules):
 
-- **`stdCSS-3` construction family:** `L-HGP`, `L-LIFTED` (finite abelian
-  groups), `L-GROUP-ALGEBRA` (two-block over a finite abelian group),
-  `A-CONCAT` (CSS factors), `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`
-  (CSS tensor product), `A-DOUBLE` (two-sheet cover), and `L-NESTED-CSS`
+- **`stdCSS-3` construction family:** `L-HGP`, `L-LIFTED` (finite abelian,
+  nonabelian, and subgroup coset inputs $\mathrm{lift}_{G;H}(A, B)$),
+  `L-GROUP-ALGEBRA` (finite abelian and nonabelian groups), `A-CONCAT` (CSS
+  factors only; symplectic inner inputs refused), `L-BALANCED` (abelian and
+  nonabelian groups), `L-TANNER`, `L-TILE`, `A-PRODUCT` (CSS tensor product),
+  `A-DOUBLE` (two-sheet cover), `L-NESTED-CSS`, `L-MAPPING-CONE`,
+  `L-PAIR-PARTITION`, and `PP-SCALE`
   ([`spec/OPERATIONAL_SEMANTICS.md`](../spec/OPERATIONAL_SEMANTICS.md)
-  §4.34–§4.36; consumer support in [`machine/constructors.py`](../machine/constructors.py);
-  Lean well-formedness and rank bookkeeping in [`lean/CodeCalculus/`](../lean/CodeCalculus/)
-  and [`AXIOMS.md`](../AXIOMS.md)).
+  §4.34–§4.36, §4.41, §4.44–§4.47, §4.49; consumer support in
+  [`machine/constructors.py`](../machine/constructors.py); Lean well-formedness
+  and rank bookkeeping in [`lean/CodeCalculus/`](../lean/CodeCalculus/) and
+  [`AXIOMS.md`](../AXIOMS.md)).
 - **Nullary and interface constructors:** `L-EMPTY`, `L-FREE`, `A-PULLBACK`,
   and `A-PUSHOUT` ([`spec/OPERATIONAL_SEMANTICS.md`](../spec/OPERATIONAL_SEMANTICS.md)
   §4.43; [`NULLARY_AND_INTERFACE_CONSTRUCTORS.md`](NULLARY_AND_INTERFACE_CONSTRUCTORS.md)).
@@ -90,15 +97,17 @@ distance lower-bound rules):
 ### Gate-realization and family-level judgment rows
 
 - **Gate-realization rows ([`GATE_REALIZATION_ROWS.md`](GATE_REALIZATION_ROWS.md)):**
-  Codespace preservation $\mathsf{preserves}_U(C)$ on CSS displays and the
-  equal-syndrome generator weight floor $\omega(C) \ge \lceil d(C)/2 \rceil$
-  (carried by weakening as $\lceil L_d / 2 \rceil$) are admitted in
+  Codespace preservation $\mathsf{preserves}_U(C)$ on CSS displays (with its
+  any-angle `C-ADD-CHECK` cell for rational angles $\theta_j \in \pi\mathbb{Q}$),
+  the equal-syndrome generator weight floor $\omega(C) \ge \lceil d(C)/2 \rceil$
+  (carried by weakening as $\lceil L_d / 2 \rceil$), and the frame-reading
+  predicates $\mathsf{preserves}_U(C \mid F)$, $\mathsf{phase}_U(C \mid F) = z$,
+  $\mathsf{image}_U(C; e) \equiv P$, and $\mathsf{addresses}_U(C; F, A)$ (Rows
+  C–F, reading the logical-witness field as a supplied frame) are admitted in
   [`spec/JUDGMENT_LAYER.md`](../spec/JUDGMENT_LAYER.md) §2, §2h, and §7.1–§7.4
   and derived in §4.37. Because CSS displays determine the phase $(-i)^m$ of
   any product of $X$- and $Z$-rows sharing $m$ qubits, phase-insensitivity of
-  the CSS state model does not block CSS gate-preservation checks. Logical-gate
-  addressability, logical action, and the non-$\pi/4$ anticommuting
-  `C-ADD-CHECK` branch remain `not yet defined`.
+  the CSS state model does not block CSS gate-preservation checks.
 - **Conditional family-level level-map transport:** Yuan's one-shot
   hollowed-tensor level map is recorded in
   [`spec/JUDGMENT_LAYER.md`](../spec/JUDGMENT_LAYER.md) §2j ($k' = k$
@@ -115,7 +124,6 @@ distance lower-bound rules):
 | Entry | Blocked by | Promotion criterion |
 | --- | --- | --- |
 | `P-RELABEL` | No grammar production; `OBL-PRESENTATION-CONJUGATION` out of scope | Admitting relabeling as ordinary syntax and discharging `OBL-PRESENTATION-CONJUGATION`. |
-| `E-SPLIT` | Merge/split routing outside current scope | Formal admission decision with typed transition, premises, and carry cells. |
 | `A-QUOTIENT` | No grammar production (`spec/JUDGMENT_LAYER.md` §2i records the conditional monomial-quotient transfer-theorem slot only) | Typed quotient map/embedding syntax, well-formedness derivation, and distance/parameter cells. |
 
 ### Extended-state (non-CSS) layer (rung 1 — `taxonomy-only`, deferred)
@@ -162,8 +170,8 @@ admitted to [`spec/`](../spec/) without a formal promotion decision:
   invariants I1–I5, `EvalExpr`/`Eval`, interval ledger, `Transport.lean`,
   `Gate6Soundness.lean`, `Gate6Exact.lean`, `GlueExtraction.lean`,
   `DualityAdjunction.lean`, and constructor well-formedness/rank theorems.
-  Discharging the four classical rank axioms in [`AXIOMS.md`](../AXIOMS.md) and
-  completing full soundness across all extensions remain open.
+  The four classical rank axioms are discharged ([`AXIOMS.md`](../AXIOMS.md)).
+  Completing full soundness across all extensions remains open.
 
 ---
 

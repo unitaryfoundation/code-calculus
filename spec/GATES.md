@@ -2,8 +2,8 @@
 
 **Status:** normative. **One authority per topic.**
 
-Gates 0–6 are ratified. Gate 7 is **unchecked**. A gate-status audit
-records evidence and open items and does not ratify any gate.
+Gates 0–7 are ratified (Gate 7 for `stdCSS-3`, 2026-11-26). A gate-status
+audit records evidence and open items and does not ratify any gate.
 
 **Consequence, stated plainly:** no artifact may describe an unchecked gate as
 met, or any claim as sound, on the strength of a gate being *listed* here.
@@ -196,6 +196,93 @@ Only after the preceding gates should the collaborators decide which lower-level
 constructors require typed input objects, which named families are closed under
 which transformations, and whether a non-circular generation or transition
 completeness theorem is justified.
+
+**Decision inputs recorded (2026-11-24 / 2026-11-25).** All three questions
+have dated records in [`TAXONOMY.md`](TAXONOMY.md), *Gate 7 decision matrices*
+and *Completeness feasibility decision (Gate 7, issue #606)*. The *typed-input
+decision matrix* records, for every admitted constructor and command, whether
+its typed inputs are required, optional, or derived. The *family-closure
+matrix* records closure or non-closure for each named family under each
+admitted transformation; a closure there is a code-level membership fact and
+enters no judgment cell. On 2026-11-25 (maintainer decision, MathysRennela;
+issue #606, Option (a)), the completeness question was settled by recording a
+scoped, non-circular feasibility argument for elementary generation and
+variable-namespace transition completeness and opening
+`OBL-ELEMENTARY-COMPLETENESS` in [`OBLIGATIONS.md`](OBLIGATIONS.md) (status
+`open`; folded into `stdCSS-3` / `v0.3.2` by maintainer decision 2026-11-26),
+leaving deliberate
+judgment incompleteness (`design/SCOPE.md` §2, §11 below) untouched.
+Recording these inputs does not by itself check Gate 7.
+
+**Ratified (2026-11-26, maintainer decision, MathysRennela; issue #603).**
+Scope: the three Gate 7 questions are settled for `stdCSS-3`
+([`VERSIONING.md`](VERSIONING.md) §4.1, §8) on the decision inputs above and
+on the Tier 2 dispositions listed below, each of which is recorded once, in
+its own dated diary fragment and in the `spec/` sections it names. This record
+cites them and does not restate them.
+
+1. **Typed inputs.** Typed inputs stay arguments of their production or
+   command; none becomes a field of $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$
+   (`STATE_MODEL.md` §1). The matrix's required / optional / derived verdicts
+   stand as recorded. Priced hypotheses remain judgment inputs, never
+   production arguments. No production, transition, or judgment cell is added
+   by this decision.
+2. **Family closure.** The matrix's closure and non-closure verdicts stand as
+   recorded: code-level membership facts that enter no judgment cell and no
+   claim rung. They are not soundness results.
+3. **Completeness.** Settled by the 2026-11-25 decision above: no completeness
+   theorem is claimed for `stdCSS-3`. `OBL-ELEMENTARY-COMPLETENESS` stays
+   `open` (recorded in `stdCSS-3` / `v0.3.2` by maintainer decision 2026-11-26)
+   and moves no `discharged-through` value. Judgment incompleteness is unchanged.
+
+**Tier 2 dispositions this ratification relies on** (all issues closed on
+`main`):
+
+- `#544` (future-$\Pi$ fields): specified as sketch refinement (PR #660); none
+  admitted as state data (`STATE_MODEL.md` §1a; diary
+  `2026-11-25-future-pi-field-sketches-issue-544.md`).
+- `#546` (`E-SPLIT`): separating deletion admitted 2026-11-25 as the command
+  production $\mathrm{split}_{Q_A; R}$ at `transition-defined`; two-state
+  projection refused (PR #662; `VERSIONING.md` §5.3; diary
+  `2026-11-25-admit-e-split-separating-deletion-issue-546.md`).
+- `#565`, `#567` (nonabelian group inputs; conditional constructor cells with
+  witness lifting): implemented (PR #622).
+- `#568` (pair-partition constructor): implemented (PR #621).
+- `#571` (split-subset `E-LOCAL-HADAMARD`): implemented (PR #661;
+  `VERSIONING.md` §5.3).
+- `#572` (gate-realization extensions): admitted 2026-11-26 (PR #665) and
+  folded into `stdCSS-3` / `v0.3.2` by maintainer decision 2026-11-26
+  (`VERSIONING.md` §5.3; diary `2026-11-26-gate-realization-log-frame-issue-572.md`,
+  `2026-11-26-ship-v032-fold-stdcss-4-into-stdcss-3.md`).
+- `#573` (symplectic inner inputs for `A-CONCAT`): refused 2026-11-25
+  (PR #663; `TAXONOMY.md` §2.14; diary
+  `2026-11-25-refuse-symplectic-inner-inputs-for-a-concat-issue-573.md`).
+- `#606` (completeness): obligation opened 2026-11-25, as above (PR #663;
+  diary `2026-11-25-gate7-completeness-feasibility-obligation-issue-606.md`).
+- `#657` (instance-contract obligations for the `v0.3.x` inventory): recorded
+  2026-11-25, including the `C-COLUMN-CNOT` Lean `Command` constructor
+  (PR #663; `VERSIONING.md` §5.2; diary
+  `2026-11-25-record-stdcss-3-instance-contract-obligations-issue-657.md`).
+
+**Ledger pass (issue #609).** [`OBLIGATIONS.md`](OBLIGATIONS.md) and
+[`CLAIMS.md`](CLAIMS.md) match this record: the ratification admits nothing,
+so no `discharged-through` value and no `stdCSS-3` claim rung moves.
+
+**Extended-state layer.** The 2026-11-18 refusal (Gate 6 above) was worded for
+`v0.3.0`. Everything published in a `v0.3.x` tag is `stdCSS-3`
+(`VERSIONING.md` §5.2), so this record reads the refusal as attaching to
+`stdCSS-3`: the extended-state (two-sorted symplectic) layer is not part of
+the `stdCSS-3` this gate ratifies. Admitting it would be a new line, not a
+`stdCSS-3` patch.
+
+What this ratification does **not** claim: any soundness result for the
+calculus; promotion of `E-GRAFT` past `transition-defined`; admission of the
+extended-state layer; any completeness theorem; any mechanized metatheorem
+beyond those already recorded (rung 7 remains owed for the kernel slice); or
+any new production, judgment cell, or consumer path. Mechanization (issue
+#607) is complete on the scoped modules, with `lake build` green and no
+`sorry` (`lean/CodeCalculus/AxiomAudit.lean`). Gates 0–6 remain ratified as
+recorded; Gate 7 is ratified for `stdCSS-3`.
 
 ---
 

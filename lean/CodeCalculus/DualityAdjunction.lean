@@ -231,6 +231,8 @@ def swapCommand : Command → Command
   | Command.puncture q => Command.puncture q
   | Command.extend delta adds =>
       Command.extend delta (adds.map (fun p => (oppositeSector p.1, p.2)))
+  | Command.cnotSwap U => Command.cnotSwap U
+  | Command.split QA R => Command.split QA R
 
 /-- `swapCommand` is an involution on `Command`. -/
 theorem swapCommand_involutive : ∀ (m : Command), swapCommand (swapCommand m) = m
@@ -252,6 +254,8 @@ theorem swapCommand_involutive : ∀ (m : Command), swapCommand (swapCommand m) 
         funext ⟨τ, supp⟩
         simp [oppositeSector_involutive]
       rw [hfun, List.map_id]
+  | Command.cnotSwap _ => rfl
+  | Command.split _ _ => rfl
 
 /-- Conjugation for `C-DELETE-CHECK`: `H(delete(C, r)) = delete(H(C), r)`. -/
 theorem swapState_deleteState (s : CodeState) (r : Nat) :
@@ -260,6 +264,16 @@ theorem swapState_deleteState (s : CodeState) (r : Nat) :
   congr 1
   rw [List.filter_map]
   rfl
+
+/-- Conjugation for `E-SPLIT`: `H(deleteAll(C, R)) = deleteAll(H(C), R)`. -/
+theorem swapState_deleteAll (s : CodeState) (R : List Nat) :
+    swapState (deleteAll s R) = deleteAll (swapState s) R := by
+  induction R generalizing s with
+  | nil => rfl
+  | cons r rest ih =>
+      show swapState (deleteAll (deleteState s r) rest) =
+        deleteAll (deleteState (swapState s) r) rest
+      rw [ih, swapState_deleteState]
 
 /-- Conjugation for `C-ADD-CHECK`: `H(add_τ(C, supp)) = add_{τ̄}(H(C), supp)`. -/
 theorem swapState_addState (s : CodeState) (τ : Sector) (supp : List Nat) :

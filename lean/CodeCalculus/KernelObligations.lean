@@ -56,9 +56,17 @@ theorem eval_deterministic : ∀ (m : Command) (s t1 t2 : CodeState),
   | hadamard T =>
       intro s t1 t2 h1 h2
       cases h1 with
-      | hadamard _ heq1 _ =>
+      | hadamard hp1 heq1 _ =>
         cases h2 with
         | hadamard _ heq2 _ =>
+          rw [heq1, heq2]
+        | hadamardSplit hsub _ _ _ _ _ =>
+          exact absurd hp1 (not_perm_or_nil_of_properSubset hsub)
+      | hadamardSplit hsub _ heq1 _ _ _ =>
+        cases h2 with
+        | hadamard hp2 _ _ =>
+          exact absurd hp2 (not_perm_or_nil_of_properSubset hsub)
+        | hadamardSplit _ _ heq2 _ _ _ =>
           rw [heq1, heq2]
   | peel q tau r_id =>
       intro s t1 t2 h1 h2
@@ -80,6 +88,20 @@ theorem eval_deterministic : ∀ (m : Command) (s t1 t2 : CodeState),
       | extend _ heq1 _ =>
         cases h2 with
         | extend _ heq2 _ =>
+          rw [heq1, heq2]
+  | cnotSwap U =>
+      intro s t1 t2 h1 h2
+      cases h1 with
+      | cnotSwap _ heq1 _ =>
+        cases h2 with
+        | cnotSwap _ heq2 _ =>
+          rw [heq1, heq2]
+  | split QA R =>
+      intro s t1 t2 h1 h2
+      cases h1 with
+      | split _ _ _ _ _ heq1 =>
+        cases h2 with
+        | split _ _ _ _ _ heq2 =>
           rw [heq1, heq2]
   | seq m1 m2 ih1 ih2 =>
       intro s t1 t2 h1 h2

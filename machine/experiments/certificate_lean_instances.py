@@ -11,7 +11,10 @@ premise is `by decide`, so the Lean kernel runs the checker.
 
 The states are the `W3` result `A1` of `machine/fixtures/mvp_fixtures.json`
 (``d_X = 2``, ``d_Z = 1``) and the pinned `codes/10-2-3-b.json` parent of
-the qLDPC replay (``d_X = d_Z = 3``).
+the qLDPC replay (``d_X = d_Z = 3``), both with kill certificates, and the
+cyclic two-block code of ``1 + x^10 + x^14`` and ``1 + x^11 + x^13`` over
+``Z_15`` on 30 qubits (``d_X = d_Z = 6``), with pruning-tree certificates
+(issue #574).
 
 Run with ``--check`` to compare the committed file with a fresh generation.
 """
@@ -27,9 +30,12 @@ sys.path.insert(0, str(ROOT))
 from machine.certificates import (  # noqa: E402
     _witness_failure,
     build_sector_lower_bound_certificate,
+    build_sector_lower_bound_tree_certificate,
     lean_instance_block,
     lean_instance_module,
+    lean_tree_instance_block,
 )
+from machine.constructors import two_block_code  # noqa: E402
 from machine.priced_calculus import CodeState, Row  # noqa: E402
 
 FIXTURE = ROOT / "machine" / "fixtures" / "qldpc_10_2_3_b.json"
@@ -45,10 +51,26 @@ theorem adds a checked witness (`certificate_equality`). These are per-state
 atomic judgments keyed to the state term, the sector distance, and the
 sector (`spec/OPERATIONAL_SEMANTICS.md` §4.24). Their evidence status is
 `certificate-checked` (`spec/CLAIMS.md`, *Admission*). They are statements
-about the Lean terms `w3_result` and `qldpc_10_2_3_b` defined here, each
-proved well-formed, and `w3_result` proved equal to `fixture_W3_result`.
+about the Lean terms defined here. `w3_result` and `qldpc_10_2_3_b` are
+each proved well-formed, and `w3_result` is proved equal to
+`fixture_W3_result`.
 The generator and the certificate producer are not trusted, and no
 operation contract is evidenced.
+
+`cyclic_30_4_6` is the two-block code of `1 + x^10 + x^14` and
+`1 + x^11 + x^13` over the cyclic group of order 15: 30 qubits and 13
+retained rows per sector. The term is not proved well-formed here: the
+kernel evaluation of `wellFormedBool` on it took over ten minutes in CI,
+and the checker theorems hold for every state term. The consumer validates
+the state it is translated from. Its bounds use pruning-tree certificates
+(`checkPruneCertificate`). Each `_accepts` theorem is the checker's
+acceptance by `decide +kernel`, and each `_lower_bound` theorem is
+`pruneCertificate_lower_bound` applied to it, in the `Option Nat` reading:
+every finite value of the exact sector distance is at least 6. The `ExtNat`
+reading is `pruneCertificate_lower_bound_ext` applied to the same
+acceptance. It is not stated here, because Lean did not elaborate that
+statement for a 30-qubit state within its default limits. Each `_exact`
+theorem adds a checked logical of weight 6.
 """
 
 
@@ -65,9 +87,16 @@ def pinned_parent():
         return CodeState.from_challenge(json.load(source))
 
 
+def cyclic_30_4_6():
+    """The two-block code of `1 + x^10 + x^14`, `1 + x^11 + x^13` over Z_15."""
+    state, _ = two_block_code([15], [[0], [10], [14]], [[0], [11], [13]])
+    return state
+
+
 INSTANCES = (
-    ("w3_result", w3_result, {"X": 2, "Z": 1}),
-    ("qldpc_10_2_3_b", pinned_parent, {"X": 3, "Z": 3}),
+    ("w3_result", w3_result, {"X": 2, "Z": 1}, "kills"),
+    ("qldpc_10_2_3_b", pinned_parent, {"X": 3, "Z": 3}, "kills"),
+    ("cyclic_30_4_6", cyclic_30_4_6, {"X": 6, "Z": 6}, "tree"),
 )
 
 
@@ -81,18 +110,26 @@ def first_witness(state, sector, weight):
 
 def generate():
     states, blocks = {}, []
-    for name, build, distances in INSTANCES:
+    for name, build, distances, form in INSTANCES:
         state = build()
         states[name] = state
         for sector in ("X", "Z"):
             bound = distances[sector]
-            certificate = build_sector_lower_bound_certificate(
-                state, sector, bound)
-            blocks.append(lean_instance_block(
-                name, state, certificate,
-                witness=first_witness(state, sector, bound)))
+            witness = first_witness(state, sector, bound)
+            if form == "tree":
+                certificate = build_sector_lower_bound_tree_certificate(
+                    state, sector, bound)
+                blocks.append(lean_tree_instance_block(
+                    name, state, certificate, witness=witness))
+            else:
+                certificate = build_sector_lower_bound_certificate(
+                    state, sector, bound)
+                blocks.append(lean_instance_block(
+                    name, state, certificate, witness=witness))
     return lean_instance_module(
-        HEADER, states, blocks, same_as={"w3_result": "fixture_W3_result"})
+        HEADER, states, blocks, same_as={"w3_result": "fixture_W3_result"},
+        without_well_formedness=tuple(
+            name for name, _, _, form in INSTANCES if form == "tree"))
 
 
 def main(argv):

@@ -402,15 +402,24 @@ theorem Derives.weaken {dMeasure : Field → CodeState → Nat} {cs : List CodeS
   | genPuncture i r σ S q s t hi hj hstep hsurvives _ ih =>
       exact Derives.genPuncture i r σ S q s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hsurvives ih
-  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+  | genHadamard i r σ S T s t hi hj hstep hg _ ih =>
       exact Derives.genHadamard i r σ S T s t (getElem?_append_of_some hi)
-        (getElem?_append_of_some hj) hstep ih
+        (getElem?_append_of_some hj) hstep hg ih
+  | genHadamardSplit i T s t row hi hj hstep hsplit hrow =>
+      exact Derives.genHadamardSplit i T s t row (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsplit hrow
   | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
       exact Derives.genRebase i r σ S sector matrix s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hsurvives ih
   | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
       exact Derives.genRebaseMint i sector matrix s t row (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hrow
+  | genCnotSwap i r σ S U s t hi hj hstep _ ih =>
+      exact Derives.genCnotSwap i r σ S U s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genSplit i r σ S QA R s t hi hj hstep hsurvives _ ih =>
+      exact Derives.genSplit i r σ S QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
 
 /-- A sentence is a generator-referencing claim. -/
 def Ann.isGen : Ann → Bool
@@ -674,13 +683,19 @@ theorem Derives.shift_cond {dMeasure : Field → CodeState → Nat} (cs : List C
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.genPuncture (i + cs.length) r σ S q s t (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep hsurvives ih
-  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+  | genHadamard i r σ S T s t hi hj hstep hg _ ih =>
       intro hsrc
       have ih := ih (fun _ => hsrc rfl)
       simp only [Ann.shift] at ih ⊢
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.genHadamard (i + cs.length) r σ S T s t (getElem?_shift_of_some hi)
-        (getElem?_shift_succ_of_some hj) hstep ih
+        (getElem?_shift_succ_of_some hj) hstep hg ih
+  | genHadamardSplit i T s t row hi hj hstep hsplit hrow =>
+      intro hsrc
+      simp only [Ann.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genHadamardSplit (i + cs.length) T s t row (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsplit hrow
   | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
       intro hsrc
       have ih := ih (fun _ => hsrc rfl)
@@ -694,6 +709,20 @@ theorem Derives.shift_cond {dMeasure : Field → CodeState → Nat} (cs : List C
       rw [Nat.add_right_comm i 1 cs.length]
       exact Derives.genRebaseMint (i + cs.length) sector matrix s t row (getElem?_shift_of_some hi)
         (getElem?_shift_succ_of_some hj) hstep hrow
+  | genCnotSwap i r σ S U s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genCnotSwap (i + cs.length) r σ S U s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep ih
+  | genSplit i r σ S QA R s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [Ann.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact Derives.genSplit (i + cs.length) r σ S QA R s t (getElem?_shift_of_some hi)
+        (getElem?_shift_succ_of_some hj) hstep hsurvives ih
 
 /-- Positive half, second segment: a derivation of a sentence that is not a
     generator-referencing claim over a chain is a derivation over any chain
@@ -1015,9 +1044,12 @@ theorem eqInvariant_of_derives {dMeasure : Field → CodeState → Nat} {cs : Li
   | genExtendMint _ _ _ _ _ _ _ _ _ _ => trivial
   | genPeel _ _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
   | genPuncture _ _ _ _ _ _ _ _ _ _ _ _ => trivial
-  | genHadamard _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genHadamard _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genHadamardSplit _ _ _ _ _ _ _ _ _ _ => trivial
   | genRebase _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
   | genRebaseMint _ _ _ _ _ _ _ _ _ _ => trivial
+  | genCnotSwap _ _ _ _ _ _ _ _ _ _ _ _ => trivial
+  | genSplit _ _ _ _ _ _ _ _ _ _ _ _ _ => trivial
 
 /-- In a chain with no identity step, no equality between distance atoms at
     two positions is derivable, for any choice of the measure: instantiation
@@ -1778,6 +1810,7 @@ theorem derives_gen_hadamard_swapped (dMeasure : Field → CodeState → Nat) :
     Derives dMeasure [graftableState, hadamardState graftableState [0, 1, 2, 3, 4]]
       (Ann.gen 1 1 Sector.Z [0, 1]) :=
   Derives.genHadamard 0 1 Sector.X [0, 1] [0, 1, 2, 3, 4] _ _ rfl rfl eval_hadamard_graftable
+    (Or.inl (List.Perm.refl _))
     (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
 
 /-- Under `E-LOCAL-HADAMARD` (`T = []`), row `1` keeps its id, sector, and
@@ -1786,6 +1819,7 @@ theorem derives_gen_hadamard_empty (dMeasure : Field → CodeState → Nat) :
     Derives dMeasure [graftableState, hadamardState graftableState []]
       (Ann.gen 1 1 Sector.X [0, 1]) :=
   Derives.genHadamard 0 1 Sector.X [0, 1] [] _ _ rfl rfl eval_hadamard_empty_graftable
+    (Or.inr rfl)
     (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
 
 /-- `P-REBASE` on `graftableState` in sector `X` with shear `[[1, 1], [0, 1]]`:
@@ -1839,5 +1873,78 @@ theorem not_derivable_gen_rebase_retired (dMeasure : Field → CodeState → Nat
       chain_rebaseChainExample (i := 0) rfl rfl eval_rebase_graftable (by decide),
     not_derivable_gen_of_rebased dMeasure hmono wellFormedContext_rebaseChainExample
       chain_rebaseChainExample (i := 0) rfl rfl eval_rebase_graftable (by decide)⟩
+
+/-! ## `W13` half for `E-SPLIT` (admitted 2026-11-25) -/
+
+/-- A cut row's identifier is not in the split's output display. -/
+theorem not_mem_rows_deleteAll_of_mem {s : CodeState} {R : List Nat}
+    {r : Nat} {σ : Sector} {S : List Nat} (hr : r ∈ R) :
+    ({ id := r, sector := σ, support := S } : Row) ∉ (deleteAll s R).rows := by
+  intro hmem
+  exact ((mem_deleteAll_rows R s _).mp hmem).2 hr
+
+/-- The `W13` half for `E-SPLIT`: a claim that refers to any deleted cut-row
+    identifier `r ∈ R` is not derivable at the split's output, whatever sector
+    and support it states (`spec/JUDGMENT_LAYER.md` §4). -/
+theorem not_derivable_gen_of_split (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) {cs : List CodeState}
+    (hctxt : WellFormedContext cs) (hchain : Chain cs)
+    {i r : Nat} {QA R : List Nat} {s t : CodeState} {σ : Sector} {S : List Nat}
+    (_hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+    (hstep : Eval (Command.split QA R) s t) (hr : r ∈ R) :
+    ¬ Derives dMeasure cs (Ann.gen (i + 1) r σ S) := by
+  apply not_derivable_of_false dMeasure hmono cs hctxt hchain
+  rintro ⟨t', ht', hmem⟩
+  have ht : t' = t := Option.some.inj (ht'.symm.trans hj)
+  rw [ht, eval_split_eq hstep] at hmem
+  exact not_mem_rows_deleteAll_of_mem hr hmem
+
+/-- Worked `E-SPLIT` instance on `graftableState`: split `QA = [0, 1, 2]` vs
+    `Q_B = [3, 4]` by deleting the unique crossing row `2` (`X [0, 2, 3, 4]`). -/
+theorem eval_split_graftable :
+    Eval (Command.split [0, 1, 2] [2]) graftableState
+      (deleteAll graftableState [2]) := by
+  apply Eval.split
+  · decide
+  · intro q hq; simp [graftableState] at hq ⊢; omega
+  · decide
+  · intro r hr
+    have hEq : r = 2 := List.mem_singleton.mp hr
+    subst hEq
+    exact ⟨⟨2, Sector.X, [0, 2, 3, 4]⟩, by simp [graftableState], rfl⟩
+  · intro row hrow
+    simp only [graftableState, List.mem_cons, List.not_mem_nil, or_false] at hrow
+    rcases hrow with rfl | rfl | rfl | rfl
+    · left; decide
+    · right; right; decide
+    · left; decide
+    · right; left; decide
+  · rfl
+
+def splitChainExample : List CodeState :=
+  [graftableState, deleteAll graftableState [2]]
+
+theorem chain_splitChainExample : Chain splitChainExample :=
+  Chain.cons eval_split_graftable (Chain.single _)
+
+theorem wellFormedContext_splitChainExample : WellFormedContext splitChainExample :=
+  chain_splitChainExample.wellFormedContext (fun s hs => by
+    have hs' : graftableState = s := Option.some.inj hs
+    exact hs' ▸ encodingWellFormed_graftableState)
+
+/-- Non-cut row `1` survives `E-SPLIT` unchanged. -/
+theorem derives_gen_split_kept (dMeasure : Field → CodeState → Nat) :
+    Derives dMeasure splitChainExample (Ann.gen 1 1 Sector.X [0, 1]) :=
+  Derives.genSplit 0 1 Sector.X [0, 1] [0, 1, 2] [2] _ _ rfl rfl eval_split_graftable
+    (by decide) (Derives.genInput 1 Sector.X [0, 1] _ rfl (by simp [graftableState]))
+
+/-- `W13` half for `E-SPLIT` on the worked instance: the deleted cut row `2`
+    has no derivable claim at the split's output, whatever sector and support
+    are stated. -/
+theorem not_derivable_gen_split_retired (dMeasure : Field → CodeState → Nat)
+    (hmono : MeasureMonotone dMeasure) (σ : Sector) (S : List Nat) :
+    ¬ Derives dMeasure splitChainExample (Ann.gen 1 2 σ S) :=
+  not_derivable_gen_of_split dMeasure hmono wellFormedContext_splitChainExample
+    chain_splitChainExample (i := 0) rfl rfl eval_split_graftable (by decide)
 
 end CodeCalculus

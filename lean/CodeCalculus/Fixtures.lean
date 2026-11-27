@@ -289,4 +289,66 @@ def fixture_W21_S_R_double_prime : CodeState := {
   ],
   used := [50000]
 }
+
+-- W26: a sharpening of W21. The identifier p1 (50000) is live in both
+-- summands, and the two `used` sets are unequal, so a test of `used`-set
+-- equality accepts the sum and the disjointness premise refuses it.
+def fixture_W26_S_L : CodeState := {
+  Q := [1, 2, 3],
+  rows := [
+    { id := 50000, sector := Sector.X, support := [1, 2] },
+    { id := 50001, sector := Sector.X, support := [2, 3] }
+  ],
+  used := [50000, 50001]
+}
+
+def fixture_W26_S_R_shared : CodeState := {
+  Q := [4, 5],
+  rows := [
+    { id := 50000, sector := Sector.X, support := [4, 5] }
+  ],
+  used := [50000]
+}
+
+-- W27: the displayed Z rows are dependent (b3 = b1 + b2); I1 holds.
+def fixture_W27_initial : CodeState := {
+  Q := [1, 2, 3],
+  rows := [
+    { id := 0, sector := Sector.X, support := [1, 2, 3] },
+    { id := 10000, sector := Sector.Z, support := [1, 3] },
+    { id := 10001, sector := Sector.Z, support := [2, 3] },
+    { id := 10002, sector := Sector.Z, support := [1, 2] }
+  ],
+  used := [0, 10000, 10001, 10002]
+}
+
+-- W28: the row a3 has support {4, 5}, outside Q; I1 to I5 hold as written.
+def fixture_W28_initial : CodeState := {
+  Q := [1, 2, 3],
+  rows := [
+    { id := 1, sector := Sector.X, support := [2, 3] },
+    { id := 2, sector := Sector.X, support := [4, 5] },
+    { id := 10000, sector := Sector.Z, support := [1, 2, 3] }
+  ],
+  used := [0, 1, 2, 10000]
+}
+
+-- W25: the initial state is a ref to W0, and the term `delete_{a1}` gives
+-- A1, the result state of W3. The judged claim, certificate inheritance,
+-- is replayed in `CertificateInstances.lean`.
+def fixture_W25_initial : CodeState := fixture_W0_initial
+
+def fixture_W25_result : CodeState := fixture_W3_result
+
+-- W29: the initial state is a ref to W0; `delete_{a1}; delete_{a2}` leaves
+-- the Z row alone.
+def fixture_W29_initial : CodeState := fixture_W0_initial
+
+def fixture_W29_result : CodeState := {
+  Q := [1, 2, 3],
+  rows := [
+    { id := 10000, sector := Sector.Z, support := [1, 2, 3] }
+  ],
+  used := [0, 1, 10000]
+}
 end CodeCalculus

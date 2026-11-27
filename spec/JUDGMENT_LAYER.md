@@ -55,7 +55,11 @@ in brackets.
 | $d_X$ | carries, $d_X'=d_X$ `[proved]` | carries, $d_X=\min(d_X^A,d_X^B)$ `[proved]` | carries **as a bound only**: $d_X'\le d_X$ `[proved]`; exact value **`unavailable`** unpriced, **`conditional`** on the matching sector deletion price (§2a) | lower bound `[proved]`; exact value `open` | single-polarity chains and interval transport carry by composition `[proved]` (§4.11, §4.13, §8.5; conditional on step prices); mixed opposite-polarity exact-quantity chains `open` | atomic opaque (§7.1, opacity `distance`); transformers (§8.3) + soundness (§8.4); precision (§8.2); refinement (§9.1); §4.13; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
 | $d_Z$ | carries, $d_Z'=d_Z$ `[proved]` | carries, $d_Z=\min(d_Z^A,d_Z^B)$ `[proved]` | carries as a bound only: $d_Z'\le d_Z$ `[proved]`; exact value **`unavailable`** unpriced, **`conditional`** on the matching sector deletion price (§2a) | as $d_X$ | single-polarity chains and interval transport carry by composition `[proved]` (§4.11, §4.13, §8.5; conditional on step prices); mixed opposite-polarity exact-quantity chains `open` | atomic opaque (§7.1, opacity `distance`); transformers (§8.3) + soundness (§8.4); precision (§8.2); refinement (§9.1); §4.13; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
 | $d$ | carries, $d'=d$ `[proved]` | carries, $d=\min(d^A,d^B)$ `[proved]` | carries **as a bound only**: $d'\le d$ `[proved]`; exact value **`unavailable`** unless $w_{\mathrm{del}},w_{\mathrm{exp}}$ are supplied, in which case $d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$ `[conditional]` | lower bound `[proved]`; exact value `open`; strict improvement `[conditional]` | single-polarity chains and interval transport carry by composition `[proved]` (§4.11, §4.13, §8.5; conditional on step prices); mixed opposite-polarity exact-quantity chains `open` | derived from the two atoms by `min` (§7.1); reduced product (§8.8); precision (§8.2); refinement (§9.1); §4.13/§4.19; §7.3 (C-SEQUENCE: composition on single-polarity chains only) |
-| $\mathsf{preserves}_U$ (codespace preservation of a commuting Pauli-rotation gate $U$, CSS display; §2h) | carries `[proved]` (§4.37) | carries when $U$ is supported on one summand `[proved]` (§4.37) | does not carry `[false]` (counterexample §4.37; at $\theta_j=\pi/4$, the child's own Lemma 3 test over its remaining rows decides it) | adding row $s$: carries at every angle when every generator commutes with $s$ `[proved]`; at all angles $\pi/4$, carries iff $V_s\in\mathcal{S}(C')$ `[proved]` (one span-membership check at $s$); when a generator anticommutes with $s$ at an angle $\neq\pi/4$, `not yet defined` (logical-witness eigenvalues); addressability `not yet defined` (§4.37) | carries by composition of the step cells `[proved]` (§4.37) | predicate preservation + frame (§7.2.3–4); carrier `span` (§7.1); §2h, §4.37 |
+| $\mathsf{preserves}_U$ (codespace preservation of a commuting Pauli-rotation gate $U$, CSS display; §2h) | carries `[proved]` (§4.37) | carries when $U$ is supported on one summand `[proved]` (§4.37) | does not carry `[false]` (counterexample §4.37; the child's own Lemma 7 test over its remaining rows decides it at every rational angle; at $\pi/4$ this is Lemma 3) | adding row $s$: carries iff $\Phi_{J(s)}(l)\in\pi\mathbb{Z}$ for every sign pattern $l\in\Lambda(\mathcal{S}(C'),J(s))$ `[proved]` (Corollary 7.1, one test at $s$, decided for rational angles $\theta_j\in\pi\mathbb{Q}$ by at most $2^{\lvert J(s)\rvert}$ sign patterns and membership tests, polynomial in the display for a fixed number of generators; `not yet defined` as a decision for other angles); in particular at every angle when every generator commutes with $s$, and at all angles $\pi/4$ iff $V_s\in\mathcal{S}(C')$ (§4.37) | carries by composition of the step cells `[proved]` (§4.37) | predicate preservation + frame (§7.2.3–4); carrier `span` (§7.1); §2h, §4.37 |
+| $\mathsf{preserves}_U(\cdot\mid F)$ (frame-sector preservation; §2h Row C) | carries `[proved]` | carries when $U$ is supported on one summand, frame $F_1\oplus F_2$ `[proved]` | does not carry `[false]` (counterexample §4.37) | when the transported frame $F'$ is consistent and $\mathcal{S}_F(C)\subseteq\mathcal{S}_{F'}(C')$: carries iff $\Phi_{J(s)}(l)\in\pi\mathbb{Z}$ for every $l\in\Lambda(\mathcal{S}_{F'}(C'),J(s))$, the source's eigenvalue condition when $F'$ resolves $J(s)$ `[proved]` (decided for rational angles $\theta_j\in\pi\mathbb{Q}$ by at most $2^{\lvert J(s)\rvert}$ sign patterns and membership tests, polynomial in the display for a fixed number of generators; `not yet defined` as a decision for other angles); when $F'$ is consistent and the inclusion fails: does not carry `[false]`; when $F'$ is not consistent on $C'$: `not yet defined` (the predicate is not stated at the child) (§4.37) | carries by composition `[proved]` | predicate preservation (restriction to a sub-sector) + frame + composition (§7.2.3–4); carrier `span`, frame parameter (§7.1); §2h, §4.37 |
+| $\mathsf{phase}_U(\cdot\mid F)$ (logical action on a frame sector; §2h Row D) | carries `[proved]` | carries, same scalar, when $U$ is supported on one summand `[proved]` | does not carry `[false]` (counterexample §4.37) | when $F'$ is consistent and the inclusion of the row above holds: carries, same scalar `[proved]`; when $F'$ is consistent and the inclusion fails: does not carry `[false]`; when $F'$ is not consistent on $C'$: `not yet defined` (§4.37) | carries by composition `[proved]` | as the row above |
+| $\mathsf{image}_U(\cdot;e)$ (logical action by conjugation; §2h Row E) | carries `[proved]` | carries when $U$ is supported on one summand `[proved]` | does not carry `[false]` (counterexample §4.37) | carries for every entry the transport keeps `[proved]` | carries by composition `[proved]` | as the $\mathsf{preserves}_U(\cdot\mid F)$ row |
+| $\mathsf{addresses}_U(\cdot;F,A)$ (addressability; §2h Row F) | carries `[proved]` | carries on $C_1\oplus C_2$ when $U$ is supported on $Q_1$, frame $F_1\oplus F_2$, and $A\subseteq F_1$ `[proved]` | does not carry `[false]` (counterexample §4.37) | holds at $(C';F',A\cap F')$ iff the $\mathsf{preserves}_U$ test at $s$ `[proved]` | carries by composition `[proved]` | as the $\mathsf{preserves}_U(\cdot\mid F)$ row |
 | $\omega$ (equal-syndrome generator weight floor; §2h) | carries, $\omega'=\omega$ and floor $\lceil L_d/2\rceil$ unchanged `[proved]` (§4.37) | carries **by weakening**: $\omega\ge\lceil\min(d^A,d^B)/2\rceil$, recomputed from $\min(L_d^A,L_d^B)$ `[proved]` (§4.37) | carries **by weakening**: $\omega'\ge\lceil d'/2\rceil$, recomputed from the child's lower endpoint $L_d'$ (the parent's value does not substitute: counterexample §4.37) `[proved]` | carries, floor $\lceil L_d'/2\rceil\ge\lceil L_d/2\rceil$ does not decrease `[proved]` (§4.37) | carries **by weakening** (recomputed from $L_d$ at each state) `[proved]` (§4.37) | weakening transport (monotone image of a carried bound, §7.2.6 / §2h); monotone in $\sqsubseteq^{\mathrm{low}}$ (§9.1); §4.37 |
 | output well-formedness | carries `[proved]` | carries `[proved]` | carries `[proved]` | carries `[proved]` | carries `[proved]` | predicate preservation (§7.3); soundness (§8.4); §4.7–§4.9 |
 
@@ -100,9 +104,9 @@ third is the $d$ row's strict-improvement half above, `conditional`:**
 | **strict improvement** of distance | `C-ADD-CHECK` | **`conditional`** | carries $d' \ge d+1$ when the consumer supplies the minimum-weight-class hypothesis; otherwise `unavailable` |
 
 **Everything outside this table is `not yet defined`** — certificates and
-interface/metric/logical-witness judgments generally (including gate
-addressability, the logical action of an accepted gate, and the non-$\pi/4$
-anticommuting addition branch of §2h), support-sensitive predicates
+interface/metric/logical-witness judgments generally (the frame-reading
+predicates of §2h, Rows C–F, excepted: they read the logical-witness field
+as a frame supplied with the state), support-sensitive predicates
 under rebasing, circuit/DEM/realization predicates, and the fixed-point-free ZX
 duality. These are not gaps in the table; they are outside the current assertion
 language.
@@ -154,6 +158,8 @@ consumer supplies the stated hypothesis; otherwise the corresponding cell is
 | `C-ADD-CHECK` (direct-sum extinction) | $d$ | $d'=d_B$ (exact) when $d_B>d_A$ | exact old $d$ ($=d_A$), the trusted factor distance $d_B$ with an evidence reference, and the computed structural side — a two-block disjoint union, the added check inside one block, $k$ of the block containing the added check equal to zero, $k$ of the surviving block at least one, and no carried sector bound exceeding $d_B$ | Proposition 18.6 + Corollary 18.7, *code-deformation* §5.2; **stack family only**: the cell is stated for stack parents, and no family other than the source's stack/direct-sum family is licensed; claim remains conditional on the trusted $d_B$; general $k'>0$ remains open and is not claimed solved |
 | `E-PEEL` at $q$ in sector $\tau$ (opposite sector $\sigma$) | $d_\sigma$ | exact: $d'_\sigma=\min(d_\sigma,w_{\mathrm{expose},\sigma}(q))$; the interval $[L_\sigma,U_\sigma]$ moves to $[\min(L_\sigma,p),\min(U_\sigma,p)]$, as for the graft | the exposure price $w_{\mathrm{expose},\sigma}(q)=\min\{|u|-1:u\text{ a parent }\sigma\text{-logical with }u_q=1\}$ (§2c), bound to the peel | derivation `OPERATIONAL_SEMANTICS.md` §4.28 (2026-11-10): the graft's non-spliced relation at $m=1$; claim remains conditional on the consumer-supplied minimum; unpriced corollary $d_\sigma-1\le d'_\sigma\le d_\sigma$ carried by §2b |
 | `E-PEEL` at $q$ in sector $\tau$ (selected sector) | $d_\tau$ | exact: $d'_\tau=w_{\mathrm{avoid},\tau}(q)$; the interval becomes $[w,w]$ | the avoidance minimum $w_{\mathrm{avoid},\tau}(q)=\min\{|v|:v\text{ a parent }\tau\text{-logical with }v_q=0\}$ (§2c) | derivation `OPERATIONAL_SEMANTICS.md` §4.28 (2026-11-10); claim remains conditional on the consumer-supplied minimum; a value below the carried lower bound $L_\tau$ contradicts $d'_\tau\ge d_\tau$ and is refused |
+| `E-SPLIT` at cut $(Q_A, R)$ (priced) | $d_X$, $d_Z$, $d$ | sector $\sigma$: $[\min(L_A, L_B),\; \min(U_A, U_B, U_\sigma)]$ where $U_\sigma$ is the parent's upper endpoint in sector $\sigma$; full distance $d$: endpoint-by-endpoint minimum of the two priced sector intervals intersected with the parent full upper endpoint $U$ | consumer-supplied intervals $[L_A, U_A]$ and $[L_B, U_B]$ for the sector distance of the two restriction displays $C'\vert_A$ and $C'\vert_B$, with a nonempty evidence reference (`split_block_intervals`, §2c) | derivation `OPERATIONAL_SEMANTICS.md` §4.48 (2026-11-25): $d_\sigma(C') = \min(d_\sigma(C'\vert_A), d_\sigma(C'\vert_B)) \le d_\sigma(C)$; claim remains conditional on the supplied block intervals; unpriced upper endpoints carry and lower endpoints reset to zero |
+| `E-EXTEND` with $\Delta\neq\varnothing$ (distance loss) | $d_X$, $d_Z$, $d$ | sector $\tau$ with a supplied loss: lower endpoint $\max(0, L_\tau-\ell_\tau)$, where $L_\tau$ is the parent's carried lower endpoint; upper endpoints only from child-valid witnesses, as unpriced; full distance: lower endpoint $\min$ of the two sector lower endpoints, so an unpriced sector keeps it at $0$ | a loss $\ell_\tau\in\mathbb N$ for one or both sectors with an evidence reference, read as $d'_\tau\ge d_\tau-\ell_\tau$; refused with $\Delta=\varnothing$ (the lower endpoints already carry) and when the parent has no $\tau$-logical; the consumer checks shape only, never the loss | `OPERATIONAL_SEMANTICS.md` §4.30, *Distance-loss cell*; `OBL-EXTEND-DISTANCE-LOSS`; prior-art instance: the appending construction (`TAXONOMY.md` §2.9) |
 | `A-CONCAT` towers (deleting lifted outer checks, any $k_{\mathrm{in}}$), price provider | deletion/exposure price input | factorization from tower level data | tower structure, class dictionary, outer presentation | Theorems 27.2 / 27.5, *code-deformation* §9.4; not a calculus constructor. A $k_{\mathrm{in}}>1$ generalization exists in the source (Theorem 27.8) with a refined class dictionary; the provider for arbitrary $k_{\mathrm{in}}$ is derived in this repository (`DERIVED_RELATIONS.md` §2a, 2026-11-11) and sweep-verified for $n_{\mathrm{in}}=4$, $k_{\mathrm{in}}\in\{1,2,3\}$; the source's theorems are cited, not reproduced. Its cost tables have size $2^{2k_{\mathrm{in}}}$ in the source; the derivation here uses two dictionaries of $2^{k_{\mathrm{in}}}$ entries. |
 | `E-GRAFT` | $r$ (interaction radius) | exact: $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$; and $r'\le 2r$ | **none** — the radius is exactly computable, so no hypothesis is needed; §2d.2 | derivation [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.21 (interaction-radius transport) |
 
@@ -212,13 +218,15 @@ distance when $k=0$. The ledger is not part of state identity.
 | `C-DELETE-CHECK` | unpriced: reset to zero in every sector and the full distance. Priced: deleted sector $\tau$ lower endpoint $\min(L_\tau,w_{\mathrm{del}})$; opposite sector $\bar\tau$ lower endpoint $\min(L_{\bar\tau},w_{\mathrm{exp}})$; full distance $\min(L,w_{\mathrm{del}},w_{\mathrm{exp}})$ | unpriced: carry the proved $d'\le d$ bound and tighten from surviving or new witnesses. Priced: $U'_\tau=\min(U_\tau,w_{\mathrm{del}})$, $U'_{\bar\tau}=\min(U_{\bar\tau},w_{\mathrm{exp}})$, $U'=\min(U,w_{\mathrm{del}},w_{\mathrm{exp}})$ |
 | `E-GRAFT` | full distance: reset to zero unless a supplied exposure price tightens it. Spliced sector: carry the lower endpoint; drop the upper endpoint to $+\infty$ unless a witness valid in the child supplies one. Non-spliced sector: reset to zero | full distance: lower endpoint resets to zero unless priced; upper endpoint is the non-spliced sector's carried bound, tightened by child-valid witnesses. Spliced sector: carries the lower endpoint only; upper endpoint from child-valid witnesses. Non-spliced sector: carry the non-increase bound and tighten from surviving or new witnesses |
 | `P-REBASE` | unchanged (the row spaces are unchanged, so every span-expressible endpoint stays valid for the child) | unchanged (a parent-valid witness is valid for the identical child spans; revalidation is unnecessary and never discriminates) |
-| `C-COLUMN-CNOT` | $[\lceil L_\sigma / \rho_\sigma^- \rceil,\; \rho_\sigma U_\sigma]$ per sector, with $\rho_\sigma,\rho_\sigma^-$ the four computed norms (§2k, §4.42); full-distance endpoints follow the same window with the combined norms | witnesses are not carried automatically; their supports must be transported by the sector map and revalidated in the child (§4.42) |
+| `C-COLUMN-CNOT` | $[\lceil L_\sigma / \rho_\sigma^- \rceil,\; L_{\mathrm{full}}']$ with $L_{\mathrm{full}}' = \min(\lceil L_X / \rho_X^- \rceil, \lceil L_Z / \rho_Z^- \rceil)$ (§2k, §4.42) | $[\lceil L_\sigma / \rho_\sigma^- \rceil,\; \rho_\sigma U_\sigma]$ per sector and $\min(\rho_X U_X, \rho_Z U_Z)$ for full distance; witnesses are not carried automatically and must be transported by the sector map and revalidated in the child (§4.42) |
 | `E-LOCAL-HADAMARD` ($T=Q$) | swap the two sector lower endpoints (§4.27: $d_X'=d_Z$, $d_Z'=d_X$); the full-distance lower endpoint keeps — $d'=d$ | swap the two sector upper endpoints likewise and *then* revalidate every witness against the child with its side swapped (an old $\sigma$-side witness is checked as a $\bar\sigma$-side witness of the child); the full-distance upper endpoint keeps |
+| `E-LOCAL-HADAMARD` (split subset $\varnothing\subsetneq T\subsetneq Q$) | both sector lower endpoints become the parent's lower bound on $d$, namely $\max(\ell_d,\min(\ell_X,\ell_Z))$ (§4.27(b): $d_\sigma'\ge d$); the full-distance lower endpoint keeps, since $d'=d$ | the sector upper endpoints reset to $+\infty$, so only witnesses valid in the child bound them. A witness inside $T$ is revalidated with its side swapped, one disjoint from $T$ with its side kept, and a mixed witness is dropped. The full-distance upper endpoint keeps |
 | `E-PEEL` | selected sector: carry the lower endpoint ($d_\tau'\ge d_\tau$, §4.28); opposite sector: carry the lower endpoint less one, floored at $0$ ($d_{\bar\tau}'\ge d_{\bar\tau}-1$, §4.28, 2026-11-10); full distance: the minimum of the two sector lower endpoints ($d'=\min(d_\tau',d_{\bar\tau}')$, so $d'\ge\min(L_\tau,L_{\bar\tau}-1)\ge d-1$; the comparison with $d$ itself is bounded in neither direction, §4.28's witness). Priced (§2a): the exposure price $p$ moves the opposite sector's lower endpoint to $\min(L_{\bar\tau},p)$ and the avoidance minimum $w$ pins the selected sector to $w$. The selected-sector carry was admitted 2026-11-06; the opposite-sector and full-distance carries and the two price cells 2026-11-10 | selected sector: reset to $+\infty$ (may exceed any prior upper, §4.28) unless the avoidance minimum pins it; opposite sector: carry the upper endpoint ($d_{\bar\tau}'\le d_{\bar\tau}$, §4.28), tightened to $\min(U_{\bar\tau},p)$ by the exposure price; full distance: the minimum of the two sector upper endpoints, tightened by child-valid witnesses |
 | `E-PUNCTURE` | reset to zero in every sector and the full distance, a refusal by design, not an impossibility: §4.29's unnamed free-qubit instance (puncturing qubit $2$ of $Q=\{0,1,2\}$ with the $Z$ display $\{0,1\}$) raises the $X$ distance $1\to2$, showing that the direction of change depends on the deleted qubit and the induced stabilizer update; no universal $\le$- or $\ge$-claim is derivable for either sector or the full distance, and no cell carrying an endpoint is admitted. The reset is sound; full-distance endpoints remain refused unless a separately admitted price supports them. The reduction is recorded at §4.29 (2026-11-10): a puncture is the deletion of every row through $q$ followed by the removal of the then-free qubit, so each child sector distance is the lightest $q$-free logical of that intermediate code, $\min(w_{\mathrm{avoid},\sigma}(q),w_{\mathrm{hole},\sigma}(q))$; the hole price has no unpriced bound in either direction (increase $1\to2$, decrease $3\to2$), and its cell waits on the D2 lower bound; the full price is `unavailable` (§2f, hole-punch records) | only witnesses valid in the child, as for the peel |
-| `E-EXTEND` | with $\Delta=\varnothing$: every sector carries its lower endpoint (distance cannot decrease under an added check); with $\Delta\neq\varnothing$: every interval's lower endpoint resets to zero | with $\Delta=\varnothing$: every sector rebuilds its upper endpoint from child-valid witnesses only (the pre-change upper endpoint is not a sound bound); with $\Delta\neq\varnothing$: only witnesses revalidating in the child |
+| `E-EXTEND` | with $\Delta=\varnothing$: every sector carries its lower endpoint (distance cannot decrease under an added check); with $\Delta\neq\varnothing$: every interval's lower endpoint resets to zero, unless a distance loss is supplied (§2a), when sector $\tau$'s lower endpoint is $\max(0,L_\tau-\ell_\tau)$ | with $\Delta=\varnothing$: every sector rebuilds its upper endpoint from child-valid witnesses only (the pre-change upper endpoint is not a sound bound); with $\Delta\neq\varnothing$: only witnesses revalidating in the child |
 | `C-DIRECT-SUM` | combine corresponding endpoints with `min` | combine corresponding endpoints with `min` |
 | `E-GLUE` | in every sector and the full distance, `min` of the two factor ledgers' lower endpoints (sound without a certificate: the glued code is $C_A\oplus C_B$ with seam checks added, each sector distance of the direct sum is the minimum of the factors', and adding a check never lowers a distance, so each glued distance is at least the factor minimum, §4.31) | only the Z sector's, as `min` of the two factors' Z upper endpoints, and only under an admissible seam certificate (§2e); the X and full upper endpoints are left to witnesses valid in the child |
+| `E-SPLIT` | unpriced: reset to zero in every sector and the full distance (splitting can lower distance: §4.48). Priced (§2a, §2c `split_block_intervals`): in each priced sector $\sigma$, $\min(L_A, L_B)$ from the supplied restriction-display intervals $[L_A, U_A]$ and $[L_B, U_B]$; full distance takes $\min(L'_X, L'_Z)$ when both sectors are priced (else $0$); an infinite lower bound when $k' > 0$, a sector or block lower endpoint above $1$ contradicted by a validated weight-1 singleton logical in the child, or a lower endpoint exceeding any carried/witness upper endpoint is refused (`no_derivation`) | unpriced: carry the proved $d_\sigma'\le d_\sigma$ and $d'\le d$ bounds and tighten from surviving or new witnesses (§4.48). Priced: in each priced sector $\sigma$, $\min(U_A, U_B, U_\sigma)$, tightened by child-valid witnesses; full distance takes $\min(U'_X, U'_Z, U)$ |
 
 For a supplied price $p$ the monotone map $f(x)=\min(x,p)$ transports an
 input interval to $[\min(L,p),\min(U,p)]$. **A price moves the endpoints its
@@ -350,6 +358,23 @@ reference as provenance only; a nonempty source string is not validation.
  $C_\tau+\langle r\rangle$ (in sector $\tau$). The cell carries
  $d'\ge d+1$ only under that hypothesis.
 
+- **Split block intervals (`split_block_intervals`, added 2026-11-25, issue #546).** Binds to a transition
+ $C\xrightarrow{\mathrm{split}_{Q_A;R}}C'$ and to one or both sectors $\sigma \in \{X, Z\}$.
+ Supplies intervals $[L_A, U_A]$ and $[L_B, U_B]$ (with $+\infty$ permitted for a
+ $k=0$ block) together with a nonempty evidence reference, asserting
+ $L_A \le d_\sigma(C'|_A) \le U_A$ and $L_B \le d_\sigma(C'|_B) \le U_B$ for
+ the two restriction displays $C'|_A$ and $C'|_B$ (§4.48). Because
+ $d_\sigma(C') = \min(d_\sigma(C'|_A), d_\sigma(C'|_B)) \le d_\sigma(C)$, the
+ cell carries $[\min(L_A, L_B), \min(U_A, U_B, U_\sigma)]$ for sector $\sigma$,
+ and full-distance endpoints $\min$ across both sectors when both are supplied.
+ The consumer validates interval shape, the nonempty evidence reference, and
+ structural consistency (no infinite lower endpoint when $k' > 0$, no sector
+ or block lower endpoint above $1$ against a validated weight-1 singleton
+ logical — a child qubit in no opposite-sector displayed row whose singleton
+ lies outside the same-sector span — and no lower endpoint above a carried
+ upper endpoint or validated witness); it does not otherwise validate the
+ supplied block bounds, and the cell remains `conditional`.
+
 - **Witness.** A subset $u\subseteq Q(C')$ with $|u|=w>0$ such that
  $u\in (C'_{\bar\sigma})^\perp\setminus C'_\sigma$ for the stated sector
  $\sigma$ in the stated state $C'$; checked by finite-field linear algebra,
@@ -411,7 +436,9 @@ the radius is recomputed against the child's own display:
 | `E-PEEL` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$ | $\le r$ |
 | `E-PUNCTURE` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}$ | $\le r$ |
 | `E-LOCAL-HADAMARD` ($T=Q$) | $\lambda$ | $r'=r$ | unchanged |
+| `E-LOCAL-HADAMARD` (split subset) | $\lambda$ | $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ | $\le r$ (every output support is a subset of a parent support) |
 | `P-REBASE` | $\lambda$ | $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ | recomputed; no guaranteed direction |
+| `E-SPLIT` | $\lambda$ | $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ | $\le r$ |
 | `E-EXTEND` | not inherited: a layout $\lambda'$ on $Q\cup\Delta$ with $\lambda'\vert_Q=\lambda$ must be supplied (with $\Delta=\emptyset$, $\lambda$ itself) | $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})$ when supplied | $\ge r$ (when supplied) |
 
 The graft's bound is a **factor of two, not a non-increase**. A graft row is
@@ -496,22 +523,30 @@ random states and layouts. A harness run is evidence, never confirmation.
 | `E-PEEL` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]`: restriction |
 | `E-PUNCTURE` at $q$ | $\lambda\vert_{Q\setminus\{q\}}$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]`: restriction |
 | `E-LOCAL-HADAMARD` ($T=Q$) | $\lambda$ | carries, $r'=r$ `[proved]` | unchanged | preserved `[proved]` |
+| `E-LOCAL-HADAMARD` (split subset) | $\lambda$ | carries, recomputed `[proved]` | $r'\le r$ | preserved `[proved]` |
 | `P-REBASE` | $\lambda$ | carries, recomputed `[proved]` | none guaranteed: both $r'>r$ and $r'<r$ occur | preserved `[proved]` |
 | `C-COLUMN-CNOT` | $\lambda$ | carries, recomputed `[proved]` | none guaranteed: row supports change, so both $r'>r$ and $r'<r$ occur | preserved `[proved]`: same qubit set and layout |
+| `E-SPLIT` | $\lambda$ | carries, recomputed `[proved]` (§4.48) | $r'\le r$ | preserved `[proved]`: same qubit set and layout |
 | `E-EXTEND`, $\Delta\neq\emptyset$ | not inherited: a layout $\lambda'$ on $Q\cup\Delta$ with $\lambda'\vert_Q=\lambda$ must be supplied | carries when supplied, $r'=\max(r,\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'_{\rm new}\})$ `[proved]`; no radius otherwise | $r'\ge r$ when supplied | **conditional**: the supplied layout must be honest; the parent's honesty does not imply it |
 | `E-EXTEND`, $\Delta=\emptyset$ | $\lambda$ | as `C-ADD-CHECK`, once per added row `[proved]` | $r'\ge r$ | preserved `[proved]` |
 | `E-GLUE` | the two factor layouts, blockwise as for `C-DIRECT-SUM`; a merged layout must be supplied | carries, $r=\max(r_A,r_B,\max\{\mathrm{diam}(s):s\ \text{a seam row}\})$ `[proved]` (the direct-sum cell, then one `C-ADD-CHECK` cell per seam check) | $r\ge\max(r_A,r_B)$ | **conditional**: the merged layout must be honest |
-| `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` (constructors, 2026-11-11), `L-NESTED-CSS` (constructor, 2026-11-13), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (constructors, 2026-11-19), `L-PAIR-PARTITION`, `PP-SCALE` (constructors, 2026-11-22) | none inherited: there is no parent; a layout on the constructed qubits must be supplied | recomputed when supplied, $r=\max\{\mathrm{diam}_{\lambda}(s):s\in\mathit{rows}\}$ over the constructed display `[proved]` (exact computation, §2d.1; $r=0$ for empty displays); no radius otherwise | none: no parent to compare with | **conditional**: the supplied layout must be honest (§2d.3) |
+| `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` (constructors, 2026-11-11), `L-NESTED-CSS` (constructor, 2026-11-13), `L-MAPPING-CONE` (constructor, 2026-11-18), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (constructors, 2026-11-19), `L-PAIR-PARTITION`, `PP-SCALE` (constructors, 2026-11-22) | none inherited: there is no parent; a layout on the constructed qubits must be supplied | recomputed when supplied, $r=\max\{\mathrm{diam}_{\lambda}(s):s\in\mathit{rows}\}$ over the constructed display `[proved]` (exact computation, §2d.1; $r=0$ for empty displays); no radius otherwise | none: no parent to compare with | **conditional**: the supplied layout must be honest (§2d.3) |
 
 
 Four entries are recorded as non-transfer cases rather than as monotone cells:
 `E-GRAFT`'s factor-of-two bound, `E-EXTEND`'s supplied layout, `P-REBASE`'s
 recomputed radius with no direction, and the honest-merge premise of
 `C-DIRECT-SUM` and `E-GLUE`. A conditional cell's verdict applies only once
-its layout premise is met; the consumer does not build merged or supplied
-layouts, so those premises are inputs, and the radius is never a distance (no
-lower bound, price, or witness enters any row). The locality class follows
-from the direction column as §2d.4 states; it takes no row of its own.
+its layout premise is met; the interval consumer does not build merged or
+supplied layouts, so those premises are inputs, and the radius is never a
+distance (no lower bound, price, or witness enters any row). A supplied layout
+may come from the consumer-side layout provider
+(`machine/layout_provider.py`), which synthesizes a planar integer-grid layout
+from the displayed Tanner graph. Its output is a supplied layout like any
+other: it is ledger data beside the state, it meets the honesty premise only
+by passing the §2d.3 check, and the radius it yields is a property of that
+layout, with no claim that a smaller radius is unattainable. The locality class
+follows from the direction column as §2d.4 states; it takes no row of its own.
 
 
 ## 2e. Seam certificate for `E-GLUE` (conditional, admitted 2026-10-23)
@@ -604,7 +639,7 @@ this decision.
 
 **Transitions.** Five of the six now have typed transitions
 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.26–§4.30):
-`peel`, `puncture`, `extend`, `hadamard` (admitted for $T=Q$ or $T=\varnothing$), and
+`peel`, `puncture`, `extend`, `hadamard` (admitted for every $T\subseteq Q$ along which both row spaces split), and
 `rebase`. `E-GLUE` remains **binary-only, with no unary command production** (decided
 2026-11-18), carrying the binary state-expression constructor
 $e ::= \mathrm{glue}(e_1, e_2; \vec u)$ (`TERM_LANGUAGE.md` §1–§2) and its
@@ -612,7 +647,7 @@ admitted evaluator transition (`OPERATIONAL_SEMANTICS.md` §4.31). Both
 future-$\Pi$ fields are defined in full (`STATE_MODEL.md` §1a), the CSS-level algebra of the extracted Theorem 4 / claim 7.4
 derivation is mechanized in `lean/CodeCalculus/GlueExtraction.lean` with the geometric move-word $\to$ `AdmissibleSeam` substrate gap
 explicitly recorded, and `E-GLUE` sits at `contract-stated` (rung 5,
-2026-11-18; Gate 6 unchecked).
+2026-11-18; Gate 6 ratified 2026-11-19).
 Sound admission is discharged under the stated hypotheses
 (`OBL-GATE6-CSS-EXTENSIONS`, `OPERATIONAL_SEMANTICS.md` §4.32,
 2026-10-28); the cells remain conditional on their hypotheses and `promoted`
@@ -622,7 +657,7 @@ rule's *source* is the named section, not this table alone).
 
 | Move | Property | Carries when hypothesis supplied | Hypothesis (consumer-supplied) | Source | Status |
 | --- | --- | --- | --- | --- | --- |
-| `E-GLUE` | $d_Z$ | $d_Z(Q)=\min(d_A,d_B)$ for an admissible seam; lower endpoints are sound without a certificate (the glued code is the direct sum with seam checks added, so each sector distance is at least the factor minimum: §4.31) | `AdmissibleSeam`: a minimum-weight factor logical survives (§4.33(ii)); Theorem 4 supplies the unconditional lower half ($w_{\mathrm{re},Z}=+\infty$, hence $d_Z(Q)\ge \min(d_A,d_B)$) on every admitted glue without a certificate, and the equality itself is conditional on `AdmissibleSeam` (the upper half). The certificate (equal move words $w(c_A)=w(c_B)$, §2e) is the evidence the consumer records for the `AdmissibleSeam` hypothesis; the geometric move-word $\to$ `AdmissibleSeam` implication stays a substrate gap; lower endpoints are sound without a certificate | seam certificate (§2e); Theorem 4 lower bound unconditional (§4.31; `wRe?_eq_none`, `glue_theorem4_lower_bound`); equality conditional on `AdmissibleSeam` (`admissibleSeam_exactDistance?_eq_min`), mechanized algebraically (`GlueExtraction.lean`), not discharged by extraction | conditional cell admitted; binary-only expression constructor `glue(e₁, e₂; seams)` (`TERM_LANGUAGE.md` §1–§2); **`contract-stated` (rung 5, 2026-11-18; Gate 6 unchecked)**; future-$\Pi$ fields defined (`STATE_MODEL.md` §1a) |
+| `E-GLUE` | $d_Z$ | $d_Z(Q)=\min(d_A,d_B)$ for an admissible seam; lower endpoints are sound without a certificate (the glued code is the direct sum with seam checks added, so each sector distance is at least the factor minimum: §4.31) | `AdmissibleSeam`: a minimum-weight factor logical survives (§4.33(ii)); Theorem 4 supplies the unconditional lower half ($w_{\mathrm{re},Z}=+\infty$, hence $d_Z(Q)\ge \min(d_A,d_B)$) on every admitted glue without a certificate, and the equality itself is conditional on `AdmissibleSeam` (the upper half). The certificate (equal move words $w(c_A)=w(c_B)$, §2e) is the evidence the consumer records for the `AdmissibleSeam` hypothesis; the geometric move-word $\to$ `AdmissibleSeam` implication stays a substrate gap; lower endpoints are sound without a certificate | seam certificate (§2e); Theorem 4 lower bound unconditional (§4.31; `wRe?_eq_none`, `glue_theorem4_lower_bound`); equality conditional on `AdmissibleSeam` (`admissibleSeam_exactDistance?_eq_min`), mechanized algebraically (`GlueExtraction.lean`), not discharged by extraction | conditional cell admitted; binary-only expression constructor `glue(e₁, e₂; seams)` (`TERM_LANGUAGE.md` §1–§2); **`contract-stated` (rung 5, 2026-11-18)**; future-$\Pi$ fields defined (`STATE_MODEL.md` §1a) |
 | `E-PUNCTURE` | $n$ | $n'=n-1$, exactly | **none** — the namespace arithmetic is the update itself | `OPERATIONAL_SEMANTICS.md` §2, §4.29 | transition defined; cell carried; sound admission discharged (§4.32), conditional on hypotheses |
 | `E-PUNCTURE` | $k$ | $k'=k-1+t_X+t_Z$, exactly ($t_\tau$ = number of displayed $\tau$-rows containing $q$; §4.29) | **none** — the rank bookkeeping is derivable, not supplied | §2, §4.29 | transition defined; cell carried |
 | `E-PUNCTURE` | $d$, $d_X$, $d_Z$ | `unavailable`: no exact post-puncture value is derived, and the full hole-punch price reads `unavailable` (hole-punch records below) | *(no hypothesis is admitted for a price: the reduction of §4.29, deletions then a free-qubit removal, makes the price a hole price, blocked on the D2 lower bound; no cell, no fixture)* | §2, §4.29 | **nothing carries** (§4.29's unnamed-free-qubit increase $d_X\;1\!\to\!2$ and deleted-row decrease $d_X\;3\!\to\!2$); ledger resets; reduction recorded 2026-11-10 |
@@ -632,9 +667,14 @@ rule's *source* is the named section, not this table alone).
 | `E-PEEL` | $d_{\bar\tau}$ (opposite sector) | both endpoints carry within one: $d_{\bar\tau}-1\le d_{\bar\tau}'\le d_{\bar\tau}$ (§4.28); exact under the exposure price: $d_{\bar\tau}'=\min(d_{\bar\tau},w_{\mathrm{expose},\bar\tau}(q))$, the graft's relation at $m=1$ (§2a, §2c) | **none** for the carries; the exposure price for the exact cell | §2, §4.28 | upper carry admitted 2026-11-06; lower carry less one and price cell admitted 2026-11-10 |
 | `E-PEEL` | $d$ (full distance) | both endpoints are the minima of the two sector endpoints: $d'=\min(d_\tau',d_{\bar\tau}')\ge\min(d_\tau,d_{\bar\tau}-1)\ge d-1$ (§4.28) | *(none)*; the two sector prices pin it when both are supplied | §2, §4.28 | admitted 2026-11-10; the comparison $d'\;\mathrm{vs.}\;d$ is bounded in neither direction (§4.28's witness) |
 | `E-EXTEND` (patch growth / breeding) | $n$, $k$ | $n'=n+|\Delta|$; $k'=k+|\Delta|-s_X-s_Z$, exactly | **none** — the row-count arithmetic is the update | §2, §4.30 | transition defined; cell carried |
-| `E-EXTEND` (patch growth / breeding) | $d$,$d_X$,$d_Z$ | with $\Delta=\varnothing$: the §2a `C-ADD-CHECK` monotonicity in both sectors (lower endpoints carry; no sector's upper endpoint carries, since an added $X$ row can raise $d_Z$: §4.30); with $\Delta\neq\varnothing$: none | *(no hypothesis is needed for the $\Delta\neq\varnothing$ refusal — no formula is admitted)* | §2, §4.30 | no distance rule for the namespace-growing instance |
-| `E-LOCAL-HADAMARD` | sector swap ($T=Q$) | exact: $d_X'=d_Z$, $d_Z'=d_X$, $d'=d$; $n,k,w$ unchanged | **none** — the $T=Q$ instance needs no consumer input | §2, §4.27 | transition defined; the general split-subset instance has **no** cell and no rule |
+| `E-EXTEND` (patch growth / breeding) | $d$,$d_X$,$d_Z$ | with $\Delta=\varnothing$: the §2a `C-ADD-CHECK` monotonicity in both sectors (lower endpoints carry; no sector's upper endpoint carries, since an added $X$ row can raise $d_Z$: §4.30); with $\Delta\neq\varnothing$: none unpriced; under a supplied loss $\ell_\tau$, $d'_\tau\ge\max(0,L_\tau-\ell_\tau)$ (§2a) | none for the unpriced refusal; the conditional cell takes a sourced loss $\ell_\tau$ (§2a) | §2, §4.30 | no unconditional distance rule for the namespace-growing instance; one conditional cell |
+| `E-LOCAL-HADAMARD` | sector swap ($T=Q$) | exact: $d_X'=d_Z$, $d_Z'=d_X$, $d'=d$; $n,k,w$ unchanged | **none** — the $T=Q$ instance needs no consumer input | §2, §4.27(a) | transition defined |
+| `E-LOCAL-HADAMARD` | split subset ($\varnothing\subsetneq T\subsetneq Q$, under the row-space splitting guard) | exact: $n,k$ unchanged, $d'=d$; sector lower bound $d_\sigma'\ge d$; $w'\le w$. The sector distances follow the $T$-split decomposition and are **not** exchanged | **none** — the guard is checked structurally | §2, §4.27(b) | transition defined 2026-11-26 |
 | `P-REBASE` | presentation | everything span-expressible carries exactly: $n,k,d_X,d_Z,d$ (spans unchanged); $w$/$r$/Tanner recomputed exactly over the child display | *(GL-ness of $M$ is a checked structural premise, not a trusted input; no hypothesis is needed)* | §2, §4.26 | transition defined; `OBL-REBASE-GENERATION` discharged §4.26 |
+| `E-SPLIT` (separating deletion, admitted 2026-11-25) | $n$, $k$, $w$, $r$, $\kappa$ | $n'=n$, $k'=k+t=k(C'\vert_A)+k(C'\vert_B)$ ($t=|R|$), $w'\le w$, $r'\le r$ (layout unchanged, honesty preserved), $\kappa'$ recomputed ($\kappa'\ge 2$ when $Q_A,Q_B\neq\varnothing$), child separated at $Q_A$, all exact | **none** — derived over `C-DELETE-CHECK` | §2, §4.48 | transition defined (`split(Q_A; R)`, 2026-11-25); cell carried; two-state projection refused |
+| `E-SPLIT` | $d_X$, $d_Z$, $d$ (unpriced) | upper endpoints carry ($d_\sigma'\le d_\sigma$, $d'\le d$); lower endpoints reset to zero; exact unpriced values `unavailable` | **none** | §2, §4.48 | proved upper carry; lower-endpoint carry refuted (§4.48, $d_Z : 2\to 1$); exact unpriced `unavailable` |
+| `E-SPLIT` | $d_X$, $d_Z$ (priced) | interval becomes $[\min(L_A,L_B),\;\min(U_A,U_B,U_\sigma)]$, where $U_\sigma$ is the parent's upper endpoint in sector $\sigma$ | `split_block_intervals`: intervals $[L_A,U_A]$ and $[L_B,U_B]$ for the sector distance of restriction displays $C'\vert_A$ and $C'\vert_B$, with a nonempty evidence reference (§2c) | §4.48 | conditional cell admitted 2026-11-25; sound and monotone under stated hypotheses (§4.48; mechanized in `SplitCommand.lean`, `Gate6Soundness.lean`, `Gate6Exact.lean`) |
+| `E-SPLIT` | $d$ (priced) | endpoint-by-endpoint minimum of the two priced sector intervals, intersected with the parent full upper endpoint $U$ | both sector hypotheses (`split_block_intervals` for $X$ and $Z$) | $d=\min(d_X,d_Z)$; §4.48 | conditional cell admitted 2026-11-25 |
 
 The cells above are **admission decisions plus their carried judgments**. A
 distance judgment with no stated hypothesis is a **refusal**, not a gap: the
@@ -724,7 +764,7 @@ The consumer realizes this as `DistanceLedger.for_constructed`.
 | Constructor | $n$ | $k$ | $w$, Tanner components, $r$ | $d$, $d_X$, $d_Z$ |
 | --- | --- | --- | --- | --- |
 | `L-HGP` | $n_1 n_2 + m_1 m_2$, exact | $k_1 k_2 + k_1^{T} k_2^{T}$, exact (§4.34) | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_X \ge \min(\ell(C_2), \ell(C_1^T))$ and $d_Z \ge \min(\ell(C_1), \ell(C_2^T))$ from supplied sourced classical factor bounds (Tillich–Zémor 2014); upper endpoints from validated Kronecker witness lifts $c_1 \otimes e_j, e_a \otimes c_2^T, e_i \otimes c_2, c_1^T \otimes e_b$ |
-| `L-LIFTED` | $|G| (n_A n_B + m_A m_B)$, exact (§4.34, §4.44) | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; $[0, +\infty)$ until a sourced bound or validated witness is supplied |
+| `L-LIFTED` | $|G| (n_A n_B + m_A m_B)$, exact (§4.34, §4.44); with a subgroup argument $[G:H] (n_A n_B + m_A m_B)$, exact (§4.49) | rank bookkeeping of the display, exact, no closed form | as above | no automatic cell; $[0, +\infty)$ until a sourced bound or validated witness is supplied |
 | `L-GROUP-ALGEBRA` | $2|G|$, exact | $2|G| - \mathrm{rank}[L(a) \mid R(b)] - \mathrm{rank}[L(b) \mid R(a)]$, exact (reducing to $2(|G| - \mathrm{rank}[L(a) \mid L(b)])$ when $G$ is abelian; §4.34, §4.44) | as above | no automatic cell; as above |
 | `A-CONCAT` | $n_{\mathrm{in}} n_{\mathrm{out}}$, exact | $k_O$, exact (§4.34) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_\sigma \ge \max(\lceil \ell_\sigma(O)/k_{\mathrm{in}} \rceil, \ell_{\mathrm{block},\sigma}(O)) \cdot \ell_\sigma(I)$ from supplied sourced outer/inner bounds ($\ell_\sigma(O) \cdot \ell_\sigma(I)$ when $k_{\mathrm{in}}=1$); upper endpoints from validated block-representative lifts of outer logical witnesses; the §2a tower price provider supplies deletion and exposure prices from level data |
 | `A-PRODUCT` | $m_Z^A m_X^B + n_A n_B + m_X^A m_Z^B$, exact | $k_A k_B$, exact (§4.35) | as above | `[0, +\infty)` by default; **conditional** (§2g.1, §4.45): $d_\sigma \ge \ell_\sigma$ from a display-certified sourced Audoux–Couvreur factor-overlap bound (direct `(d_X, d_Z)`, or multiplicative $\underline d_{A,\sigma}\underline d_{B,\sigma}$ when certified for the chosen displays); upper endpoints from validated central-block Kronecker witness lifts $w_A \times w_B$ of weight $\mathrm{wt}(w_A)\mathrm{wt}(w_B)$. Distances may depend on the factor displays (§4.35) |
@@ -739,9 +779,9 @@ The consumer realizes this as `DistanceLedger.for_constructed`.
 | `A-PULLBACK` | $|Q_1 \times_{Q_I} Q_2|$, exact (§4.43) | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. Naive lower bound $d(A\times_C B)\ge\min(d_A,d_B)$ is `false` (`the left-in-papers note` §6.3) |
 | `A-PUSHOUT` | $|Q_1 \sqcup_{Q_S} Q_2|$, exact (§4.43) | rank bookkeeping of the display, exact, no closed form | as above | no cell; as above. General pushouts with $S\neq 0$ can drop distance (`the left-in-papers note` claims 3.5, 4.1) |
 | `L-PAIR-PARTITION` | $L \cdot p$, exact (§4.46) | rank bookkeeping of the display, exact, no closed form | recomputed exactly over the constructed display; $r$ only under a supplied honest layout (§2d.3) | no cell; $[0, +\infty)$ until a sourced bound or validated witness is supplied (for CPM-PP, the structural factorial ceiling $d \le (J+1)!$ of Okada–Kasai Thm 3 is an external bound a consumer may name; APM-PP escapes that ceiling, §4.46) |
-| `PP-SCALE` | $L \cdot P$, exact (§4.47) | $L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z')$, exact (§4.47) | $w = L$ carries (each natural row has one 1 in each of the $L$ block columns); $r$ and Tanner connectivity recomputed from the generated presentation | `not yet defined` unless a verified interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied, in which case `conditional` (§2l): ledger starts at $[0, +\infty)$ and the supplied interval raises the lower/upper endpoints as a trusted input (consumer checks shape and witness consistency only; no automatic distance rule) |
+| `PP-SCALE` | $L \cdot P$, exact (§4.47) | $L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z')$, exact (§4.47) | $w = L$ carries (each natural row has one 1 in each of the $L$ block columns); $r$ and Tanner connectivity recomputed from the generated presentation | `unavailable` automatically unless a supplied interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is recorded as a priced hypothesis, in which case `conditional` (§2l): ledger starts at $[0, +\infty)$ and the supplied interval sets the endpoints as a trusted input (consumer checks shape and witness consistency only; no automatic distance rule) |
 
-### 2g.1 Conditional distance cells and factor-to-child witness lifting for admitted constructors (issue #567)
+### 2g.1 Conditional distance cells and factor-to-child witness lifting for admitted constructors
 
 For the five constructors with established parameter theorems (`L-HGP`,
 `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`), `OPERATIONAL_SEMANTICS.md`
@@ -767,12 +807,14 @@ A supplied bound that contradicts a validated witness is a failed premise
 natural rows do not commute (or whose interface maps fail the CSS-morphism premise) has no derivation and no cells.
 
 
-## 2h. Gate-realization judgment rows: codespace preservation and transport by weakening (admitted 2026-11-18)
+## 2h. Gate-realization judgment rows: codespace preservation, frame reading, and transport by weakening (admitted 2026-11-18; Rows C–F 2026-11-26)
 
-Admitted to the `stdCSS-3` / `v0.3.0` candidate scope by dated maintainer
-decision; derivations at
+Rows A and B were admitted to `stdCSS-3` / `v0.3.0` on 2026-11-18, and Rows
+C–F together with the any-angle `C-ADD-CHECK` cell of Row A were admitted on
+2026-11-26 (issue #572) and folded into `stdCSS-3` / `v0.3.2` by maintainer
+decision (2026-11-26); derivations at
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.37 and
-`GATE_REALIZATION_ROWS.md`).
+`GATE_REALIZATION_ROWS.md`.
 Source statements: Nelson, Danageozian, Cao, Economou, and Barnes, arXiv
 2610.17612v1 (Theorem 1 and Corollaries 2 and 3), re-derived for a CSS display
 in §4.37.
@@ -801,25 +843,44 @@ $V_g = \prod_{j \in J(g)} i\epsilon_j G_j$ over the set $J(g)$ of generators
 anticommuting with row $g$, and $\mathsf{preserves}_U(C)$ holds iff
 $V_g \in \mathcal{S}(C)$ for every displayed row $g$ — a decidable polynomial-time
 test over the display (two $\mathbb{F}_2$ span-membership tests and one phase
-check per displayed row).
+check per displayed row). At every angle, by Lemma 7 of §4.37,
+$\mathsf{preserves}_U(C)$ holds iff, for every displayed row $g$,
+$\Phi_{J(g)}(l) = \sum_{j\in J(g)}\epsilon_j\theta_j l_j \in \pi\mathbb{Z}$
+for every sign pattern $l$ in $\Lambda(\mathcal{S}(C), J(g))$, the patterns of
+eigenvalues of $(G_j)_{j\in J(g)}$ that occur on $\mathcal{V}(C)$: those
+satisfying $\prod_{j\in T} l_j = c_T$ whenever $c_T\prod_{j\in T}G_j\in
+\mathcal{S}(C)$ (Lemma 6). The test ranges over at most $2^{\lvert J(g)\rvert}$
+patterns and finds the relations by at most $2^{\lvert J(g)\rvert}$
+membership tests per row: polynomial in the display for a fixed number of
+generators, exponential in the number anticommuting with the row. It is a
+decision procedure for *rational angles* $\theta_j = a_j\pi$,
+$a_j \in \mathbb{Q}_{\ge 0}$, on which $\Phi \in \pi\mathbb{Z}$ is the
+integrality of a rational, decided exactly with no floating-point tolerance
+(§4.37, *Angle domain*). For a gate with an angle outside $\pi\mathbb{Q}$ no
+decision procedure is admitted, and a cell that needs one is
+`not yet defined` (issue #572).
 
 | Transition | Verdict for $\mathsf{preserves}_U$ | Condition / scope | Evidence |
 | --- | --- | --- | --- |
 | `C-SKIP` | carries | none | `[proved]` (§4.37) |
 | `C-ADD-CHECK`, adding row $s$, every generator $G_j$ commuting with $s$ | carries at every angle $\theta_j \ge 0$ | none beyond the stated commutation ($U$ commutes with $s$) | `[proved]` (§4.37) |
 | `C-ADD-CHECK`, adding row $s$, all angles $\theta_j = \pi/4$ | carries iff $V_s \in \mathcal{S}(C')$ for the child $C'$ | one stabilizer-membership test at the added row $s$ (contains the commuting case, where $J(s) = \varnothing$ and $V_s = I$) | `[proved]` (§4.37) |
-| `C-ADD-CHECK`, adding row $s$, some generator anticommuting with $s$ and some angle $\theta_j \neq \pi/4$ | `not yet defined` | depends on eigenvalues of zero-syndrome logical operators in a chosen frame (requires a rule reading the logical-witness field, [`STATE_MODEL.md`](STATE_MODEL.md) §1a) | `not-applicable` |
-| `C-DELETE-CHECK` | does not carry | refuted by counterexample (§4.37: deleting $X_0 X_1$ from rows $X_0 X_1, Z_0 Z_1$ under $G_1 = X_0, G_2 = X_1$, $\epsilon = (+1, -1)$ at $\pi/4$); at $\pi/4$ the child's own Lemma 3 test over its remaining rows decides $\mathsf{preserves}_U(C')$ | `[false]` (§4.37) |
+| `C-ADD-CHECK`, adding row $s$, some generator anticommuting with $s$ and some angle $\theta_j \neq \pi/4$ | carries iff $\Phi_{J(s)}(l) \in \pi\mathbb{Z}$ for every $l \in \Lambda(\mathcal{S}(C'), J(s))$ | one test at the added row $s$ (Corollary 7.1, which contains the two rows above), decided for rational angles $\theta_j\in\pi\mathbb{Q}$ by at most $2^{\lvert J(s)\rvert}$ sign patterns and membership tests, polynomial in the display for a fixed number of generators; `not yet defined` as a decision for other angles; its reading in a frame is the source's eigenvalue condition (Row C) | `[proved]` (§4.37, issue #572) |
+| `C-DELETE-CHECK` | does not carry | refuted by counterexample (§4.37: deleting $X_0 X_1$ from rows $X_0 X_1, Z_0 Z_1$ under $G_1 = X_0, G_2 = X_1$, $\epsilon = (+1, -1)$ at $\pi/4$); the child's own Lemma 7 test over its remaining rows decides $\mathsf{preserves}_U(C')$ at every rational angle | `[false]` (§4.37) |
 | `C-DIRECT-SUM`, gate $U$ supported on one summand | carries | generators of $U$ supported on $Q_A$ (or $Q_B$); instance of the Frame schema (§7.2.3) | `[proved]` (§4.37) |
 | `C-SEQUENCE` | carries by composition | where each step's cell carries | `[proved]` (§4.37) |
 
-**Scope and `not yet defined` boundaries for Row A.** Addressability (that a
-gate acts on chosen logical qubits in a logical frame) and the logical action
-of an accepted gate require a logical frame and remain `not yet defined`, as
-does the non-$\pi/4$ anticommuting `C-ADD-CHECK` branch above. Both rows in
-this section are stated for a CSS display only: mixed (non-CSS) rows require an
-independent sign bit per row (`TAXONOMY.md` §4.3, refused for `v0.3.0`), without which Lemma 1 fails. `E-GRAFT` and the Gate 6 transitions
-carry no cell for $\mathsf{preserves}_U$.
+**Scope of Row A.** Addressability and the logical action of an accepted
+gate, which read a logical frame, are Rows D–F below, and the reading of
+the non-$\pi/4$ `C-ADD-CHECK` cell in a frame is Row C (issue #572). Every
+row in this section is stated for a CSS display only: mixed (non-CSS) rows
+require an independent sign bit per row (`TAXONOMY.md` §4.3, refused for
+`v0.3.0`), without which Lemma 1 fails. `E-GRAFT` and the Gate 6 transitions
+carry no positive cell for $\mathsf{preserves}_U$ or for Rows C–F; in particular,
+`E-SPLIT` does not carry $\mathsf{preserves}_U$ (`false`, by the $t=1$
+`C-DELETE-CHECK` counterexample of §4.37, see §4.48), while
+$\omega \ge \lceil L_d'/2 \rceil$ weakens at `E-SPLIT` from the child's lower
+endpoint $L_d'$.
 
 **Row B — Equal-syndrome generator weight floor ($\omega$) and transport by
 weakening (axis 3).** A family of pairwise commuting Hermitian Pauli generators
@@ -858,6 +919,96 @@ substituted from the parent — is recorded as structural schema 6 in §7.2 and
 implemented on the consumer ledger as
 `DistanceLedger.equal_syndrome_weight_floor` (`machine/intervals.py`). Neither
 Row A nor Row B modifies any distance interval endpoint ($d, d_X, d_Z$).
+
+**Rows C–F — Frame-reading predicates (assertion-language extension, axis 3;
+admitted 2026-11-26, `stdCSS-3` / `v0.3.2`, issue #572).** Derivations:
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.37, Lemmas 5–11.
+A *frame* $F$ is a logical-witness field $\mathsf{log}$
+([`STATE_MODEL.md`](STATE_MODEL.md) §1a) supplied with the state as a
+parameter of the predicate, like the gate. No part of
+$C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ changes, no operation
+identifier is minted, and the consumer ledger does not carry the frame. Its
+eigenvalue reading (§1a): $F$ is *consistent* on $C$ when its entries
+commute pairwise (F1) and its eigenvalues respect every relation among the
+entries of one sector modulo the displayed rows (F2). Then the *frame group*
+$\mathcal{S}_F(C)$, generated by $\mathcal{S}(C)$ and the signed entry
+operators $\varepsilon_e f_e$, is a stabilizer group, and the *frame sector*
+$\mathcal{V}_F(C)$, the vectors of $\mathcal{V}(C)$ on which every entry
+takes its eigenvalue, is nonzero (Lemma 8). A frame-indexed predicate is
+stated only for a frame consistent on its state (Rows C and D) or well
+formed on it (Rows E and F).
+
+| Row | Predicate | Holds iff | Carrier |
+| --- | --- | --- | --- |
+| C | $\mathsf{preserves}_U(C\mid F)$: $U$ maps $\mathcal{V}_F(C)$ into $\mathcal{V}(C)$ | $\Phi_{J(g)}(l)\in\pi\mathbb{Z}$ for every displayed row $g$ and every $l\in\Lambda(\mathcal{S}_F(C),J(g))$ (Lemma 9) | span, frame parameter |
+| D | $\mathsf{phase}_U(C\mid F)=z$: $U\psi=z\psi$ on $\mathcal{V}_F(C)$, the logical action of $U$ on a frame sector | $\exp(i\Phi(l))=z$ for every $l\in\Lambda(\mathcal{S}_F(C),\{1,\dots,q\})$ (Lemma 10); for rational angles $z=\exp(i\pi r)$ is named by a rational $r\in[0,2)$ | span, frame parameter |
+| E | $\mathsf{image}_U(C;e)\equiv P$: $U^\dagger f_eU\psi=P\psi$ on $\mathcal{V}(C)$, for an entry $e$; with $\mathsf{preserves}_U(C)$, the logical action of $U$ by conjugation | all angles $\pi/4$: $P^{-1}f_eV_{f_e}\in\mathcal{S}(C)$; every angle with $P=\eta f_e$, $\eta=\pm1$: $\exp(2i\Phi_{J(f_e)}(l))=\eta$ for every $l\in\Lambda(\mathcal{S}(C),J(f_e))$ (Lemma 11); other pairs `open` | span, frame parameter |
+| F | $\mathsf{addresses}_U(C;F,A)$: $\mathsf{preserves}_U(C)$, and $U$ commutes on $\mathcal{V}(C)$ with $f_e$ for every entry $e$ of $F$ outside $A$ | Lemma 7, and Row E with $P=f_e$ for each entry outside $A$ | span, frame parameter |
+
+**Angle domain and cost.** Rows C–F, like Row A, are decision procedures
+for rational angles $\theta_j\in\pi\mathbb{Q}$, where every test is exact
+rational arithmetic (§4.37, *Angle domain*); for other angles their
+decision is `not yet defined`. Each test enumerates at most $2^{m}$ sign
+patterns and finds the relations among the generators by at most $2^{m}$
+membership tests, with $m$ the number of generators involved ($\lvert J(g)\rvert$
+for Rows C and F, $\lvert J(f_e)\rvert$ for Row E, $q$ for Row D): polynomial in
+the display for a fixed number of generators. Row C asserts that the sector
+is mapped into $\mathcal{V}(C)$, not into itself; that the sector is mapped
+into itself follows from Row D, not from Row C.
+
+**The eigenvalue condition and the source's Theorem 1.** When the
+transported frame $F'$ *resolves* $J(s)$, so that every zero-syndrome
+product $L_j=G_{j_0}G_j$ ($j\in J(s)$) acts on the child's sector as its
+eigenvalue $l_j^{(F')}$, Row C's `C-ADD-CHECK` cell is the single equation
+$\sum_{j\in J(s)}\epsilon_j\theta_j\,l_j^{(F')}\in\pi\mathbb{Z}$
+(Corollary 9.1): the source's condition, with the logical sector named by
+the frame. For a family with one common nonempty syndrome that $F$
+resolves, $\mathsf{preserves}_U(C\mid F)$ and
+$\mathsf{phase}_U(C\mid F)=(-1)^{\Phi^{(F)}/\pi}$ hold iff
+$\Phi^{(F)}=\sum_j\epsilon_j\theta_j l_j^{(F)}\in\pi\mathbb{Z}$
+(Corollary 10.1): the source's Theorem 1 in CSS form, a diagonal logical
+gate. Row A's frame-free cell is the conjunction of Row C's cell over every
+consistent eigenvalue assignment (Lemma 9), which is why it needs no frame.
+
+**Addressability.** Row F states that the accepted gate fixes every logical
+operator that $F$ names outside $A$. When the classes of those entries span
+a subspace of the logical space on which the commutation form is
+nondegenerate, they generate the logical algebra of a tensor factor of
+$\mathcal{V}(C)$, and the gate acts as the identity on that factor: it acts
+on the other logical qubits only. The field carries no pairing of $X$- and
+$Z$-logicals into qubits, so that reading depends on the choice of $F$ and
+$A$.
+
+| Transition | Row C | Row D | Row E | Row F | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| `C-SKIP` | carries | carries | carries | carries | `[proved]` (§4.37) |
+| `C-ADD-CHECK`, adding row $s$, frame transported to $F'$ consistent on $C'$, $\mathcal{S}_F(C)\subseteq\mathcal{S}_{F'}(C')$ | carries iff $\Phi_{J(s)}(l)\in\pi\mathbb{Z}$ for every $l\in\Lambda(\mathcal{S}_{F'}(C'),J(s))$ | carries, same $z$ | carries for every entry the transport keeps | $\mathsf{addresses}_U(C';F',A\cap F')$ holds iff Row A's test at $s$ | `[proved]` (§4.37) |
+| `C-ADD-CHECK`, $F'$ consistent on $C'$, $\mathcal{S}_F(C)\not\subseteq\mathcal{S}_{F'}(C')$ | does not carry | does not carry | as above | as above | `[false]` (one-qubit counterexample, §4.37); Lemmas 9 and 10 at the child decide Rows C and D |
+| `C-ADD-CHECK`, $F'$ not consistent on $C'$ | `not yet defined` | `not yet defined` | as above | as above | the predicates of Rows C and D are not stated at the child (§4.37); Rows E and F need only a well-formed frame |
+| `C-DELETE-CHECK` | does not carry | does not carry | does not carry | does not carry | `[false]` (three-qubit counterexample, §4.37); Lemmas 9–11 at the child decide it |
+| `C-DIRECT-SUM`, $C_1\oplus C_2$, $U$ supported on $Q_1$, frame $F_1\oplus F_2$ extended by zero | carries | carries, same $z$ | carries; an entry of $F_2$ has image $f_e$ | carries for $A\subseteq F_1$ | `[proved]` (§4.37) |
+| `C-SEQUENCE` | carries by composition of the step cells | by composition | by composition | by composition | `[proved]` (§4.37) |
+
+The inclusion $\mathcal{S}_F(C)\subseteq\mathcal{S}_{F'}(C')$ holds when the
+transport keeps every entry. It fails when the transport drops an entry
+that anticommutes with $s$, drops an entry that $s$ brings into the span
+with eigenvalue $-1$, or merges two entries whose eigenvalues disagree; the
+child's sector is then not inside the parent's, and Lemma 9 or 10 at the
+child decides it. The transported frame can also fail to be consistent:
+the transport discards no entry for a new relation among the survivors, so
+three entries whose vectors $s$ brings into one relation with eigenvalue
+product $-1$ all survive and violate F2 (§4.37); Rows C and D are then not
+stated at the child.
+
+**What Rows C–F do not define.** The conjugation image for a target other
+than $\pm f_e$ at angles that are not all $\pi/4$ (`open`: away from
+$\pi/4$ the image of a Pauli operator is in general not one). A pairing of
+frame entries into logical qubits (the field has none). Mixed ($Y$-type)
+frame entries, since the field's entries are single-sector vectors; a
+zero-syndrome product with a mixed logical part may then have no resolving
+frame, and the general form of the test applies. Cells for `E-GRAFT` and
+the Gate 6 transitions. None of Rows C–F modifies $C$, a distance interval,
+or the frame.
 
 ## 2i. Monomial-quotient specialization of `A-QUOTIENT` (conditional)
 
@@ -932,24 +1083,7 @@ paragraph of this section.)
 
 No constructor evaluates this cell: $\bar\Gamma$ as a single-code map is constructor-candidate material (typed input, identifier allocation, well-formedness obligation), but that ladder step is left for another PR. Here no term denotes $\bar\Gamma(C)$, so no evaluation yields a state these cells describe and no consumer path uses them; the tower-level threshold statement is the only family-level content, and no usable automatic distance bound or $k$ transport rule enters the calculus from this record.
 
-## 2l. PP-SCALE family-level structural upper bound (conjectural, optional)
-
-Recorded as a conditional family-level rule over PP-scale families with fixed
-parameters, analogous to §2j. **No taxonomy operation identifier is minted**
-(`TAXONOMY.md` §3.8). The paper's conjecture of a finite, size-independent
-structural distance upper bound $B$, with improvement toward it as $P$ grows, is
-scoped as an upper ceiling, marked `conjectural`, with monotonicity explicitly
-not assumed. Family closure and amplified lower bounds remain `unavailable`
-(`design/SCOPE.md` §4, issue #541). Admission is a separate maintainer
-decision.
-
-| Property / Quantity | Judgment cell | Imported hypothesis / side condition | Source & Evidence status |
-| --- | --- | --- | --- |
-| Structural distance upper bound ($d, d_X, d_Z$) | upper ceiling $B$ only; monotonicity not assumed | $B$ supplied as a trusted (conjectural) input | Kasai, arXiv submit/8406448 §2.1; **`conjectural`** |
-| Per-state supplied distance interval ($d, d_X, d_Z$) | $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ recorded on the constructed ledger | sourced interval supplied as a priced hypothesis; consumer checks shape and witness consistency only | Kasai, arXiv submit/8406448 §3; **`conditional`** |
-| Amplified family-level lower bound ($d, d_X, d_Z$) | `unavailable` unless a sourced per-state interval is supplied | none | `design/SCOPE.md` §4; **`unavailable`** |
-
-## 2k. CSS-preserving column CNOT/SWAP transformation (admitted 2026-11-18)
+## 2k. CSS-preserving column CNOT/SWAP transformation (`C-COLUMN-CNOT`, admitted 2026-11-18)
 
 Admitted to the `stdCSS-3` candidate scope. The command
 $\mathrm{cnotSwap}_U$, $U \in \mathrm{GL}(Q,2)$, transforms a presented CSS
@@ -965,7 +1099,7 @@ not a constructor: it rewrites an already-formed presented state.
 **Output well-formedness.** The image of a well-formed CSS display under an
 invertible column map is again a well-formed CSS display; `I1`–`I5` carry
 (`OBL-WELL-FORMEDNESS-PRESERVATION`), with the per-invariant argument at
-`OPERATIONAL_SEMANTICS.md` §4.43.
+`OPERATIONAL_SEMANTICS.md` §4.42.
 
 **Parameter effects.**
 
@@ -1006,6 +1140,23 @@ zero.
 $[\lceil L_\sigma / \rho_\sigma^- \rceil,\; \rho_\sigma U_\sigma]$.
 Parent-valid witnesses are not carried automatically; their supports must be
 transported by the sector map and revalidated in the child.
+
+## 2l. PP-SCALE family-level structural upper bound (conjectural, optional)
+
+Recorded as a conditional family-level rule over PP-scale families with fixed
+parameters, analogous to §2j. **No taxonomy operation identifier is minted**
+(`TAXONOMY.md` §3.8). The paper's conjecture of a finite, size-independent
+structural distance upper bound $B$, with improvement toward it as $P$ grows, is
+scoped as an upper ceiling, marked `conjectural`, with monotonicity explicitly
+not assumed. Family closure and amplified lower bounds remain `unavailable`
+(`design/SCOPE.md` §4). Admission is a separate maintainer
+decision.
+
+| Property / Quantity | Judgment cell | Imported hypothesis / side condition | Source & Evidence status |
+| --- | --- | --- | --- |
+| Structural distance upper bound ($d, d_X, d_Z$) | upper ceiling $B$ only; monotonicity not assumed | $B$ supplied as a trusted (conjectural) input | Kasai, arXiv submit/8406448 §2.1; **`conjectural`** |
+| Per-state supplied distance interval ($d, d_X, d_Z$) | $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ recorded on the constructed ledger | sourced interval supplied as a priced hypothesis; consumer checks shape and witness consistency only | Kasai, arXiv submit/8406448 §3; **`conditional`** |
+| Amplified family-level lower bound ($d, d_X, d_Z$) | `unavailable` unless a sourced per-state interval is supplied | none | `design/SCOPE.md` §4; **`not-applicable`** (`unavailable`) |
 
 ## 3. What `unavailable` means, and why it is a position
 `unavailable` is **withheld by design commitment**. It is not ignorance, not a gap
@@ -1076,9 +1227,12 @@ of L3, one per transition of the evaluation chain:
 | `E-PUNCTURE` at $q$, with $q \notin S$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives (its support does not contain $q$) |
 | `E-PUNCTURE` at $q$, with $q \in S$ (or $r$ a retired row through $q$) | **no rule** | the puncture deletes every row through $q$: no claim with $q \in S$ is derivable, and for any retired identifier $r$ (whose input row contained $q$) no claim $\mathsf{gen}_{i+1}(r,\sigma,S)$ is derivable for any $\sigma, S$ by I3 identifier injectivity — the `W13` half for the puncture |
 | `E-LOCAL-HADAMARD` ($T=Q$ or $T=\varnothing$) | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma',S)$, with $\sigma' = \overline{\sigma}$ when $T$ is non-empty and $\sigma' = \sigma$ otherwise | the referenced generator survives and keeps its identifier; its sector swaps when $T \ne \varnothing$ (design choice) |
+| `E-LOCAL-HADAMARD` (split subset) | concludes $\mathsf{gen}_{i+1}(r',\sigma',S')$ for every row $(r',\sigma',S')$ of the canonical update (§2 card) | every output row is a source, as `P-REBASE`'s minted rows are. A $T$-pure row keeps its identifier and support, with its sector exchanged exactly when it lies inside $T$. A mixed row's identifier names its first kept piece, if any (design choice) |
 | `P-REBASE` at sector $\tau$, with $\sigma \ne \tau$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives (it is of the untouched sector) |
 | `P-REBASE` at sector $\tau$, with `r` an old row of sector $\tau$ (`σ = τ`: no transport rule) | **no rule** | the rebase retires every old row of sector $\tau$: for an old row `r` of sector $\tau$, no claim $\mathsf{gen}_{i+1}(r,\sigma,S)$ is derivable for any $\sigma, S$ by I3 identifier injectivity and mint freshness — the `W13` half for the rebase |
 | `P-REBASE` at sector $\tau$ (minted row) | concludes $\mathsf{gen}_{i+1}(r',\tau,S')$ for each row the rebase mints, with $r'$ the canonical mint and $S'$ the $\mathbb{F}_2$ combination of the sector's displayed rows selected by the coefficient row | source: the claim originates where the row is minted |
+| `E-SPLIT` at cut $(Q_A, R)$, with $r \notin R$ | from $\mathsf{gen}_i(r,\sigma,S)$ concludes $\mathsf{gen}_{i+1}(r,\sigma,S)$ | the referenced generator survives unchanged (`OPERATIONAL_SEMANTICS.md` §4.48) |
+| `E-SPLIT` at cut $(Q_A, R)$, with $r \in R$ | **no rule** | the split retires every row in $R$: no claim $\mathsf{gen}_{i+1}(r,\sigma,S)$ is derivable for any $\sigma, S$ — the `W13` half for `E-SPLIT` |
 
 The survival side conditions ($r \ne r'$ for `C-DELETE-CHECK`, $r \notin \vec r$
 for `E-GRAFT`, $r \ne r_{\mathrm{id}}$ for `E-PEEL`, $q \notin S$ for
@@ -1087,8 +1241,9 @@ condition of `spec/OPERATIONAL_SEMANTICS.md` §4.11 read on this claim. In a
 minted graft row, $q$ belongs to both $S_j$ and $S_{j+1}$, so the symmetric
 difference $S_j \mathbin{\triangle} S_{j+1}$ lies in $Q \setminus \{q\}$. Under
 `E-GRAFT` and `E-PEEL`, a transported opposite-sector claim changes its support
-by dropping $q$; under `E-LOCAL-HADAMARD` with $T \ne \varnothing$, a
-transported claim changes its sector to $\overline{\sigma}$. In every case the
+by dropping $q$; under `E-LOCAL-HADAMARD` at $T=Q$, a
+transported claim changes its sector to $\overline{\sigma}$, and at a split
+subset every output row is sourced rather than transported. In every case the
 claim follows the identifier of the rewritten row.
 
 The input-display rule is a rule about position $0$ of the chain the
@@ -1125,11 +1280,13 @@ input-display rule is `Derives.genInput`, the two graft rows are
 with `Derives.shift_gen`. The Gate 6 rows for the claim are
 `Derives.genExtend`, `genExtendMint`, `genPeel` (with
 `peelSupport_eq_graftSupport_of_eval` in `Soundness.lean`), `genPuncture`,
-`genHadamard`, `genRebase`, and `genRebaseMint`, with refusals
+`genHadamard`, `genRebase`, `genRebaseMint`, and `genSplit` (2026-11-25,
+`E-SPLIT`), with refusals
 `not_derivable_gen_of_peeled`, `not_derivable_gen_of_punctured` (support form),
 `not_derivable_gen_of_punctured_id` (identifier form, arbitrary $\sigma, S$),
-and `not_derivable_gen_of_rebased` (identifier form, arbitrary $\sigma, S$),
-together with worked instances for all five Gate 6 commands. The seam condition is discharged on every chain of single (non-sequence)
+`not_derivable_gen_of_rebased` (identifier form, arbitrary $\sigma, S$),
+and `not_derivable_gen_of_split` (identifier form, arbitrary $\sigma, S$),
+together with worked instances for all five Gate 6 commands and `E-SPLIT`. The seam condition is discharged on every chain of single (non-sequence)
 steps and on every command evaluation trace by `seamRowsDerived_of_stepChain`,
 `stepChain_append`, `Trace.stepChain`, `seamRowsDerived_of_trace`,
 `Derives.shift_gen_of_stepChain`, `Derives.shift_gen_of_trace`,
@@ -1191,6 +1348,7 @@ were span-level is the shape of the graft's spliced-sector error
 | $d_X$, $d_Z$ | span | atomic | distance |
 | $d$ | span | derived from the two atoms by `min` | distance |
 | $\mathsf{preserves}_U$ | span | operator-indexed predicate ($U\mathcal{V}(C)\subseteq\mathcal{V}(C)$) | none |
+| $\mathsf{preserves}_U(\cdot\mid F)$, $\mathsf{phase}_U(\cdot\mid F)$, $\mathsf{image}_U(\cdot;e)$, $\mathsf{addresses}_U(\cdot;F,A)$ | span | operator- and frame-indexed predicates (§2h Rows C–F); the frame is a parameter, not state data | none |
 | $\omega$ (equal-syndrome weight floor) | span | atomic (bounded below by $\lceil d/2\rceil$) | distance |
 | output well-formedness | state | predicate (I1–I5) | none |
 | presentation data (ids, sectors) | presentation | data | none |
@@ -1251,6 +1409,7 @@ them instead of re-arguing each cell.
 | `P-REBASE` span-expressible claims | carrier typing (span-level survives a span-preserving rebase) |
 | `E-GRAFT` spliced-sector correction | carrier typing (a display-level carry was read as span-level) |
 | $\mathsf{preserves}_U$ rows (`C-SKIP`, `C-ADD-CHECK`, `C-DIRECT-SUM`, `C-SEQUENCE`) | predicate preservation + frame + composition (§2h, §4.37) |
+| §2h Rows C–F (`C-SKIP`, `C-ADD-CHECK`, `C-DIRECT-SUM`, `C-SEQUENCE`) | predicate preservation (restriction to a sub-sector under $\mathcal{S}_F(C)\subseteq\mathcal{S}_{F'}(C')$) + frame + composition (§2h, §4.37) |
 | $\omega$ row (equal-syndrome weight floor) | weakening (monotone image $\lceil L_d/2 \rceil$ of the distance lower endpoint $L_d$, §7.2.6, §2h, §4.37) |
 | well-formedness rows | predicate preservation, already proved for the MVP |
 
@@ -1258,7 +1417,7 @@ The genuinely bespoke items remain: the distance atoms' per-primitive
 instantiations, the conditional price cells, the seam certificate, and the
 extension cells whose transitions are new.
 
-### 7.4 The `n`, `k`, `w`, `r`, $\kappa$, $\mathsf{preserves}_U$, and $\omega$ rows as instances
+### 7.4 The `n`, `k`, `w`, `r`, $\kappa$, $\mathsf{preserves}_U$, §2h Rows C–F, and $\omega$ rows as instances
 
 Each of these rows of §2 is, under the signature of §7.1, an instance of
 the schemas of §7.2 rather than a fresh argument. The derived-transfer or
@@ -1272,7 +1431,8 @@ evidence labels of §2 are unchanged.
 | $w$ | display | $\max\{\mathrm{wt}(r):r\in\mathit{rows}\}$ | $w'=w$ (skip); $w=\max(w_A,w_B)$ (direct sum); $w'=\max\{\mathrm{wt}(r):r\in\mathit{rows}'\}$ (delete, $\le w$); $w'=\max(w,\mathrm{wt}(r_{\rm new}))$ (add); carries (sequence) | derived transfer + monotonicity |
 | $r$ | display | $\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}\}$ | $r'=r$ (skip); $r=\max(r_A,r_B)$ (direct sum, conditional on honest merged layout); $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ (delete, $\le r$); $r'=\max(r,\mathrm{diam}_\lambda(r_{\rm new}))$ (add); carries by composition (sequence) | derived transfer + monotonicity |
 | $\kappa$ | display | $\kappa(C)$, the component count of the displayed-row Tanner graph $\Gamma(C)$ | $\kappa'=\kappa$ (skip); $\kappa=\kappa_A+\kappa_B$ (direct sum); $\kappa'\ge\kappa$, recomputed (delete); $\kappa'\le\kappa$ (add); composition (sequence) | derived transfer + monotonicity |
-| $\mathsf{preserves}_U$ | span | $U\mathcal{V}(C)\subseteq\mathcal{V}(C)$ | carries (skip); carries when supported on one summand (direct sum); does not carry (delete); carries when every $G_j$ commutes with $s$ or at $\theta_j=\pi/4$ with $V_s\in\mathcal{S}(C')$ (add); composition (sequence) | predicate preservation + frame + composition |
+| $\mathsf{preserves}_U$ | span | $U\mathcal{V}(C)\subseteq\mathcal{V}(C)$ | carries (skip); carries when supported on one summand (direct sum); does not carry (delete); carries iff the test of Corollary 7.1 at $s$ (add; every $G_j$ commuting with $s$, and $\theta_j=\pi/4$ with $V_s\in\mathcal{S}(C')$, are instances); composition (sequence) | predicate preservation + frame + composition |
+| $\mathsf{preserves}_U(\cdot\mid F)$, $\mathsf{phase}_U(\cdot\mid F)$, $\mathsf{image}_U(\cdot;e)$, $\mathsf{addresses}_U(\cdot;F,A)$ (§2h Rows C–F) | span (frame parameter) | frame-sector preservation, sector scalar phase, conjugation image of an entry, and addressability (§2h Rows C–F) | carries (skip); carries on $C_1\oplus C_2$ when $U$ is supported on $Q_1$ with $F_1\oplus F_2$ and $A\subseteq F_1$ (direct sum); does not carry (delete); with $F'$ consistent and $\mathcal{S}_F(C)\subseteq\mathcal{S}_{F'}(C')$, Row C iff Corollary 9.1 and Row D same $z$, with $F'$ consistent and the inclusion failing, Rows C and D do not carry, and with $F'$ not consistent on $C'$, Rows C and D are `not yet defined`; Row E carries for kept entries; Row F holds at $(C';F',A\cap F')$ iff Corollary 7.1 at $s$ (add); composition (sequence) | predicate preservation (sub-sector restriction) + frame + composition |
 | $\omega$ | span | $\min w_{\max}$ over nontrivial equal-syndrome families ($\ge\lceil d(C)/2\rceil$) | carried floor $\lceil L_d/2\rceil$: unchanged (skip); $\ge\lceil L_d/2\rceil$ (add); recomputed $\lceil L_d'/2\rceil$, weakens (delete); $\lceil\min(L_d^A,L_d^B)/2\rceil$ (direct sum); recomputed at each state (sequence) | weakening (monotone image) |
 
 The distance atoms ($d_X$, $d_Z$, $d$) are **not** in this list: they are
@@ -1618,6 +1778,7 @@ axis of $P$:
 | `E-GRAFT` | per-sector: splice carries lower (monotone in $\sqsubseteq^{\mathrm{low}}$), non-splice carries upper (monotone in $\sqsubseteq^{\mathrm{up}}$), full distance resets unless priced (monotone via the $x\mapsto\min(x,p)$ map) | §2b `E-GRAFT` row, §4.13 |
 | `P-REBASE` | identity is monotone | §2b `P-REBASE` row (unchanged) |
 | `E-LOCAL-HADAMARD` ($T=Q$) | the swap $X\leftrightarrow Z$ is monotone | §2b `E-LOCAL-HADAMARD` row |
+| `E-LOCAL-HADAMARD` (split subset) | $\max$, $\min$ and a constant $+\infty$ endpoint are monotone | §2b `E-LOCAL-HADAMARD` split-subset row |
 | `E-PEEL` | selected lower carry is monotone in $\sqsubseteq^{\mathrm{low}}$; opposite upper carry and the full-distance upper carry are monotone in $\sqsubseteq^{\mathrm{up}}$; reset lower endpoints are constant | §2b `E-PEEL` row, §4.28 |
 | `E-PUNCTURE` | lower reset to $0$ is constant (monotone); upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-PUNCTURE` row |
 | `E-EXTEND` | $\Delta=\varnothing$: lower carry is monotone in $\sqsubseteq^{\mathrm{low}}$, upper rebuild is monotone in $\sqsubseteq^{\mathrm{up}}$; $\Delta\ne\varnothing$: lower reset to $0$ is constant, upper endpoints from child-valid witnesses are monotone in $\sqsubseteq^{\mathrm{up}}$ | §2b `E-EXTEND` row |

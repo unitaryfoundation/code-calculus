@@ -16,7 +16,12 @@
 # hyphens, so substrings like "OBL-SKIP-IDENTITY" or "QLDPC-LAYA" do not leak
 # look-alike IDs ("L-SKIP-IDENTITY", "C-LAYA"). Checks 2 and 3 match a whole
 # word, so an ID is never satisfied by a longer token that merely contains it
-# (hardened 2026-10-29; a review finding).
+# (hardened 2026-10-29; RG-21).
+#
+# The walk skips .git, .venv, lean/.lake, public, and .claude. Local agent
+# worktrees live under .claude/worktrees: they are other branches' checkouts,
+# not part of this tree, and linting them against this tree's spec/ gives
+# false findings.
 #
 # Usage: sh scripts/lint_docs.sh   (exit 0 = clean, 1 = findings)
 
@@ -24,7 +29,7 @@ set -u
 cd "$(dirname "$0")/.." || exit 2
 
 fail=0
-files=$(find . \( -path './.git' -o -path './.venv' -o -path './lean/.lake' \) -prune -o -name '*.md' -print | sort)
+files=$(find . \( -path './.git' -o -path './.venv' -o -path './.claude' -o -path './lean/.lake' -o -path './public' -o -path './public/lean/.lake' \) -prune -o -name '*.md' -print | sort)
 
 # 1. Relative markdown link targets resolve.
 for f in $files; do
@@ -73,7 +78,11 @@ fi
 #    bracket; (c) link *text* that names a file which exists nowhere in the
 #    repository, while the target points at its successor.
 #
-live=$(echo "$files")
+#    `the archived notes` is excluded, and deliberately: a dated note's link text names
+#    the file as it was called when the note was written, which is evidence
+#    rather than a stale pointer. Finding IDs `RG-21`/`RC-33` list live paths
+#    only; check 1 above still covers the archive's link targets.
+live=$(echo "$files" | grep -v '^\./archive/')
 for f in $live; do
   if grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" >/dev/null; then
     grep -nE '`[^`]*\.(md|json|py|lean)`\([^)]*\)' "$f" | sed "s|^|$f: |"
@@ -94,7 +103,7 @@ badtext=$(grep -ohE '\[`[^]]*`[^]]*\]\([^)]*\)' $live \
   | grep -oE '`[^`]+`' | tr -d '`' \
   | grep -E '\.(md|json|py|lean)$' | sort -u | while read -r name; do
       base=$(basename "$name")
-      if [ -z "$(find . \( -path './.git' -o -path './.venv' -o -path './lean/.lake' \) -prune -o -name "$base" -print -quit)" ]; then
+      if [ -z "$(find . \( -path './.git' -o -path './.venv' -o -path './.claude' -o -path './lean/.lake' \) -prune -o -name "$base" -print -quit)" ]; then
         echo "$name"
       fi
     done)
@@ -103,8 +112,11 @@ if [ -n "$badtext" ]; then
   fail=1
 fi
 
-# 6. No unresolved merge-conflict markers anywhere in the tracked tree.
-cm=$(grep -rlE '^(<<<<<<<|=======$|>>>>>>>)' . --exclude-dir=.git --exclude-dir=.venv --exclude-dir=.lake   --include='*.md' --include='*.py' --include='*.lean' --include='*.json'   --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.txt' 2>/dev/null   | grep -v '^./.git/' | grep -v '^./.venv/' | grep -v '^./lean/.lake/' | grep -v '^./machine/requirements' || true)
+# 6. No unresolved merge-conflict markers anywhere in the tracked tree (excluding
+#    vendored/dependency directories). Such markers are the signature of a
+#    conflict that was committed without being resolved, which has previously
+#    deleted content silently.
+cm=$(grep -rlE '^(<<<<<<<|=======$|>>>>>>>)' . --exclude-dir=.git --exclude-dir=.venv --exclude-dir=.claude --exclude-dir=.lake   --include='*.md' --include='*.py' --include='*.lean' --include='*.json'   --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.txt' 2>/dev/null   | grep -v '^./.git/' | grep -v '^./.venv/' | grep -v '^./lean/.lake/' | grep -v '^./machine/requirements' || true)
 if [ -n "$cm" ]; then
   echo "unresolved conflict markers found:"
   for f in $cm; do
@@ -113,14 +125,13 @@ if [ -n "$cm" ]; then
   fail=1
 fi
 
-# 7. The accepted axiom set in lean/extra/ClosedK.lean is frozen: exactly the
-#    four rank axioms listed in AXIOMS.md. Any change requires updating both.
-axioms_found=$(grep -oE '^axiom [A-Za-z_]+' lean/extra/ClosedK.lean | sort)
-axioms_expected=$(printf '%s\n' 'axiom hgp_rankX' 'axiom hgp_rankZ' 'axiom product_rankX' 'axiom product_rankZ' | sort)
-if [ "$axioms_found" != "$axioms_expected" ]; then
-  echo "axiom set in lean/extra/ClosedK.lean changed:"
-  echo "--- found ---"; echo "$axioms_found"
-  echo "--- expected ---"; echo "$axioms_expected"
+# 7. The accepted axiom set is empty (AXIOMS.md): no module under lean/
+#    declares an axiom. Any change requires updating AXIOMS.md and this check.
+axioms_found=$(grep -rnE '^[[:space:]]*(private[[:space:]]+)?axiom[[:space:]]' \
+  --include='*.lean' lean/CodeCalculus lean/extra lean/CodeCalculus.lean || true)
+if [ -n "$axioms_found" ]; then
+  echo "axiom declared under lean/ (AXIOMS.md records none):"
+  echo "$axioms_found"
   echo "Update AXIOMS.md and this check together."
   fail=1
 fi

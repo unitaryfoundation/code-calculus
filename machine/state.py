@@ -478,7 +478,7 @@ class CodeState:
     # constructs the child and validates it; a failed output check is a
     # no-derivation, per the §2 card wording ("an output failing I1-I5 gives
     # no derivation"). E-GLUE is a binary-only expression constructor
-    # (TERM_LANGUAGE.md §1-§2,; contract-stated, Gate 6 unchecked):
+    # (TERM_LANGUAGE.md §1-§2,; contract-stated, conditional cell):
     # its binary state/ledger helpers live above (OPERATIONAL_SEMANTICS.md §4.31).
 
     @staticmethod
@@ -536,14 +536,102 @@ class CodeState:
     def hadamard_sector_swap(self):
         """E-LOCAL-HADAMARD at T=Q: the sector exchange of the whole display.
 
-        The general split-subset instance is not admitted: a hadamard term for
-        any other qubit subset has no derivation (the review-dispositioned split
-        condition's row-wise mechanics are out of scope; see
-        OPERATIONAL_SEMANTICS.md §4.27).
+        On a well-formed state this is the T=Q specialization of
+        :meth:`local_hadamard` (every row lies inside T; OPERATIONAL_SEMANTICS.md
+        §4.27).
         """
         swapped = tuple(Row(row.id, opposite_sector_name(row.sector), row.support)
                         for row in self.rows)
         result = CodeState(self.Q, swapped, self.used)
+        _validate_output(result)
+        return result
+
+    def hadamard_split_guard(self, qubits):
+        """The decidable row-space splitting premise of E-LOCAL-HADAMARD.
+
+        Both sector row spaces split along T: for every displayed row r of
+        sector sigma, the restriction supp(r) ∩ T lies in the sigma span
+        (equivalently v|_T ∈ X for all v ∈ X and w|_T ∈ Z for all w ∈ Z,
+        since restriction is linear). Returns the first failing sector, or
+        None when both sectors split.
+        """
+        tmask = support_mask(sorted(qubits))
+        for sector in ("X", "Z"):
+            masks = [row.mask for row in self.sector_rows(sector)]
+            for mask in masks:
+                if not in_span(mask & tmask, masks):
+                    return sector
+        return None
+
+    def local_hadamard(self, qubits):
+        """E-LOCAL-HADAMARD for a qubit subset T ⊆ Q (§2 card, §4.27).
+
+        Applicability: T ⊆ Q and both row spaces split along T
+        (:meth:`hadamard_split_guard`). The canonical update, in identifier
+        order (the order of the fixed identifier enumeration, used both for
+        the seed of T-pure rows and for the pass over mixed rows): a row
+        inside T keeps its identifier and support and changes sector; a row
+        disjoint from T is unchanged; a mixed row (meeting both T and Q \\ T)
+        is replaced by its two pieces, the outer piece supp ∖ T in its own
+        sector and then the inner piece supp ∩ T in the opposite sector, each
+        kept only when independent of the T-pure rows of its output sector
+        and of the pieces kept before it. The first kept piece of a mixed row
+        inherits the row's identifier; a second kept piece receives the
+        canonical mint over ``used`` (first identifier not in ``used``, in
+        emission order). A mixed row with no kept piece is retired (its
+        identifier stays in ``used``). T = Q gives the sector swap and
+        T = ∅ the identity (up to row order).
+        """
+        tset = frozenset(qubits)
+        if not tset <= set(self.Q):
+            raise NoDerivation("E-LOCAL-HADAMARD subset T is not contained in Q")
+        failing = self.hadamard_split_guard(tset)
+        if failing is not None:
+            raise NoDerivation(
+                "E-LOCAL-HADAMARD splitting guard fails: the %s row space does "
+                "not split along T (some displayed %s-row restricted to T is "
+                "outside the %s span)" % (failing, failing, failing))
+        tmask = support_mask(sorted(tset))
+
+        def is_pure(row):
+            inner = row.mask & tmask
+            return inner == 0 or inner == row.mask
+
+        def pure_sector(row):
+            # A row inside T (nonempty) changes sector; a row disjoint from T
+            # keeps it.
+            if row.mask & tmask and row.mask & ~tmask == 0:
+                return opposite_sector_name(row.sector)
+            return row.sector
+
+        ordered = sorted(self.rows, key=lambda row: identifier_rank(row.id))
+        bases = {"X": [], "Z": []}
+        for row in ordered:
+            if is_pure(row):
+                bases[pure_sector(row)].append(row.mask)
+        next_used = set(self.used)
+        rows = []
+        for row in ordered:
+            if is_pure(row):
+                rows.append(Row(row.id, pure_sector(row), row.support))
+                continue
+            outer = tuple(q for q in row.support if q not in tset)
+            inner = tuple(q for q in row.support if q in tset)
+            inherited = False
+            for sector, support in ((row.sector, outer),
+                                    (opposite_sector_name(row.sector), inner)):
+                mask = support_mask(support)
+                if in_span(mask, bases[sector]):
+                    continue
+                bases[sector].append(mask)
+                if not inherited:
+                    identifier = row.id
+                    inherited = True
+                else:
+                    identifier = self._mint(next_used)
+                    next_used.add(identifier)
+                rows.append(Row(identifier, sector, support))
+        result = CodeState(self.Q, tuple(rows), frozenset(next_used))
         _validate_output(result)
         return result
 
@@ -644,6 +732,63 @@ class CodeState:
         result = CodeState(result_q, tuple(rows), frozenset(used))
         _validate_output(result)
         return result
+
+    def crossing_rows(self, block_qubits):
+        """Displayed rows whose support meets both ``block_qubits`` and ``Q \\ block_qubits``."""
+        if not isinstance(block_qubits, (list, tuple, set, frozenset)):
+            raise Malformed("E-SPLIT block_qubits must be a sequence of qubit labels")
+        bset = set(block_qubits)
+        outside = set(self.Q) - bset
+        return tuple(
+            row for row in self.rows
+            if (set(row.support) & bset) and (set(row.support) & outside)
+        )
+
+    def is_separated(self, block_qubits):
+        """Whether no displayed row crosses ``block_qubits`` and ``Q \\ block_qubits``."""
+        return not self.crossing_rows(block_qubits)
+
+    def split(self, block_qubits, cut_row_ids):
+        """E-SPLIT (separating deletion): delete cut_row_ids so the child is separated at block_qubits.
+
+        Transcribed from spec/OPERATIONAL_SEMANTICS.md §2 and §4.48 (admitted 2026-11-25,
+        issue #546; two-state projection refused).
+        """
+        if not isinstance(block_qubits, (list, tuple)):
+            raise Malformed("E-SPLIT block_qubits must be a list or tuple of distinct qubit labels")
+        for q in block_qubits:
+            if isinstance(q, bool) or not isinstance(q, int) or q < 0:
+                raise Malformed("E-SPLIT block qubit labels must be nonnegative integers")
+        block_set = set(block_qubits)
+        if len(block_set) != len(block_qubits):
+            raise Malformed("E-SPLIT block_qubits lists a qubit label twice; a list with repeats does not name a subset")
+        if not isinstance(cut_row_ids, (list, tuple)):
+            raise Malformed("E-SPLIT cut_row_ids must be a list or tuple of distinct generator identifiers")
+        for rid in cut_row_ids:
+            if not isinstance(rid, str):
+                raise Malformed("E-SPLIT cut row identifiers must be strings")
+        cut_set = set(cut_row_ids)
+        if len(cut_set) != len(cut_row_ids):
+            raise Malformed("E-SPLIT cut_row_ids contains duplicate identifiers")
+        qset = set(self.Q)
+        if not block_set <= qset:
+            raise NoDerivation("E-SPLIT block_qubits must be a subset of Q")
+        displayed_ids = {row.id for row in self.rows}
+        for rid in cut_row_ids:
+            if rid not in displayed_ids:
+                raise NoDerivation("DisplayedGenerator(%s, pres) fails" % rid)
+        for row in self.crossing_rows(block_qubits):
+            if row.id not in cut_set:
+                raise NoDerivation("E-SPLIT cut omits crossing row %s" % row.id)
+        result = CodeState(
+            self.Q,
+            tuple(row for row in self.rows if row.id not in cut_set),
+            self.used,
+        )
+        _validate_output(result)
+        return result
+
+    e_split = split
 
 
 __all__ = [

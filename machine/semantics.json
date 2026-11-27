@@ -120,12 +120,22 @@
         {
           "symbol": "hadamard_T",
           "id": "E-LOCAL-HADAMARD",
-          "argument": "T is a list of distinct qubit labels of Q (a repeated label is malformed: a list with repeats does not name a subset); the transition is admitted for T=Q (the sector exchange) and T=empty (the identity), and is inapplicable otherwise"
+          "argument": "T is a list of distinct qubit labels (a repeated label is malformed: a list with repeats does not name a subset); the transition is admitted for every T contained in Q along which both row spaces split (T=Q the sector exchange, T=empty the identity, and the split-subset instance), and is inapplicable otherwise"
         },
         {
           "symbol": "rebase_{tau;M}",
           "id": "P-REBASE",
           "argument": "tau is X or Z; M is an invertible (GL(m,2)) matrix over that sector's displayed rows"
+        },
+        {
+          "symbol": "cnotSwap_U",
+          "id": "C-COLUMN-CNOT",
+          "argument": "U in GL(Q, 2), invertible binary matrix on Q; transforms H_X -> H_X U^{-1} and H_Z -> H_Z U^T"
+        },
+        {
+          "symbol": "split_{Q_A;R}",
+          "id": "E-SPLIT",
+          "argument": "Q_A (canonical step key `block`) is a list of distinct qubit labels in Q; R (canonical step key `cut_ids`) is a list of distinct displayed generator identifiers covering every displayed row crossing (Q_A, Q \\ Q_A); repeats in Q_A or R, missing required keys, or unexpected alias keys are malformed"
         },
         {
           "symbol": "m1 ; m2",
@@ -141,7 +151,7 @@
     }
   },
   "kernel_is_five": {
-    "note": "The five core primitives remain the kernel. E-GRAFT, the five Gate 6 CSS cells admitted 2026-10-23, and the binary E-GLUE evaluator transition (section 4.30, 2026-10-27) are separately admitted as conditional construction transitions. Other operations outside these productions have NO production and are not encoded as commands over an existing CSS state.",
+    "note": "The five core primitives remain the kernel. E-GRAFT, the five Gate 6 CSS cells admitted 2026-10-23, C-COLUMN-CNOT (admitted 2026-11-18), and the binary E-GLUE evaluator transition (section 4.31, 2026-10-27) are separately admitted as conditional construction transitions. Other operations outside these productions have NO production and are not encoded as commands over an existing CSS state.",
     "excluded": [
       {
         "id": "P-RELABEL",
@@ -161,7 +171,7 @@
       },
       {
         "id": "E-* (unadmitted)",
-        "reason": "E-SPLIT needs separately admitted support/interface predicates. E-GLUE is binary-only (expression production glue(e1, e2; u) in categories.expression, no unary command production; decided 2026-11-18) and is listed in admitted_extensions at contract-stated (rung 5, conditional cell, Gate 6 unchecked). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) are listed in admitted_extensions."
+        "reason": "None among the CSS-level E-* extensions: E-SPLIT (separating deletion, command production split_{Q_A;R}) was admitted 2026-11-25 at transition-defined (issue #546; two-state projection refused) and is listed in admitted_extensions. E-GLUE is binary-only (expression production glue(e1, e2; u) in categories.expression, no unary command production; decided 2026-11-18) and is listed in admitted_extensions at contract-stated (rung 5, conditional cell; Gate 6 ratified 2026-11-19). The five Gate 6 cells admitted 2026-10-23 (P-REBASE, E-PEEL, E-PUNCTURE, E-EXTEND, E-LOCAL-HADAMARD) and C-COLUMN-CNOT (admitted 2026-11-18) are listed in admitted_extensions."
       }
     ],
     "admitted_extensions": [
@@ -187,18 +197,23 @@
       },
       {
         "id": "E-EXTEND",
-        "classification": "transition-defined; conditional cell; distance monotonicity only for Delta=empty",
-        "judgment_inputs": "none"
+        "classification": "transition-defined; conditional cell; distance monotonicity only for Delta=empty; conditional distance-loss cell for Delta nonempty (2026-11-26)",
+        "judgment_inputs": "optional extend_distance_loss (loss_X and/or loss_Z, nonnegative integers, plus nonempty evidence reference), Delta nonempty only; sector lower endpoint max(0, L_tau - loss_tau)"
       },
       {
         "id": "E-LOCAL-HADAMARD",
-        "classification": "transition-defined for T=Q (and T=empty identity); conditional cell",
+        "classification": "transition-defined for every T contained in Q under the row-space splitting guard (T=Q sector exchange, T=empty identity, split subset since 2026-11-26); conditional cell",
         "judgment_inputs": "none"
       },
       {
         "id": "E-GLUE",
-        "classification": "binary-only state-expression constructor glue(e1, e2; u) (decided 2026-11-18,; no unary command production); conditional cell (sections 2e/2f); contract-index row contract-stated (rung 5, 2026-11-18,; Gate 6 unchecked); future-Pi fields defined (STATE_MODEL.md section 1a); CSS-level algebra of section 4.31/4.33 mechanized (lean/CodeCalculus/GlueExtraction.lean) with geometric move-word gap recorded; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32)",
+        "classification": "binary-only state-expression constructor glue(e1, e2; u) (decided 2026-11-18,; no unary command production); conditional cell (sections 2e/2f); contract-index row contract-stated (rung 5, 2026-11-18); future-Pi fields defined (STATE_MODEL.md section 1a); CSS-level algebra of section 4.31/4.33 mechanized (lean/CodeCalculus/GlueExtraction.lean) with geometric move-word gap recorded; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32)",
         "judgment_inputs": "seam certificate (identical move words plus an evidence reference) for the Z-sector upper endpoint; lower endpoints need none"
+      },
+      {
+        "id": "E-SPLIT",
+        "classification": "derived command production split_{Q_A;R} over C-DELETE-CHECK and C-SEQUENCE (admitted 2026-11-25, issue #546; two-state projection refused); transition-defined, meeting spec/VERSIONING.md section 4.2 at patch level on stdCSS-3; conditional block-interval cell (section 2a/2f, section 4.48)",
+        "judgment_inputs": "optional split_block_intervals (restriction-display intervals [L_A, U_A], [L_B, U_B] per sector plus nonempty evidence reference); unpriced upper endpoints carry and lower endpoints reset to zero"
       }
     ]
   },
@@ -425,7 +440,7 @@
       "premises": [
         {
           "predicate": "ambient_membership",
-          "formula": "Supports and Q are unchanged by the sector exchange, so every displayed row remains a subset of Q (W22 reading)."
+          "formula": "Q is unchanged and every output support is a subset of a parent support (unchanged at T=Q), so every displayed row remains a subset of Q (W22 reading)."
         },
         {
           "predicate": "namespace_subset",
@@ -436,18 +451,18 @@
           "formula": "T lists each qubit label at most once; a list with repeats is malformed rather than inapplicable (a list with repeats does not name a subset)"
         },
         {
-          "predicate": "sector_exchange_instance",
-          "formula": "T = Q (the admitted instance); T = empty is the identity; any other T has no derivation (the review-dispositioned split-subset mechanics are out of scope)"
+          "predicate": "row_space_splitting_guard",
+          "formula": "for every displayed row r of sector sigma, supp(r) intersect T lies in the sigma row span (equivalently v|_T in X for all v in X and w|_T in Z for all w in Z); trivially true at T = Q and T = empty"
         }
       ],
       "update": {
         "Q": "unchanged",
-        "rows": "every displayed row's sector is swapped (X to Z and Z to X); supports, identifiers, and used are unchanged",
-        "used": "unchanged",
+        "rows": "in identifier order (the order of the fixed identifier enumeration, used both for the T-pure seed and for the mixed-row pass): a row disjoint from T is unchanged; a nonempty row inside T keeps its identifier and support and swaps sector; a mixed row offers its outer piece supp minus T in its own sector, then its inner piece supp intersect T in the other sector, each kept exactly when outside the span of the T-pure rows landing in that output sector and the pieces kept before it; the first kept piece inherits the row identifier, a second is canonically minted, and a row with no kept piece is retired. At T = Q every displayed row's sector is swapped; at T = empty the display is unchanged",
+        "used": "grows by the minted identifiers (in identifier/emission order); unchanged at T = Q and T = empty",
         "steps": "not read"
       },
-      "inapplicable_when": "Ill-typed T; T strictly between empty and Q",
-      "standing": "transition specified for T=Q only; derivations at \u00a74.27; sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.31)",
+      "inapplicable_when": "T not contained in Q, or the splitting guard fails in either sector; a non-qubit or repeated label is malformed; minting past the identifier capacity",
+      "standing": "transition specified for T=Q, T=empty and the split-subset instance (2026-11-26); derivations at \u00a74.27(a) and \u00a74.27(b); sound admission discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.27"
     },
     {
@@ -579,7 +594,7 @@
         "steps": "not read"
       },
       "inapplicable_when": "A qubit-namespace or identifier collision, or a seam check failing commutation or independence (no derivation). A seam certificate, when supplied, is consumed for admissibility only (JUDGMENT_LAYER.md section 2e): differing move words, or a certificate without an evidence reference, give no derivation.",
-      "standing": "binary-only expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18,; no unary command production); contract-stated (rung 5, 2026-11-18,; Gate 6 unchecked, conditional cell). Output well-formedness follows C-DIRECT-SUM plus seam independence (section 4.31; mechanized wf_glueState_of_eval_glueCommand and evalExpr_glue_iff_evalTerm_glueCommand in GlueExtraction.lean). Both future-Pi fields are defined in full (STATE_MODEL.md section 1a; WitnessFields.lean). CSS-level algebra of the extracted Theorem 4 / claim 7.4 derivation (w_re = +inf, Claim 2 Steps 1 & 3-5, Consequence (iii), refutation, and AdmissibleSeam -> glueField / glueLedger soundness) is mechanized in ExactGlue*.lean, LogicalWitness.lean, AdmissibleSeamFamily.lean, Gate6Exact.lean, and GlueExtraction.lean; the geometric implication from planar move-word equality w(c_A) = w(c_B) to AdmissibleSeam remains a recorded substrate gap. The scalar relation d = min(d_A, d_B) is not admitted, and sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32).",
+      "standing": "binary-only expression constructor (TERM_LANGUAGE.md sections 1-2, decided 2026-11-18,; no unary command production); contract-stated (rung 5, 2026-11-18,; conditional cell). Output well-formedness follows C-DIRECT-SUM plus seam independence (section 4.31; mechanized wf_glueState_of_eval_glueCommand and evalExpr_glue_iff_evalTerm_glueCommand in GlueExtraction.lean). Both future-Pi fields are defined in full (STATE_MODEL.md section 1a; WitnessFields.lean). CSS-level algebra of the extracted Theorem 4 / claim 7.4 derivation (w_re = +inf, Claim 2 Steps 1 & 3-5, Consequence (iii), refutation, and AdmissibleSeam -> glueField / glueLedger soundness) is mechanized in ExactGlue*.lean, LogicalWitness.lean, AdmissibleSeamFamily.lean, Gate6Exact.lean, and GlueExtraction.lean; the geometric implication from planar move-word equality w(c_A) = w(c_B) to AdmissibleSeam remains a recorded substrate gap. The scalar relation d = min(d_A, d_B) is not admitted, and sound admission is discharged (OBL-GATE6-CSS-EXTENSIONS, section 4.32).",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a74.31"
     },
     {
@@ -610,7 +625,7 @@
       "premises": [
         {
           "predicate": "well_typed_inputs",
-          "formula": "G a finite group (abelian given by cyclic orders, or nonabelian given by an explicit multiplication table or permutation generators); A and B rectangular matrices over F_2[G], entries finite subsets of G"
+          "formula": "G a finite group (abelian given by cyclic orders, or nonabelian given by an explicit multiplication table or permutation generators); A and B rectangular matrices over F_2[G], entries finite subsets of G; optionally a subgroup H <= G given by generators, in which case every term of B lies in the normalizer N_G(H) (a term outside it is malformed; section 4.49)"
         },
         {
           "predicate": "ambient_membership",
@@ -623,7 +638,7 @@
         "used": "the canonically minted identifiers"
       },
       "inapplicable_when": "Malformed input only; every well-typed input evaluates. The trivial group gives L-HGP, and abelian cyclic orders coincide with R = L.",
-      "standing": "transition specified 2026-11-11 and generalized to finite nonabelian groups 2026-11-22, transition-defined; output well-formed by L(x) R(y) = R(y) L(x) over F_2[G] (sections 4.34 and 4.44); n exact, k by rank bookkeeping; no automatic distance rule (JUDGMENT_LAYER.md section 2g)",
+      "standing": "transition specified 2026-11-11, generalized to finite nonabelian groups 2026-11-22 and to coset inputs 2026-11-26 (blocks indexed by G/H, n = [G:H] (nA nB + mA mB), L_H(x) R_H(y) = R_H(y) L_H(x); section 4.49, no Lean counterpart), transition-defined; output well-formed by L(x) R(y) = R(y) L(x) over F_2[G] (sections 4.34 and 4.44); n exact, k by rank bookkeeping; no automatic distance rule (JUDGMENT_LAYER.md section 2g)",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7L-LIFTED"
     },
     {
@@ -972,7 +987,56 @@
       "inapplicable_when": "Non-PP-presented input, failed SNF reproduction check, P < 2, k' <= 0, or non-commuting generated rows give no derivation.",
       "standing": "transition specified 2026-11-22, transition-defined; output well-formed and n = L * P (section 4.47); k by rank bookkeeping; w = L carries; no automatic distance rule",
       "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7PP-SCALE"
-
+    },
+    {
+      "id": "C-COLUMN-CNOT",
+      "kind": "command",
+      "term_form": "cnotSwap_U",
+      "premises": [
+        {
+          "predicate": "invertible_over_F2",
+          "formula": "U is square of size |Q| and invertible over F_2"
+        }
+      ],
+      "update": {
+        "Q": "unchanged",
+        "rows": "X-rows transform by U^{-1} and Z-rows by U^T, retaining generator identifiers",
+        "used": "unchanged"
+      },
+      "inapplicable_when": "U is a square |Q| x |Q| binary matrix that is singular (not invertible over F_2); non-square, non-binary, or wrong-dimension matrices are malformed.",
+      "standing": "admitted 2026-11-18, transition-defined; output well-formed, n' = n, k' = k, and sector-wise distance windows [ceil(L_sigma / rho_sigma^-), rho_sigma U_sigma] (section 4.42)",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7C-COLUMN-CNOT"
+    },
+    {
+      "id": "E-SPLIT",
+      "kind": "command",
+      "form": "Eval(split_{Q_A;R}, C, C')",
+      "step_keys": {
+        "block": "list or tuple of distinct qubit labels naming Q_A (no aliases)",
+        "cut_ids": "list or tuple of distinct generator identifiers naming R (no aliases)"
+      },
+      "premises": [
+        {
+          "predicate": "block_in_namespace",
+          "formula": "Q_A subseteq Q (distinct qubit labels; repeats are malformed)"
+        },
+        {
+          "predicate": "cut_rows_displayed",
+          "formula": "every identifier r in R is displayed in C (DisplayedGenerator(r, pres); repeats in R are malformed)"
+        },
+        {
+          "predicate": "crossing_rows_covered",
+          "formula": "every displayed row of C whose support meets both Q_A and Q \\ Q_A has its identifier in R"
+        }
+      ],
+      "update": {
+        "Q": "unchanged",
+        "rows": "displayed rows of C whose identifiers are not in R, in their order",
+        "used": "unchanged (identifiers in R retired and retained in used; nothing minted)"
+      },
+      "inapplicable_when": "Any qubit in Q_A lies outside Q, any identifier in R is not displayed in C, or any displayed row crossing (Q_A, Q \\ Q_A) is omitted from R (no_derivation, W10). Repeated labels in Q_A, repeated identifiers in R, missing required step keys (`block`, `cut_ids`), or unexpected step keys are malformed.",
+      "standing": "admitted 2026-11-25 (issue #546), transition-defined; derived over C-DELETE-CHECK and C-SEQUENCE (section 4.48); output well-formed, n' = n, k' = k + |R| = k(C'|_A) + k(C'|_B), separated at Q_A, d_sigma(C') = min(d_sigma(C'|_A), d_sigma(C'|_B)) = min(d_sigma(C), w_del,sigma, w_exp,sigma) <= d_sigma(C); conditional priced block-interval cell (JUDGMENT_LAYER.md section 2a/2b/2c/2f); two-state projection refused",
+      "source": "spec/OPERATIONAL_SEMANTICS.md \u00a7E-SPLIT"
     }
   ],
   "layout_cells": {
@@ -1044,9 +1108,9 @@
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       },
       "E-LOCAL-HADAMARD": {
-        "child_layout": "lambda, unchanged (T = Q: Q and every support are unchanged; only the sector labels swap)",
-        "radius": "r' = r, exact",
-        "direction": "unchanged",
+        "child_layout": "lambda, unchanged (Q is unchanged; at T = Q every support is unchanged and only the sector labels swap)",
+        "radius": "T = Q: r' = r, exact; split subset: r' = max { diam_lambda(s) : s in rows' }, exact (recomputed over the child display)",
+        "direction": "T = Q: unchanged; split subset: r' <= r (every output support is a subset of a parent support)",
         "honesty": "preserved: the layout is unchanged",
         "evidence": "proved",
         "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.21",
@@ -1184,7 +1248,7 @@
         "direction": "none: no parent to compare with",
         "honesty": "vacuously honest",
         "evidence": "proved",
-        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.43",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       },
       "L-FREE": {
@@ -1193,7 +1257,7 @@
         "direction": "none: no parent to compare with",
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
-        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.43",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       },
       "A-PULLBACK": {
@@ -1202,7 +1266,7 @@
         "direction": "none: no parent to compare with",
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
-        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.43",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       },
       "A-PUSHOUT": {
@@ -1211,7 +1275,7 @@
         "direction": "none: no parent to compare with",
         "honesty": "not automatic: the supplied layout must be honest (conditional cell)",
         "evidence": "proved",
-        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.39",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.43",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       },
       "L-PAIR-PARTITION": {
@@ -1231,6 +1295,24 @@
         "evidence": "proved",
         "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.47",
 
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "C-COLUMN-CNOT": {
+        "child_layout": "lambda, unchanged (same qubit set Q)",
+        "radius": "r' = max { diam_lambda(s) : s in rows' }, recomputed",
+        "direction": "none guaranteed: row supports change, so both r' > r and r' < r occur",
+        "honesty": "preserved: same qubit set and layout",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.42",
+        "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
+      },
+      "E-SPLIT": {
+        "child_layout": "lambda, unchanged (same qubit set Q)",
+        "radius": "r' = max { diam_lambda(s) : s in rows' }, exact (recomputed over surviving rows)",
+        "direction": "r' <= r",
+        "honesty": "preserved: same qubit set and layout",
+        "evidence": "proved",
+        "derivation": "spec/OPERATIONAL_SEMANTICS.md \u00a74.48",
         "source": "spec/JUDGMENT_LAYER.md \u00a72d.5"
       }
     }

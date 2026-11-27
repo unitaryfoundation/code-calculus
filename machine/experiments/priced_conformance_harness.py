@@ -55,7 +55,7 @@ SECTORS = ("X", "Z")
 # that operation.  The suite fails if an admitted operation is never
 # transited or never transited with a nonzero lower endpoint.
 ADMITTED_OPERATIONS = ("C-ADD-CHECK", "C-DELETE-CHECK", "C-DIRECT-SUM",
-                       "C-SKIP", "E-GRAFT", "E-PEEL")
+                       "C-SKIP", "E-GRAFT", "E-PEEL", "E-SPLIT")
 
 DEFAULT_CASES = 200
 DEFAULT_SEED = 20261021
@@ -709,6 +709,76 @@ def run_case(rng, state, operations_log, hyp_counts=None, lower_seed=0,
                                    new_exact[opposite]))
             if not ok2:
                 record_violation(desc + " (priced)", new_state, new_ledger2, new_exact, reasons2)
+
+    # 3c. E-SPLIT: separating deletion over a random block cut, unpriced and priced.
+    if len(current_state.Q) >= 2:
+        size = rng.randint(1, len(current_state.Q) - 1)
+        block = sorted(rng.sample(list(current_state.Q), size))
+        crossing_ids = [row.id for row in current_state.crossing_rows(block)]
+        others = [row.id for row in current_state.rows if row.id not in crossing_ids]
+        extra = rng.sample(others, rng.randint(0, min(1, len(others)))) if others else []
+        cut_ids = crossing_ids + extra
+        try:
+            new_state = current_state.split(block, cut_ids)
+        except (pc.NoDerivation, pc.Malformed, ValueError):
+            new_state = None
+        if new_state is not None:
+            desc = "E-SPLIT block=%s cut=%s" % (block, cut_ids)
+            _inv_ok, _inv_reasons = _check_state_invariants(current_state, new_state, desc)
+            if not _inv_ok:
+                record_violation(desc, new_state, None, None, _inv_reasons)
+            else:
+                op = {"op": "E-SPLIT", "block": block, "cut_ids": cut_ids}
+                new_exact = exact_distances(new_state)
+                _note_input(coverage, "E-SPLIT", current_ledger)
+                new_ledger = current_ledger.propagate(
+                    op, new_state, hypothesis=_merge_hyp({}),
+                    observations={}, parent_state=current_state,
+                )
+                ok, reasons = _check_ledger(new_ledger, new_exact)
+                _dok, _dre = _check_decide(new_ledger, new_exact["d"])
+                if not _dok:
+                    ok = False
+                    reasons = reasons + _dre
+                if not ok:
+                    record_violation(desc + " (unpriced)", new_state, new_ledger, new_exact, reasons)
+                # Priced cell: oracle block intervals for restriction displays A and B.
+                bset = set(block)
+                comp = tuple(q for q in new_state.Q if q not in bset)
+                rows_a = tuple(row for row in new_state.rows if set(row.support) <= bset)
+                rows_b = tuple(row for row in new_state.rows if set(row.support) <= set(comp))
+                part_a = pc.CodeState(tuple(block), rows_a, frozenset(row.id for row in rows_a))
+                part_b = pc.CodeState(comp, rows_b, frozenset(row.id for row in rows_b))
+                part_a.validate()
+                part_b.validate()
+                ex_a = exact_distances(part_a)
+                ex_b = exact_distances(part_b)
+                split_hyp = {"evidence": "harness oracle"}
+                for side in SECTORS:
+                    da, db = ex_a[side], ex_b[side]
+                    la = None if da is None else _seed_lower(da, lower_seed)
+                    lb = None if db is None else _seed_lower(db, lower_seed)
+                    ua = None if da is None else da + upper_slack
+                    ub = None if db is None else db + upper_slack
+                    split_hyp[side] = {"A": [la, ua], "B": [lb, ub]}
+                hyp_counts["split_block_intervals"] = hyp_counts.get("split_block_intervals", 0) + 1
+                try:
+                    _note_input(coverage, "E-SPLIT", current_ledger)
+                    new_ledger2 = current_ledger.propagate(
+                        op, new_state,
+                        hypothesis=_merge_hyp({"split_block_intervals": split_hyp}),
+                        observations={}, parent_state=current_state,
+                    )
+                    ok2, reasons2 = _check_ledger(new_ledger2, new_exact)
+                    _dok2, _dre2 = _check_decide(new_ledger2, new_exact["d"])
+                    if not _dok2:
+                        ok2 = False
+                        reasons2 = reasons2 + _dre2
+                    if not ok2:
+                        record_violation(desc + " (priced)", new_state, new_ledger2, new_exact, reasons2)
+                except (pc.NoDerivation, pc.Malformed, ValueError) as exc:
+                    record_violation(desc + " (priced)", new_state, None, new_exact,
+                                     ["true block intervals refused: %s" % exc])
 
     # 4. C-DIRECT-SUM: combine with a second disjoint state
     try:

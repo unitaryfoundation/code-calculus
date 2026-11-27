@@ -555,11 +555,10 @@ class SymplecticLedger:
             # upper endpoint is rebuilt from witnesses valid in the child.
             out.full = Interval(self.full.lower, None)
         elif op == "SYM-DELETE-CHECK":
-            # A deleted generator is a logical of the child, so the
-            # distance cannot rise: the upper endpoint carries, the lower
-            # endpoint resets to zero.
-            out.full = Interval(0 if self.full.lower is not None else None,
-                                self.full.upper)
+            # A deleted generator is a logical of the child (so k' = k + 1 >= 1
+            # and distance is finite), so the distance cannot rise: the upper
+            # endpoint carries and the lower endpoint resets to zero.
+            out.full = Interval(0, self.full.upper)
         else:
             raise Malformed("operation is outside the symplectic move set: %s" % op)
         out.full = out._tightened(new_state, out.full)
@@ -663,8 +662,8 @@ class SymplecticLedger:
         return out
 
     def decide(self, target):
-        if not isinstance(target, int) or isinstance(target, bool):
-            raise Malformed("target must be a nonnegative integer")
+        if not isinstance(target, int) or isinstance(target, bool) or target < 1:
+            raise Malformed("target must be a positive integer")
         if self.full.lower is None or self.full.lower >= target:
             return "certify"
         if self.full.upper is not None and self.full.upper < target:

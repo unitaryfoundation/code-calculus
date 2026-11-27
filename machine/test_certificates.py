@@ -8,15 +8,22 @@ feasibility of the format, not a status upgrade.
 
 import copy
 import json
+import math
 import os
+import random
 import unittest
 
 from machine.certificates import (
     NoCertificate,
     build_sector_lower_bound_certificate,
+    build_sector_lower_bound_tree_certificate,
     certificate_size_bytes,
     check_sector_lower_bound_certificate,
+    check_sector_lower_bound_tree_certificate,
+    tree_node_counts,
 )
+from machine.constructors import two_block_code
+from machine.oracle import exact_distances
 from machine.experiments.certificate_prototype import (
     CERTIFIED_BOUND,
     REPORT_PATH,
@@ -222,6 +229,195 @@ class CheckerContractTests(unittest.TestCase):
         accepted, failures = check_sector_lower_bound_certificate(certificate)
         self.assertFalse(accepted)
         self.assertTrue(any("not CSS" in f for f in failures), failures)
+
+
+def cyclic_30():
+    """The cyclic two-block code on 30 qubits used for the tree instances."""
+    state, _ = two_block_code([15], [[0], [10], [14]], [[0], [11], [13]])
+    return state
+
+
+def tree_certificate(state, sector, bound):
+    return build_sector_lower_bound_tree_certificate(state, sector, bound)
+
+
+def first_node(tree, kind):
+    """The first node of ``kind`` in depth-first order, one-branch first."""
+    stack = [tree]
+    while stack:
+        node = stack.pop()
+        if node[0] == kind:
+            return node
+        if node[0] == "branch":
+            stack += [node[3], node[2]]
+    raise AssertionError("no %s node" % kind)
+
+
+class PruningTreeCertificateTests(unittest.TestCase):
+    """Pruning-tree certificates (issue #574).
+
+    The Python checker is the prototype. The mechanized checker is
+    `checkPruneCertificate`, and `lake build` is the authority for the
+    instances of `CertificateInstances.lean`.
+    """
+
+    def test_both_sectors_of_the_pinned_parent_are_accepted(self):
+        for sector in ("X", "Z"):
+            certificate = tree_certificate(pinned_parent(), sector, 3)
+            accepted, failures = check_sector_lower_bound_tree_certificate(
+                certificate)
+            self.assertTrue(accepted, failures)
+            json.dumps(certificate)
+
+    def test_a_bound_beyond_the_truth_is_not_producible(self):
+        for sector in ("X", "Z"):
+            with self.assertRaises(NoCertificate):
+                tree_certificate(pinned_parent(), sector, 4)
+
+    def test_producer_reaches_exactly_the_oracle_distance(self):
+        # Random small CSS states: the largest bound the producer certifies
+        # is the exact sector distance, and every certificate it emits is
+        # accepted. Agreement is evidence about the producer and the
+        # prototype checker, not a proof of either.
+        rng = random.Random(574)
+        checked = 0
+        while checked < 25:
+            ell = rng.randint(3, 6)
+            a = sorted(rng.sample(range(ell), rng.randint(1, min(3, ell))))
+            b = sorted(rng.sample(range(ell), rng.randint(1, min(3, ell))))
+            state, _ = two_block_code([ell], [[e] for e in a], [[e] for e in b])
+            if state.k() == 0:
+                continue
+            exact = exact_distances(state)
+            for sector in ("X", "Z"):
+                distance = exact[sector]
+                certificate = tree_certificate(state, sector, distance)
+                self.assertEqual(
+                    check_sector_lower_bound_tree_certificate(certificate),
+                    (True, []))
+                with self.assertRaises(NoCertificate):
+                    tree_certificate(state, sector, distance + 1)
+            checked += 1
+
+    def test_tree_agrees_with_the_kill_list_on_the_same_fact(self):
+        state = pinned_parent()
+        for sector in ("X", "Z"):
+            for bound in range(4):
+                kills = build_sector_lower_bound_certificate(
+                    state, sector, bound)
+                tree = tree_certificate(state, sector, bound)
+                self.assertEqual(kills["state"], tree["state"])
+                self.assertTrue(check_sector_lower_bound_certificate(kills)[0])
+                self.assertTrue(
+                    check_sector_lower_bound_tree_certificate(tree)[0])
+
+    def test_thirty_qubit_tree_is_far_smaller_than_the_ball(self):
+        state = cyclic_30()
+        self.assertEqual((state.n(), state.k()), (30, 4))
+        ball = sum(math.comb(30, weight) for weight in range(6))
+        self.assertEqual(ball, 174437)
+        for sector in ("X", "Z"):
+            certificate = tree_certificate(state, sector, 6)
+            self.assertEqual(
+                check_sector_lower_bound_tree_certificate(certificate),
+                (True, []))
+            nodes = sum(tree_node_counts(certificate["tree"]).values())
+            self.assertLess(nodes, 5000)
+            self.assertLess(30 * nodes, ball)
+            with self.assertRaises(NoCertificate):
+                tree_certificate(state, sector, 7)
+
+    def test_a_tree_for_one_bound_is_rejected_for_a_larger_one(self):
+        certificate = tree_certificate(pinned_parent(), "X", 3)
+        certificate["bound"] = 4
+        accepted, failures = check_sector_lower_bound_tree_certificate(
+            certificate)
+        self.assertFalse(accepted)
+        self.assertTrue(any("does not reach the bound" in f for f in failures))
+
+    def test_tampered_leaves_are_rejected(self):
+        state = pinned_parent()
+        base = tree_certificate(state, "X", 3)
+        rows = len(base["state"]["rows"]["Z"])
+
+        def rejected(mutate, fragment):
+            certificate = copy.deepcopy(base)
+            mutate(certificate)
+            accepted, failures = check_sector_lower_bound_tree_certificate(
+                certificate)
+            self.assertFalse(accepted)
+            self.assertTrue(any(fragment in f for f in failures), failures)
+
+        def other_row(kind):
+            def mutate(certificate):
+                node = first_node(certificate["tree"], kind)
+                node[1] = (node[1] + 1) % rows
+            return mutate
+
+        rejected(other_row("need_more"), "even overlap")
+        rejected(other_row("conflict"), "")
+
+        def flip_coefficient(certificate):
+            first_node(certificate["tree"], "in_span")[1][0] ^= 1
+        rejected(flip_coefficient, "not the fixed vector")
+
+        def conflict_too_early(certificate):
+            # Replace the root, where nothing is fixed, by a conflict leaf.
+            certificate["tree"] = ["conflict", 0]
+        rejected(conflict_too_early, "even overlap")
+
+        def span_too_early(certificate):
+            certificate["tree"] = first_node(certificate["tree"], "in_span")
+        rejected(span_too_early, "free qubit")
+
+        def drop_a_subtree(certificate):
+            certificate["tree"][2] = ["bound"]
+        rejected(drop_a_subtree, "below the bound")
+
+        def branch_twice(certificate):
+            tree = certificate["tree"]
+            certificate["tree"] = ["branch", tree[1], tree, tree[3]]
+        rejected(branch_twice, "already fixed")
+
+        def other_sector(certificate):
+            certificate["state"]["rows"]["X"][0] = [0, 1, 3, 5]
+        rejected(other_sector, "")
+
+    def test_malformed_trees_are_rejected_not_raised(self):
+        base = tree_certificate(pinned_parent(), "Z", 3)
+        cases = [None, [], {}, "tree", 7]
+        for tree in (None, [], ["bound", 1], ["need_more"], ["need_more", -1],
+                     ["need_more", 99], ["need_more", True], ["conflict", "0"],
+                     ["in_span"], ["in_span", [1]], ["in_span", "111"],
+                     ["branch", 0], ["branch", 99, ["bound"], ["bound"]],
+                     ["branch", 0, None, ["bound"]], ["prune"], "bound", 3):
+            certificate = copy.deepcopy(base)
+            certificate["tree"] = tree
+            cases.append(certificate)
+        for key in ("kind", "format_version", "sector", "bound", "state",
+                    "tree"):
+            certificate = copy.deepcopy(base)
+            del certificate[key]
+            cases.append(certificate)
+        for bad_state in ({"qubits": [0, 0], "rows": {"X": [], "Z": []}},
+                          {"qubits": [0, 1], "rows": {"X": [[5]], "Z": []}},
+                          {"qubits": [0, 1], "rows": {"X": []}}, [], None):
+            certificate = copy.deepcopy(base)
+            certificate["state"] = bad_state
+            cases.append(certificate)
+        for certificate in cases:
+            accepted, failures = check_sector_lower_bound_tree_certificate(
+                certificate)
+            self.assertFalse(accepted)
+            self.assertTrue(failures)
+
+    def test_bound_zero_and_the_checker_are_deterministic(self):
+        certificate = tree_certificate(pinned_parent(), "X", 0)
+        self.assertEqual(certificate["tree"], ["bound"])
+        self.assertEqual(
+            check_sector_lower_bound_tree_certificate(certificate), (True, []))
+        again = tree_certificate(pinned_parent(), "X", 3)
+        self.assertEqual(again, tree_certificate(pinned_parent(), "X", 3))
 
 
 class CommittedArtifactTests(unittest.TestCase):

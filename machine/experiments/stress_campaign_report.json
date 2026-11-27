@@ -1,0 +1,239 @@
+{
+  "schema": "stress_campaign.v1",
+  "issue": "#577",
+  "note": "Empirical discovery-loop stress battery only (AGENTS.md Hard rules): zero violations means the run failed to falsify, never a proof of soundness.",
+  "seed": 20261125,
+  "qldpc_commit": "9d30c66a43bf7c275196267d369ddab171bfd72f",
+  "import_hygiene": {
+    "static_modules_scanned": 11,
+    "static_oracle_hits": 0,
+    "runtime_oracle_modules": [],
+    "elapsed_seconds": 0.1363,
+    "budget_seconds": 30.0,
+    "within_budget": true
+  },
+  "quadrant_1_oracle_differential": {
+    "transition_differential_owner": "machine/experiments/priced_conformance_harness.py",
+    "admitted_constructors_expected": 17,
+    "admitted_constructors_covered": 17,
+    "constructor_instances_checked": 18,
+    "pareto_batches_checked": 30,
+    "pareto_pairs_checked": 2021,
+    "small_n_planner_trials": 22,
+    "small_n_planner_children_checked": 200,
+    "small_n_verdict_counts": {
+      "certify": 18,
+      "prune": 35,
+      "re-measure": 147
+    },
+    "elapsed_seconds": 0.0903,
+    "budget_seconds": 120.0,
+    "within_budget": true
+  },
+  "quadrant_2_gate_differential": {
+    "prune_precision_definition": "confirmed_by_gate / (confirmed_by_gate + contradicted_by_gate) over exportable pruned candidates checked by pinned verify/qldpc_verify.py; confirmed_by_gate requires structural+witness pass and either earned_distance.d.value < target or distance_not_refuted witness < target; single-side pruned candidates lacking an opposite-sector witness are validated locally and tracked separately as single_side_pruned_unexported.",
+    "parents_tested": 5,
+    "total_candidates": 378,
+    "verdict_counts": {
+      "prune": 251,
+      "re-measure": 127
+    },
+    "remeasure_rate": 0.336,
+    "gate_exported_checked": 40,
+    "gate_structural_pass": 40,
+    "prune_confirmed_by_gate": 31,
+    "prune_contradicted_by_gate": 0,
+    "single_side_pruned_unexported": 13,
+    "prune_precision": 1.0,
+    "remeasure_exported": 9,
+    "remeasure_refuted_below_target": 9,
+    "remeasure_unrefuted_by_gate": 0,
+    "certify_checked": 1,
+    "certify_contradicted": 0,
+    "per_parent": [
+      {
+        "parent": "codes/10-2-3-b.json",
+        "n": 10,
+        "k": 2,
+        "target": 3,
+        "candidates": 44,
+        "verdicts": {
+          "prune": 44
+        },
+        "remeasure_rate": 0.0,
+        "gate_verified": 8,
+        "prune_confirmed": 8,
+        "prune_contradicted": 0
+      },
+      {
+        "parent": "codes/14-2-3.json",
+        "n": 14,
+        "k": 2,
+        "target": 3,
+        "candidates": 64,
+        "verdicts": {
+          "prune": 64
+        },
+        "remeasure_rate": 0.0,
+        "gate_verified": 8,
+        "prune_confirmed": 8,
+        "prune_contradicted": 0
+      },
+      {
+        "parent": "codes/16-2-4.json",
+        "n": 16,
+        "k": 2,
+        "target": 4,
+        "candidates": 68,
+        "verdicts": {
+          "prune": 67,
+          "re-measure": 1
+        },
+        "remeasure_rate": 0.0147,
+        "gate_verified": 8,
+        "prune_confirmed": 7,
+        "prune_contradicted": 0
+      },
+      {
+        "parent": "codes/24-4-4.json",
+        "n": 24,
+        "k": 4,
+        "target": 4,
+        "candidates": 100,
+        "verdicts": {
+          "prune": 38,
+          "re-measure": 62
+        },
+        "remeasure_rate": 0.62,
+        "gate_verified": 8,
+        "prune_confirmed": 4,
+        "prune_contradicted": 0
+      },
+      {
+        "parent": "codes/25-5-4.json",
+        "n": 25,
+        "k": 5,
+        "target": 4,
+        "candidates": 102,
+        "verdicts": {
+          "prune": 38,
+          "re-measure": 64
+        },
+        "remeasure_rate": 0.6275,
+        "gate_verified": 8,
+        "prune_confirmed": 4,
+        "prune_contradicted": 0
+      }
+    ],
+    "elapsed_seconds": 23.0355,
+    "budget_seconds": 600.0,
+    "within_budget": true
+  },
+  "quadrant_3_invariant_fuzzing": {
+    "states_tested": 25,
+    "candidates_checked": 85,
+    "chains_checked": 44,
+    "hadamard_roundtrips_checked": 25,
+    "rebase_inertness_checked": 14,
+    "invalid_move_and_entrypoint_checks": 22,
+    "symplectic_roundtrip_ok": true,
+    "elapsed_seconds": 0.7644,
+    "budget_seconds": 180.0,
+    "within_budget": true
+  },
+  "quadrant_4_adversarial": {
+    "adversarial_checks_run": 37,
+    "unreachable_target_candidates": 44,
+    "elapsed_seconds": 0.0194,
+    "budget_seconds": 60.0,
+    "within_budget": true
+  },
+  "scale_ladder": {
+    "parents_tested": 5,
+    "total_candidates_checked": 2174,
+    "budget_overrides": {
+      "support_budget": 256,
+      "default_support_budget": 4096,
+      "support_max_weight": 2,
+      "default_support_max_weight": 6,
+      "sector_budget": 24,
+      "children_search_cap": 5
+    },
+    "oracle_invoked": false,
+    "per_parent": [
+      {
+        "parent": "codes/100-24-5.json",
+        "n": 100,
+        "k": 24,
+        "w": 8,
+        "target": 5,
+        "candidates": 378,
+        "children_support_searched": 5,
+        "bss_budget_used": 24,
+        "rebase_checked": true,
+        "elapsed_seconds": 3.9088
+      },
+      {
+        "parent": "codes/108-8-10.json",
+        "n": 108,
+        "k": 8,
+        "w": 6,
+        "target": 10,
+        "candidates": 432,
+        "children_support_searched": 5,
+        "bss_budget_used": 24,
+        "rebase_checked": true,
+        "elapsed_seconds": 5.5597
+      },
+      {
+        "parent": "codes/112-12-8.json",
+        "n": 112,
+        "k": 12,
+        "w": 6,
+        "target": 8,
+        "candidates": 452,
+        "children_support_searched": 5,
+        "bss_budget_used": 24,
+        "rebase_checked": true,
+        "elapsed_seconds": 5.8431
+      },
+      {
+        "parent": "codes/119-34-5.json",
+        "n": 119,
+        "k": 34,
+        "w": 6,
+        "target": 5,
+        "candidates": 456,
+        "children_support_searched": 5,
+        "bss_budget_used": 24,
+        "rebase_checked": true,
+        "elapsed_seconds": 5.3858
+      },
+      {
+        "parent": "codes/120-24-8.json",
+        "n": 120,
+        "k": 24,
+        "w": 9,
+        "target": 8,
+        "candidates": 456,
+        "children_support_searched": 5,
+        "bss_budget_used": 24,
+        "rebase_checked": true,
+        "elapsed_seconds": 5.9312
+      }
+    ],
+    "elapsed_seconds": 26.6289,
+    "budget_seconds": 600.0,
+    "within_budget": true
+  },
+  "summary": {
+    "total_violations": 0,
+    "unexpected_violations": 0,
+    "known_violations": 0,
+    "advisory_budget_overruns": [],
+    "passed": true,
+    "total_elapsed_seconds": 50.8849
+  },
+  "known_violation_allowlist": {},
+  "violations": []
+}

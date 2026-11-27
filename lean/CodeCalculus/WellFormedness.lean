@@ -17,7 +17,8 @@ instantiation rows against.
    `C-ADD-CHECK` premises (`wf_deleteState`, `wf_addState`). `wf_of_eval`
    lifts these to every evaluation of a graft-free command: skip and
    sequencing structurally, deletion and addition through the lemmas, the
-   Gate 6 cells through the well-formedness premise their transitions carry.
+   Gate 6 cells and `Command.cnotSwap` through the well-formedness premise
+   their transitions carry.
    The graft is excluded from this lift: its well-formedness preservation is
    the content of §4.12 and is mechanized in `GraftWellFormedness.lean`
    (`wf_graft_of_eval`), where `wf_of_eval_all` lifts preservation to every
@@ -855,6 +856,15 @@ theorem wf_deleteState (s : CodeState) (r : Nat) (hwf : EncodingWellFormed s) :
     apply (independentGenerator_iff s hids row hrow').mp (hI2 row hrow')
     exact inSpanRows_of_sublist s.Q (hsub.filter _) _ hspan
 
+/-- Deleting a list of rows preserves well-formedness (§4.7, §4.48, `E-SPLIT`). -/
+theorem wf_deleteAll (R : List Nat) :
+    ∀ (s : CodeState), EncodingWellFormed s → EncodingWellFormed (deleteAll s R) := by
+  induction R with
+  | nil => intro s hwf; exact hwf
+  | cons r rest ih =>
+      intro s hwf
+      exact ih (deleteState s r) (wf_deleteState s r hwf)
+
 theorem filter_sublist_filter_of_imp {α : Type} (p q : α → Bool) (l : List α)
     (h : ∀ x ∈ l, p x = true → q x = true) : (l.filter p).Sublist (l.filter q) := by
   induction l with
@@ -1055,8 +1065,13 @@ theorem wf_of_eval {m : Command} {s t : CodeState} (hm : GraftFree m) (h : Eval 
   | graft => exact absurd hm id
   | rebase _ _ _ hwf' => exact hwf'
   | hadamard _ _ hwf' => exact hwf'
+  | hadamardSplit _ _ _ hwf' _ _ => exact hwf'
   | peel _ _ _ _ _ hwf' => exact hwf'
   | puncture _ _ hwf' => exact hwf'
   | extend _ _ hwf' => exact hwf'
+  | cnotSwap _ _ hwf' => exact hwf'
+  | split _ _ _ _ _ heq =>
+    rw [heq]
+    exact wf_deleteAll _ _ hwf
 
 end CodeCalculus

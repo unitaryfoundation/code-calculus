@@ -1,58 +1,48 @@
-# AXIOMS.md — accepted assumptions in the mechanization
+# AXIOMS.md: accepted assumptions in the mechanization
 
-This file records the Lean axioms that the repository **deliberately keeps**
-rather than proving, together with the obligations they relate to. It is the trust-basis
-counterpart of `lean/CodeCalculus/AxiomAudit.lean` (which guards
-`Classical.choice` and `sorryAx` in the audited modules). Nothing here is
-claimed as a theorem.
+This file records the Lean axioms that the repository deliberately keeps
+in place of a proof, together with the obligations they relate to. It is
+the trust-basis counterpart of `lean/CodeCalculus/AxiomAudit.lean` (which
+guards `Classical.choice` and `sorryAx` in the audited modules).
 
-## `lean/extra/ClosedK.lean` (non-audited module)
+## Current set
 
-These four axioms are the only assumptions in `extra/ClosedK.lean`. They are
-rank identities of the natural check matrices of two constructors. Under the
-ratified assumption policy, they mean that the associated work is **closed on
-assumptions, not on proofs**; the corresponding
-claims read `proposed (classical)` in the claim/evidence model.
+None. No module under `lean/` declares an `axiom`, and
+`scripts/lint_docs.sh` fails if one appears. `Classical.choice` is confined
+to the denotation, as recorded by `AxiomAudit.lean`.
 
-| Axiom | Statement (informal) | Status |
+A new assumption needs an entry here and a change to that check in the
+same pull request, with the reason it is kept and what its discharge
+requires.
+
+## Discharged
+
+Until 2026-11-24 the non-audited module `lean/extra/ClosedK.lean` declared
+four axioms, accepted as `proposed (classical)` assumptions on 2026-11-16.
+They are theorems of the audited module `lean/CodeCalculus/ClosedK.lean`
+since, with the statements unchanged, and depend on `propext` and
+`Quot.sound` alone.
+
+| Statement | Content (informal) | Proved from |
 | --- | --- | --- |
-| `hgp_rankX` | Rank of the `X`-sector natural matrix of `L-HGP` is `m1*n2 - (m1 - r1)*(n2 - r2)`. | Assumption remains |
-| `hgp_rankZ` | Rank of the `Z`-sector natural matrix of `L-HGP` is `n1*m2 - (n1 - r1)*(m2 - r2)`. | Assumption remains |
-| `product_rankX` | Rank of the `X`-sector natural matrix of `A-PRODUCT` is `nA*xB + xA*nB - xA*xB`. | Assumption remains |
-| `product_rankZ` | Rank of the `Z`-sector natural matrix of `A-PRODUCT` is `nA*zB + zA*nB - zA*zB`. | Assumption remains |
+| `hgp_rankX` | Rank of the `X`-sector natural matrix of `L-HGP` is `m1*n2 - (m1 - r1)*(n2 - r2)`. | `rank_hgRows`, `rank_colMasks` |
+| `hgp_rankZ` | Rank of the `Z`-sector natural matrix of `L-HGP` is `n1*m2 - (n1 - r1)*(m2 - r2)`. | `rank_hgRows`, `rank_colMasks` |
+| `product_rankX` | Rank of the `X`-sector natural matrix of `A-PRODUCT` is `nA*xB + xA*nB - xA*xB`. | `rank_prodRows` |
+| `product_rankZ` | Rank of the `Z`-sector natural matrix of `A-PRODUCT` is `nA*zB + zA*nB - zA*zB`. | `rank_prodRows` |
 
-The arithmetic that combines these ranks into the closed forms for `stateK`
-(`hgp_arith`, `product_arith`) **is** proved. Only the rank
-identities above remain assumed.
+The three capabilities the discharge was recorded as needing are in the
+audited modules:
 
-### Why they are kept (not proved)
+1. The rank is monotone in the span (`rankBitmasks_le_of_span` in
+   `RankNullity.lean`), with rank and nullity for an additive map
+   (`rank_nullity`, `rank_kerList`).
+2. Row rank equals column rank (`rank_colMasks` in `HgpRank.lean`).
+3. The rank of a family of tensors is the product of the ranks
+   (`rank_tens` in `TensorRank.lean`), and the rank of the family of rows
+   `(u ⊗ e_j, e_a ⊗ v)` follows (`rank_hgRows` in `HgpRank.lean`). The
+   tensor product of two three-term complexes is `rank_prodRows` in
+   `ProductRank.lean`.
 
-Discharging them requires three pieces the mask-rank library does not yet have:
-
-1. An independent family inside a span is no longer than a spanning list
-   (rank is monotone in the span).
-2. Row rank of a matrix equals its column rank (the HGP formula is stated
-   with row ranks but the argument uses the column space of `H2`).
-3. The rank of a list of rows of the form `(u ⊗ e_j, e_a ⊗ v)`.
-
-For `A-PRODUCT`, the same three are needed for the tensor product of two
-three-term complexes. The discharge path is therefore: extend
-`lean/CodeCalculus/MaskRank.lean` with (1)–(3), then convert the four
-`axiom`s above to `theorem`s and reopen the obligations.
-
-### Status discipline
-
-- These are `proposed (classical)` assumptions, not `established` facts.
-- They are confined to the non-audited `extra/` module and are **not** part
-  of the `AxiomAudit` trust basis.
-- The set of four is frozen: `scripts/lint_docs.sh` checks that
-  `lean/extra/ClosedK.lean` declares exactly these four axioms. Any change
-  to the set requires updating this file and the check together.
-- They must not be cited as proofs of the corresponding rank claims; the
-  associated work is resolved only on the explicit condition that these
-  assumptions hold.
-
-## Other modules
-
-No other module in `lean/` declares an `axiom`. `Classical.choice` is
-confined to the denotation, as recorded by `AxiomAudit.lean`.
+The closed forms `hgpState_k_closed` and `productState_k_closed` therefore
+rest on no assumption. This file records the mechanization. It moves no
+claim status in `spec/`.

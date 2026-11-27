@@ -34,6 +34,18 @@ class ChangedPathFilterTests(unittest.TestCase):
                 self.assertTrue(result["code"])
                 self.assertTrue(result["lean"])
 
+    def test_formal_certificate_inputs_enable_lean_build(self):
+        for path in (
+            "machine/certificates.py",
+            "machine/ingestion.py",
+            "machine/experiments/formal_cert_from_challenge.py",
+            "scripts/check_formal_cert_pipeline.sh",
+        ):
+            with self.subTest(path=path):
+                result = classify_changed_paths([path])
+                self.assertTrue(result["code"])
+                self.assertTrue(result["lean"])
+
     def test_pinned_replay_inputs_enable_integration_replay(self):
         for path in (
             "machine/experiments/issue21_challenge_replay.py",

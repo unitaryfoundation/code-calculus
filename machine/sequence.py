@@ -45,14 +45,16 @@ def apply_operation(state, operation):
             raise Malformed(
                 "E-LOCAL-HADAMARD lists a qubit label twice; a list with "
                 "repeats does not name a subset")
-        if qset != set(state.Q) and qset != set():
-            raise NoDerivation(
-                "E-LOCAL-HADAMARD is admitted only for the T=Q sector exchange; "
-                "the general split-subset instance has no admitted transition "
-                "(spec/OPERATIONAL_SEMANTICS.md §2, §4.27)")
+        if any(isinstance(q, bool) or not isinstance(q, int) or q < 0 for q in qubits):
+            raise Malformed("E-LOCAL-HADAMARD qubit labels must be nonnegative integers")
         if not qset:
             return state.skip()
-        return state.hadamard_sector_swap()
+        if qset == set(state.Q):
+            return state.hadamard_sector_swap()
+        # 0 < |T| < |Q|: the split-subset instance, under the row-space
+        # splitting guard (spec/OPERATIONAL_SEMANTICS.md §2, §4.27); a T
+        # outside Q or a failed guard has no derivation.
+        return state.local_hadamard(qset)
     if op == "E-PEEL":
         return state.peel(operation.get("qubit"), operation.get("sector"),
                           operation.get("row_id"))
@@ -61,6 +63,17 @@ def apply_operation(state, operation):
     if op == "E-EXTEND":
         return state.extend_code(operation.get("new_qubits", ()),
                                  operation.get("additions", ()))
+    if op == "E-SPLIT":
+        allowed_keys = {"op", "block", "cut_ids", "hypothesis", "witnesses"}
+        extra_keys = sorted(set(operation) - allowed_keys)
+        if extra_keys:
+            raise Malformed(
+                "E-SPLIT received unexpected key(s) %s; canonical keys are 'block' and 'cut_ids'"
+                % ", ".join(repr(key) for key in extra_keys)
+            )
+        if "block" not in operation or "cut_ids" not in operation:
+            raise Malformed("E-SPLIT requires both 'block' and 'cut_ids'")
+        return state.split(operation["block"], operation["cut_ids"])
     if op == "E-GLUE":
         right_state = (operation.get("right_state")
                       or operation.get("other_state")

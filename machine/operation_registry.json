@@ -80,13 +80,19 @@
     },
     {
       "id": "E-SPLIT",
-      "name": "Split",
-      "layer": "candidate-css-extension",
-      "contract_status": "taxonomy-only"
+      "name": "Split (separating deletion)",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
     },
     {
       "id": "E-LOCAL-HADAMARD",
       "name": "Local Hadamard (per-qubit sector swap)",
+      "layer": "admitted-conditional-css-extension",
+      "contract_status": "transition-defined"
+    },
+    {
+      "id": "C-COLUMN-CNOT",
+      "name": "CSS-preserving column CNOT/SWAP transformation",
       "layer": "admitted-conditional-css-extension",
       "contract_status": "transition-defined"
     },

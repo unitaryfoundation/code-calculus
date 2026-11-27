@@ -6,20 +6,54 @@ obligation (spec/CLAIMS.md, Admission).
 """
 import unittest
 
+import json
+from pathlib import Path
+
 from machine.constructors import structural_profile
+from machine.experiments.applicability_report import render
+from machine.oracle import exact_distances
 from machine.planner import (
+    CHILD_SCREENS,
+    REPORT_FAMILIES,
+    applicability_blocking,
     bounded_sector_search,
     candidate_moves,
     constructor_candidates,
+    move_applicability_report,
     new_applicability_record,
     objective_improvement,
+    plan,
+    refusal_reason,
+    run_campaign,
+    weight_one_logicals,
 )
 from machine.priced_calculus import (
     CodeState,
     DistanceLedger,
     Interval,
+    Malformed,
+    NoDerivation,
     Row,
+    apply_operation,
 )
+
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "qldpc_10_2_3_b.json"
+
+
+def _pinned_parent():
+    with open(FIXTURE) as source:
+        return CodeState.from_challenge(json.load(source))
+
+
+def _x_only_state():
+    """Three independent X-rows on three qubits, no Z-row; every qubit is
+    in at least two X-rows."""
+    rows = (
+        Row("a9001", "X", (0, 1)),
+        Row("a9002", "X", (1, 2)),
+        Row("a9003", "X", (0, 1, 2)),
+    )
+    return CodeState((0, 1, 2), rows, frozenset(r.id for r in rows))
 
 
 def _weight_state():
@@ -75,6 +109,143 @@ class ApplicabilityDiagnosticsTests(unittest.TestCase):
         # The swap was not asked for: distinct from "asked and refused".
         self.assertFalse(diag["E-LOCAL-HADAMARD"]["enabled"])
         self.assertEqual(diag["E-LOCAL-HADAMARD"]["enumerated"], 0)
+
+
+class RefusalReasonTests(unittest.TestCase):
+    """The failed premise behind an ``apply_fail`` (issue #592)."""
+
+    def test_reason_groups_by_premise_not_by_row(self):
+        self.assertEqual(
+            refusal_reason(NoDerivation("Independent(a3; pres) fails")),
+            refusal_reason(NoDerivation("Independent(b17; pres) fails")))
+        self.assertEqual(
+            refusal_reason(NoDerivation("DisplayedGenerator(a3, pres) fails")),
+            "DisplayedGenerator(r, pres) fails")
+        plain = "E-GRAFT coverage condition fails"
+        self.assertEqual(refusal_reason(NoDerivation(plain)), plain)
+
+    def test_search_record_names_the_premise_of_each_apply_failure(self):
+        diag = new_applicability_record()
+        plan(_x_only_state(), DistanceLedger(
+            Interval(0, None), {"X": Interval(0, None), "Z": Interval(0, None)}),
+            diagnostics=diag)
+        graft = diag["E-GRAFT"]
+        self.assertEqual(graft["apply_fail"], 3)
+        self.assertEqual(
+            graft["refusals"],
+            {"E-GRAFT grafted qubit is not in the opposite sector": 3})
+        for family, counts in diag.items():
+            self.assertEqual(sum(counts["refusals"].values()),
+                             counts["apply_fail"], family)
+
+
+class MoveApplicabilityReportTests(unittest.TestCase):
+    """The parent-level report (issue #592)."""
+
+    def assertPartitioned(self, report):
+        self.assertEqual(tuple(report["families"]), REPORT_FAMILIES)
+        for family, entry in report["families"].items():
+            refused = sum(entry["refusals"].values())
+            screened = sum(entry["screens"].values())
+            self.assertEqual(entry["domain"],
+                             refused + screened + entry["usable"], family)
+            self.assertEqual(entry["derived"],
+                             screened + entry["usable"], family)
+            self.assertLessEqual(set(entry["screens"]), set(CHILD_SCREENS))
+            self.assertEqual(entry["blocking"] is None,
+                             entry["usable"] > 0, family)
+            self.assertLessEqual(
+                set(entry["example"]),
+                set(entry["refusals"]) | set(entry["screens"]))
+
+    def test_every_candidate_lands_in_exactly_one_place(self):
+        for state in (_pinned_parent(), _weight_state(), _x_only_state()):
+            for cap in (None, 2, 4):
+                self.assertPartitioned(
+                    move_applicability_report(state, weight_cap=cap))
+
+    def test_pinned_parent_peel_is_refused_by_unique_touch_only(self):
+        report = move_applicability_report(_pinned_parent())
+        peel = report["families"]["E-PEEL"]
+        self.assertEqual(peel["domain"], 20)
+        self.assertEqual(peel["usable"], 8)
+        self.assertEqual(sorted(peel["refusals"].values()), [6, 6])
+        for reason in peel["refusals"]:
+            self.assertIn("unique-touch fails", reason)
+        # Eight peels: the eight sector/qubit pairs of column weight 1.
+        column = report["parent"]["column_weight"]
+        self.assertEqual(column["X"]["histogram"], {1: 4, 2: 6})
+        self.assertEqual(column["Z"]["histogram"], {1: 4, 2: 6})
+
+    def test_weight_cap_explains_a_weight_shedding_campaign(self):
+        parent = _pinned_parent()
+        free = move_applicability_report(parent)["families"]["P-REBASE"]
+        self.assertEqual((free["domain"], free["usable"]), (24, 24))
+        self.assertIsNone(free["blocking"])
+        capped = move_applicability_report(
+            parent, weight_cap=4)["families"]["P-REBASE"]
+        self.assertEqual(capped["usable"], 0)
+        self.assertEqual(capped["screens"], {"over_weight_cap": 24})
+        self.assertEqual(capped["blocking"], "over_weight_cap")
+        # Every elementary mix of this parent raises the check weight.
+        self.assertEqual(capped["best_child_w"], 6)
+        self.assertEqual(parent.w(), 4)
+
+    def test_rebase_can_be_left_out(self):
+        report = move_applicability_report(_pinned_parent(), rebase=False)
+        rebase = report["families"]["P-REBASE"]
+        self.assertFalse(rebase["enabled"])
+        self.assertEqual(rebase["domain"], 0)
+        self.assertIsNone(rebase["blocking"])
+
+    def test_a_sector_with_no_weight_one_column_has_no_peel(self):
+        report = move_applicability_report(_x_only_state())
+        self.assertEqual(report["parent"]["column_weight"]["X"]["min"], 2)
+        peel = report["families"]["E-PEEL"]
+        self.assertEqual(peel["usable"], 0)
+        self.assertEqual(peel["refusals"], {
+            "E-PEEL unique-touch fails: q is not in exactly one displayed "
+            "X-row": 3,
+            "no displayed Z-row contains the qubit": 3,
+        })
+        self.assertIsNotNone(peel["blocking"])
+        graft = report["families"]["E-GRAFT"]
+        self.assertEqual(graft["blocking"],
+                         "E-GRAFT grafted qubit is not in the opposite sector")
+
+    def test_distance_one_children_are_named_and_the_oracle_agrees(self):
+        parent = _pinned_parent()
+        report = move_applicability_report(parent)
+        deletion = report["families"]["C-DELETE-CHECK"]
+        self.assertEqual(deletion["screens"], {"weight_one_logical": 8})
+        self.assertEqual(deletion["blocking"], "weight_one_logical")
+        puncture = report["families"]["E-PUNCTURE"]
+        self.assertEqual(puncture["screens"],
+                         {"weight_one_logical": 6, "bare_qubit": 2})
+        for family in ("C-DELETE-CHECK", "E-PUNCTURE"):
+            entry = report["families"][family]
+            for screen in entry["screens"]:
+                child = apply_operation(parent, entry["example"][screen])
+                found = weight_one_logicals(child)
+                exact = exact_distances(child)
+                for sector in ("X", "Z"):
+                    self.assertEqual(bool(found[sector]),
+                                     exact[sector] == 1, (family, sector))
+        self.assertEqual(weight_one_logicals(parent), {"X": [], "Z": []})
+
+    def test_bad_arguments_are_refused(self):
+        for cap in (0, -1, True, 2.5, "4"):
+            with self.assertRaises(Malformed):
+                move_applicability_report(_pinned_parent(), weight_cap=cap)
+        with self.assertRaises(Malformed):
+            move_applicability_report({"n": 3})
+
+    def test_rendered_table_has_a_line_per_family(self):
+        text = render(move_applicability_report(_pinned_parent(),
+                                                weight_cap=4))
+        for family in REPORT_FAMILIES:
+            self.assertIn(family, text)
+        self.assertIn("24 x over_weight_cap", text)
 
 
 class ObjectiveTests(unittest.TestCase):
@@ -180,6 +351,118 @@ class ConstructorScreeningTests(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         self.assertTrue(entries[0]["derived"])
         self.assertIn("connected", entries[0])
+
+
+class BlockingTests(unittest.TestCase):
+    """``blocking`` in search and campaign records (issue #652)."""
+
+    @staticmethod
+    def _record(**counts):
+        record = new_applicability_record()
+        record["E-GRAFT"].update(counts)
+        return record
+
+    def test_a_refused_candidate_is_counted_once(self):
+        # Ten refusals under two premises, seven bare-qubit children: the
+        # screen is the commonest reason, not the refusal total.
+        record = self._record(enumerated=17, apply_fail=10, bare_qubit=7,
+                              refusals={"premise A": 6, "premise B": 4})
+        applicability_blocking(record)
+        self.assertEqual(record["E-GRAFT"]["blocking"], "bare_qubit")
+
+    def test_unattributed_refusals_stay_apply_fail(self):
+        record = self._record(enumerated=9, apply_fail=9,
+                              refusals={"premise A": 4})
+        applicability_blocking(record)
+        self.assertEqual(record["E-GRAFT"]["blocking"], "apply_fail")
+
+    def test_annotations_and_totals_are_not_reasons(self):
+        record = self._record(enumerated=3, improving=50, dominated=3)
+        applicability_blocking(record)
+        self.assertEqual(record["E-GRAFT"]["blocking"], "dominated")
+
+    def test_survivors_unblock_and_nothing_enumerated_is_empty(self):
+        record = self._record(enumerated=2, survived=1, dominated=1)
+        applicability_blocking(record)
+        self.assertIsNone(record["E-GRAFT"]["blocking"])
+        self.assertEqual(record["E-PEEL"]["blocking"], "empty domain")
+
+    def test_families_not_asked_for_are_not_blocked(self):
+        result = bounded_sector_search(_pinned_parent(), _ledger(), "X",
+                                       budget=16, sector_swap=False)
+        diag = result["applicability"]
+        for family in ("P-REBASE", "E-LOCAL-HADAMARD"):
+            self.assertFalse(diag[family]["enabled"])
+            self.assertIsNone(diag[family]["blocking"])
+        self.assertNotIn("blocking", result)
+        self.assertNotIn("refusal_histogram", result)
+
+    def test_search_blocking_is_set_for_every_family(self):
+        result = bounded_sector_search(_pinned_parent(), _ledger(), "X",
+                                       budget=16, sector_swap=True)
+        for family, counts in result["applicability"].items():
+            if counts["enabled"] and counts["survived"] == 0:
+                self.assertIsNotNone(counts["blocking"], family)
+                self.assertNotIn(counts["blocking"],
+                                 ("improving", "enumerated", "survived"))
+
+    @staticmethod
+    def _unknown_ledger():
+        return DistanceLedger(Interval(0, None), {"X": Interval(0, None),
+                                                  "Z": Interval(0, None)})
+
+    def test_verdict_pruned_children_block_a_campaign_family(self):
+        diag = new_applicability_record()
+        candidates = plan(_pinned_parent(), self._unknown_ledger(), 4,
+                          diagnostics=diag, support_search=True)
+        self.assertTrue(candidates)
+        self.assertTrue(all(c["verdict"] == "prune" for c in candidates))
+        applicability_blocking(diag, candidates)
+        pruned = [f for f, c in diag.items() if c["verdict_prune"]]
+        self.assertIn("E-GRAFT", pruned)
+        for family in pruned:
+            self.assertEqual(diag[family]["blocking"], "verdict_prune")
+        # Read without the verdicts, the same counts say these families
+        # had survivors.
+        applicability_blocking(diag)
+        self.assertIsNone(diag["E-GRAFT"]["blocking"])
+
+    def test_no_survivor_record_says_why_without_a_rerun(self):
+        # The pinned parent at target 4: every derived child is pruned by
+        # its verdict once the support search has run.
+        history = run_campaign(_pinned_parent(), self._unknown_ledger(), 4,
+                               steps=3)
+        self.assertEqual(len(history), 1)
+        record = history[0]
+        self.assertEqual(record["stop_reason"], "no-survivor")
+        diag = record["applicability"]
+        self.assertEqual(set(diag), set(new_applicability_record()))
+        self.assertFalse(diag["P-REBASE"]["enabled"])
+        self.assertIsNone(diag["P-REBASE"]["blocking"])
+        self.assertEqual(diag["E-GRAFT"]["blocking"], "verdict_prune")
+        for family, counts in diag.items():
+            if counts["enabled"]:
+                # No child survived its verdict, so every family asked for
+                # names its reason.
+                self.assertIsNotNone(counts["blocking"], family)
+                self.assertEqual(counts["survived"], counts["verdict_prune"],
+                                 family)
+        json.dumps(record, default=str)
+
+    def test_every_campaign_record_carries_its_step_record(self):
+        parent = _pinned_parent()
+        ledger = DistanceLedger(Interval(3, 3),
+                                {"X": Interval(3, 3), "Z": Interval(3, 3)})
+        history = run_campaign(parent, ledger, 4, steps=2,
+                               support_search=False)
+        self.assertEqual(history[-1]["stop_reason"], "step-limit-reached")
+        for record in history:
+            diag = record["applicability"]
+            family = record["operation"]["op"]
+            self.assertIsNone(diag[family]["blocking"])
+            self.assertIn("verdict_prune", diag[family])
+        self.assertIsNot(history[0]["applicability"],
+                         history[1]["applicability"])
 
 
 if __name__ == "__main__":

@@ -165,17 +165,50 @@ def glueLedger (A B : DistanceLedger) (certified : Bool) : DistanceLedger :=
   , z := Interval.mk (minOpt A.z.lower B.z.lower)
       (if certified then minOpt A.z.upper B.z.upper else none) }
 
-/-- The §4.32 transformers for the five unary Gate 6 moves; every other
+/-- §4.27(b)'s split-subset `E-LOCAL-HADAMARD` transformer: the full interval
+    carries (`d' = d`), and each sector interval is the full lower endpoint
+    with no upper endpoint (`d_σ' ≥ d`). -/
+def splitLedger (L : DistanceLedger) : DistanceLedger :=
+  { full := L.full
+  , x := Interval.mk L.full.lower none
+  , z := Interval.mk L.full.lower none }
+
+/-- `splitLedger` is sound under §4.27(b)'s two relations. -/
+theorem splitLedger_sound (δ : CodeState → ExactDist) {s s' : CodeState}
+    (hfull : (δ s').full = (δ s).full)
+    (hx : leOpt (δ s).full (δ s').x) (hz : leOpt (δ s).full (δ s').z)
+    (L : DistanceLedger) (hL : LedgerSound (δ s) L) :
+    LedgerSound (δ s') (splitLedger L) := by
+  obtain ⟨hf, _, _⟩ := hL
+  refine ⟨?_, ⟨leOpt_trans hf.1 hx, leOpt_none _⟩, ⟨leOpt_trans hf.1 hz, leOpt_none _⟩⟩
+  show Interval.contains L.full (δ s').full
+  rw [hfull]
+  exact hf
+
+/-- Unpriced `E-SPLIT` interval transformer (`JUDGMENT_LAYER.md` §2a, §2b; §4.48):
+    each lower endpoint resets to `0` and each upper endpoint carries from the parent,
+    because separating deletion factors into `C-DELETE-CHECK`s and raises no distance. -/
+def splitLedgerUnpriced (L : DistanceLedger) : DistanceLedger :=
+  { full := Interval.mk (some 0) L.full.upper
+  , x := Interval.mk (some 0) L.x.upper
+  , z := Interval.mk (some 0) L.z.upper }
+
+/-- The §4.32/§4.48 transformers for the unary Gate 6 moves; every other
     command keeps its `propagateCmd` transport. The `T = ∅` Hadamard is the
-    identity on state and ledger (`TERM_LANGUAGE.md` §2, §4.27). -/
+    identity on state and ledger (`TERM_LANGUAGE.md` §2, §4.27). The
+    split-subset Hadamard (`0 < |T| < |Q|`, issue #571) takes `splitLedger`:
+    the full interval carries and both sector lower endpoints become the
+    full lower endpoint (§4.27(b)). -/
 def propagateGate6 (m : Command) (s s' : CodeState) (L : DistanceLedger) (H : Hyp) :
     DistanceLedger :=
   match m with
   | Command.rebase _ _ => L
-  | Command.hadamard T => if T.isEmpty then L else hadamardLedger L
+  | Command.hadamard T =>
+      if T.isEmpty then L else if CoversQ T s.Q then hadamardLedger L else splitLedger L
   | Command.peel _ τ _ => peelLedger τ L H.peelExpose H.peelAvoid
   | Command.puncture _ => resetLedger
   | Command.extend delta _ => if delta.isEmpty then carryLowerLedger L else resetLedger
+  | Command.split _ _ => splitLedgerUnpriced L
   | _ => propagateCmd m s s' L H
 
 /-- `propagateGate6` with the `k = 0` collapse of `propagateCmdK`. -/
@@ -467,7 +500,10 @@ theorem gate6_interval_soundness
   (hrebase : ∀ σ M s s', EncodingWellFormed s → Eval (Command.rebase σ M) s s' →
       δ s' = δ s)
   (hhadamard : ∀ T s s', EncodingWellFormed s → Eval (Command.hadamard T) s s' → T ≠ [] →
-      (δ s').x = (δ s).z ∧ (δ s').z = (δ s).x)
+      CoversQ T s.Q → (δ s').x = (δ s).z ∧ (δ s').z = (δ s).x)
+  (hsplit : ∀ T s s', EncodingWellFormed s → Eval (Command.hadamard T) s s' → T ≠ [] →
+      ¬ CoversQ T s.Q → (δ s').full = (δ s).full ∧ leOpt (δ s).full (δ s').x ∧
+        leOpt (δ s).full (δ s').z)
   (hpeel : ∀ q τ r s s', EncodingWellFormed s → Eval (Command.peel q τ r) s s' →
       (if τ = Sector.X then leOpt (δ s).x (δ s').x else leOpt (δ s).z (δ s').z) ∧
       (if τ = Sector.X then leOpt (δ s').z (δ s).z else leOpt (δ s').x (δ s).x) ∧
@@ -512,6 +548,7 @@ theorem gate6_interval_soundness
     | delete r => exact kernel _ hEval hH rfl
     | addStab sector support => exact kernel _ hEval hH rfl
     | graft q τ ids => exact kernel _ hEval hH rfl
+    | cnotSwap U => exact kernel _ hEval hH rfl
     | seq m1 m2 => exact kernel _ hEval hH rfl
     | rebase σ M =>
         exact rebase_transformer_sound δ (hrebase σ M s s' hwf hEval) L hSound
@@ -521,13 +558,20 @@ theorem gate6_interval_soundness
             have hs : s' = s := by
               cases hEval with
               | hadamard _ hs' _ => exact hs'
+              | hadamardSplit hsub _ _ _ _ _ => exact absurd hsub.1 (by simp)
             show LedgerSound (δ s') L
             rw [hs]
             exact hSound
         | cons a T' =>
-            obtain ⟨hx, hz⟩ := hhadamard (a :: T') s s' hwf hEval (List.cons_ne_nil a T')
-            show LedgerSound (δ s') (hadamardLedger L)
-            exact hadamard_transformer_sound δ hmin hx hz L hSound
+            by_cases hp : CoversQ (a :: T') s.Q
+            · obtain ⟨hx, hz⟩ := hhadamard (a :: T') s s' hwf hEval (List.cons_ne_nil a T') hp
+              show LedgerSound (δ s') (if CoversQ (a :: T') s.Q then hadamardLedger L else splitLedger L)
+              rw [if_pos hp]
+              exact hadamard_transformer_sound δ hmin hx hz L hSound
+            · show LedgerSound (δ s') (if CoversQ (a :: T') s.Q then hadamardLedger L else splitLedger L)
+              rw [if_neg hp]
+              obtain ⟨hf, hx, hz⟩ := hsplit (a :: T') s s' hwf hEval (List.cons_ne_nil a T') hp
+              exact splitLedger_sound δ hf hx hz L hSound
     | peel q τ r =>
         obtain ⟨hsel, hopp, hlow⟩ := hpeel q τ r s s' hwf hEval
         obtain ⟨hexpose, havoid⟩ := hH
@@ -541,6 +585,41 @@ theorem gate6_interval_soundness
         | cons a d =>
             show LedgerSound (δ s') resetLedger
             exact puncture_transformer_sound δ s'
+    | split QA R =>
+        cases hEval with
+        | split _ _ hRnd hRdisp _ hs' =>
+            subst hs'
+            have hstep_le : ∀ (Rs : List Nat) (u : CodeState),
+                EncodingWellFormed u → Rs.Nodup → (∀ r ∈ Rs, DisplayedGenerator r u) →
+                leOpt (δ (deleteAll u Rs)).full (δ u).full ∧
+                leOpt (δ (deleteAll u Rs)).x (δ u).x ∧
+                leOpt (δ (deleteAll u Rs)).z (δ u).z := by
+              intro Rs
+              induction Rs with
+              | nil =>
+                  intro u _ _ _
+                  exact ⟨leOpt_refl _, leOpt_refl _, leOpt_refl _⟩
+              | cons r rest ih =>
+                  intro u hwfU hndU hdispU
+                  obtain ⟨row, hmem, hid⟩ := hdispU r List.mem_cons_self
+                  have hind : IndependentGenerator r u := hid ▸ hwfU.2.2.2.2.2.2.2 row hmem
+                  have h1 : Eval (Command.delete r) u (deleteState u r) :=
+                    Eval.delete ⟨row, hmem, hid⟩ hind rfl
+                  obtain ⟨hf1, hx1, hz1⟩ := hdelete r u (deleteState u r) hwfU h1
+                  have hnd' := List.nodup_cons.mp hndU
+                  obtain ⟨hf2, hx2, hz2⟩ := ih (deleteState u r) (wf_deleteState u r hwfU) hnd'.2
+                    (fun r' hr' => by
+                      obtain ⟨row', hmem', hid'⟩ := hdispU r' (List.mem_cons_of_mem _ hr')
+                      refine ⟨row', ?_, hid'⟩
+                      show row' ∈ u.rows.filter (fun row => row.id ≠ r)
+                      exact List.mem_filter.mpr ⟨hmem', decide_eq_true (fun h =>
+                        hnd'.1 (by rw [← h, hid']; exact hr'))⟩)
+                  exact ⟨leOpt_trans hf2 hf1, leOpt_trans hx2 hx1, leOpt_trans hz2 hz1⟩
+            obtain ⟨hdf, hdx, hdz⟩ := hstep_le R s hwf hRnd hRdisp
+            obtain ⟨hLf, hLx, hLz⟩ := hSound
+            exact ⟨⟨some_zero_leOpt _, leOpt_trans hdf hLf.2⟩,
+              ⟨some_zero_leOpt _, leOpt_trans hdx hLx.2⟩,
+              ⟨some_zero_leOpt _, leOpt_trans hdz hLz.2⟩⟩
 
 /-- Two steps of the §4.32 transport compose (§8.5), as
     `priced_interval_soundness_seq` does for `propagateCmdK`. -/
@@ -560,7 +639,10 @@ theorem gate6_interval_soundness_seq
   (hrebase : ∀ σ M s s', EncodingWellFormed s → Eval (Command.rebase σ M) s s' →
       δ s' = δ s)
   (hhadamard : ∀ T s s', EncodingWellFormed s → Eval (Command.hadamard T) s s' → T ≠ [] →
-      (δ s').x = (δ s).z ∧ (δ s').z = (δ s).x)
+      CoversQ T s.Q → (δ s').x = (δ s).z ∧ (δ s').z = (δ s).x)
+  (hsplit : ∀ T s s', EncodingWellFormed s → Eval (Command.hadamard T) s s' → T ≠ [] →
+      ¬ CoversQ T s.Q → (δ s').full = (δ s).full ∧ leOpt (δ s).full (δ s').x ∧
+        leOpt (δ s).full (δ s').z)
   (hpeel : ∀ q τ r s s', EncodingWellFormed s → Eval (Command.peel q τ r) s s' →
       (if τ = Sector.X then leOpt (δ s).x (δ s').x else leOpt (δ s).z (δ s').z) ∧
       (if τ = Sector.X then leOpt (δ s').z (δ s).z else leOpt (δ s').x (δ s).x) ∧
@@ -576,8 +658,8 @@ theorem gate6_interval_soundness_seq
   (L : DistanceLedger) (hL : LedgerSound (δ s) L) :
   LedgerSound (δ u) (propagateGate6K m2 t u (propagateGate6K m1 s t L H) H) := by
   have hstep1 := gate6_interval_soundness δ hmin hk0 hdelete hadd hgraft hrebase hhadamard
-    hpeel hextend H L s t m1 hwf h1 hH1 hL
-  exact gate6_interval_soundness δ hmin hk0 hdelete hadd hgraft hrebase hhadamard hpeel
+    hsplit hpeel hextend H L s t m1 hwf h1 hH1 hL
+  exact gate6_interval_soundness δ hmin hk0 hdelete hadd hgraft hrebase hhadamard hsplit hpeel
     hextend H (propagateGate6K m1 s t L H) t u m2 (wf_of_eval_all h1 hwf) h2 hH2 hstep1
 
 /-! ## Monotonicity (§8.4(2), §9.4) and the comparison with the widened reset -/
@@ -609,12 +691,19 @@ theorem propagateGate6_monotone (m : Command) (s s' : CodeState) (H : Hyp)
   | delete r => exact propagateCmd_monotone _ s s' H L1 L2 h
   | addStab sector support => exact propagateCmd_monotone _ s s' H L1 L2 h
   | graft q τ ids => exact propagateCmd_monotone _ s s' H L1 L2 h
+  | cnotSwap U => exact propagateCmd_monotone _ s s' H L1 L2 h
   | seq m1 m2 => exact propagateCmd_monotone _ s s' H L1 L2 h
   | rebase σ M => exact h
   | hadamard T =>
       cases T with
       | nil => exact h
-      | cons a T' => exact ⟨h.1, h.2.2, h.2.1⟩
+      | cons a T' =>
+          show (if CoversQ (a :: T') s.Q then hadamardLedger L1 else splitLedger L1).refines
+            (if CoversQ (a :: T') s.Q then hadamardLedger L2 else splitLedger L2)
+          by_cases hp : CoversQ (a :: T') s.Q
+          · rw [if_pos hp, if_pos hp]; exact ⟨h.1, h.2.2, h.2.1⟩
+          · rw [if_neg hp, if_neg hp]
+            exact ⟨h.1, ⟨h.1.1, leOpt_refl none⟩, ⟨h.1.1, leOpt_refl none⟩⟩
   | peel q τ r =>
       cases τ with
       | X => exact ⟨minInterval_monotone (peelSelected_monotone h.2.1 _) (peelOpposite_monotone h.2.2 _),
@@ -626,6 +715,8 @@ theorem propagateGate6_monotone (m : Command) (s s' : CodeState) (H : Hyp)
       cases delta with
       | nil => exact ⟨⟨h.1.1, leOpt_refl none⟩, ⟨h.2.1.1, leOpt_refl none⟩, ⟨h.2.2.1, leOpt_refl none⟩⟩
       | cons a d => exact DistanceLedger.refines_refl _
+  | split QA R =>
+      exact ⟨⟨leOpt_refl _, h.1.2⟩, ⟨leOpt_refl _, h.2.1.2⟩, ⟨leOpt_refl _, h.2.2.2⟩⟩
 
 /-- The same including the `k = 0` collapse. -/
 theorem propagateGate6K_monotone (m : Command) (s s' : CodeState) (H : Hyp)
@@ -669,10 +760,12 @@ theorem propagateGate6_refines_propagateCmd (m : Command) (s s' : CodeState)
   | peel q τ r => exact refines_resetLedger _
   | puncture q => exact refines_resetLedger _
   | extend delta adds => exact refines_resetLedger _
+  | split QA R => exact refines_resetLedger _
   | skip => exact DistanceLedger.refines_refl _
   | delete r => exact DistanceLedger.refines_refl _
   | addStab sector support => exact DistanceLedger.refines_refl _
   | graft q τ ids => exact DistanceLedger.refines_refl _
+  | cnotSwap U => exact DistanceLedger.refines_refl _
   | seq m1 m2 => exact DistanceLedger.refines_refl _
 
 /-! ## The §4.26, §4.27, and §4.30 relations for the exact distance
@@ -915,10 +1008,12 @@ theorem rebase_transformer_sound_exact {σ : Sector} {M : List (List Nat)} {s s'
 /-- `E-LOCAL-HADAMARD` (`T = Q`) for the exact distance, from the
     transition's premises: no distance hypothesis is left. -/
 theorem hadamard_transformer_sound_exact {T : List Nat} {s s' : CodeState} (hT : T ≠ [])
-    (h : Eval (Command.hadamard T) s s')
+    (hp : CoversQ T s.Q) (h : Eval (Command.hadamard T) s s')
     (L : DistanceLedger) (hL : LedgerSound (exactDist s) L) :
     LedgerSound (exactDist s') (hadamardLedger L) := by
   cases h with
+  | hadamardSplit hsub _ _ _ _ _ =>
+      exact absurd hp (not_coversQ_of_properSubset hsub)
   | hadamard _ hs' _ =>
       subst hs'
       cases T with

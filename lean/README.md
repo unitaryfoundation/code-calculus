@@ -80,12 +80,14 @@ lake build
  `L-GROUP-ALGEBRA` on every input (`twoblockState_k_closed`), and
  `k = k_O` for `A-CONCAT` under the hypothesis that the display retains
  every natural row (`concatState_k_of_retention`). The closed forms for
- `L-HGP` and `A-PRODUCT` are not proved.
+ `L-HGP` and `A-PRODUCT` are proved in `ClosedK.lean`.
  - `ConcatRetention.lean`: the `A-CONCAT` display retains every natural
  row (`concatState_rows_length`), so `k = k_O` (`concatState_k_closed`,
  `evalExpr_concat_k`), for well-formed factors and typed blocks and
- representatives. It rests on the independence of the
- natural rows of each sector (`vecIndep_concat`), on the independence of
+ representatives. It rests on the block-projection corollary
+ (`combineRows_take_drop`, from `combineRows_map_additive` and
+ `additive_blockAt`), on the inner and outer independence theorems
+ (`vecIndep_concatInner`, `vecIndep_concat`), on the independence of
  the displayed rows of a well-formed state (`vecIndep_sectorRows`), and
  on the general statement that a constructed state with independent
  natural rows displays all of them
@@ -101,19 +103,70 @@ lake build
  (`cayleyBalanced_naturalOrthogonal`), so every evaluation of
  `balancedTable` yields a well-formed state
  (`evalExpr_balancedTable_wf`), with `n` (`evalExpr_balancedTable_n`).
+ - `RankNullity.lean`: the rank is monotone in the span
+ (`rankBitmasks_le_of_span`); rank and nullity for an additive map
+ (`rank_nullity`); the combination of a mask list by a coefficient mask
+ (`comb`) and a list spanning its kernel (`kerList`, `rank_kerList`).
+ - `TensorRank.lean`: the tensor of two masks (`tens`), its bits and
+ slices, and the rank of a family of tensors as the product of the ranks
+ (`rank_tens`).
+ - `HgpRank.lean`: row rank equals column rank (`rank_colMasks`), and the
+ rank of the two-block tensor family `(A_s ⊗ e_t, e_s ⊗ D_t)`
+ (`rank_hgRows`).
+ - `MaskBlocks.lean`: masks of Boolean lists over index pairs as tensors
+ with unit masks, and the two placements of a pair of blocks.
+ - `ProductRank.lean`: the rank of the natural rows of a tensor product
+ of two complexes (`rank_prodRows`), by counting the dependencies among
+ the rows.
+ - `ClosedK.lean`: the ranks of the natural matrices of `L-HGP`
+ (`hgp_rankX`, `hgp_rankZ`) and of `A-PRODUCT` (`product_rankX`,
+ `product_rankZ`), and the closed forms
+ `k = k_1 k_2 + k_1ᵀ k_2ᵀ` (`hgpState_k_closed`, `evalExpr_hgp_k`) and
+ `k = k_A k_B` (`productState_k_closed`, `evalExpr_product_k`). The four
+ rank statements were axioms of `lean/extra/ClosedK.lean` until
+ 2026-11-24.
  - `ConstructorRankNatural.lean`: `k` of `L-BALANCED`, `L-TANNER`, and
  `L-TILE` as `n` minus the ranks of the two matrices of natural rows
  (`balancedState_k_closed`, `tannerState_k_closed`,
  `tileState_k_closed`). These are instances of
- `stateK_constructedState`, not formulas in the input parameters.
- - `SplitCommand.lean`: the separating deletion of
- `the E-split proposal note` as the sequence of deletions
- `splitCommand`, with no constructor added and no operation admitted. Its
- applicability on a well-formed state (`eval_splitCommand_iff`),
- `k' = k + |R|` (`stateK_of_eval_split`), the non-increase of each sector
- distance (`exactDistanceExt_split_le`), the separation of the child
- (`separated_deleteAll`), and the inverse law against `E-GLUE` up to the
- growth of `used` (`deleteAll_glueState_rows`, `deleteAll_glueState_used`).
+ `stateK_constructedState`, not formulas in the input parameters. For
+ `L-TANNER` and `L-TILE`, the counting bound: `k` is at least `n` minus the
+ number of natural rows (`tannerState_k_ge`, `tileState_k_ge`), with
+ equality iff the natural rows of each sector are independent
+ (`tannerState_k_of_indep`, `tileState_k_of_indep`,
+ `tannerState_k_eq_counting_iff`, `tileState_k_eq_counting_iff`, and the
+ `evalExpr_*` forms). For `L-TANNER`, the local-code rank bound
+ (`tannerState_k_ge_localRank`, `evalExpr_tanner_k_ge_localRank` — no weaker
+ than `tannerState_k_ge`, and tighter when a sector with a view has redundant
+ local checks) and its exact closed form on vertex-disjoint views
+ (`tannerState_k_of_disjoint_views`, `evalExpr_tanner_k_of_disjoint_views`).
+ Finally, the formal no-go theorems (`tanner_k_not_determined_by_params`,
+ `tile_k_not_determined_by_params`) proving that no function of
+ `(n, L_X, L_Z, |V_X|, |V_Z|)` equals `stateK` on all valid `L-TANNER`
+ evaluations and no function of the tile list, qubit count, placement count,
+ and two kept-row counts equals `stateK` on all valid `L-TILE` evaluations
+ (closed forms in richer invariants of the views or placements are not
+ excluded).
+ - `SplitCommand.lean`: the admitted `E-SPLIT` separating deletion
+ (`Command.split` / `Eval.split` in `Term.lean` and `Eval.lean`, admitted
+ 2026-11-25, `spec/OPERATIONAL_SEMANTICS.md` §4.48) and its factorization into
+ the deletion sequence `splitCommand` (`eval_split_iff_eval_splitCommand`).
+ Covers applicability on a well-formed state (`eval_splitCommand_iff`),
+ `k' = k + |R|` (`stateK_of_eval_split`, `stateK_of_eval_split_cmd`),
+ non-increase of each sector distance (`exactDistanceExt_split_le`,
+ `exactDistanceExt_split_cmd_le`), separation of the child
+ (`separated_deleteAll`, `separated_of_eval_split`), the partial inverse law
+ against `E-GLUE` up to the growth of `used` (`deleteAll_glueState_rows`,
+ `deleteAll_glueState_used`, `eval_split_glueState`), the block-minimum
+ decomposition (`exactDistanceExt_separated_eq_min`), the exact price
+ decomposition (`exactDistanceExt_split_eq_min_price`), and the unpriced and
+ `split_block_intervals`-priced interval transformers
+ (`splitLedger_unpriced_sound`, `splitLedger_priced_sound`,
+ `splitLedger_priced_monotone`). Well-formedness preservation (`wf_deleteAll`)
+ lives in `WellFormedness.lean`; `Derives.genSplit` / `not_derivable_gen_of_split`
+ and worked instances live in `Soundness.lean`, `Transport.lean`,
+ `SeamChains.lean`, and `ExpandedSoundness.lean`; sector-swap conjugation
+ (`swapState_deleteAll`) lives in `DualityAdjunction.lean`.
  - `ConstructorAssembly.lean`: the five constructors of. The
  overlap for `A-PRODUCT`, proved for every pair of well-formed factors
  (`product_naturalOrthogonal`, `evalExpr_product_wf`); well-formedness
@@ -147,9 +200,32 @@ lake build
  `ExtNat = ℕ ∪ {+∞}`, the metatheorems `ext_judgment_soundness` and its
  `_exact`, `_exact_uncertified`, and `_exact_admissible` instances, seam-
  certificate equality retained as `SeamCertSound` with the `AdmissibleSeam`
- discharge, and three worked closed-term derivations. It is the
+ discharge, structural carry rows for `Command.cnotSwap` and all seventeen
+ admitted `StateExpr` constructors (`instCnotSwap*`, `instCone*`,
+ `instEmpty*`, `instFree*`, `instPullbackN`, `instPushoutN`,
+ `instPairPartitionN`, `instPpScaleN`, `instLiftTableN`, `instTwoblockTableN`,
+ `instBalancedTableN`), and worked closed-term derivations. For
+ `Command.cnotSwap`, `Eval.cnotSwap` carries `EncodingWellFormed s'` as a
+ premise, so `instCnotSwapWF` covers it through the well-formedness premise its
+ transition carries (a premise restatement via `wf_of_eval_all`) and
+ `eval_cnotSwap_k` relies on that premise; preservation of I1–I5 under an
+ invertible column map `U` is hand-derived in `spec/OPERATIONAL_SEMANTICS.md`
+ §4.42 and not mechanized. It is the
  expanded-system counterpart of `Soundness.lean` / `TermSoundness.lean`;
  the two derivation systems are documented in their headers.
+ - `ColumnCnot.lean` — mechanization of `Command.cnotSwap` (`C-COLUMN-CNOT`,
+ `spec/OPERATIONAL_SEMANTICS.md` §4.42; issue #657): identifier retention,
+ determinism (`eval_cnotSwap_unique`), skip identity (`eval_cnotSwap_skip_left`,
+ `eval_cnotSwap_skip_right`), sequence associativity (`eval_cnotSwap_seq_assoc`),
+ positive CNOT/SWAP instances, singular/wrong-shape/wrong-size refusals (both
+ malformed and singular matrices fail the single `cnotMatrix_ok` premise), and a
+ worked `TermModels` derivation (`termModels_cnotSwap_example`). As with the
+ non-rebase Gate 6 transitions, `Eval.cnotSwap` carries `EncodingWellFormed s'`
+ as a premise, so `wf_of_eval_all` and `instCnotSwapWF` cover `Command.cnotSwap`
+ through the well-formedness premise its transition carries (a premise
+ restatement) and `eval_cnotSwap_k` relies on that premise; preservation of
+ I1–I5 under invertible `U` remains the hand derivation of §4.42 and is not
+ mechanized.
  - `Transport.lean` — judgment transport through sequences, including the
  W13 refutation shape and its derivation-level instance for the
  generator-referencing claim `Ann.gen`, with the
@@ -180,6 +256,22 @@ lake build
  `k = 0` reading `hk0` (`exactDist_k0`: a well-formed state with no
  logical qubit has no logical operator). The positional
  vector operations `dropAt`, `insertAt`, and `entryAt` live here.
+ - `SplitHadamard.lean`: the split-subset `E-LOCAL-HADAMARD` (issue
+ #571) for the exact distance. Each child sector distance is at least the
+ parent's full distance (`exactDistance_split_ge`, needing no guard), and
+ under the splitting guard the full distance is unchanged
+ (`exactDistance_split_min`). Combined in `Option Nat` as
+ `exactDist_splitHadamardState`, the `hsplit` premise of
+ `gate6_interval_soundness`. The mechanized `splitLedger` transport floors
+ each sector at `L.full.lower`, which is weaker than the consumer's
+ `max(L.full.lower, min(ℓ_X, ℓ_Z))` (both are sound; the `min(ℓ_X, ℓ_Z)`
+ floor is hand-derived in §4.27(b) and not mechanized in Lean). The proof
+ rests on span facts about the canonical update, which reads rows in
+ identifier order (`sortRowsByRank`) and is `≡`-input invariant
+ (`splitHadamardState_equiv`): every child row is a piece of a parent row
+ (`splitRow_origin`), every piece lies in the child span of its output
+ sector (`piece_inSpan_child`), and the guard puts each inner piece in its
+ own sector's span (`guard_inner`).
  - `Gate6Exact.lean`: `gate6_interval_soundness` instantiated with the
  exact distance (`gate6_interval_soundness_exact`, with no distance
  hypothesis), and the `glueLedger` transformer on the
@@ -261,6 +353,23 @@ lake build
  crosses a seam exactly when its representative survives. The candidate
  lists of the other transitions and the hand derivations of §1a are not
  mechanized.
+ - `FuturePiFields.lean`: candidate sketch-refinement definitions and
+ transport soundness proofs for the two proposed future-`Π` fields of
+ `design/FUTURE_PI_FIELDS.md` (outside `CodeState`, not admitted to
+ `spec/STATE_MODEL.md` §1a): `ConstructionRecord` (`Option ClosedTerm`,
+ `constructionRecord_transportCmd_valid`,
+ `constructionRecord_transportCmdPure_valid`, and constructor lifts
+ `constructionRecord_directSum_valid`, `constructionRecord_glue_valid`,
+ `constructionRecord_concat_valid`, `constructionRecord_product_valid`,
+ `constructionRecord_double_valid`, `constructionRecord_ppScale_valid`)
+ and `LogicalFrame` (`List FramePair` with canonical symplectic pairing
+ `LogicalFrame.Dual`, automatic `LogField.OnePerClass` projection
+ `frame_toLogField_onePerClass`, generic filter transport
+ `transportFrame_wellFormed_of_dual`, and transition theorems
+ `frame_wellFormed_deleteState`, `frame_wellFormed_addState`,
+ `frame_wellFormed_rebaseState`, `frame_wellFormed_swapState`,
+ `frame_wellFormed_directSumState`, `frame_wellFormed_glueState`, plus
+ a kernel-checked `[[4, 2, 2]]` frame instance `frame422_wellFormed`).
  - `AdmissibleSeamFamily.lean`: the admissible-seam family guarantee for
  `E-GLUE` (`spec/OPERATIONAL_SEMANTICS.md` §4.31, `ADMISSIBLE_SEAM_FAMILY.md`): `AdmissibleSeam` and `HasMinLogical` package survival of
  minimum-weight factor representatives across the seam, `admissible_carriesMin`
@@ -287,10 +396,30 @@ lake build
  `certificate_lower_bound` (and its `ExtNat` and `Nat` readings), and
  `certificate_equality` prove that acceptance implies the bound, and with
  a checked witness the exact value, for the exact distance.
+ `checkPruneCertificate` accepts a pruning-tree certificate, which covers
+ the vectors of weight below the bound by classes and is walked once;
+ `checkPrune_sound`, `checkPruneCertificate_sound`, and the
+ `pruneCertificate_` theorems prove the same four conclusions for it.
  - `CertificateInstances.lean`: generated by
  `machine/experiments/certificate_lean_instances.py`. Per-state theorems
  for the `W3` result state and the pinned `[[10,2,3]]` parent, with every
- acceptance premise discharged by kernel `decide`.
+ acceptance premise discharged by kernel `decide`, and for a cyclic
+ two-block code on 30 qubits, whose two sector distances are proved equal
+ to 6 from pruning-tree certificates by `decide +kernel`. That term is
+ not proved well-formed, because the kernel evaluation of `wellFormedBool`
+ on it is too slow.
+ - `Ingestion.lean`: external code ingestion (`spec/REPRESENTATION.md` §9).
+ `presentationBinds` is the computable statement that a state is an
+ ingestion of a matrix presentation; `presentationBinds_Q`,
+ `presentationBinds_retained`, and `presentationBinds_span` read off that
+ the qubits are `0, …, n − 1`, that every row of the state is a presented
+ row, and that every presented row is in the span of the state's rows.
+ - `IngestedInstances.lean`: generated by
+ `machine/experiments/code_state_lean_instances.py`. The pinned
+ `[[10,2,3]]` entry and a redundant presentation of the `[[8,2,2]]` toric
+ code, each with its presentation literal, recorded binding hash,
+ `_binds` theorem by kernel `decide`, and exact sector distances from
+ checked certificates.
  - `ExactDistance.lean`: exact sector distance over F₂, in `Nat` with the
  sentinel `|Q| + 1`, in `Option Nat` (`exactDistance?`, `none` for `+∞`),
  and in the domain `ExtNat` (`exactDistanceExt`), with the sentinel
@@ -302,21 +431,158 @@ lake build
  - `GraftWellFormedness.lean` — well-formedness for E-GRAFT.
  - `Rebase*.lean` — presentation-rebase rank preservation.
  - `Fixtures.lean` / `FixtureReplay.lean` / `FixtureEvalReplay.lean` —
- fixture transcription and replay checks.
+ fixture transcription and replay checks. Every fixture of
+ `machine/fixtures/mvp_fixtures.json` is transcribed except `W24`, a
+ 119-qubit state whose well-formedness the Boolean test cannot decide in
+ the kernel: its independence check enumerates the coefficient vectors of
+ a 46-row sector. `machine/lean_fixture_coverage.py` reports the coverage
+ and compares the transcribed states with the JSON.
  - `WellFormedBool.lean` — boolean well-formedness helpers.
  - `Property.lean`, `Judgment.lean`, `Interval.lean`, `Refinement.lean`,
  `MaskRank.lean`, `MixSupport.lean` — supporting definitions.
  - `AxiomAudit.lean`: build-time check of the trust basis below.
 - `CodeCalculus.lean` is the entry point imported by `lake build`.
 
+## External code ingestion
+
+A code written outside this repository as a pair of check matrices is brought
+into Lean under the contract of `spec/REPRESENTATION.md` §9.
+
+```sh
+python3 machine/experiments/code_state_lean_instances.py \
+    --presentation entry.json --name my_code > CodeCalculus/MyCode.lean
+```
+
+The input is a document of the shape `CodeState.from_challenge` accepts (`n`,
+`k`, `checks.X`, `checks.Z`). The output defines `my_code_presentation`,
+`my_code_checks_sha256`, the state `my_code`, and the theorems
+`my_code_wellFormed` and `my_code_binds`. Certificates for the state are
+added with `lean_instance_block` of `machine/certificates.py`, as
+`IngestedInstances.lean` does.
+
+- The translation is untrusted. `my_code_binds` is checked by the kernel, so a
+  state whose rows are not rows of the presentation, or whose row spaces
+  differ from it, does not build.
+- Lean does not compute the binding hash. `binding_failures` in
+  `machine/ingestion.py` reads the presentation literal back out of the Lean
+  source, hashes it, and compares it with the recorded string and with the
+  hash and `n` of the source document. For the committed instances this is
+  `python3 machine/experiments/code_state_lean_instances.py --verify`, and
+  `machine/test_code_state_lean.py` runs it. The hash is the `checks_sha256`
+  of `qldpc-challenge`.
+- Ingestion makes the state available. It proves nothing about distance. A
+  lower bound needs a certificate, and `checkCertificate` enumerates every
+  vector of weight below the bound, so kernel-checked bounds are practical
+  only for small codes (about 20 qubits). Larger codes wait on a scalable
+  certificate format (issue #574).
+
+## Formal certificates for challenge entries
+
+`machine/experiments/formal_cert_from_challenge.py` turns a qldpc-challenge
+entry into a Lean module and, once that module is committed, into the
+`certs/<slug>.json` payload of a `formal` certificate. Run it from the
+repository root; it needs `lake` on the path. For `codes/10-2-3-b.json`,
+with qldpc-challenge checked out beside this repository:
+
+```sh
+python3 machine/experiments/formal_cert_from_challenge.py \
+    ../qldpc-challenge/codes/10-2-3-b.json --name qldpc_10_2_3_b
+```
+
+This ingests the entry, builds a pruning-tree certificate per sector at the
+entry's witnessed values (`--sector X --bound B` pairs override them), and
+writes `lean/CodeCalculus/FormalCerts/qldpc_10_2_3_b.lean`. The module holds
+the ingestion block, the tree blocks, and one theorem,
+`CodeCalculus.FormalCert_qldpc_10_2_3_b.qldpc_10_2_3_b_certified`: the
+binding theorem conjoined with each sector's bound, or its exact distance
+when the entry's witness has the bound's weight. The script checks the
+module's binding hash against the entry, runs
+`lake build CodeCalculus.FormalCerts.qldpc_10_2_3_b`, and refuses a theorem
+that depends on an axiom other than `propext`, `Classical.choice` and
+`Quot.sound`. The generated module is not imported by `CodeCalculus.lean`,
+so `AxiomAudit.lean` does not cover it; this check is the audit. Progress
+goes to stderr.
+
+The payload names a commit that holds the theorem, so it is printed only
+when the module at that commit is the one just generated. Commit the module
+(on a branch of a public repository), then run again:
+
+```sh
+git add lean/CodeCalculus/FormalCerts/qldpc_10_2_3_b.lean
+git commit -m "Formal certificate module for 10-2-3-b"
+git push
+python3 machine/experiments/formal_cert_from_challenge.py \
+    ../qldpc-challenge/codes/10-2-3-b.json --name qldpc_10_2_3_b \
+    --repo https://github.com/OWNER/REPO > ../qldpc-challenge/certs/10-2-3-b.json
+```
+
+`--repo` has no default: only the caller knows where the commit is
+published. `--commit` defaults to `HEAD`. The payload's
+`verification.replay` holds `repo`, `commit`, `theorem` (the
+`_certified` theorem), `build`
+(`cd lean && lake build CodeCalculus.FormalCerts.<name>`) and `toolchain`
+(read from `lean/lean-toolchain` at the commit). There is no `mathlib`
+field: the development uses the Lean core library only.
+`verification.checks_sha256` is the hash of the entry's presentation, not of
+the retained rows, so a redundant presentation binds to its entry. The
+definition is generated from the entry, never transcribed. The payload is
+exact when the least bound is the entry's `d` and partial otherwise; a run
+with one `--sector` builds the module and prints no payload, since the board
+takes no single-side bound. Then, in the qldpc-challenge checkout (its
+command, which needs `jsonschema`):
+
+```sh
+python3 verify/check_certs.py
+```
+
+CI runs this workflow end to end on the board's `codes/10-2-3-b.json`:
+`scripts/check_formal_cert_pipeline.sh` generates and builds the module,
+pins it in a commit object no branch points at, and passes the payload
+through `verify/check_certs.py` of a pinned qldpc-challenge commit in a
+temporary tree. `machine/test_challenge_certificate.py` runs the same
+checker on its payloads when `QLDPC_CHALLENGE_DIR` names a checkout, as
+it does in CI.
+
+The payload is built by `export_challenge_certificate` in
+`machine/certificates.py`, which refuses a state that is not the entry's
+ingestion, a missing sector, a certificate the prototype checker rejects, a
+witness that is not a logical or is lighter than a proven bound or than
+`d`, a partial bound outside `2 .. d - 1`, an exact payload without a
+weight-`d` witness, and a `replay` or `checker` the schema does not allow.
+It has no defaults for `replay`, `checker` or `solver`.
+
+**Size limits** (`machine/ingestion.py`, measured by
+`machine/experiments/benchmark_formal_cert.py` on an Apple-silicon laptop
+with a warm build cache, lower bounds at the sector distance, no witness):
+
+| code | n | retained rows per sector | bound | tree nodes | build (s) | build with `_wellFormed` (s) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `10-2-3-b` | 10 | 4 | 3 | 86 | 0.9 | 1.4 |
+| two-block, `Z_9` | 18 | 7 | 4 | 612 | 1.1 | 1.8 |
+| two-block, `Z_12` | 24 | 8 | 2 | 98 | 4.1 | 2.8 |
+| two-block, `Z_12` | 24 | 10 | 4 | 808 | 2.0 | fails |
+| two-block, `Z_15` | 30 | 13 | 6 | 9,030 | 12.1 | fails |
+| two-block, `Z_21` | 42 | 19 | 6 | 10,030 | 24.0 | fails |
+| two-block, `Z_24` | 48 | 22 | 8 | 118,928 | stopped unfinished after > 10 min | not run |
+Generation takes under 0.1 s for each. `<name>_wellFormed` is proved by
+`decide`, which reaches Lean's maximum recursion depth at 10 retained rows;
+the certified theorem does not use it, and the generator leaves it out above
+`LEAN_WELL_FORMEDNESS_ROW_LIMIT = 8` rows (`--well-formedness always` keeps
+it). The certificate theorems grow with the tree, which grows with the bound
+and the number of qubits. The generator refuses entries above
+`LEAN_GENERATION_QUBIT_LIMIT = 42` qubits, the largest size built here,
+unless `--allow-large` is given; the 500-qubit board composites are far
+outside it. Times are single runs.
+
 ## Extra modules
 
 `lean/extra/` holds modules that are **not** part of the default `lake build`
 target and are **not** covered by `AxiomAudit.lean`:
 
-- `ClosedK.lean`: closed forms for `stateK` of `L-HGP` and `A-PRODUCT`, derived from the four rank axioms recorded in `AXIOMS.md`
- (`hgp_rankX`, `hgp_rankZ`, `product_rankX`, `product_rankZ`); the
- arithmetic that combines the ranks is proved.
+- `ClosedK.lean`: no declaration. The closed forms for `stateK` of `L-HGP`
+ and `A-PRODUCT`, and the four rank statements it held as axioms, are
+ proved in `CodeCalculus/ClosedK.lean`. The file remains so that
+ `lake build ClosedK` names a target.
 - `Retention.lean`: no declaration. The `A-CONCAT` retention statement it
  held as an axiom is proved in `CodeCalculus/ConcatRetention.lean`. The file remains so that `lake build Retention` names a
  target.
@@ -329,9 +595,9 @@ default build.
 
 Mechanization is partial and ongoing. Modules marked with `sorry` are
 incomplete; the build is expected to be green (`0 sorry` on `main`), and
-`CodeCalculus/AxiomAudit.lean` fails the build on a `sorry`. Gate 0
-(record completeness) and Gate 1 (formal syntax) are ratified; Gates 2–7 are
-unchecked. See `spec/GATES.md`.
+`CodeCalculus/AxiomAudit.lean` fails the build on a `sorry`. Gates 0–6 are
+ratified (2026-11-19); Gate 7 is ratified for `stdCSS-3` (2026-11-26). See
+`spec/GATES.md`.
 
 ## Trust basis
 
@@ -365,7 +631,9 @@ Certificates: the theorems of `CertificateInstances.lean` rest
 on the kernel and on the definition of the exact distance. The certificate
 producer and the generator that writes that module are Python and are not
 trusted; a wrong certificate or a wrong translation fails `by decide` or
-yields a true theorem about a different state term. That a state term is the
+yields a true theorem about a different state term. The pruning-tree
+instances use `decide +kernel`, which asks the kernel to evaluate the
+checker directly and adds no axiom (`native_decide` is not used). That a state term is the
 intended state is checked by reading (`spec/CLAIMS.md`, *Mechanized
 checker*).
 

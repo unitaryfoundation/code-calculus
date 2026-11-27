@@ -11,10 +11,26 @@ theorem adds a checked witness (`certificate_equality`). These are per-state
 atomic judgments keyed to the state term, the sector distance, and the
 sector (`spec/OPERATIONAL_SEMANTICS.md` §4.24). Their evidence status is
 `certificate-checked` (`spec/CLAIMS.md`, *Admission*). They are statements
-about the Lean terms `w3_result` and `qldpc_10_2_3_b` defined here, each
-proved well-formed, and `w3_result` proved equal to `fixture_W3_result`.
+about the Lean terms defined here. `w3_result` and `qldpc_10_2_3_b` are
+each proved well-formed, and `w3_result` is proved equal to
+`fixture_W3_result`.
 The generator and the certificate producer are not trusted, and no
 operation contract is evidenced.
+
+`cyclic_30_4_6` is the two-block code of `1 + x^10 + x^14` and
+`1 + x^11 + x^13` over the cyclic group of order 15: 30 qubits and 13
+retained rows per sector. The term is not proved well-formed here: the
+kernel evaluation of `wellFormedBool` on it took over ten minutes in CI,
+and the checker theorems hold for every state term. The consumer validates
+the state it is translated from. Its bounds use pruning-tree certificates
+(`checkPruneCertificate`). Each `_accepts` theorem is the checker's
+acceptance by `decide +kernel`, and each `_lower_bound` theorem is
+`pruneCertificate_lower_bound` applied to it, in the `Option Nat` reading:
+every finite value of the exact sector distance is at least 6. The `ExtNat`
+reading is `pruneCertificate_lower_bound_ext` applied to the same
+acceptance. It is not stated here, because Lean did not elaborate that
+statement for a 30-qubit state within its default limits. Each `_exact`
+theorem adds a checked logical of weight 6.
 -/
 
 namespace CodeCalculus.CertificateInstances
@@ -50,6 +66,39 @@ def qldpc_10_2_3_b : CodeState := {
 
 theorem qldpc_10_2_3_b_wellFormed : EncodingWellFormed qldpc_10_2_3_b :=
   encodingWellFormed_of_bool (by decide)
+
+def cyclic_30_4_6 : CodeState := {
+  Q := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+  rows := [
+    { id := 0, sector := Sector.X, support := [0, 1, 5, 15, 17, 19] },
+    { id := 1, sector := Sector.X, support := [1, 2, 6, 16, 18, 20] },
+    { id := 2, sector := Sector.X, support := [2, 3, 7, 17, 19, 21] },
+    { id := 3, sector := Sector.X, support := [3, 4, 8, 18, 20, 22] },
+    { id := 4, sector := Sector.X, support := [4, 5, 9, 19, 21, 23] },
+    { id := 5, sector := Sector.X, support := [5, 6, 10, 20, 22, 24] },
+    { id := 6, sector := Sector.X, support := [6, 7, 11, 21, 23, 25] },
+    { id := 7, sector := Sector.X, support := [7, 8, 12, 22, 24, 26] },
+    { id := 8, sector := Sector.X, support := [8, 9, 13, 23, 25, 27] },
+    { id := 9, sector := Sector.X, support := [9, 10, 14, 24, 26, 28] },
+    { id := 10, sector := Sector.X, support := [0, 10, 11, 25, 27, 29] },
+    { id := 11, sector := Sector.X, support := [1, 11, 12, 15, 26, 28] },
+    { id := 12, sector := Sector.X, support := [2, 12, 13, 16, 27, 29] },
+    { id := 13, sector := Sector.Z, support := [0, 11, 13, 15, 25, 29] },
+    { id := 14, sector := Sector.Z, support := [1, 12, 14, 15, 16, 26] },
+    { id := 15, sector := Sector.Z, support := [0, 2, 13, 16, 17, 27] },
+    { id := 16, sector := Sector.Z, support := [1, 3, 14, 17, 18, 28] },
+    { id := 17, sector := Sector.Z, support := [0, 2, 4, 18, 19, 29] },
+    { id := 18, sector := Sector.Z, support := [1, 3, 5, 15, 19, 20] },
+    { id := 19, sector := Sector.Z, support := [2, 4, 6, 16, 20, 21] },
+    { id := 20, sector := Sector.Z, support := [3, 5, 7, 17, 21, 22] },
+    { id := 21, sector := Sector.Z, support := [4, 6, 8, 18, 22, 23] },
+    { id := 22, sector := Sector.Z, support := [5, 7, 9, 19, 23, 24] },
+    { id := 23, sector := Sector.Z, support := [6, 8, 10, 20, 24, 25] },
+    { id := 24, sector := Sector.Z, support := [7, 9, 11, 21, 25, 26] },
+    { id := 25, sector := Sector.Z, support := [8, 10, 12, 22, 26, 27] }
+  ],
+  used := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+}
 
 def w3_result_X_certificate : SectorCertificate := {
   sector := Sector.X,
@@ -231,5 +280,1341 @@ theorem qldpc_10_2_3_b_Z_exact :
     exactDistance? Sector.Z qldpc_10_2_3_b = some 3 :=
   certificate_equality qldpc_10_2_3_b qldpc_10_2_3_b_Z_certificate (by decide)
     [true, true, true, false, false, false, false, false, false, false] (by decide)
+
+open PruneTree in
+def cyclic_30_4_6_X_tree : PruneTree :=
+    (branch 0 (branch 11 (branch 2 (branch 4 (branch 18 (needMore 3) (branch 19 (needMore 5)
+    (branch 29 (needMore 0) (conflict 4)))) (branch 6 (branch 8 (needMore 11) (branch 18
+    (needMore 3) (branch 22 (needMore 7) (branch 23 (needMore 9) (conflict 8))))) (branch 16
+    (branch 13 (needMore 0) (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2))))
+    (branch 20 (branch 8 (needMore 5) (branch 10 (needMore 5) (branch 24 (needMore 5) (branch 25
+    (needMore 0) (conflict 10))))) (branch 21 (branch 3 (needMore 3) (branch 5 (needMore 5)
+    (branch 7 (needMore 9) (branch 17 (needMore 2) (branch 22 (needMore 8) (conflict 7))))))
+    (conflict 6)))))) (branch 13 (branch 15 (branch 4 (needMore 1) (branch 18 (needMore 1)
+    (branch 19 (needMore 1) (branch 29 (needMore 0) (conflict 4))))) (branch 25 (branch 4
+    (needMore 6) (branch 18 (needMore 3) (branch 19 (needMore 5) (branch 29 (conflict 0)
+    (conflict 4))))) (branch 29 (branch 7 (needMore 7) (branch 9 (needMore 9) (branch 21
+    (needMore 6) (branch 26 (needMore 1) (conflict 11))))) (conflict 0)))) (branch 16 (branch 4
+    (branch 1 (needMore 3) (branch 12 (needMore 8) (branch 14 (needMore 3) (branch 15 (needMore 0)
+    (branch 26 (needMore 8) (conflict 1)))))) (branch 18 (branch 6 (needMore 1) (branch 20
+    (needMore 1) (branch 21 (needMore 1) (conflict 6)))) (branch 19 (branch 6 (needMore 1)
+    (branch 20 (needMore 1) (branch 21 (needMore 1) (conflict 6)))) (branch 29 (branch 15
+    (needMore 5) (branch 25 (needMore 1) (conflict 0))) (conflict 4))))) (branch 17 (branch 4
+    (branch 6 (needMore 3) (branch 20 (needMore 3) (branch 21 (needMore 3) (conflict 6))))
+    (branch 18 (branch 6 (needMore 6) (branch 8 (needMore 7) (branch 22 (needMore 11) (branch 23
+    (needMore 7) (conflict 8))))) (branch 19 (branch 1 (needMore 1) (branch 3 (needMore 9)
+    (branch 14 (needMore 1) (branch 28 (needMore 5) (conflict 3))))) (branch 29 (branch 15
+    (needMore 1) (branch 25 (needMore 3) (conflict 0))) (conflict 4))))) (branch 27 (branch 4
+    (branch 6 (needMore 10) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6))))
+    (branch 18 (branch 1 (needMore 1) (branch 3 (needMore 5) (branch 14 (needMore 1) (branch 28
+    (needMore 8) (conflict 3))))) (branch 19 (branch 1 (needMore 1) (branch 3 (needMore 3) (branch 5
+    (needMore 7) (branch 15 (needMore 0) (branch 20 (needMore 6) (conflict 5)))))) (branch 29
+    (branch 15 (needMore 1) (branch 25 (needMore 10) (conflict 0))) (conflict 4))))) (conflict 2))))))
+    (branch 13 (branch 2 (branch 16 (branch 1 (needMore 3) (branch 12 (needMore 12) (branch 14
+    (needMore 3) (branch 15 (needMore 0) (branch 26 (needMore 11) (conflict 1)))))) (branch 17
+    (branch 4 (needMore 3) (branch 6 (needMore 3) (branch 20 (needMore 3) (branch 21 (needMore 3)
+    (conflict 6))))) (branch 27 (branch 4 (needMore 4) (branch 6 (needMore 8) (branch 20
+    (needMore 5) (branch 21 (needMore 7) (conflict 6))))) (conflict 2)))) (branch 4 (branch 6
+    (branch 8 (needMore 8) (branch 10 (needMore 12) (branch 20 (needMore 5) (branch 24 (needMore 9)
+    (branch 25 (needMore 0) (conflict 10)))))) (branch 16 (branch 17 (needMore 1) (branch 27
+    (needMore 1) (conflict 2))) (branch 20 (branch 8 (needMore 5) (branch 18 (needMore 3) (branch 22
+    (needMore 5) (branch 23 (needMore 5) (conflict 8))))) (branch 21 (branch 8 (needMore 7)
+    (branch 18 (needMore 3) (branch 22 (needMore 11) (branch 23 (needMore 7) (conflict 8)))))
+    (conflict 6))))) (branch 18 (branch 6 (branch 16 (needMore 1) (branch 20 (needMore 3) (branch 21
+    (needMore 3) (conflict 6)))) (branch 8 (branch 10 (needMore 3) (branch 20 (needMore 3)
+    (branch 24 (needMore 3) (branch 25 (needMore 0) (conflict 10))))) (branch 22 (branch 10
+    (needMore 3) (branch 12 (needMore 1) (branch 26 (needMore 1) (branch 27 (needMore 2)
+    (conflict 12))))) (branch 23 (branch 1 (needMore 1) (branch 3 (needMore 5) (branch 14
+    (needMore 1) (branch 17 (needMore 2) (branch 28 (needMore 9) (conflict 3)))))) (conflict 8)))))
+    (branch 19 (branch 1 (branch 3 (needMore 1) (branch 14 (needMore 9) (branch 17 (needMore 1)
+    (branch 28 (needMore 1) (conflict 3))))) (branch 3 (branch 14 (needMore 1) (branch 17
+    (needMore 2) (branch 28 (needMore 7) (conflict 3)))) (branch 5 (branch 7 (needMore 9) (branch 17
+    (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (branch 15
+    (branch 25 (needMore 1) (branch 29 (needMore 1) (conflict 0))) (branch 20 (branch 6 (needMore 8)
+    (branch 16 (needMore 1) (branch 21 (needMore 7) (conflict 6)))) (conflict 5)))))) (branch 29
+    (branch 15 (branch 1 (needMore 3) (branch 3 (needMore 1) (branch 5 (needMore 1) (branch 20
+    (needMore 1) (conflict 5))))) (branch 25 (branch 7 (needMore 7) (branch 9 (needMore 9)
+    (branch 21 (needMore 6) (branch 26 (needMore 1) (conflict 11))))) (conflict 0))) (conflict 4))))))
+    (branch 15 (branch 2 (branch 1 (branch 3 (needMore 5) (branch 14 (needMore 1) (branch 17
+    (needMore 2) (branch 18 (needMore 4) (branch 28 (needMore 6) (conflict 3)))))) (branch 12
+    (branch 3 (needMore 3) (branch 5 (needMore 6) (branch 19 (needMore 4) (branch 20 (needMore 10)
+    (conflict 5))))) (branch 14 (branch 3 (needMore 6) (branch 17 (needMore 2) (branch 18
+    (needMore 4) (branch 28 (needMore 5) (conflict 3))))) (branch 16 (branch 17 (needMore 3)
+    (branch 27 (needMore 5) (conflict 2))) (branch 26 (branch 3 (needMore 3) (branch 5 (needMore 6)
+    (branch 19 (needMore 4) (branch 20 (needMore 10) (conflict 5))))) (conflict 1)))))) (branch 16
+    (branch 4 (branch 1 (needMore 1) (branch 3 (needMore 3) (branch 5 (needMore 7) (branch 19
+    (needMore 4) (branch 20 (needMore 6) (conflict 5)))))) (branch 18 (branch 6 (needMore 3)
+    (branch 20 (needMore 3) (branch 21 (needMore 3) (conflict 6)))) (branch 19 (branch 6
+    (needMore 8) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6)))) (branch 29
+    (branch 25 (needMore 5) (conflict 0)) (conflict 4))))) (branch 17 (branch 1 (branch 4
+    (needMore 6) (branch 18 (needMore 3) (branch 19 (needMore 5) (branch 29 (needMore 0)
+    (conflict 4))))) (branch 12 (branch 3 (needMore 4) (branch 14 (needMore 1) (branch 18
+    (needMore 5) (branch 28 (needMore 4) (conflict 3))))) (branch 14 (branch 4 (needMore 5)
+    (branch 18 (needMore 3) (branch 19 (needMore 7) (branch 29 (needMore 0) (conflict 4)))))
+    (branch 26 (branch 3 (needMore 4) (branch 18 (needMore 5) (branch 28 (needMore 4) (conflict 3))))
+    (conflict 1))))) (branch 27 (branch 1 (branch 3 (needMore 4) (branch 14 (needMore 1) (branch 18
+    (needMore 8) (branch 28 (needMore 4) (conflict 3))))) (branch 12 (branch 4 (needMore 5)
+    (branch 18 (needMore 3) (branch 19 (needMore 9) (branch 29 (needMore 0) (conflict 4)))))
+    (branch 14 (branch 3 (needMore 4) (branch 18 (needMore 5) (branch 28 (needMore 4) (conflict 3))))
+    (branch 26 (branch 4 (needMore 5) (branch 18 (needMore 3) (branch 19 (needMore 9) (branch 29
+    (needMore 0) (conflict 4))))) (conflict 1))))) (conflict 2))))) (branch 25 (branch 2 (branch 7
+    (branch 4 (needMore 4) (branch 6 (needMore 7) (branch 16 (needMore 1) (branch 20 (needMore 5)
+    (branch 21 (needMore 9) (conflict 6)))))) (branch 9 (branch 5 (needMore 5) (branch 19
+    (needMore 4) (branch 23 (needMore 6) (branch 24 (needMore 6) (conflict 9))))) (branch 21
+    (branch 3 (needMore 3) (branch 5 (needMore 5) (branch 17 (needMore 2) (branch 22 (needMore 8)
+    (conflict 7))))) (branch 26 (branch 1 (needMore 3) (branch 12 (needMore 6) (branch 14
+    (needMore 3) (branch 16 (needMore 2) (conflict 1))))) (conflict 11))))) (branch 16 (branch 1
+    (branch 4 (needMore 3) (branch 18 (needMore 5) (branch 19 (needMore 3) (branch 29 (conflict 0)
+    (conflict 4))))) (branch 12 (branch 4 (needMore 8) (branch 18 (needMore 3) (branch 19
+    (needMore 5) (branch 29 (conflict 0) (conflict 4))))) (branch 14 (branch 3 (needMore 4)
+    (branch 17 (needMore 2) (branch 18 (needMore 6) (branch 28 (needMore 4) (conflict 3)))))
+    (branch 26 (branch 4 (needMore 8) (branch 18 (needMore 3) (branch 19 (needMore 5) (branch 29
+    (conflict 0) (conflict 4))))) (conflict 1))))) (branch 17 (branch 4 (branch 6 (needMore 3)
+    (branch 20 (needMore 3) (branch 21 (needMore 3) (conflict 6)))) (branch 18 (branch 6
+    (needMore 6) (branch 8 (needMore 7) (branch 22 (needMore 10) (branch 23 (needMore 7)
+    (conflict 8))))) (branch 19 (branch 1 (needMore 1) (branch 3 (needMore 9) (branch 14
+    (needMore 1) (branch 28 (needMore 5) (conflict 3))))) (branch 29 (conflict 0) (conflict 4)))))
+    (branch 27 (branch 4 (branch 6 (needMore 11) (branch 20 (needMore 5) (branch 21 (needMore 7)
+    (conflict 6)))) (branch 18 (branch 1 (needMore 1) (branch 3 (needMore 5) (branch 14 (needMore 1)
+    (branch 28 (needMore 8) (conflict 3))))) (branch 19 (branch 1 (needMore 1) (branch 3
+    (needMore 3) (branch 5 (needMore 7) (branch 20 (needMore 6) (conflict 5))))) (branch 29
+    (conflict 0) (conflict 4))))) (conflict 2))))) (branch 29 (branch 2 (branch 4 (branch 6
+    (needMore 6) (branch 8 (needMore 10) (branch 18 (needMore 3) (branch 22 (needMore 7) (branch 23
+    (needMore 9) (conflict 8)))))) (branch 18 (branch 6 (needMore 3) (branch 16 (needMore 1)
+    (branch 20 (needMore 3) (branch 21 (needMore 3) (conflict 6))))) (branch 19 (branch 1
+    (needMore 1) (branch 3 (needMore 3) (branch 5 (needMore 6) (branch 20 (needMore 9) (conflict 5)))))
+    (conflict 4)))) (branch 16 (branch 1 (branch 3 (needMore 6) (branch 5 (needMore 3) (branch 19
+    (needMore 3) (branch 20 (needMore 3) (conflict 5))))) (branch 12 (branch 4 (needMore 4)
+    (branch 6 (needMore 8) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6)))))
+    (branch 14 (branch 3 (needMore 5) (branch 17 (needMore 2) (branch 18 (needMore 4) (branch 28
+    (needMore 6) (conflict 3))))) (branch 26 (branch 7 (needMore 6) (branch 9 (needMore 6)
+    (branch 21 (needMore 7) (conflict 11)))) (conflict 1))))) (branch 17 (branch 1 (branch 12
+    (needMore 5) (branch 14 (needMore 3) (branch 26 (needMore 5) (conflict 1)))) (branch 3 (branch 5
+    (needMore 7) (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5)))) (branch 14
+    (branch 12 (needMore 7) (branch 26 (needMore 7) (conflict 1))) (branch 18 (branch 4 (needMore 6)
+    (branch 19 (needMore 5) (conflict 4))) (branch 28 (branch 5 (needMore 5) (branch 7 (needMore 9)
+    (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (conflict 3)))))) (branch 27
+    (branch 8 (branch 6 (needMore 6) (branch 10 (needMore 8) (branch 20 (needMore 5) (branch 24
+    (needMore 8) (conflict 10))))) (branch 10 (branch 6 (needMore 6) (branch 20 (needMore 5)
+    (branch 24 (needMore 9) (conflict 10)))) (branch 12 (branch 1 (needMore 3) (branch 14
+    (needMore 3) (branch 26 (needMore 11) (conflict 1)))) (branch 22 (branch 3 (needMore 3)
+    (branch 5 (needMore 5) (branch 7 (needMore 8) (branch 21 (needMore 6) (conflict 7)))))
+    (branch 26 (branch 1 (needMore 3) (branch 14 (needMore 3) (conflict 1))) (conflict 12))))))
+    (conflict 2))))) (conflict 0)))))) (branch 1 (branch 12 (branch 3 (branch 5 (branch 15
+    (needMore 0) (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5)))) (branch 7 (branch 9
+    (needMore 12) (branch 19 (needMore 4) (branch 23 (needMore 8) (branch 24 (needMore 10)
+    (conflict 9))))) (branch 17 (branch 14 (needMore 1) (branch 18 (needMore 2) (branch 28
+    (needMore 2) (conflict 3)))) (branch 21 (branch 9 (needMore 6) (branch 11 (needMore 0)
+    (branch 25 (needMore 0) (branch 26 (needMore 1) (conflict 11))))) (branch 22 (branch 4
+    (needMore 4) (branch 6 (needMore 6) (branch 8 (needMore 10) (branch 18 (needMore 3) (branch 23
+    (needMore 9) (conflict 8)))))) (conflict 7)))))) (branch 14 (branch 15 (branch 11 (needMore 11)
+    (branch 13 (needMore 2) (branch 25 (needMore 10) (branch 29 (needMore 4) (conflict 0)))))
+    (branch 16 (branch 5 (needMore 2) (branch 19 (needMore 2) (branch 20 (needMore 2) (conflict 5))))
+    (branch 26 (branch 5 (needMore 7) (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5))))
+    (conflict 1)))) (branch 17 (branch 2 (branch 4 (needMore 5) (branch 18 (needMore 3) (branch 19
+    (needMore 6) (branch 29 (needMore 0) (conflict 4))))) (branch 13 (branch 11 (needMore 5)
+    (branch 15 (needMore 1) (branch 25 (needMore 5) (branch 29 (needMore 4) (conflict 0)))))
+    (branch 16 (branch 15 (needMore 0) (branch 26 (needMore 5) (conflict 1))) (branch 27 (branch 5
+    (needMore 9) (branch 15 (needMore 0) (branch 19 (needMore 4) (branch 20 (needMore 6)
+    (conflict 5))))) (conflict 2))))) (branch 18 (branch 2 (branch 13 (needMore 0) (branch 16
+    (needMore 1) (branch 27 (needMore 5) (conflict 2)))) (branch 4 (branch 5 (needMore 6) (branch 15
+    (needMore 0) (branch 19 (needMore 4) (branch 20 (needMore 10) (conflict 5))))) (branch 19
+    (branch 6 (needMore 6) (branch 8 (needMore 9) (branch 22 (needMore 7) (branch 23 (needMore 12)
+    (conflict 8))))) (branch 29 (branch 5 (needMore 0) (branch 15 (needMore 1) (branch 20
+    (needMore 0) (conflict 5)))) (conflict 4))))) (branch 28 (branch 5 (branch 7 (needMore 11)
+    (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7)))) (branch 15 (branch 16
+    (needMore 0) (branch 26 (needMore 0) (conflict 1))) (branch 19 (branch 2 (needMore 2) (branch 4
+    (needMore 6) (branch 29 (needMore 0) (conflict 4)))) (branch 20 (branch 2 (needMore 2) (branch 4
+    (needMore 4) (branch 6 (needMore 8) (branch 16 (needMore 1) (branch 21 (needMore 7) (conflict 6))))))
+    (conflict 5))))) (conflict 3)))))) (branch 14 (branch 3 (branch 17 (branch 2 (needMore 4)
+    (branch 13 (needMore 0) (branch 16 (needMore 1) (branch 27 (needMore 12) (conflict 2)))))
+    (branch 18 (branch 2 (needMore 2) (branch 4 (needMore 6) (branch 19 (needMore 5) (branch 29
+    (needMore 0) (conflict 4))))) (branch 28 (branch 5 (needMore 5) (branch 7 (needMore 9)
+    (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (conflict 3)))) (branch 5
+    (branch 7 (branch 9 (needMore 9) (branch 11 (needMore 0) (branch 21 (needMore 6) (branch 25
+    (needMore 0) (branch 26 (needMore 1) (conflict 11)))))) (branch 17 (branch 18 (needMore 2)
+    (branch 28 (needMore 2) (conflict 3))) (branch 21 (branch 9 (needMore 6) (branch 19 (needMore 4)
+    (branch 23 (needMore 6) (branch 24 (needMore 6) (conflict 9))))) (branch 22 (branch 9
+    (needMore 8) (branch 19 (needMore 4) (branch 23 (needMore 12) (branch 24 (needMore 8)
+    (conflict 9))))) (conflict 7))))) (branch 15 (branch 16 (branch 11 (needMore 2) (branch 13
+    (needMore 6) (branch 25 (needMore 2) (branch 29 (needMore 2) (conflict 0))))) (branch 26
+    (branch 11 (needMore 12) (branch 13 (needMore 2) (branch 25 (needMore 10) (branch 29
+    (needMore 4) (conflict 0))))) (conflict 1))) (branch 19 (branch 2 (branch 13 (needMore 0)
+    (branch 16 (needMore 1) (branch 17 (needMore 3) (branch 27 (needMore 6) (conflict 2)))))
+    (branch 4 (branch 6 (needMore 9) (branch 16 (needMore 1) (branch 20 (conflict 5) (branch 21
+    (needMore 7) (conflict 6))))) (branch 18 (branch 17 (needMore 2) (branch 28 (needMore 8)
+    (conflict 3))) (branch 29 (branch 11 (needMore 9) (branch 13 (needMore 2) (branch 25
+    (needMore 9) (conflict 0)))) (conflict 4))))) (branch 20 (branch 2 (branch 4 (needMore 2)
+    (branch 18 (needMore 2) (branch 29 (needMore 0) (conflict 4)))) (branch 4 (branch 18
+    (needMore 3) (branch 29 (needMore 0) (conflict 4))) (branch 6 (branch 8 (needMore 10) (branch 18
+    (needMore 3) (branch 22 (needMore 7) (branch 23 (needMore 9) (conflict 8))))) (branch 16
+    (branch 26 (needMore 2) (conflict 1)) (branch 21 (branch 7 (needMore 9) (branch 17 (needMore 2)
+    (branch 22 (needMore 8) (conflict 7)))) (conflict 6)))))) (conflict 5)))))) (branch 15
+    (branch 11 (branch 3 (branch 5 (needMore 9) (branch 19 (needMore 4) (branch 20 (needMore 6)
+    (conflict 5)))) (branch 17 (branch 2 (needMore 4) (branch 13 (needMore 0) (branch 16
+    (needMore 1) (branch 27 (needMore 7) (conflict 2))))) (branch 18 (branch 2 (needMore 2)
+    (branch 4 (needMore 6) (branch 19 (needMore 5) (branch 29 (needMore 0) (conflict 4)))))
+    (branch 28 (branch 7 (needMore 7) (branch 9 (needMore 9) (branch 21 (needMore 6) (branch 25
+    (needMore 0) (branch 26 (needMore 1) (conflict 11)))))) (conflict 3))))) (branch 13 (branch 2
+    (branch 3 (needMore 4) (branch 17 (needMore 2) (branch 18 (needMore 6) (branch 28 (needMore 4)
+    (conflict 3))))) (branch 16 (branch 26 (needMore 3) (conflict 1)) (branch 17 (branch 3
+    (needMore 3) (branch 5 (needMore 5) (branch 7 (needMore 9) (branch 21 (needMore 6) (branch 22
+    (needMore 8) (conflict 7)))))) (branch 27 (branch 3 (needMore 5) (branch 18 (needMore 4)
+    (branch 28 (needMore 12) (conflict 3)))) (conflict 2))))) (branch 25 (branch 3 (branch 5
+    (needMore 9) (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5)))) (branch 17
+    (branch 2 (needMore 4) (branch 16 (needMore 1) (branch 27 (needMore 7) (conflict 2))))
+    (branch 18 (branch 2 (needMore 2) (branch 4 (needMore 6) (branch 19 (needMore 5) (branch 29
+    (conflict 0) (conflict 4))))) (branch 28 (branch 7 (needMore 7) (branch 9 (needMore 9)
+    (branch 21 (needMore 6) (branch 26 (needMore 1) (conflict 11))))) (conflict 3))))) (branch 29
+    (branch 3 (branch 5 (needMore 4) (branch 19 (needMore 7) (branch 20 (needMore 4) (conflict 5))))
+    (branch 17 (branch 2 (needMore 6) (branch 16 (needMore 1) (branch 27 (needMore 4) (conflict 2))))
+    (branch 18 (branch 4 (needMore 4) (branch 6 (needMore 6) (branch 8 (needMore 10) (branch 22
+    (needMore 7) (branch 23 (needMore 9) (conflict 8)))))) (branch 28 (branch 2 (needMore 2)
+    (branch 4 (needMore 6) (branch 19 (needMore 5) (conflict 4)))) (conflict 3))))) (conflict 0)))))
+    (branch 16 (branch 2 (branch 3 (branch 4 (needMore 6) (branch 18 (needMore 3) (branch 19
+    (needMore 5) (branch 29 (needMore 0) (conflict 4))))) (branch 17 (branch 13 (needMore 0)
+    (branch 27 (needMore 4) (conflict 2))) (branch 18 (branch 5 (needMore 7) (branch 19 (needMore 4)
+    (branch 20 (needMore 6) (conflict 5)))) (branch 28 (branch 4 (needMore 5) (branch 19
+    (needMore 9) (branch 29 (needMore 0) (conflict 4)))) (conflict 3))))) (branch 13 (branch 11
+    (branch 3 (needMore 6) (branch 17 (needMore 2) (branch 18 (needMore 4) (branch 28 (needMore 5)
+    (conflict 3))))) (branch 25 (branch 3 (needMore 6) (branch 17 (needMore 2) (branch 18
+    (needMore 4) (branch 28 (needMore 5) (conflict 3))))) (branch 29 (branch 4 (needMore 3)
+    (branch 18 (needMore 5) (branch 19 (needMore 3) (conflict 4)))) (conflict 0)))) (branch 17
+    (branch 3 (branch 18 (needMore 4) (branch 28 (needMore 6) (conflict 3))) (branch 5 (branch 4
+    (needMore 4) (branch 6 (needMore 8) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6)))))
+    (branch 19 (branch 4 (needMore 7) (branch 18 (needMore 3) (branch 29 (needMore 0) (conflict 4))))
+    (branch 20 (branch 7 (needMore 9) (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))
+    (conflict 5))))) (branch 27 (branch 3 (branch 4 (needMore 4) (branch 6 (needMore 7) (branch 20
+    (needMore 5) (branch 21 (needMore 11) (conflict 6))))) (branch 18 (branch 4 (needMore 5)
+    (branch 19 (needMore 6) (branch 29 (needMore 0) (conflict 4)))) (branch 28 (branch 5
+    (needMore 6) (branch 19 (needMore 4) (branch 20 (needMore 10) (conflict 5)))) (conflict 3))))
+    (conflict 2))))) (branch 26 (branch 3 (branch 8 (branch 5 (needMore 5) (branch 7 (needMore 8)
+    (branch 17 (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 10) (conflict 7))))))
+    (branch 10 (branch 6 (needMore 6) (branch 20 (needMore 5) (branch 24 (needMore 7) (branch 25
+    (needMore 0) (conflict 10))))) (branch 22 (branch 4 (needMore 4) (branch 6 (needMore 6)
+    (branch 18 (needMore 3) (branch 23 (needMore 9) (conflict 8))))) (branch 27 (branch 2
+    (needMore 4) (branch 13 (needMore 0) (branch 17 (needMore 3) (conflict 2)))) (conflict 12)))))
+    (branch 17 (branch 2 (branch 5 (needMore 4) (branch 19 (needMore 6) (branch 20 (needMore 4)
+    (conflict 5)))) (branch 13 (branch 11 (needMore 5) (branch 25 (needMore 5) (branch 29
+    (needMore 4) (conflict 0)))) (branch 27 (branch 5 (needMore 9) (branch 19 (needMore 4)
+    (branch 20 (needMore 6) (conflict 5)))) (conflict 2)))) (branch 18 (branch 5 (branch 7
+    (needMore 4) (branch 21 (needMore 4) (branch 22 (needMore 4) (conflict 7)))) (branch 19
+    (branch 7 (needMore 7) (branch 9 (needMore 8) (branch 23 (needMore 11) (branch 24 (needMore 8)
+    (conflict 9))))) (branch 20 (branch 2 (needMore 2) (branch 4 (needMore 10) (branch 29
+    (needMore 0) (conflict 4)))) (conflict 5)))) (branch 28 (branch 5 (branch 7 (needMore 12)
+    (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7)))) (branch 19 (branch 2
+    (needMore 2) (branch 4 (needMore 6) (branch 29 (needMore 0) (conflict 4)))) (branch 20 (branch 2
+    (needMore 2) (branch 4 (needMore 4) (branch 6 (needMore 8) (branch 21 (needMore 7) (conflict 6)))))
+    (conflict 5)))) (conflict 3))))) (conflict 1)))))) (branch 2 (branch 13 (branch 11 (branch 4
+    (branch 6 (needMore 6) (branch 8 (needMore 10) (branch 18 (needMore 3) (branch 22 (needMore 7)
+    (branch 23 (needMore 9) (conflict 8)))))) (branch 18 (branch 3 (needMore 5) (branch 14
+    (needMore 1) (branch 17 (needMore 2) (branch 28 (needMore 6) (conflict 3))))) (branch 19
+    (branch 3 (needMore 3) (branch 5 (needMore 6) (branch 15 (needMore 0) (branch 20 (needMore 9)
+    (conflict 5))))) (branch 29 (branch 15 (needMore 1) (branch 25 (needMore 6) (conflict 0)))
+    (conflict 4))))) (branch 15 (branch 12 (branch 4 (needMore 5) (branch 18 (needMore 3) (branch 19
+    (needMore 6) (branch 29 (needMore 0) (conflict 4))))) (branch 14 (branch 3 (needMore 4)
+    (branch 17 (needMore 2) (branch 18 (needMore 5) (branch 28 (needMore 4) (conflict 3)))))
+    (branch 16 (branch 17 (needMore 3) (branch 27 (needMore 4) (conflict 2))) (branch 26 (branch 4
+    (needMore 5) (branch 18 (needMore 3) (branch 19 (needMore 6) (branch 29 (needMore 0)
+    (conflict 4))))) (conflict 1))))) (branch 25 (branch 4 (branch 7 (needMore 7) (branch 9
+    (needMore 8) (branch 21 (needMore 6) (branch 26 (needMore 1) (conflict 11))))) (branch 18
+    (branch 3 (needMore 5) (branch 14 (needMore 1) (branch 17 (needMore 2) (branch 28 (needMore 6)
+    (conflict 3))))) (branch 19 (branch 3 (needMore 3) (branch 5 (needMore 6) (branch 20
+    (needMore 9) (conflict 5)))) (branch 29 (conflict 0) (conflict 4))))) (branch 29 (branch 4
+    (branch 18 (needMore 3) (branch 19 (needMore 5) (conflict 4))) (branch 6 (branch 8 (needMore 12)
+    (branch 18 (needMore 3) (branch 22 (needMore 7) (branch 23 (needMore 9) (conflict 8)))))
+    (branch 16 (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2))) (branch 20 (branch 3
+    (needMore 3) (branch 5 (needMore 7) (branch 19 (needMore 4) (conflict 5)))) (branch 21 (branch 7
+    (needMore 9) (branch 9 (needMore 7) (branch 26 (needMore 1) (conflict 11)))) (conflict 6))))))
+    (conflict 0))))) (branch 16 (branch 12 (branch 4 (branch 6 (needMore 10) (branch 20 (needMore 5)
+    (branch 21 (needMore 7) (conflict 6)))) (branch 18 (branch 3 (needMore 5) (branch 14
+    (needMore 1) (branch 17 (needMore 2) (branch 28 (needMore 8) (conflict 3))))) (branch 19
+    (branch 3 (needMore 3) (branch 5 (needMore 7) (branch 15 (needMore 0) (branch 20 (needMore 6)
+    (conflict 5))))) (branch 29 (branch 11 (needMore 11) (branch 15 (needMore 1) (branch 25
+    (needMore 10) (conflict 0)))) (conflict 4))))) (branch 14 (branch 3 (branch 4 (needMore 5)
+    (branch 18 (needMore 3) (branch 19 (needMore 7) (branch 29 (needMore 0) (conflict 4)))))
+    (branch 17 (branch 27 (needMore 4) (conflict 2)) (branch 18 (branch 4 (needMore 4) (branch 6
+    (needMore 6) (branch 8 (needMore 10) (branch 22 (needMore 7) (branch 23 (needMore 9)
+    (conflict 8)))))) (branch 28 (branch 4 (needMore 6) (branch 19 (needMore 5) (branch 29
+    (needMore 0) (conflict 4)))) (conflict 3))))) (branch 15 (branch 11 (branch 4 (needMore 5)
+    (branch 18 (needMore 3) (branch 19 (needMore 9) (branch 29 (needMore 0) (conflict 4)))))
+    (branch 25 (branch 4 (needMore 5) (branch 18 (needMore 3) (branch 19 (needMore 9) (branch 29
+    (conflict 0) (conflict 4))))) (branch 29 (branch 3 (needMore 3) (branch 5 (needMore 7)
+    (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5))))) (conflict 0)))) (branch 26
+    (branch 4 (branch 6 (needMore 10) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6))))
+    (branch 18 (branch 3 (needMore 5) (branch 17 (needMore 2) (branch 28 (needMore 8) (conflict 3))))
+    (branch 19 (branch 3 (needMore 3) (branch 5 (needMore 7) (branch 20 (needMore 6) (conflict 5))))
+    (branch 29 (branch 11 (needMore 12) (branch 25 (needMore 10) (conflict 0))) (conflict 4)))))
+    (conflict 1))))) (branch 17 (branch 3 (branch 4 (branch 5 (needMore 7) (branch 15 (needMore 0)
+    (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5))))) (branch 18 (branch 14
+    (needMore 1) (branch 28 (needMore 5) (conflict 3))) (branch 19 (branch 6 (needMore 8) (branch 20
+    (needMore 5) (branch 21 (needMore 7) (conflict 6)))) (branch 29 (branch 11 (needMore 5)
+    (branch 15 (needMore 1) (branch 25 (needMore 5) (conflict 0)))) (conflict 4))))) (branch 14
+    (branch 12 (branch 4 (needMore 7) (branch 18 (needMore 3) (branch 19 (needMore 5) (branch 29
+    (needMore 0) (conflict 4))))) (branch 15 (branch 11 (needMore 4) (branch 25 (needMore 4)
+    (branch 29 (needMore 5) (conflict 0)))) (branch 26 (branch 4 (needMore 7) (branch 18
+    (needMore 3) (branch 19 (needMore 5) (branch 29 (needMore 0) (conflict 4))))) (conflict 1))))
+    (branch 18 (branch 4 (branch 19 (needMore 5) (branch 29 (needMore 0) (conflict 4))) (branch 6
+    (branch 5 (needMore 5) (branch 7 (needMore 9) (branch 21 (needMore 6) (branch 22 (needMore 8)
+    (conflict 7))))) (branch 20 (branch 5 (needMore 8) (branch 15 (needMore 0) (branch 19
+    (needMore 4) (conflict 5)))) (branch 21 (branch 8 (needMore 10) (branch 22 (needMore 7)
+    (branch 23 (needMore 9) (conflict 8)))) (conflict 6))))) (branch 28 (branch 4 (branch 5
+    (needMore 5) (branch 7 (needMore 8) (branch 21 (needMore 6) (branch 22 (needMore 12)
+    (conflict 7))))) (branch 19 (branch 5 (needMore 6) (branch 15 (needMore 0) (branch 20
+    (needMore 7) (conflict 5)))) (branch 29 (branch 11 (needMore 6) (branch 15 (needMore 1)
+    (branch 25 (needMore 6) (conflict 0)))) (conflict 4)))) (conflict 3))))) (branch 27 (branch 4
+    (branch 6 (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6))) (branch 8 (branch 10
+    (needMore 12) (branch 20 (needMore 5) (branch 24 (needMore 9) (branch 25 (needMore 0)
+    (conflict 10))))) (branch 18 (branch 19 (needMore 3) (branch 29 (needMore 0) (conflict 4)))
+    (branch 22 (branch 3 (needMore 3) (branch 5 (needMore 5) (branch 7 (needMore 9) (branch 21
+    (needMore 6) (conflict 7))))) (branch 23 (branch 10 (needMore 9) (branch 12 (needMore 1)
+    (branch 26 (needMore 1) (conflict 12)))) (conflict 8)))))) (branch 18 (branch 3 (branch 6
+    (needMore 5) (branch 20 (needMore 7) (branch 21 (needMore 5) (conflict 6)))) (branch 14
+    (branch 12 (needMore 6) (branch 15 (needMore 0) (branch 26 (needMore 6) (conflict 1))))
+    (branch 28 (branch 6 (needMore 10) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6))))
+    (conflict 3)))) (branch 19 (branch 6 (branch 8 (needMore 5) (branch 22 (needMore 5) (branch 23
+    (needMore 5) (conflict 8)))) (branch 20 (branch 8 (needMore 8) (branch 10 (needMore 9)
+    (branch 24 (needMore 12) (branch 25 (needMore 0) (conflict 10))))) (branch 21 (branch 3
+    (needMore 3) (branch 5 (needMore 11) (branch 15 (needMore 0) (conflict 5)))) (conflict 6))))
+    (branch 29 (branch 11 (branch 6 (needMore 8) (branch 20 (needMore 5) (branch 21 (needMore 7)
+    (conflict 6)))) (branch 15 (branch 12 (needMore 5) (branch 14 (needMore 3) (branch 26
+    (needMore 5) (conflict 1)))) (branch 25 (branch 6 (needMore 8) (branch 20 (needMore 5)
+    (branch 21 (needMore 7) (conflict 6)))) (conflict 0)))) (conflict 4))))) (conflict 2)))))
+    (branch 3 (branch 14 (branch 12 (branch 5 (branch 7 (needMore 7) (branch 9 (needMore 11)
+    (branch 19 (needMore 4) (branch 23 (needMore 8) (branch 24 (needMore 10) (conflict 9))))))
+    (branch 15 (branch 16 (needMore 0) (branch 26 (needMore 0) (conflict 1))) (branch 19 (branch 4
+    (needMore 6) (branch 18 (needMore 3) (branch 29 (needMore 0) (conflict 4)))) (branch 20
+    (branch 4 (needMore 4) (branch 6 (needMore 7) (branch 16 (needMore 1) (branch 21 (needMore 10)
+    (conflict 6))))) (conflict 5))))) (branch 15 (branch 11 (branch 5 (needMore 5) (branch 7
+    (needMore 9) (branch 17 (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 8)
+    (conflict 7)))))) (branch 13 (branch 16 (needMore 1) (branch 17 (needMore 3) (branch 27
+    (needMore 7) (conflict 2)))) (branch 25 (branch 7 (needMore 9) (branch 9 (needMore 7) (branch 21
+    (needMore 6) (branch 26 (needMore 1) (conflict 11))))) (branch 29 (branch 4 (needMore 6)
+    (branch 18 (needMore 3) (branch 19 (needMore 5) (conflict 4)))) (conflict 0))))) (branch 16
+    (branch 13 (branch 11 (needMore 5) (branch 25 (needMore 5) (branch 29 (needMore 4) (conflict 0))))
+    (branch 17 (branch 18 (needMore 4) (branch 28 (needMore 5) (conflict 3))) (branch 27 (branch 5
+    (needMore 6) (branch 19 (needMore 4) (branch 20 (needMore 7) (conflict 5)))) (conflict 2))))
+    (branch 26 (branch 5 (branch 8 (needMore 8) (branch 10 (needMore 9) (branch 22 (needMore 7)
+    (branch 27 (needMore 2) (conflict 12))))) (branch 19 (branch 4 (needMore 6) (branch 18
+    (needMore 3) (branch 29 (needMore 0) (conflict 4)))) (branch 20 (branch 4 (needMore 4) (branch 6
+    (needMore 7) (branch 21 (needMore 10) (conflict 6)))) (conflict 5)))) (conflict 1)))))
+    (branch 17 (branch 13 (branch 11 (branch 5 (needMore 7) (branch 15 (needMore 0) (branch 19
+    (needMore 4) (branch 20 (needMore 6) (conflict 5))))) (branch 15 (branch 12 (needMore 12)
+    (branch 16 (needMore 2) (branch 26 (needMore 11) (conflict 1)))) (branch 25 (branch 5
+    (needMore 7) (branch 19 (needMore 4) (branch 20 (needMore 6) (conflict 5)))) (branch 29
+    (branch 4 (needMore 5) (branch 18 (needMore 3) (branch 19 (needMore 9) (conflict 4))))
+    (conflict 0))))) (branch 16 (branch 12 (branch 5 (needMore 6) (branch 15 (needMore 0) (branch 19
+    (needMore 4) (branch 20 (needMore 10) (conflict 5))))) (branch 15 (branch 11 (needMore 6)
+    (branch 25 (needMore 6) (branch 29 (needMore 4) (conflict 0)))) (branch 26 (branch 5
+    (needMore 6) (branch 19 (needMore 4) (branch 20 (needMore 10) (conflict 5)))) (conflict 1))))
+    (branch 27 (branch 5 (branch 7 (needMore 11) (branch 21 (needMore 6) (branch 22 (needMore 8)
+    (conflict 7)))) (branch 15 (branch 12 (needMore 0) (branch 26 (needMore 0) (conflict 1)))
+    (branch 19 (branch 4 (needMore 6) (branch 18 (needMore 3) (branch 29 (needMore 0) (conflict 4))))
+    (branch 20 (branch 4 (needMore 4) (branch 6 (needMore 8) (branch 21 (needMore 7) (conflict 6))))
+    (conflict 5))))) (conflict 2)))) (branch 18 (branch 4 (branch 5 (branch 6 (needMore 8)
+    (branch 16 (needMore 1) (branch 20 (needMore 5) (branch 21 (needMore 7) (conflict 6)))))
+    (branch 15 (branch 12 (needMore 0) (branch 16 (needMore 0) (branch 26 (needMore 0) (conflict 1))))
+    (branch 19 (branch 29 (needMore 0) (conflict 4)) (branch 20 (branch 7 (needMore 9) (branch 21
+    (needMore 6) (branch 22 (needMore 8) (conflict 7)))) (conflict 5))))) (branch 19 (branch 5
+    (branch 15 (needMore 0) (branch 20 (needMore 6) (conflict 5))) (branch 7 (branch 6 (needMore 6)
+    (branch 8 (needMore 10) (branch 22 (needMore 7) (branch 23 (needMore 9) (conflict 8)))))
+    (branch 21 (branch 6 (needMore 9) (branch 16 (needMore 1) (branch 20 (needMore 5) (conflict 6))))
+    (branch 22 (branch 9 (needMore 11) (branch 23 (needMore 8) (branch 24 (needMore 10) (conflict 9))))
+    (conflict 7))))) (branch 29 (branch 5 (branch 11 (needMore 8) (branch 13 (needMore 2) (branch 15
+    (needMore 1) (branch 25 (needMore 8) (conflict 0))))) (branch 15 (branch 12 (needMore 7)
+    (branch 16 (needMore 2) (branch 26 (needMore 7) (conflict 1)))) (branch 20 (branch 11
+    (needMore 6) (branch 13 (needMore 2) (branch 25 (needMore 6) (conflict 0)))) (conflict 5))))
+    (conflict 4)))) (branch 28 (branch 5 (branch 7 (branch 21 (needMore 6) (branch 22 (needMore 8)
+    (conflict 7))) (branch 9 (branch 11 (needMore 0) (branch 21 (needMore 6) (branch 25 (needMore 0)
+    (branch 26 (needMore 1) (conflict 11))))) (branch 19 (branch 4 (needMore 5) (branch 29
+    (needMore 0) (conflict 4))) (branch 23 (branch 4 (needMore 4) (branch 6 (needMore 6) (branch 8
+    (needMore 10) (branch 22 (needMore 7) (conflict 8))))) (branch 24 (branch 6 (needMore 6)
+    (branch 8 (needMore 8) (branch 10 (needMore 12) (branch 20 (needMore 5) (branch 25 (needMore 0)
+    (conflict 10)))))) (conflict 9)))))) (branch 15 (branch 12 (branch 7 (needMore 0) (branch 21
+    (needMore 0) (branch 22 (needMore 0) (conflict 7)))) (branch 16 (branch 13 (needMore 6)
+    (branch 27 (needMore 0) (conflict 2))) (branch 26 (branch 7 (needMore 0) (branch 21 (needMore 0)
+    (branch 22 (needMore 0) (conflict 7)))) (conflict 1)))) (branch 19 (branch 4 (branch 7
+    (needMore 6) (branch 21 (needMore 8) (branch 22 (needMore 6) (conflict 7)))) (branch 29
+    (branch 11 (needMore 7) (branch 13 (needMore 2) (branch 25 (needMore 7) (conflict 0))))
+    (conflict 4))) (branch 20 (branch 7 (branch 9 (needMore 6) (branch 23 (needMore 6) (branch 24
+    (needMore 6) (conflict 9)))) (branch 21 (branch 9 (needMore 9) (branch 11 (needMore 0)
+    (branch 25 (needMore 0) (branch 26 (needMore 1) (conflict 11))))) (branch 22 (branch 4
+    (needMore 4) (branch 6 (needMore 12) (branch 16 (needMore 1) (conflict 6)))) (conflict 7))))
+    (conflict 5))))) (conflict 3))))) (branch 4 (branch 18 (branch 14 (branch 12 (branch 6
+    (needMore 8) (branch 16 (needMore 1) (branch 20 (needMore 5) (branch 21 (needMore 7)
+    (conflict 6))))) (branch 15 (branch 5 (needMore 0) (branch 19 (needMore 0) (branch 20
+    (needMore 0) (conflict 5)))) (branch 16 (branch 13 (needMore 0) (branch 17 (needMore 3)
+    (branch 27 (needMore 12) (conflict 2)))) (branch 26 (branch 6 (needMore 8) (branch 20
+    (needMore 5) (branch 21 (needMore 7) (conflict 6)))) (conflict 1))))) (branch 17 (branch 13
+    (branch 11 (needMore 6) (branch 15 (needMore 1) (branch 25 (needMore 6) (branch 29 (needMore 4)
+    (conflict 0))))) (branch 16 (branch 12 (needMore 7) (branch 15 (needMore 0) (branch 26
+    (needMore 7) (conflict 1)))) (branch 27 (branch 6 (needMore 7) (branch 20 (needMore 5)
+    (branch 21 (needMore 11) (conflict 6)))) (conflict 2)))) (branch 28 (branch 6 (branch 8
+    (needMore 12) (branch 22 (needMore 7) (branch 23 (needMore 9) (conflict 8)))) (branch 16
+    (branch 13 (needMore 0) (branch 27 (needMore 1) (conflict 2))) (branch 20 (branch 5 (needMore 7)
+    (branch 15 (needMore 0) (branch 19 (needMore 4) (conflict 5)))) (branch 21 (branch 5
+    (needMore 5) (branch 7 (needMore 9) (branch 22 (needMore 8) (conflict 7)))) (conflict 6)))))
+    (conflict 3)))) (branch 19 (branch 5 (branch 6 (branch 7 (needMore 9) (branch 17 (needMore 2)
+    (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (branch 16 (branch 13
+    (needMore 0) (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2)))) (branch 20
+    (branch 15 (needMore 0) (conflict 5)) (branch 21 (branch 8 (needMore 10) (branch 22 (needMore 7)
+    (branch 23 (needMore 9) (conflict 8)))) (conflict 6))))) (branch 15 (branch 11 (branch 12
+    (needMore 6) (branch 14 (needMore 3) (branch 16 (needMore 2) (branch 26 (needMore 6)
+    (conflict 1))))) (branch 13 (branch 16 (needMore 8) (branch 17 (needMore 1) (branch 27
+    (needMore 1) (conflict 2)))) (branch 25 (branch 12 (needMore 6) (branch 14 (needMore 3)
+    (branch 16 (needMore 2) (branch 26 (needMore 6) (conflict 1))))) (branch 29 (conflict 4)
+    (conflict 0))))) (branch 20 (branch 6 (branch 16 (needMore 1) (branch 21 (needMore 7)
+    (conflict 6))) (branch 8 (branch 7 (needMore 7) (branch 9 (needMore 11) (branch 23 (needMore 8)
+    (branch 24 (needMore 10) (conflict 9))))) (branch 22 (branch 7 (needMore 10) (branch 17
+    (needMore 2) (branch 21 (needMore 6) (conflict 7)))) (branch 23 (branch 10 (needMore 12)
+    (branch 24 (needMore 9) (branch 25 (needMore 0) (conflict 10)))) (conflict 8))))) (conflict 5))))
+    (branch 29 (branch 11 (branch 6 (branch 8 (needMore 8) (branch 10 (needMore 11) (branch 20
+    (needMore 5) (branch 24 (needMore 9) (branch 25 (needMore 0) (conflict 10)))))) (branch 16
+    (branch 13 (needMore 0) (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2))))
+    (branch 20 (branch 5 (needMore 7) (branch 15 (needMore 0) (conflict 5))) (branch 21 (branch 8
+    (needMore 7) (branch 22 (needMore 12) (branch 23 (needMore 7) (conflict 8)))) (conflict 6)))))
+    (branch 13 (branch 16 (branch 12 (needMore 8) (branch 14 (needMore 3) (branch 15 (needMore 0)
+    (branch 26 (needMore 8) (conflict 1))))) (branch 17 (branch 14 (needMore 1) (branch 28
+    (needMore 6) (conflict 3))) (branch 27 (branch 6 (needMore 10) (branch 20 (needMore 5)
+    (branch 21 (needMore 7) (conflict 6)))) (conflict 2)))) (branch 15 (branch 5 (branch 12
+    (needMore 6) (branch 14 (needMore 3) (branch 16 (needMore 2) (branch 26 (needMore 6)
+    (conflict 1))))) (branch 20 (branch 12 (needMore 8) (branch 14 (needMore 3) (branch 16
+    (needMore 2) (branch 26 (needMore 8) (conflict 1))))) (conflict 5))) (branch 25 (branch 6
+    (branch 7 (needMore 7) (branch 9 (needMore 9) (branch 21 (needMore 6) (branch 26 (needMore 1)
+    (conflict 11))))) (branch 16 (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2)))
+    (branch 20 (branch 5 (needMore 7) (conflict 5)) (branch 21 (branch 8 (needMore 7) (branch 22
+    (needMore 10) (branch 23 (needMore 7) (conflict 8)))) (conflict 6))))) (conflict 0)))))
+    (conflict 4)))) (branch 5 (branch 15 (branch 11 (branch 12 (branch 7 (needMore 12) (branch 17
+    (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (branch 14
+    (branch 17 (needMore 2) (branch 18 (needMore 4) (branch 28 (needMore 7) (conflict 3))))
+    (branch 16 (branch 13 (needMore 0) (branch 17 (needMore 3) (branch 27 (needMore 6) (conflict 2))))
+    (branch 26 (branch 7 (needMore 11) (branch 17 (needMore 2) (branch 21 (needMore 6) (branch 22
+    (needMore 8) (conflict 7))))) (conflict 1))))) (branch 13 (branch 16 (branch 6 (needMore 7)
+    (branch 20 (needMore 5) (branch 21 (needMore 9) (conflict 6)))) (branch 17 (branch 12
+    (needMore 3) (branch 14 (needMore 9) (branch 26 (needMore 3) (conflict 1)))) (branch 27
+    (branch 12 (needMore 7) (branch 14 (needMore 3) (branch 26 (needMore 7) (conflict 1))))
+    (conflict 2)))) (branch 25 (branch 12 (branch 7 (needMore 10) (branch 17 (needMore 2) (branch 21
+    (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (branch 14 (branch 17 (needMore 2)
+    (branch 18 (needMore 4) (branch 28 (needMore 7) (conflict 3)))) (branch 16 (branch 17
+    (needMore 3) (branch 27 (needMore 6) (conflict 2))) (branch 26 (branch 7 (needMore 10)
+    (branch 17 (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 8) (conflict 7)))))
+    (conflict 1))))) (branch 29 (branch 18 (branch 14 (needMore 7) (branch 17 (needMore 1)
+    (branch 28 (needMore 1) (conflict 3)))) (branch 19 (branch 20 (needMore 1) (conflict 5))
+    (conflict 4))) (conflict 0))))) (branch 19 (branch 18 (branch 14 (branch 12 (needMore 7)
+    (branch 16 (needMore 2) (branch 26 (needMore 7) (conflict 1)))) (branch 17 (branch 13
+    (needMore 0) (branch 16 (needMore 1) (branch 27 (needMore 8) (conflict 2)))) (branch 28
+    (branch 7 (needMore 8) (branch 21 (needMore 6) (branch 22 (needMore 12) (conflict 7))))
+    (conflict 3)))) (branch 29 (branch 11 (branch 7 (needMore 9) (branch 17 (needMore 2) (branch 21
+    (needMore 6) (branch 22 (needMore 8) (conflict 7))))) (branch 13 (branch 16 (needMore 1)
+    (branch 17 (needMore 3) (branch 27 (needMore 7) (conflict 2)))) (branch 25 (branch 7
+    (needMore 9) (branch 17 (needMore 2) (branch 21 (needMore 6) (branch 22 (needMore 8)
+    (conflict 7))))) (conflict 0)))) (conflict 4))) (branch 20 (branch 6 (branch 7 (branch 8
+    (needMore 10) (branch 18 (needMore 3) (branch 22 (needMore 7) (branch 23 (needMore 9)
+    (conflict 8))))) (branch 17 (branch 13 (needMore 0) (branch 16 (needMore 1) (branch 27
+    (needMore 3) (conflict 2)))) (branch 21 (branch 16 (needMore 1) (conflict 6)) (branch 22
+    (branch 9 (needMore 11) (branch 23 (needMore 8) (branch 24 (needMore 10) (conflict 9))))
+    (conflict 7))))) (branch 16 (branch 12 (branch 13 (needMore 0) (branch 17 (needMore 3)
+    (branch 27 (needMore 7) (conflict 2)))) (branch 14 (branch 13 (needMore 0) (branch 17
+    (needMore 9) (branch 27 (needMore 3) (conflict 2)))) (branch 26 (branch 13 (needMore 0)
+    (branch 17 (needMore 3) (branch 27 (needMore 7) (conflict 2)))) (conflict 1)))) (branch 21
+    (branch 7 (branch 17 (needMore 2) (branch 22 (needMore 8) (conflict 7))) (branch 9 (branch 8
+    (needMore 8) (branch 10 (needMore 12) (branch 24 (needMore 9) (branch 25 (needMore 0)
+    (conflict 10))))) (branch 23 (branch 8 (needMore 11) (branch 18 (needMore 3) (branch 22
+    (needMore 7) (conflict 8)))) (branch 24 (branch 11 (needMore 0) (branch 25 (needMore 0)
+    (branch 26 (needMore 1) (conflict 11)))) (conflict 9))))) (conflict 6)))) (conflict 5))))
+    (branch 6 (branch 16 (branch 13 (branch 11 (branch 12 (needMore 8) (branch 14 (needMore 3)
+    (branch 15 (needMore 0) (branch 26 (needMore 8) (conflict 1))))) (branch 15 (branch 19
+    (needMore 4) (branch 20 (needMore 6) (conflict 5))) (branch 25 (branch 12 (needMore 8)
+    (branch 14 (needMore 3) (branch 26 (needMore 8) (conflict 1)))) (branch 29 (branch 18
+    (needMore 1) (branch 19 (needMore 1) (conflict 4))) (conflict 0))))) (branch 17 (branch 14
+    (branch 7 (needMore 8) (branch 21 (needMore 6) (branch 22 (needMore 10) (conflict 7))))
+    (branch 18 (branch 19 (needMore 1) (branch 29 (needMore 0) (conflict 4))) (branch 28 (branch 12
+    (needMore 7) (branch 15 (needMore 0) (branch 26 (needMore 7) (conflict 1)))) (conflict 3))))
+    (branch 27 (branch 12 (branch 8 (needMore 12) (branch 18 (needMore 3) (branch 22 (needMore 7)
+    (branch 23 (needMore 9) (conflict 8))))) (branch 14 (branch 18 (needMore 4) (branch 28
+    (needMore 8) (conflict 3))) (branch 15 (branch 19 (needMore 0) (branch 20 (needMore 0)
+    (conflict 5))) (branch 26 (branch 8 (needMore 11) (branch 18 (needMore 3) (branch 22
+    (needMore 7) (branch 23 (needMore 9) (conflict 8))))) (conflict 1))))) (conflict 2))))
+    (branch 20 (branch 15 (branch 12 (branch 11 (needMore 8) (branch 13 (needMore 2) (branch 25
+    (needMore 8) (branch 29 (needMore 4) (conflict 0))))) (branch 14 (branch 17 (needMore 0)
+    (branch 18 (needMore 0) (branch 28 (needMore 0) (conflict 3)))) (branch 26 (branch 11
+    (needMore 8) (branch 13 (needMore 2) (branch 25 (needMore 8) (branch 29 (needMore 4)
+    (conflict 0))))) (conflict 1)))) (branch 19 (branch 18 (branch 14 (needMore 1) (branch 17
+    (needMore 2) (branch 28 (needMore 9) (conflict 3)))) (branch 29 (branch 11 (needMore 8)
+    (branch 13 (needMore 2) (branch 25 (needMore 8) (conflict 0)))) (conflict 4))) (conflict 5)))
+    (branch 21 (branch 7 (branch 8 (branch 9 (needMore 11) (branch 19 (needMore 4) (branch 23
+    (needMore 8) (branch 24 (needMore 10) (conflict 9))))) (branch 18 (branch 19 (needMore 3)
+    (branch 29 (needMore 0) (conflict 4))) (branch 22 (branch 17 (needMore 2) (conflict 7))
+    (branch 23 (branch 10 (needMore 12) (branch 24 (needMore 9) (branch 25 (needMore 0)
+    (conflict 10)))) (conflict 8))))) (branch 17 (branch 13 (branch 14 (needMore 0) (branch 18
+    (needMore 0) (branch 28 (needMore 0) (conflict 3)))) (branch 27 (branch 14 (needMore 1)
+    (branch 18 (needMore 4) (branch 28 (needMore 8) (conflict 3)))) (conflict 2))) (branch 22
+    (branch 8 (branch 18 (needMore 3) (branch 23 (needMore 9) (conflict 8))) (branch 10 (branch 9
+    (needMore 9) (branch 11 (needMore 0) (branch 25 (needMore 0) (branch 26 (needMore 1)
+    (conflict 11))))) (branch 24 (branch 9 (needMore 12) (branch 19 (needMore 4) (branch 23
+    (needMore 8) (conflict 9)))) (branch 25 (branch 12 (needMore 0) (branch 26 (needMore 0)
+    (branch 27 (needMore 0) (conflict 12)))) (conflict 10))))) (conflict 7)))) (conflict 6))))
+    (branch 7 (branch 17 (branch 13 (branch 14 (branch 11 (needMore 1) (branch 15 (needMore 5)
+    (branch 25 (needMore 1) (branch 29 (needMore 1) (conflict 0))))) (branch 18 (branch 19
+    (needMore 0) (branch 29 (needMore 8) (conflict 4))) (branch 28 (branch 11 (needMore 9)
+    (branch 15 (needMore 1) (branch 25 (needMore 9) (branch 29 (needMore 4) (conflict 0)))))
+    (conflict 3)))) (branch 16 (branch 20 (branch 15 (needMore 0) (branch 19 (needMore 1)
+    (conflict 5))) (branch 21 (branch 22 (needMore 1) (conflict 7)) (conflict 6))) (branch 27
+    (branch 14 (branch 12 (needMore 9) (branch 15 (needMore 0) (branch 26 (needMore 9) (conflict 1))))
+    (branch 18 (branch 19 (needMore 5) (branch 29 (needMore 0) (conflict 4))) (branch 28 (branch 9
+    (needMore 12) (branch 19 (needMore 4) (branch 23 (needMore 8) (branch 24 (needMore 10)
+    (conflict 9))))) (conflict 3)))) (conflict 2)))) (branch 21 (branch 16 (branch 13 (branch 11
+    (needMore 1) (branch 15 (needMore 5) (branch 25 (needMore 1) (branch 29 (needMore 1)
+    (conflict 0))))) (branch 27 (branch 12 (needMore 9) (branch 14 (needMore 3) (branch 15
+    (needMore 0) (branch 26 (needMore 9) (conflict 1))))) (conflict 2))) (branch 20 (branch 15
+    (branch 12 (needMore 0) (branch 14 (needMore 0) (branch 26 (needMore 0) (conflict 1))))
+    (branch 19 (branch 18 (needMore 3) (branch 29 (needMore 0) (conflict 4))) (conflict 5)))
+    (conflict 6))) (branch 22 (branch 8 (branch 9 (branch 10 (needMore 12) (branch 20 (needMore 5)
+    (branch 24 (needMore 9) (branch 25 (needMore 0) (conflict 10))))) (branch 19 (branch 18
+    (needMore 3) (branch 29 (needMore 0) (conflict 4))) (branch 23 (branch 18 (needMore 3)
+    (conflict 8)) (branch 24 (branch 11 (needMore 0) (branch 25 (needMore 0) (branch 26 (needMore 1)
+    (conflict 11)))) (conflict 9))))) (branch 18 (branch 14 (branch 19 (needMore 1) (branch 29
+    (needMore 0) (conflict 4))) (branch 28 (branch 19 (needMore 5) (branch 29 (needMore 0)
+    (conflict 4))) (conflict 3))) (branch 23 (branch 9 (branch 19 (needMore 4) (branch 24
+    (needMore 10) (conflict 9))) (branch 11 (branch 13 (needMore 2) (branch 15 (needMore 1)
+    (branch 25 (needMore 10) (branch 29 (needMore 4) (conflict 0))))) (branch 25 (branch 13
+    (needMore 2) (branch 15 (needMore 1) (branch 29 (needMore 4) (conflict 0)))) (branch 26
+    (branch 12 (needMore 12) (branch 14 (needMore 3) (branch 15 (needMore 0) (branch 16 (needMore 2)
+    (conflict 1))))) (conflict 11))))) (conflict 8)))) (conflict 7)))) (branch 8 (branch 18
+    (branch 19 (branch 15 (branch 14 (needMore 0) (branch 17 (needMore 0) (branch 28 (needMore 0)
+    (conflict 3)))) (branch 20 (branch 16 (needMore 1) (branch 21 (needMore 3) (conflict 6)))
+    (conflict 5))) (branch 29 (branch 14 (branch 11 (needMore 1) (branch 13 (needMore 1) (branch 15
+    (needMore 5) (branch 25 (needMore 1) (conflict 0))))) (branch 17 (branch 21 (needMore 0)
+    (branch 22 (needMore 0) (conflict 7))) (branch 28 (branch 11 (needMore 10) (branch 13
+    (needMore 2) (branch 15 (needMore 1) (branch 25 (needMore 11) (conflict 0))))) (conflict 3))))
+    (conflict 4))) (branch 22 (branch 17 (branch 14 (branch 13 (needMore 0) (branch 16 (needMore 6)
+    (branch 27 (needMore 1) (conflict 2)))) (branch 28 (branch 13 (needMore 0) (branch 16
+    (needMore 1) (branch 27 (needMore 10) (conflict 2)))) (conflict 3))) (branch 21 (branch 16
+    (branch 13 (needMore 0) (branch 27 (needMore 1) (conflict 2))) (branch 20 (branch 15
+    (needMore 0) (branch 19 (needMore 4) (conflict 5))) (conflict 6))) (conflict 7))) (branch 23
+    (branch 9 (branch 10 (branch 11 (needMore 0) (branch 21 (needMore 6) (branch 25 (needMore 0)
+    (branch 26 (needMore 1) (conflict 11))))) (branch 20 (branch 15 (needMore 0) (branch 19
+    (needMore 4) (conflict 5))) (branch 24 (branch 19 (needMore 4) (conflict 9)) (branch 25
+    (branch 12 (needMore 0) (branch 26 (needMore 0) (branch 27 (needMore 0) (conflict 12))))
+    (conflict 10))))) (branch 19 (branch 29 (branch 15 (needMore 1) (branch 20 (needMore 0)
+    (conflict 5))) (conflict 4)) (branch 24 (branch 10 (branch 20 (needMore 5) (branch 25
+    (needMore 0) (conflict 10))) (branch 12 (branch 14 (needMore 3) (branch 15 (needMore 0)
+    (branch 16 (needMore 2) (branch 26 (needMore 11) (conflict 1))))) (branch 26 (branch 14
+    (needMore 3) (branch 15 (needMore 0) (branch 16 (needMore 2) (conflict 1)))) (branch 27
+    (branch 13 (needMore 0) (branch 16 (needMore 1) (branch 17 (needMore 3) (conflict 2))))
+    (conflict 12))))) (conflict 9)))) (conflict 8)))) (branch 9 (branch 19 (branch 18 (branch 15
+    (branch 22 (needMore 0) (branch 23 (needMore 0) (conflict 8))) (branch 20 (branch 16
+    (needMore 1) (branch 21 (needMore 3) (conflict 6))) (conflict 5))) (branch 29 (branch 15
+    (branch 12 (needMore 11) (branch 14 (needMore 3) (branch 16 (needMore 2) (branch 26
+    (needMore 12) (conflict 1))))) (branch 20 (branch 16 (needMore 0) (branch 21 (needMore 0)
+    (conflict 6))) (conflict 5))) (conflict 4))) (branch 23 (branch 18 (branch 29 (branch 14
+    (needMore 0) (branch 17 (needMore 0) (branch 28 (needMore 0) (conflict 3)))) (conflict 4))
+    (branch 22 (branch 17 (branch 14 (needMore 1) (branch 28 (needMore 2) (conflict 3))) (branch 21
+    (branch 16 (needMore 1) (branch 20 (needMore 5) (conflict 6))) (conflict 7))) (conflict 8)))
+    (branch 24 (branch 10 (branch 11 (branch 13 (needMore 2) (branch 15 (needMore 1) (branch 25
+    (needMore 10) (branch 29 (needMore 4) (conflict 0))))) (branch 21 (branch 16 (needMore 1)
+    (branch 20 (needMore 5) (conflict 6))) (branch 25 (branch 20 (needMore 0) (conflict 10))
+    (branch 26 (branch 12 (needMore 12) (branch 14 (needMore 3) (branch 15 (needMore 0) (branch 16
+    (needMore 2) (conflict 1))))) (conflict 11))))) (branch 20 (branch 15 (branch 16 (needMore 0)
+    (branch 21 (needMore 0) (conflict 6))) (conflict 5)) (branch 25 (branch 11 (branch 21
+    (needMore 6) (branch 26 (needMore 1) (conflict 11))) (branch 13 (branch 16 (needMore 1)
+    (branch 17 (needMore 3) (branch 27 (needMore 12) (conflict 2)))) (branch 15 (conflict 5)
+    (branch 29 (branch 18 (needMore 3) (conflict 4)) (conflict 0))))) (conflict 10)))) (conflict 9))))
+    (branch 10 (branch 20 (branch 15 (branch 16 (branch 13 (needMore 12) (branch 17 (needMore 0)
+    (branch 27 (needMore 0) (conflict 2)))) (branch 21 (branch 17 (needMore 0) (branch 22
+    (needMore 0) (conflict 7))) (conflict 6))) (branch 19 (branch 18 (branch 16 (needMore 1)
+    (branch 21 (needMore 3) (conflict 6))) (branch 29 (branch 16 (needMore 0) (branch 21
+    (needMore 0) (conflict 6))) (conflict 4))) (conflict 5))) (branch 24 (branch 19 (branch 15
+    (branch 18 (needMore 0) (branch 29 (needMore 1) (conflict 4))) (conflict 5)) (branch 23
+    (branch 18 (branch 29 (needMore 0) (conflict 4)) (branch 22 (branch 17 (needMore 2) (branch 21
+    (needMore 6) (conflict 7))) (conflict 8))) (conflict 9))) (branch 25 (branch 11 (branch 12
+    (branch 14 (needMore 3) (branch 15 (needMore 0) (branch 16 (needMore 2) (branch 26 (needMore 11)
+    (conflict 1))))) (branch 22 (branch 17 (needMore 2) (branch 21 (needMore 6) (conflict 7)))
+    (branch 26 (branch 21 (needMore 1) (conflict 11)) (branch 27 (branch 13 (needMore 0) (branch 16
+    (needMore 1) (branch 17 (needMore 3) (conflict 2)))) (conflict 12))))) (branch 21 (branch 16
+    (branch 17 (needMore 0) (branch 22 (needMore 0) (conflict 7))) (conflict 6)) (branch 26
+    (branch 13 (branch 16 (conflict 6) (branch 17 (needMore 1) (branch 27 (needMore 1) (conflict 2))))
+    (branch 15 (branch 19 (needMore 4) (conflict 5)) (branch 29 (branch 18 (needMore 1) (branch 19
+    (needMore 1) (conflict 4))) (conflict 0)))) (conflict 11)))) (conflict 10)))) (branch 11
+    (branch 21 (branch 16 (branch 17 (branch 14 (needMore 0) (branch 18 (needMore 0) (branch 28
+    (needMore 0) (conflict 3)))) (branch 22 (branch 13 (needMore 1) (branch 27 (needMore 0)
+    (conflict 2))) (conflict 7))) (branch 20 (branch 15 (branch 17 (needMore 1) (branch 22
+    (needMore 1) (conflict 7))) (branch 19 (branch 18 (needMore 0) (branch 29 (needMore 7)
+    (conflict 4))) (conflict 5))) (conflict 6))) (branch 25 (branch 20 (branch 16 (branch 15
+    (needMore 0) (branch 19 (needMore 1) (conflict 5))) (conflict 6)) (branch 24 (branch 19
+    (branch 15 (needMore 0) (conflict 5)) (branch 23 (branch 18 (needMore 3) (branch 22 (needMore 7)
+    (conflict 8))) (conflict 9))) (conflict 10))) (branch 26 (branch 13 (branch 16 (branch 20
+    (needMore 5) (conflict 6)) (branch 17 (branch 22 (needMore 1) (conflict 7)) (branch 27
+    (branch 12 (needMore 12) (branch 14 (needMore 3) (branch 15 (needMore 0) (conflict 1))))
+    (conflict 2)))) (branch 15 (branch 19 (branch 18 (needMore 3) (branch 29 (conflict 0)
+    (conflict 4))) (branch 20 (branch 16 (needMore 1) (conflict 6)) (conflict 5))) (branch 29
+    (branch 18 (branch 22 (needMore 1) (branch 23 (needMore 1) (conflict 8))) (branch 19 (branch 20
+    (needMore 1) (conflict 5)) (conflict 4))) (conflict 0)))) (conflict 11)))) (branch 12 (branch 22
+    (branch 17 (branch 18 (branch 19 (needMore 1) (branch 29 (needMore 0) (conflict 4))) (branch 23
+    (branch 14 (needMore 2) (branch 28 (needMore 1) (conflict 3))) (conflict 8))) (branch 21
+    (branch 16 (branch 13 (needMore 0) (branch 27 (needMore 8) (conflict 2))) (branch 20 (branch 15
+    (needMore 0) (branch 19 (needMore 1) (conflict 5))) (conflict 6))) (conflict 7))) (branch 26
+    (branch 21 (branch 17 (branch 16 (needMore 1) (branch 20 (needMore 2) (conflict 6)))
+    (conflict 7)) (branch 25 (branch 20 (branch 16 (needMore 0) (conflict 6)) (branch 24 (branch 19
+    (needMore 0) (branch 23 (needMore 0) (conflict 9))) (conflict 10))) (conflict 11))) (branch 27
+    (branch 14 (branch 13 (branch 15 (needMore 1) (branch 25 (needMore 3) (branch 29 (needMore 3)
+    (conflict 0)))) (branch 16 (branch 15 (needMore 0) (conflict 1)) (branch 17 (branch 21
+    (needMore 6) (conflict 7)) (conflict 2)))) (branch 15 (branch 19 (branch 18 (needMore 0)
+    (branch 29 (needMore 2) (conflict 4))) (branch 20 (branch 16 (needMore 0) (branch 21
+    (needMore 0) (conflict 6))) (conflict 5))) (branch 16 (branch 20 (branch 19 (needMore 4)
+    (conflict 5)) (branch 21 (branch 17 (needMore 2) (conflict 7)) (conflict 6))) (conflict 1))))
+    (conflict 12)))) (branch 13 (branch 15 (branch 19 (branch 18 (branch 22 (needMore 1) (branch 23
+    (needMore 1) (conflict 8))) (branch 29 (branch 25 (needMore 1) (conflict 0)) (conflict 4)))
+    (branch 20 (branch 16 (branch 24 (needMore 9) (branch 25 (needMore 0) (conflict 10))) (branch 21
+    (branch 14 (needMore 2) (branch 26 (needMore 2) (conflict 1))) (conflict 6))) (conflict 5)))
+    (branch 25 (branch 20 (branch 19 (branch 18 (needMore 2) (branch 29 (conflict 0) (conflict 4)))
+    (conflict 5)) (branch 24 (branch 19 (conflict 5) (branch 23 (branch 18 (needMore 2) (branch 22
+    (needMore 2) (conflict 8))) (conflict 9))) (conflict 10))) (branch 29 (branch 18 (branch 22
+    (branch 17 (needMore 12) (branch 21 (needMore 2) (conflict 7))) (branch 23 (branch 19
+    (needMore 2) (branch 24 (needMore 2) (conflict 9))) (conflict 8))) (branch 19 (branch 20
+    (branch 24 (needMore 2) (conflict 10)) (conflict 5)) (conflict 4))) (conflict 0)))) (branch 14
+    (branch 15 (branch 25 (branch 19 (branch 18 (needMore 8) (branch 29 (conflict 0) (conflict 4)))
+    (branch 20 (branch 16 (needMore 1) (branch 21 (needMore 3) (conflict 6))) (conflict 5)))
+    (branch 29 (branch 18 (branch 19 (conflict 4) (branch 20 (needMore 6) (conflict 5))) (branch 19
+    (branch 17 (needMore 2) (branch 28 (needMore 9) (conflict 3))) (conflict 4))) (conflict 0)))
+    (branch 16 (branch 17 (branch 20 (branch 19 (needMore 4) (conflict 5)) (branch 21 (branch 25
+    (needMore 0) (branch 26 (conflict 1) (conflict 11))) (conflict 6))) (branch 27 (branch 18
+    (branch 19 (needMore 5) (branch 29 (needMore 0) (conflict 4))) (branch 28 (branch 20
+    (needMore 5) (branch 21 (needMore 7) (conflict 6))) (conflict 3))) (conflict 2))) (branch 26
+    (branch 21 (branch 20 (branch 19 (needMore 3) (conflict 5)) (conflict 6)) (branch 25 (branch 29
+    (branch 18 (needMore 8) (branch 19 (needMore 3) (conflict 4))) (conflict 0)) (conflict 11)))
+    (conflict 1)))) (branch 15 (branch 25 (branch 16 (branch 17 (branch 18 (needMore 4) (branch 28
+    (needMore 5) (conflict 3))) (branch 27 (branch 19 (needMore 4) (branch 20 (needMore 11)
+    (conflict 5))) (conflict 2))) (branch 26 (branch 19 (branch 18 (needMore 3) (branch 29
+    (conflict 0) (conflict 4))) (branch 20 (branch 21 (needMore 7) (conflict 6)) (conflict 5)))
+    (conflict 1))) (branch 29 (branch 16 (branch 17 (branch 18 (needMore 5) (branch 28 (needMore 4)
+    (conflict 3))) (branch 27 (branch 18 (needMore 3) (branch 19 (needMore 6) (conflict 4)))
+    (conflict 2))) (branch 26 (branch 21 (branch 20 (needMore 4) (conflict 6)) (conflict 11))
+    (conflict 1))) (conflict 0))) (branch 16 (branch 26 (branch 17 (branch 18 (branch 19
+    (needMore 5) (branch 29 (needMore 0) (conflict 4))) (branch 28 (branch 20 (needMore 5)
+    (branch 21 (needMore 12) (conflict 6))) (conflict 3))) (branch 27 (branch 20 (branch 19
+    (needMore 4) (conflict 5)) (branch 21 (branch 22 (needMore 8) (conflict 7)) (conflict 6)))
+    (conflict 2))) (conflict 1)) (branch 17 (branch 27 (branch 18 (branch 19 (branch 20 (needMore 6)
+    (conflict 5)) (branch 29 (branch 25 (needMore 7) (conflict 0)) (conflict 4))) (branch 28
+    (branch 21 (branch 20 (needMore 5) (conflict 6)) (branch 22 (branch 23 (needMore 9) (conflict 8))
+    (conflict 7))) (conflict 3))) (conflict 2)) (branch 18 (branch 28 (branch 19 (branch 20
+    (branch 21 (needMore 7) (conflict 6)) (conflict 5)) (branch 29 (branch 25 (branch 22
+    (needMore 7) (branch 23 (needMore 9) (conflict 8))) (conflict 0)) (conflict 4))) (conflict 3))
+    (branch 19 (branch 29 (branch 25 (branch 20 (branch 21 (needMore 7) (conflict 6)) (conflict 5))
+    (conflict 0)) (conflict 4)) (branch 20 (conflict 5) (branch 21 (conflict 6) (branch 22
+    (conflict 7) (branch 23 (conflict 8) (branch 24 (conflict 9) (branch 25 (conflict 10) (branch 26
+    (conflict 1) (branch 27 (conflict 2) (branch 28 (conflict 3) (branch 29 (conflict 0)
+    (inSpan [false, false, false, false, false, false, false, false, false, false, false, false, false])))))))))))))))))))))))))))))))
+
+def cyclic_30_4_6_X_prune : PruneCertificate := {
+  opp := [
+    [true, false, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true],
+    [false, true, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, true, false, false, false],
+    [true, false, true, false, false, false, false, false, false, false, false, false, false, true, false, false, true, true, false, false, false, false, false, false, false, false, false, true, false, false],
+    [false, true, false, true, false, false, false, false, false, false, false, false, false, false, true, false, false, true, true, false, false, false, false, false, false, false, false, false, true, false],
+    [true, false, true, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, true],
+    [false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false, false, false],
+    [false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false, false],
+    [false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false],
+    [false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false],
+    [false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false],
+    [false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false],
+    [false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false],
+    [false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false]
+  ],
+  same := [
+    [true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, false],
+    [false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false],
+    [false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false],
+    [false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false],
+    [false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false],
+    [false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false],
+    [false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false],
+    [false, false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false],
+    [false, false, false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false],
+    [true, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, false, true],
+    [false, true, false, false, false, false, false, false, false, false, false, true, true, false, false, true, false, false, false, false, false, false, false, false, false, false, true, false, true, false],
+    [false, false, true, false, false, false, false, false, false, false, false, false, true, true, false, false, true, false, false, false, false, false, false, false, false, false, false, true, false, true]
+  ],
+  tree := cyclic_30_4_6_X_tree
+}
+
+set_option maxRecDepth 1000000 in
+theorem cyclic_30_4_6_X_accepts :
+    checkPruneCertificate cyclic_30_4_6 Sector.X 6 cyclic_30_4_6_X_prune = true := by decide +kernel
+
+theorem cyclic_30_4_6_X_lower_bound :
+    ∀ d : Nat, exactDistance? Sector.X cyclic_30_4_6 = some d → 6 ≤ d :=
+  pruneCertificate_lower_bound cyclic_30_4_6 Sector.X 6 cyclic_30_4_6_X_prune cyclic_30_4_6_X_accepts
+
+set_option maxRecDepth 1000000 in
+theorem cyclic_30_4_6_X_witness :
+    witnessValid cyclic_30_4_6 Sector.X 6
+      [true, true, true, false, true, false, false, false, false, false, false, false, false, false, false, true, false, false, true, false, false, false, false, false, false, false, false, false, false, false] = true := by decide +kernel
+
+theorem cyclic_30_4_6_X_exact :
+    exactDistance? Sector.X cyclic_30_4_6 = some 6 :=
+  pruneCertificate_equality cyclic_30_4_6 Sector.X 6 cyclic_30_4_6_X_prune cyclic_30_4_6_X_accepts _ cyclic_30_4_6_X_witness
+
+open PruneTree in
+def cyclic_30_4_6_Z_tree : PruneTree :=
+    (branch 0 (branch 1 (branch 2 (branch 3 (branch 4 (needMore 4) (branch 8 (needMore 7) (branch 18
+    (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 5) (conflict 3)))))) (branch 7
+    (branch 6 (needMore 1) (branch 11 (needMore 7) (branch 21 (needMore 2) (branch 23 (needMore 4)
+    (branch 25 (needMore 7) (conflict 6)))))) (branch 17 (branch 5 (needMore 4) (branch 15
+    (needMore 10) (branch 19 (needMore 2) (conflict 0)))) (branch 19 (branch 5 (needMore 5)
+    (branch 15 (needMore 4) (conflict 0))) (branch 21 (branch 4 (needMore 3) (branch 5 (needMore 0)
+    (branch 9 (needMore 6) (branch 23 (needMore 8) (conflict 4))))) (conflict 2)))))) (branch 6
+    (branch 5 (branch 15 (needMore 4) (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0))))
+    (branch 10 (branch 7 (needMore 2) (branch 11 (needMore 9) (branch 21 (needMore 2) (branch 23
+    (needMore 4) (branch 25 (needMore 8) (conflict 6)))))) (branch 20 (branch 16 (needMore 3)
+    (branch 18 (needMore 6) (conflict 1))) (branch 22 (branch 3 (needMore 2) (branch 4 (needMore 4)
+    (branch 8 (needMore 6) (branch 18 (needMore 1) (conflict 3))))) (branch 24 (branch 7
+    (needMore 2) (branch 8 (needMore 3) (branch 12 (needMore 6) (branch 26 (needMore 6) (conflict 7)))))
+    (conflict 5)))))) (branch 16 (branch 12 (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 22
+    (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9) (conflict 7)))))) (branch 13
+    (branch 11 (needMore 6) (branch 15 (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 8)
+    (conflict 11))))) (branch 27 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 23
+    (needMore 4) (branch 25 (needMore 6) (conflict 8))))) (branch 29 (branch 11 (needMore 6)
+    (branch 15 (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 9) (conflict 11)))))
+    (conflict 12))))) (branch 18 (branch 3 (branch 7 (needMore 6) (branch 17 (needMore 0) (branch 19
+    (needMore 0) (branch 21 (needMore 4) (conflict 2))))) (branch 4 (branch 5 (needMore 0) (branch 9
+    (needMore 8) (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 6)
+    (conflict 4)))))) (branch 8 (branch 7 (needMore 2) (branch 12 (needMore 8) (branch 22
+    (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 8) (conflict 7)))))) (branch 20
+    (conflict 1) (branch 22 (branch 5 (needMore 0) (branch 10 (needMore 7) (branch 24 (needMore 9)
+    (conflict 5)))) (conflict 3)))))) (branch 20 (branch 3 (branch 7 (needMore 5) (branch 17
+    (needMore 0) (branch 19 (needMore 0) (branch 21 (needMore 4) (conflict 2))))) (branch 4
+    (branch 5 (needMore 0) (branch 10 (needMore 4) (branch 22 (needMore 3) (branch 24 (needMore 4)
+    (conflict 5))))) (branch 8 (branch 5 (needMore 0) (branch 10 (needMore 7) (branch 22
+    (conflict 3) (branch 24 (needMore 8) (conflict 5))))) (branch 22 (branch 7 (needMore 2)
+    (branch 12 (needMore 10) (branch 24 (needMore 5) (branch 26 (needMore 9) (conflict 7)))))
+    (conflict 3))))) (conflict 1)))))) (branch 5 (branch 4 (branch 3 (branch 2 (needMore 1)
+    (branch 7 (needMore 5) (branch 17 (needMore 0) (branch 19 (needMore 0) (branch 21 (needMore 4)
+    (conflict 2)))))) (branch 8 (branch 6 (needMore 1) (branch 10 (needMore 7) (branch 20
+    (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 8) (conflict 5)))))) (branch 18
+    (branch 2 (needMore 2) (branch 6 (needMore 6) (branch 16 (needMore 5) (branch 20 (needMore 3)
+    (conflict 1))))) (branch 20 (branch 2 (needMore 2) (branch 6 (needMore 5) (branch 16
+    (needMore 10) (conflict 1)))) (branch 22 (branch 7 (needMore 2) (branch 12 (needMore 10)
+    (branch 24 (needMore 5) (branch 26 (needMore 9) (conflict 7))))) (conflict 3)))))) (branch 9
+    (branch 6 (branch 2 (needMore 2) (branch 16 (needMore 6) (branch 18 (needMore 3) (branch 20
+    (needMore 3) (conflict 1))))) (branch 10 (branch 8 (needMore 3) (branch 13 (needMore 12)
+    (branch 23 (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 10) (conflict 8))))))
+    (branch 20 (branch 2 (needMore 2) (branch 16 (needMore 3) (branch 18 (needMore 8) (conflict 1))))
+    (branch 22 (branch 3 (needMore 2) (branch 8 (needMore 9) (branch 18 (needMore 1) (conflict 3))))
+    (branch 24 (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 12 (needMore 8) (branch 26
+    (needMore 8) (conflict 7))))) (conflict 5)))))) (branch 19 (branch 15 (branch 11 (needMore 2)
+    (branch 12 (needMore 2) (branch 26 (needMore 2) (branch 28 (needMore 2) (conflict 11)))))
+    (branch 17 (branch 6 (needMore 1) (branch 10 (needMore 9) (branch 20 (needMore 1) (branch 22
+    (needMore 3) (branch 24 (needMore 7) (conflict 5)))))) (conflict 0))) (branch 21 (branch 2
+    (branch 6 (needMore 10) (branch 16 (needMore 5) (branch 18 (needMore 3) (branch 20 (needMore 3)
+    (conflict 1))))) (branch 3 (branch 8 (needMore 5) (branch 18 (needMore 1) (branch 20
+    (needMore 1) (branch 22 (needMore 6) (conflict 3))))) (branch 7 (branch 6 (needMore 1)
+    (branch 10 (needMore 7) (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 9)
+    (conflict 5)))))) (branch 17 (branch 15 (needMore 5) (conflict 0)) (conflict 2))))) (branch 23
+    (branch 6 (branch 2 (needMore 2) (branch 16 (needMore 8) (branch 18 (needMore 3) (branch 20
+    (needMore 3) (conflict 1))))) (branch 7 (branch 2 (needMore 1) (branch 3 (needMore 3) (branch 17
+    (needMore 0) (conflict 2)))) (branch 11 (branch 10 (needMore 8) (branch 20 (needMore 1)
+    (branch 22 (needMore 3) (branch 24 (needMore 7) (conflict 5))))) (branch 25 (branch 10
+    (needMore 9) (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 7)
+    (conflict 5))))) (conflict 6))))) (conflict 4)))))) (branch 15 (branch 11 (branch 6 (branch 2
+    (needMore 2) (branch 16 (needMore 5) (branch 18 (needMore 3) (branch 20 (needMore 3)
+    (conflict 1))))) (branch 7 (branch 2 (needMore 1) (branch 3 (needMore 3) (branch 17 (needMore 0)
+    (branch 19 (conflict 0) (branch 21 (needMore 4) (conflict 2)))))) (branch 21 (branch 2
+    (needMore 1) (branch 3 (needMore 3) (branch 17 (needMore 0) (branch 19 (conflict 0) (conflict 2)))))
+    (branch 23 (branch 4 (needMore 3) (branch 9 (needMore 9) (branch 19 (needMore 0) (conflict 4))))
+    (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 12) (branch 29 (needMore 8)
+    (conflict 10)))) (conflict 6)))))) (branch 12 (branch 10 (branch 6 (needMore 1) (branch 20
+    (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 12) (conflict 5))))) (branch 25
+    (branch 6 (needMore 1) (branch 7 (needMore 2) (branch 21 (needMore 2) (branch 23 (needMore 4)
+    (conflict 6))))) (branch 27 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 13
+    (needMore 7) (branch 23 (needMore 4) (conflict 8))))) (branch 29 (branch 7 (needMore 2)
+    (branch 8 (needMore 3) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9)
+    (conflict 7)))))) (conflict 10))))) (branch 26 (branch 7 (branch 6 (needMore 1) (branch 21
+    (needMore 4) (branch 23 (needMore 2) (branch 25 (needMore 2) (conflict 6))))) (branch 8
+    (branch 10 (needMore 3) (branch 25 (needMore 3) (branch 27 (needMore 3) (branch 29 (needMore 3)
+    (conflict 10))))) (branch 22 (branch 3 (needMore 2) (branch 4 (needMore 4) (branch 18
+    (needMore 1) (branch 20 (needMore 1) (conflict 3))))) (branch 24 (branch 6 (needMore 1)
+    (branch 10 (needMore 9) (branch 20 (needMore 1) (conflict 5)))) (conflict 7))))) (branch 28
+    (branch 9 (branch 4 (needMore 3) (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23
+    (needMore 6) (conflict 4))))) (branch 10 (branch 6 (needMore 1) (branch 20 (needMore 1)
+    (branch 22 (needMore 3) (branch 24 (needMore 7) (conflict 5))))) (branch 14 (branch 25
+    (needMore 6) (branch 27 (needMore 8) (branch 29 (needMore 12) (conflict 10)))) (branch 24
+    (branch 6 (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 3) (conflict 5))))
+    (conflict 9))))) (conflict 11))))) (branch 17 (branch 2 (branch 6 (branch 10 (needMore 6)
+    (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 6) (conflict 5)))))
+    (branch 16 (branch 10 (needMore 5) (branch 11 (needMore 6) (branch 25 (needMore 6) (branch 27
+    (needMore 8) (branch 29 (needMore 12) (conflict 10)))))) (branch 18 (branch 12 (needMore 3)
+    (branch 13 (needMore 3) (branch 27 (needMore 3) (branch 29 (needMore 3) (conflict 12)))))
+    (branch 20 (branch 10 (needMore 3) (branch 22 (needMore 7) (branch 24 (needMore 3) (conflict 5))))
+    (conflict 1))))) (branch 3 (branch 4 (branch 9 (needMore 8) (branch 19 (conflict 0) (branch 21
+    (needMore 2) (branch 23 (needMore 6) (conflict 4))))) (branch 8 (branch 7 (needMore 2)
+    (branch 12 (needMore 8) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 8)
+    (conflict 7)))))) (branch 18 (branch 6 (needMore 5) (branch 16 (needMore 10) (branch 20
+    (needMore 3) (conflict 1)))) (branch 20 (branch 6 (needMore 6) (branch 16 (needMore 5)
+    (conflict 1))) (branch 22 (branch 6 (needMore 1) (branch 10 (needMore 7) (branch 24 (needMore 9)
+    (conflict 5)))) (conflict 3)))))) (branch 7 (branch 6 (branch 16 (needMore 5) (branch 18
+    (needMore 3) (branch 20 (needMore 3) (conflict 1)))) (branch 11 (branch 12 (needMore 12)
+    (branch 26 (needMore 9) (branch 28 (needMore 7) (conflict 11)))) (branch 21 (branch 19
+    (conflict 0) (conflict 2)) (branch 23 (branch 4 (needMore 3) (branch 9 (needMore 7) (branch 19
+    (conflict 0) (conflict 4)))) (branch 25 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 13
+    (needMore 7) (branch 27 (needMore 7) (conflict 8))))) (conflict 6)))))) (branch 19 (conflict 0)
+    (branch 21 (branch 4 (branch 8 (needMore 6) (branch 18 (needMore 1) (branch 20 (needMore 1)
+    (branch 22 (needMore 5) (conflict 3))))) (branch 9 (branch 6 (needMore 1) (branch 11
+    (needMore 8) (branch 23 (conflict 4) (branch 25 (needMore 9) (conflict 6))))) (branch 23
+    (branch 8 (needMore 3) (branch 13 (needMore 10) (branch 25 (needMore 6) (branch 27 (needMore 12)
+    (conflict 8))))) (conflict 4)))) (conflict 2)))))) (branch 19 (branch 2 (branch 6 (branch 4
+    (needMore 3) (branch 9 (needMore 5) (branch 21 (needMore 2) (branch 23 (needMore 5) (conflict 4)))))
+    (branch 16 (branch 4 (needMore 3) (branch 9 (needMore 8) (branch 21 (needMore 2) (branch 23
+    (needMore 6) (conflict 4))))) (branch 18 (branch 4 (needMore 10) (branch 9 (needMore 3)
+    (branch 21 (needMore 2) (branch 23 (needMore 3) (conflict 4))))) (branch 20 (branch 10
+    (needMore 3) (branch 22 (needMore 4) (branch 24 (needMore 3) (conflict 5)))) (conflict 1)))))
+    (branch 3 (branch 4 (branch 10 (needMore 5) (branch 11 (needMore 6) (branch 25 (needMore 6)
+    (branch 27 (needMore 8) (branch 29 (needMore 12) (conflict 10)))))) (branch 9 (branch 8
+    (needMore 7) (branch 18 (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 5)
+    (conflict 3))))) (branch 21 (branch 7 (needMore 3) (conflict 2)) (branch 23 (branch 8
+    (needMore 6) (branch 18 (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 5)
+    (conflict 3))))) (conflict 4))))) (branch 7 (branch 4 (branch 8 (needMore 6) (branch 18
+    (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 5) (conflict 3))))) (branch 9
+    (branch 6 (needMore 1) (branch 11 (needMore 7) (branch 21 (conflict 2) (branch 23 (conflict 4)
+    (branch 25 (needMore 7) (conflict 6)))))) (branch 21 (conflict 2) (branch 23 (branch 8
+    (needMore 3) (branch 13 (needMore 7) (branch 25 (needMore 6) (branch 27 (needMore 7)
+    (conflict 8))))) (conflict 4))))) (branch 21 (branch 6 (branch 16 (needMore 5) (branch 18
+    (needMore 3) (branch 20 (needMore 3) (conflict 1)))) (branch 11 (branch 12 (needMore 7)
+    (branch 26 (needMore 7) (branch 28 (needMore 9) (conflict 11)))) (branch 23 (branch 4
+    (needMore 3) (branch 9 (needMore 9) (conflict 4))) (branch 25 (branch 8 (needMore 3) (branch 9
+    (needMore 4) (branch 13 (needMore 12) (branch 27 (needMore 10) (conflict 8))))) (conflict 6)))))
+    (conflict 2))))) (conflict 0)))))) (branch 1 (branch 5 (branch 2 (branch 3 (branch 4
+    (needMore 5) (branch 8 (needMore 4) (branch 18 (needMore 1) (branch 20 (needMore 1) (branch 22
+    (needMore 4) (conflict 3)))))) (branch 7 (branch 4 (needMore 3) (branch 9 (needMore 5)
+    (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 5) (conflict 4))))))
+    (branch 17 (branch 15 (needMore 4) (branch 19 (needMore 2) (conflict 0))) (branch 19 (branch 15
+    (needMore 5) (conflict 0)) (branch 21 (branch 6 (needMore 1) (branch 11 (needMore 5) (branch 23
+    (needMore 4) (branch 25 (needMore 5) (conflict 6))))) (conflict 2)))))) (branch 6 (branch 4
+    (branch 3 (needMore 2) (branch 8 (needMore 6) (branch 18 (needMore 1) (branch 20 (needMore 1)
+    (branch 22 (needMore 5) (conflict 3)))))) (branch 9 (branch 7 (needMore 2) (branch 11
+    (needMore 8) (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 9)
+    (conflict 6)))))) (branch 19 (branch 15 (needMore 2) (branch 17 (needMore 6) (conflict 0)))
+    (branch 21 (branch 3 (needMore 3) (branch 7 (needMore 6) (branch 17 (needMore 0) (conflict 2))))
+    (branch 23 (branch 8 (needMore 3) (branch 13 (needMore 11) (branch 25 (needMore 6) (branch 27
+    (needMore 10) (conflict 8))))) (conflict 4)))))) (branch 16 (branch 10 (branch 11 (needMore 4)
+    (branch 25 (needMore 4) (branch 27 (needMore 4) (branch 29 (needMore 4) (conflict 10)))))
+    (branch 20 (branch 18 (needMore 4) (conflict 1)) (branch 22 (branch 3 (needMore 2) (branch 4
+    (needMore 7) (branch 8 (needMore 4) (branch 18 (conflict 1) (conflict 3))))) (branch 24
+    (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 12 (needMore 4) (branch 26 (needMore 4)
+    (conflict 7))))) (conflict 5))))) (branch 18 (branch 10 (branch 11 (needMore 3) (branch 25
+    (needMore 3) (branch 27 (needMore 3) (branch 29 (needMore 3) (conflict 10))))) (branch 20
+    (conflict 1) (branch 22 (branch 4 (needMore 3) (branch 9 (needMore 7) (branch 19 (needMore 0)
+    (branch 21 (needMore 2) (branch 23 (needMore 6) (conflict 4)))))) (branch 24 (branch 3
+    (needMore 2) (branch 4 (needMore 7) (branch 8 (needMore 4) (conflict 3)))) (conflict 5)))))
+    (branch 20 (branch 3 (branch 7 (needMore 4) (branch 17 (needMore 0) (branch 19 (needMore 0)
+    (branch 21 (needMore 6) (conflict 2))))) (branch 4 (branch 11 (needMore 6) (branch 12
+    (needMore 7) (branch 15 (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 9)
+    (conflict 11)))))) (branch 8 (branch 9 (needMore 7) (branch 19 (needMore 0) (branch 21
+    (needMore 2) (branch 23 (needMore 6) (conflict 4))))) (branch 22 (branch 10 (needMore 4)
+    (branch 24 (needMore 4) (conflict 5))) (conflict 3))))) (conflict 1)))))) (branch 15 (branch 2
+    (branch 3 (branch 4 (needMore 4) (branch 8 (needMore 7) (branch 18 (needMore 1) (branch 20
+    (needMore 1) (branch 22 (needMore 5) (conflict 3)))))) (branch 7 (branch 6 (needMore 1)
+    (branch 11 (needMore 7) (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 7)
+    (conflict 6)))))) (branch 17 (branch 19 (needMore 2) (conflict 0)) (branch 19 (conflict 0)
+    (branch 21 (branch 4 (needMore 3) (branch 9 (needMore 6) (branch 23 (needMore 8) (conflict 4))))
+    (conflict 2)))))) (branch 6 (branch 10 (branch 11 (needMore 9) (branch 25 (needMore 8)
+    (branch 27 (needMore 6) (branch 29 (needMore 6) (conflict 10))))) (branch 20 (branch 16
+    (needMore 3) (branch 18 (needMore 6) (conflict 1))) (branch 22 (branch 3 (needMore 2) (branch 4
+    (needMore 4) (branch 8 (needMore 6) (branch 18 (needMore 1) (conflict 3))))) (branch 24
+    (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 12 (needMore 6) (branch 26 (needMore 6)
+    (conflict 7))))) (conflict 5))))) (branch 16 (branch 12 (branch 11 (needMore 6) (branch 26
+    (needMore 9) (branch 28 (needMore 7) (conflict 11)))) (branch 13 (branch 8 (needMore 3)
+    (branch 9 (needMore 4) (branch 23 (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 10)
+    (conflict 8)))))) (branch 27 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 23
+    (needMore 4) (branch 25 (needMore 6) (conflict 8))))) (branch 29 (branch 10 (needMore 5)
+    (branch 11 (needMore 6) (branch 25 (needMore 6) (conflict 10)))) (conflict 12))))) (branch 18
+    (branch 3 (branch 7 (needMore 6) (branch 17 (needMore 0) (branch 19 (conflict 0) (branch 21
+    (needMore 4) (conflict 2))))) (branch 4 (branch 9 (needMore 8) (branch 19 (needMore 0)
+    (branch 21 (needMore 2) (branch 23 (needMore 6) (conflict 4))))) (branch 8 (branch 7
+    (needMore 2) (branch 12 (needMore 8) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26
+    (needMore 8) (conflict 7)))))) (branch 20 (conflict 1) (branch 22 (branch 10 (needMore 7)
+    (branch 24 (needMore 9) (conflict 5))) (conflict 3)))))) (branch 20 (branch 10 (branch 3
+    (needMore 2) (branch 4 (needMore 4) (branch 8 (needMore 7) (branch 22 (needMore 5) (conflict 3)))))
+    (branch 22 (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 12 (needMore 11) (branch 24
+    (conflict 5) (branch 26 (needMore 9) (conflict 7)))))) (branch 24 (branch 3 (needMore 2)
+    (branch 4 (needMore 4) (branch 8 (needMore 8) (conflict 3)))) (conflict 5)))) (conflict 1))))))
+    (branch 17 (branch 11 (branch 10 (branch 6 (needMore 2) (branch 20 (needMore 2) (branch 22
+    (needMore 1) (branch 24 (needMore 1) (conflict 5))))) (branch 25 (branch 2 (needMore 8)
+    (branch 6 (needMore 2) (branch 16 (needMore 2) (branch 18 (needMore 2) (branch 20 (needMore 2)
+    (conflict 1)))))) (branch 27 (branch 6 (needMore 2) (branch 7 (needMore 1) (branch 21
+    (needMore 1) (branch 23 (needMore 1) (conflict 6))))) (branch 29 (branch 6 (needMore 2)
+    (branch 7 (needMore 1) (branch 21 (needMore 1) (branch 23 (needMore 1) (conflict 6)))))
+    (conflict 10))))) (branch 12 (branch 2 (branch 7 (needMore 2) (branch 8 (needMore 3) (branch 22
+    (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9) (conflict 7)))))) (branch 6
+    (branch 3 (needMore 3) (branch 7 (needMore 5) (branch 19 (conflict 0) (branch 21 (needMore 4)
+    (conflict 2))))) (branch 16 (branch 3 (needMore 3) (branch 7 (needMore 6) (branch 19
+    (conflict 0) (branch 21 (needMore 4) (conflict 2))))) (branch 18 (branch 13 (needMore 2)
+    (branch 27 (needMore 2) (branch 29 (needMore 2) (conflict 12)))) (branch 20 (branch 10
+    (needMore 2) (branch 22 (needMore 2) (branch 24 (needMore 2) (conflict 5)))) (conflict 1))))))
+    (branch 26 (branch 7 (branch 6 (needMore 5) (branch 21 (needMore 1) (branch 23 (needMore 1)
+    (branch 25 (needMore 1) (conflict 6))))) (branch 8 (branch 2 (needMore 3) (branch 3 (needMore 1)
+    (branch 19 (conflict 0) (branch 21 (needMore 1) (conflict 2))))) (branch 22 (branch 2
+    (needMore 3) (branch 3 (needMore 1) (branch 19 (conflict 0) (branch 21 (needMore 1) (conflict 2)))))
+    (branch 24 (branch 6 (needMore 2) (branch 10 (needMore 1) (branch 20 (needMore 2) (conflict 5))))
+    (conflict 7))))) (branch 28 (branch 9 (branch 4 (needMore 1) (branch 19 (conflict 0) (branch 21
+    (needMore 1) (branch 23 (needMore 1) (conflict 4))))) (branch 10 (branch 25 (needMore 1)
+    (branch 27 (needMore 1) (branch 29 (needMore 1) (conflict 10)))) (branch 14 (branch 2
+    (needMore 12) (branch 6 (needMore 2) (branch 16 (needMore 2) (branch 18 (needMore 2) (branch 20
+    (needMore 2) (conflict 1)))))) (branch 24 (branch 6 (needMore 2) (branch 20 (needMore 2)
+    (branch 22 (needMore 1) (conflict 5)))) (conflict 9))))) (conflict 11))))) (branch 19 (branch 2
+    (branch 4 (branch 11 (needMore 3) (branch 12 (needMore 3) (branch 26 (needMore 3) (branch 28
+    (needMore 3) (conflict 11))))) (branch 9 (branch 11 (needMore 6) (branch 12 (needMore 7)
+    (branch 26 (needMore 7) (branch 28 (needMore 8) (conflict 11))))) (branch 21 (branch 3
+    (needMore 3) (branch 7 (needMore 7) (conflict 2))) (branch 23 (branch 6 (needMore 1) (branch 7
+    (needMore 2) (branch 11 (needMore 8) (branch 25 (needMore 10) (conflict 6))))) (conflict 4)))))
+    (branch 3 (branch 6 (branch 4 (needMore 5) (branch 9 (needMore 3) (branch 21 (needMore 2)
+    (branch 23 (needMore 3) (conflict 4))))) (branch 16 (branch 4 (needMore 11) (branch 9
+    (needMore 3) (branch 21 (needMore 2) (branch 23 (needMore 3) (conflict 4))))) (branch 18
+    (branch 4 (needMore 3) (branch 9 (needMore 8) (branch 21 (needMore 2) (branch 23 (needMore 6)
+    (conflict 4))))) (branch 20 (branch 10 (needMore 4) (branch 22 (needMore 3) (branch 24
+    (needMore 4) (conflict 5)))) (conflict 1))))) (branch 7 (branch 6 (branch 4 (needMore 3)
+    (branch 9 (needMore 5) (branch 21 (conflict 2) (branch 23 (needMore 5) (conflict 4)))))
+    (branch 16 (branch 4 (needMore 3) (branch 9 (needMore 6) (branch 21 (conflict 2) (branch 23
+    (needMore 7) (conflict 4))))) (branch 18 (branch 4 (needMore 6) (branch 8 (needMore 4)
+    (branch 20 (conflict 1) (branch 22 (needMore 4) (conflict 3))))) (branch 20 (branch 4
+    (needMore 5) (branch 8 (needMore 4) (branch 22 (needMore 4) (conflict 3)))) (conflict 1)))))
+    (branch 21 (branch 6 (branch 10 (needMore 9) (branch 20 (needMore 1) (branch 22 (needMore 3)
+    (branch 24 (needMore 7) (conflict 5))))) (branch 16 (branch 11 (needMore 10) (branch 23
+    (needMore 4) (branch 25 (needMore 8) (conflict 6)))) (branch 18 (branch 11 (needMore 3)
+    (branch 23 (needMore 3) (branch 25 (needMore 3) (conflict 6)))) (branch 20 (branch 4
+    (needMore 4) (branch 8 (needMore 5) (branch 22 (needMore 6) (conflict 3)))) (conflict 1)))))
+    (conflict 2))))) (conflict 0))))) (branch 2 (branch 6 (branch 3 (branch 4 (branch 5 (needMore 0)
+    (branch 9 (needMore 5) (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 5)
+    (conflict 4)))))) (branch 8 (branch 5 (needMore 0) (branch 10 (needMore 6) (branch 20
+    (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 6) (conflict 5)))))) (branch 18
+    (branch 16 (needMore 5) (branch 20 (needMore 3) (conflict 1))) (branch 20 (branch 16
+    (needMore 6) (conflict 1)) (branch 22 (branch 7 (needMore 2) (branch 12 (needMore 6) (branch 24
+    (needMore 5) (branch 26 (needMore 6) (conflict 7))))) (conflict 3)))))) (branch 7 (branch 5
+    (branch 15 (needMore 4) (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0))))
+    (branch 10 (branch 11 (needMore 6) (branch 25 (needMore 6) (branch 27 (needMore 7) (branch 29
+    (needMore 7) (conflict 10))))) (branch 20 (branch 16 (needMore 3) (branch 18 (needMore 7)
+    (conflict 1))) (branch 22 (branch 4 (needMore 4) (branch 8 (needMore 7) (branch 18 (needMore 1)
+    (conflict 3)))) (branch 24 (branch 9 (needMore 4) (branch 14 (needMore 12) (branch 26
+    (needMore 7) (branch 28 (needMore 11) (conflict 9))))) (conflict 5)))))) (branch 17 (branch 5
+    (branch 11 (needMore 4) (branch 21 (needMore 2) (branch 23 (needMore 8) (branch 25 (needMore 4)
+    (conflict 6))))) (branch 15 (branch 10 (needMore 6) (branch 20 (needMore 1) (branch 22
+    (needMore 3) (branch 24 (needMore 6) (conflict 5))))) (branch 19 (branch 21 (needMore 5)
+    (conflict 2)) (conflict 0)))) (branch 19 (branch 5 (branch 11 (needMore 10) (branch 21
+    (conflict 2) (branch 23 (needMore 4) (branch 25 (needMore 8) (conflict 6))))) (branch 15
+    (branch 4 (needMore 3) (branch 9 (needMore 5) (branch 21 (conflict 2) (branch 23 (needMore 5)
+    (conflict 4))))) (conflict 0))) (branch 21 (branch 4 (branch 8 (needMore 5) (branch 18
+    (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 7) (conflict 3))))) (branch 5
+    (branch 15 (needMore 11) (conflict 0)) (branch 9 (branch 10 (needMore 8) (branch 20 (needMore 1)
+    (branch 22 (needMore 3) (branch 24 (needMore 7) (conflict 5))))) (branch 23 (branch 11
+    (needMore 5) (branch 25 (needMore 5) (conflict 6))) (conflict 4))))) (conflict 2))))))
+    (branch 16 (branch 3 (branch 4 (branch 5 (needMore 0) (branch 9 (needMore 8) (branch 19
+    (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 6) (conflict 4)))))) (branch 8
+    (branch 7 (needMore 2) (branch 12 (needMore 8) (branch 22 (needMore 3) (branch 24 (needMore 5)
+    (branch 26 (needMore 8) (conflict 7)))))) (branch 18 (branch 20 (needMore 3) (conflict 1))
+    (branch 20 (conflict 1) (branch 22 (branch 5 (needMore 0) (branch 10 (needMore 7) (branch 24
+    (needMore 9) (conflict 5)))) (conflict 3)))))) (branch 7 (branch 11 (branch 10 (needMore 5)
+    (branch 25 (needMore 6) (branch 27 (needMore 7) (branch 29 (needMore 7) (conflict 10)))))
+    (branch 21 (branch 17 (needMore 0) (branch 19 (needMore 0) (conflict 2))) (branch 23 (branch 4
+    (needMore 3) (branch 5 (needMore 0) (branch 9 (needMore 7) (branch 19 (needMore 0) (conflict 4)))))
+    (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 7) (branch 29 (needMore 7) (conflict 10))))
+    (conflict 6))))) (branch 17 (branch 5 (branch 10 (needMore 4) (branch 20 (needMore 1) (branch 22
+    (needMore 3) (branch 24 (needMore 4) (conflict 5))))) (branch 15 (branch 11 (needMore 6)
+    (branch 12 (needMore 7) (branch 26 (needMore 7) (branch 28 (needMore 9) (conflict 11)))))
+    (branch 19 (branch 21 (needMore 6) (conflict 2)) (conflict 0)))) (branch 19 (branch 5 (branch 10
+    (needMore 9) (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 7)
+    (conflict 5))))) (branch 15 (branch 4 (needMore 3) (branch 9 (needMore 8) (branch 21
+    (conflict 2) (branch 23 (needMore 6) (conflict 4))))) (conflict 0))) (branch 21 (branch 11
+    (branch 4 (needMore 3) (branch 5 (needMore 0) (branch 9 (needMore 8) (branch 23 (needMore 6)
+    (conflict 4))))) (branch 23 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 13
+    (needMore 12) (branch 25 (conflict 6) (branch 27 (needMore 10) (conflict 8)))))) (branch 25
+    (branch 4 (needMore 3) (branch 5 (needMore 0) (branch 9 (needMore 9) (conflict 4))))
+    (conflict 6)))) (conflict 2)))))) (branch 18 (branch 12 (branch 11 (branch 7 (needMore 3)
+    (branch 21 (needMore 3) (branch 23 (needMore 2) (branch 25 (needMore 2) (conflict 6)))))
+    (branch 15 (branch 5 (needMore 2) (branch 17 (needMore 3) (branch 19 (needMore 3) (conflict 0))))
+    (branch 26 (branch 3 (needMore 9) (branch 7 (needMore 3) (branch 17 (needMore 0) (branch 19
+    (needMore 0) (branch 21 (needMore 3) (conflict 2)))))) (branch 28 (branch 7 (needMore 3)
+    (branch 8 (needMore 2) (branch 22 (needMore 2) (branch 24 (needMore 2) (conflict 7)))))
+    (conflict 11))))) (branch 13 (branch 3 (branch 8 (needMore 3) (branch 9 (needMore 4) (branch 23
+    (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 10) (conflict 8)))))) (branch 7
+    (branch 4 (needMore 4) (branch 8 (needMore 6) (branch 20 (conflict 1) (branch 22 (needMore 5)
+    (conflict 3))))) (branch 17 (branch 5 (needMore 3) (branch 15 (needMore 3) (branch 19
+    (needMore 2) (conflict 0)))) (branch 19 (branch 5 (needMore 3) (branch 15 (needMore 3)
+    (conflict 0))) (branch 21 (branch 11 (needMore 3) (branch 23 (needMore 3) (branch 25
+    (needMore 3) (conflict 6)))) (conflict 2)))))) (branch 27 (branch 8 (branch 7 (needMore 6)
+    (branch 22 (needMore 2) (branch 24 (needMore 2) (branch 26 (needMore 2) (conflict 7)))))
+    (branch 9 (branch 3 (needMore 4) (branch 4 (needMore 2) (branch 20 (conflict 1) (branch 22
+    (needMore 2) (conflict 3))))) (branch 23 (branch 3 (needMore 4) (branch 4 (needMore 2)
+    (branch 20 (conflict 1) (branch 22 (needMore 2) (conflict 3))))) (branch 25 (branch 7
+    (needMore 3) (branch 11 (needMore 2) (branch 21 (needMore 3) (conflict 6)))) (conflict 8)))))
+    (branch 29 (branch 10 (branch 5 (needMore 0) (branch 20 (conflict 1) (branch 22 (needMore 2)
+    (branch 24 (needMore 2) (conflict 5))))) (branch 11 (branch 15 (needMore 0) (branch 26
+    (needMore 2) (branch 28 (needMore 2) (conflict 11)))) (branch 25 (branch 7 (needMore 3)
+    (branch 21 (needMore 3) (branch 23 (needMore 2) (conflict 6)))) (conflict 10)))) (conflict 12)))))
+    (branch 20 (branch 3 (branch 5 (branch 15 (needMore 4) (branch 17 (needMore 2) (branch 19
+    (needMore 2) (conflict 0)))) (branch 10 (branch 11 (needMore 6) (branch 25 (needMore 6)
+    (branch 27 (needMore 8) (branch 29 (needMore 9) (conflict 10))))) (branch 22 (branch 4
+    (needMore 4) (branch 8 (needMore 8) (conflict 3))) (branch 24 (branch 7 (needMore 2) (branch 8
+    (needMore 3) (branch 12 (needMore 9) (branch 26 (needMore 11) (conflict 7))))) (conflict 5)))))
+    (branch 4 (branch 7 (branch 5 (needMore 0) (branch 10 (needMore 4) (branch 22 (needMore 3)
+    (branch 24 (needMore 4) (conflict 5))))) (branch 17 (branch 5 (needMore 12) (branch 15
+    (needMore 4) (branch 19 (needMore 2) (conflict 0)))) (branch 19 (branch 5 (needMore 4)
+    (branch 15 (needMore 5) (conflict 0))) (branch 21 (branch 11 (needMore 5) (branch 23
+    (needMore 4) (branch 25 (needMore 5) (conflict 6)))) (conflict 2))))) (branch 8 (branch 7
+    (branch 5 (needMore 0) (branch 10 (needMore 6) (branch 22 (conflict 3) (branch 24 (needMore 6)
+    (conflict 5))))) (branch 17 (branch 5 (needMore 4) (branch 15 (needMore 5) (branch 19
+    (needMore 2) (conflict 0)))) (branch 19 (branch 5 (needMore 7) (branch 15 (needMore 4)
+    (conflict 0))) (branch 21 (branch 5 (needMore 0) (branch 9 (needMore 5) (branch 23 (needMore 5)
+    (conflict 4)))) (conflict 2))))) (branch 22 (branch 7 (branch 11 (needMore 10) (branch 21
+    (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 8) (conflict 6))))) (branch 17
+    (branch 5 (needMore 4) (branch 15 (needMore 7) (branch 19 (needMore 2) (conflict 0))))
+    (branch 19 (branch 5 (needMore 5) (branch 15 (needMore 4) (conflict 0))) (branch 21 (branch 5
+    (needMore 0) (branch 9 (needMore 6) (branch 23 (needMore 7) (conflict 4)))) (conflict 2)))))
+    (conflict 3))))) (conflict 1))))) (branch 3 (branch 7 (branch 4 (branch 5 (branch 15
+    (needMore 5) (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0)))) (branch 9 (branch 6
+    (needMore 1) (branch 11 (needMore 7) (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25
+    (needMore 7) (conflict 6)))))) (branch 19 (branch 15 (needMore 2) (branch 17 (needMore 6)
+    (conflict 0))) (branch 21 (branch 17 (needMore 0) (conflict 2)) (branch 23 (branch 8
+    (needMore 3) (branch 13 (needMore 7) (branch 25 (needMore 6) (branch 27 (needMore 7)
+    (conflict 8))))) (conflict 4)))))) (branch 8 (branch 6 (branch 16 (needMore 5) (branch 18
+    (needMore 3) (branch 20 (needMore 3) (conflict 1)))) (branch 11 (branch 10 (needMore 5)
+    (branch 25 (needMore 6) (branch 27 (needMore 11) (branch 29 (needMore 8) (conflict 10)))))
+    (branch 21 (branch 17 (needMore 0) (branch 19 (needMore 0) (conflict 2))) (branch 23 (branch 5
+    (needMore 0) (branch 9 (needMore 8) (branch 19 (needMore 0) (conflict 4)))) (branch 25
+    (branch 10 (needMore 5) (branch 27 (needMore 8) (branch 29 (needMore 12) (conflict 10))))
+    (conflict 6)))))) (branch 18 (branch 6 (branch 12 (needMore 5) (branch 22 (needMore 3)
+    (branch 24 (needMore 9) (branch 26 (needMore 5) (conflict 7))))) (branch 16 (branch 11
+    (needMore 7) (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 7)
+    (conflict 6))))) (branch 20 (branch 22 (needMore 6) (conflict 3)) (conflict 1)))) (branch 20
+    (branch 6 (branch 12 (needMore 11) (branch 22 (conflict 3) (branch 24 (needMore 5) (branch 26
+    (needMore 9) (conflict 7))))) (branch 16 (branch 5 (needMore 0) (branch 10 (needMore 6)
+    (branch 22 (conflict 3) (branch 24 (needMore 6) (conflict 5))))) (conflict 1))) (branch 22
+    (branch 5 (branch 15 (needMore 4) (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0))))
+    (branch 6 (branch 16 (needMore 12) (conflict 1)) (branch 10 (branch 11 (needMore 9) (branch 21
+    (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 8) (conflict 6))))) (branch 24
+    (branch 12 (needMore 6) (branch 26 (needMore 6) (conflict 7))) (conflict 5))))) (conflict 3))))))
+    (branch 17 (branch 5 (branch 4 (branch 6 (needMore 1) (branch 10 (needMore 9) (branch 20
+    (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 7) (conflict 5)))))) (branch 8
+    (branch 9 (needMore 5) (branch 19 (needMore 0) (branch 21 (conflict 2) (branch 23 (needMore 5)
+    (conflict 4))))) (branch 18 (branch 6 (needMore 4) (branch 16 (needMore 4) (branch 20
+    (needMore 3) (conflict 1)))) (branch 20 (branch 6 (needMore 4) (branch 16 (needMore 4)
+    (conflict 1))) (branch 22 (branch 12 (needMore 4) (branch 24 (needMore 4) (branch 26
+    (needMore 4) (conflict 7)))) (conflict 3)))))) (branch 15 (branch 11 (branch 6 (needMore 1)
+    (branch 21 (needMore 2) (branch 23 (needMore 3) (branch 25 (needMore 3) (conflict 6)))))
+    (branch 12 (branch 8 (needMore 8) (branch 22 (needMore 5) (branch 24 (needMore 3) (branch 26
+    (needMore 3) (conflict 7))))) (branch 26 (branch 8 (needMore 8) (branch 22 (needMore 5)
+    (branch 24 (needMore 3) (conflict 7)))) (branch 28 (branch 9 (needMore 3) (branch 10
+    (needMore 3) (branch 14 (needMore 3) (branch 24 (needMore 3) (conflict 9))))) (conflict 11)))))
+    (branch 19 (branch 21 (branch 6 (needMore 1) (branch 11 (needMore 3) (branch 23 (needMore 3)
+    (branch 25 (needMore 3) (conflict 6))))) (conflict 2)) (conflict 0)))) (branch 19 (branch 5
+    (branch 4 (branch 9 (needMore 5) (branch 21 (conflict 2) (branch 23 (needMore 5) (conflict 4))))
+    (branch 8 (branch 12 (needMore 5) (branch 22 (needMore 3) (branch 24 (needMore 8) (branch 26
+    (needMore 5) (conflict 7))))) (branch 18 (branch 6 (needMore 6) (branch 16 (needMore 5)
+    (branch 20 (needMore 3) (conflict 1)))) (branch 20 (branch 6 (needMore 5) (branch 16
+    (needMore 12) (conflict 1))) (branch 22 (branch 12 (needMore 11) (branch 24 (needMore 5)
+    (branch 26 (needMore 9) (conflict 7)))) (conflict 3)))))) (branch 15 (branch 4 (branch 11
+    (needMore 6) (branch 12 (needMore 7) (branch 26 (needMore 7) (branch 28 (needMore 9)
+    (conflict 11))))) (branch 9 (branch 8 (needMore 7) (branch 18 (needMore 1) (branch 20
+    (needMore 1) (branch 22 (needMore 5) (conflict 3))))) (branch 21 (conflict 2) (branch 23
+    (branch 6 (needMore 1) (branch 11 (needMore 3) (branch 25 (needMore 3) (conflict 6))))
+    (conflict 4))))) (conflict 0))) (branch 21 (branch 4 (branch 6 (branch 16 (needMore 5)
+    (branch 18 (needMore 3) (branch 20 (needMore 3) (conflict 1)))) (branch 11 (branch 10
+    (needMore 5) (branch 25 (needMore 6) (branch 27 (needMore 8) (branch 29 (needMore 11)
+    (conflict 10))))) (branch 23 (branch 5 (needMore 0) (branch 9 (needMore 9) (conflict 4)))
+    (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 12) (branch 29 (needMore 8)
+    (conflict 10)))) (conflict 6))))) (branch 5 (branch 15 (branch 8 (needMore 5) (branch 18
+    (needMore 1) (branch 20 (needMore 1) (branch 22 (needMore 6) (conflict 3))))) (conflict 0))
+    (branch 9 (branch 8 (branch 6 (needMore 1) (branch 11 (needMore 7) (branch 23 (conflict 4)
+    (branch 25 (needMore 7) (conflict 6))))) (branch 18 (branch 6 (needMore 5) (branch 16
+    (needMore 6) (branch 20 (needMore 3) (conflict 1)))) (branch 20 (branch 6 (needMore 8)
+    (branch 16 (needMore 5) (conflict 1))) (branch 22 (branch 6 (needMore 1) (branch 10 (needMore 6)
+    (branch 24 (needMore 6) (conflict 5)))) (conflict 3))))) (branch 23 (branch 8 (branch 12
+    (needMore 11) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9)
+    (conflict 7))))) (branch 18 (branch 6 (needMore 5) (branch 16 (needMore 8) (branch 20
+    (needMore 3) (conflict 1)))) (branch 20 (branch 6 (needMore 6) (branch 16 (needMore 5)
+    (conflict 1))) (branch 22 (branch 6 (needMore 1) (branch 10 (needMore 7) (branch 24 (needMore 8)
+    (conflict 5)))) (conflict 3))))) (conflict 4))))) (conflict 2))))) (branch 4 (branch 8 (branch 5
+    (branch 15 (branch 11 (needMore 5) (branch 12 (needMore 5) (branch 26 (needMore 5) (branch 28
+    (needMore 5) (conflict 11))))) (branch 17 (branch 7 (needMore 5) (branch 19 (conflict 0)
+    (branch 21 (needMore 4) (conflict 2)))) (branch 19 (branch 7 (needMore 4) (branch 21
+    (needMore 5) (conflict 2))) (conflict 0)))) (branch 9 (branch 7 (branch 17 (needMore 0)
+    (branch 19 (needMore 0) (branch 21 (needMore 4) (conflict 2)))) (branch 12 (branch 11
+    (needMore 6) (branch 15 (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 12)
+    (conflict 11))))) (branch 22 (branch 18 (needMore 1) (branch 20 (needMore 1) (conflict 3)))
+    (branch 24 (branch 6 (needMore 1) (branch 10 (needMore 9) (branch 20 (needMore 1) (conflict 5))))
+    (branch 26 (branch 11 (needMore 6) (branch 15 (needMore 0) (branch 28 (needMore 9) (conflict 11))))
+    (conflict 7)))))) (branch 19 (branch 15 (branch 7 (needMore 6) (branch 17 (conflict 0)
+    (branch 21 (needMore 4) (conflict 2)))) (branch 17 (branch 13 (needMore 7) (branch 23
+    (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 7) (conflict 8))))) (conflict 0)))
+    (branch 21 (branch 7 (branch 13 (needMore 12) (branch 23 (conflict 4) (branch 25 (needMore 6)
+    (branch 27 (needMore 10) (conflict 8))))) (branch 17 (branch 15 (needMore 6) (conflict 0))
+    (conflict 2))) (branch 23 (branch 6 (branch 16 (needMore 5) (branch 18 (needMore 3) (branch 20
+    (needMore 3) (conflict 1)))) (branch 7 (branch 17 (needMore 0) (conflict 2)) (branch 11
+    (branch 12 (needMore 10) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9)
+    (conflict 7))))) (branch 25 (branch 13 (needMore 7) (branch 27 (needMore 7) (conflict 8)))
+    (conflict 6))))) (conflict 4)))))) (branch 18 (branch 6 (branch 5 (branch 15 (needMore 6)
+    (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0)))) (branch 9 (branch 10
+    (needMore 6) (branch 20 (needMore 1) (branch 22 (conflict 3) (branch 24 (needMore 6)
+    (conflict 5))))) (branch 19 (branch 15 (needMore 2) (branch 17 (needMore 5) (conflict 0)))
+    (branch 21 (branch 7 (needMore 5) (branch 17 (needMore 0) (conflict 2))) (branch 23 (branch 13
+    (needMore 5) (branch 25 (needMore 5) (branch 27 (needMore 5) (conflict 8)))) (conflict 4))))))
+    (branch 16 (branch 12 (branch 7 (needMore 2) (branch 22 (needMore 3) (branch 24 (needMore 4)
+    (branch 26 (needMore 4) (conflict 7))))) (branch 13 (branch 9 (needMore 9) (branch 23
+    (needMore 6) (branch 25 (needMore 4) (branch 27 (needMore 4) (conflict 8))))) (branch 27
+    (branch 9 (needMore 9) (branch 23 (needMore 6) (branch 25 (needMore 4) (conflict 8))))
+    (branch 29 (branch 10 (needMore 4) (branch 11 (needMore 4) (branch 25 (needMore 4) (conflict 10))))
+    (conflict 12))))) (branch 20 (branch 22 (branch 7 (needMore 2) (branch 12 (needMore 4)
+    (branch 24 (needMore 4) (branch 26 (needMore 4) (conflict 7))))) (conflict 3)) (conflict 1))))
+    (branch 20 (branch 6 (branch 5 (branch 15 (needMore 5) (branch 17 (needMore 2) (branch 19
+    (needMore 2) (conflict 0)))) (branch 9 (branch 13 (needMore 6) (branch 23 (needMore 4)
+    (branch 25 (needMore 9) (branch 27 (needMore 6) (conflict 8))))) (branch 19 (branch 15
+    (needMore 2) (branch 17 (needMore 6) (conflict 0))) (branch 21 (branch 7 (needMore 6) (branch 17
+    (needMore 0) (conflict 2))) (branch 23 (branch 13 (needMore 12) (branch 25 (needMore 6)
+    (branch 27 (needMore 10) (conflict 8)))) (conflict 4)))))) (branch 16 (branch 5 (branch 15
+    (needMore 11) (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0)))) (branch 10
+    (branch 9 (needMore 8) (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 6)
+    (conflict 4))))) (branch 22 (conflict 3) (branch 24 (branch 7 (needMore 2) (branch 12
+    (needMore 4) (branch 26 (needMore 4) (conflict 7)))) (conflict 5))))) (conflict 1))) (branch 22
+    (branch 5 (branch 15 (branch 7 (needMore 2) (branch 12 (needMore 12) (branch 24 (needMore 5)
+    (branch 26 (needMore 9) (conflict 7))))) (branch 17 (branch 7 (needMore 6) (branch 19
+    (conflict 0) (branch 21 (needMore 4) (conflict 2)))) (branch 19 (branch 7 (needMore 4)
+    (branch 21 (needMore 6) (conflict 2))) (conflict 0)))) (branch 6 (branch 16 (branch 9
+    (needMore 6) (branch 19 (needMore 0) (branch 21 (needMore 2) (branch 23 (needMore 7)
+    (conflict 4))))) (conflict 1)) (branch 10 (branch 9 (branch 7 (needMore 2) (branch 12
+    (needMore 8) (branch 24 (conflict 5) (branch 26 (needMore 8) (conflict 7))))) (branch 19
+    (branch 15 (needMore 2) (branch 17 (needMore 7) (conflict 0))) (branch 21 (branch 7 (needMore 9)
+    (branch 17 (needMore 0) (conflict 2))) (branch 23 (branch 7 (needMore 2) (branch 11 (needMore 7)
+    (branch 25 (needMore 7) (conflict 6)))) (conflict 4))))) (branch 24 (branch 9 (branch 13
+    (needMore 12) (branch 23 (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 10)
+    (conflict 8))))) (branch 19 (branch 15 (needMore 2) (branch 17 (needMore 9) (conflict 0)))
+    (branch 21 (branch 7 (needMore 7) (branch 17 (needMore 0) (conflict 2))) (branch 23 (branch 7
+    (needMore 2) (branch 11 (needMore 8) (branch 25 (needMore 9) (conflict 6)))) (conflict 4)))))
+    (conflict 5))))) (conflict 3))))) (branch 5 (branch 15 (branch 9 (branch 11 (branch 10
+    (needMore 6) (branch 25 (needMore 5) (branch 27 (needMore 5) (branch 29 (needMore 5)
+    (conflict 10))))) (branch 12 (branch 13 (needMore 5) (branch 16 (needMore 1) (branch 27
+    (needMore 5) (branch 29 (needMore 5) (conflict 12))))) (branch 26 (branch 7 (needMore 2)
+    (branch 8 (needMore 3) (branch 22 (needMore 3) (branch 24 (needMore 8) (conflict 7)))))
+    (branch 28 (branch 6 (needMore 1) (branch 10 (needMore 8) (branch 20 (needMore 1) (branch 22
+    (needMore 3) (branch 24 (needMore 7) (conflict 5)))))) (conflict 11))))) (branch 19 (branch 17
+    (branch 11 (needMore 5) (branch 12 (needMore 5) (branch 26 (needMore 5) (branch 28 (needMore 5)
+    (conflict 11))))) (conflict 0)) (branch 21 (branch 7 (branch 11 (needMore 5) (branch 12
+    (needMore 5) (branch 26 (needMore 5) (branch 28 (needMore 5) (conflict 11))))) (branch 17
+    (conflict 0) (conflict 2))) (branch 23 (branch 6 (branch 16 (needMore 8) (branch 18 (needMore 3)
+    (branch 20 (needMore 3) (conflict 1)))) (branch 7 (branch 17 (conflict 0) (conflict 2))
+    (branch 11 (branch 10 (needMore 8) (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24
+    (needMore 7) (conflict 5))))) (branch 25 (branch 10 (needMore 9) (branch 27 (needMore 5)
+    (branch 29 (needMore 5) (conflict 10)))) (conflict 6))))) (conflict 4))))) (branch 17 (branch 7
+    (branch 9 (branch 6 (needMore 1) (branch 10 (needMore 6) (branch 20 (needMore 1) (branch 22
+    (needMore 3) (branch 24 (needMore 6) (conflict 5)))))) (branch 19 (conflict 0) (branch 21
+    (conflict 2) (branch 23 (branch 8 (needMore 3) (branch 13 (needMore 5) (branch 25 (needMore 5)
+    (branch 27 (needMore 5) (conflict 8))))) (conflict 4))))) (branch 19 (conflict 0) (branch 21
+    (branch 6 (branch 16 (needMore 12) (branch 18 (needMore 3) (branch 20 (needMore 3) (conflict 1))))
+    (branch 11 (branch 12 (needMore 5) (branch 26 (needMore 5) (branch 28 (needMore 5) (conflict 11))))
+    (branch 23 (branch 9 (needMore 5) (conflict 4)) (branch 25 (branch 10 (needMore 8) (branch 27
+    (needMore 5) (branch 29 (needMore 5) (conflict 10)))) (conflict 6))))) (conflict 2))))
+    (branch 19 (branch 7 (branch 6 (branch 16 (needMore 7) (branch 18 (needMore 3) (branch 20
+    (needMore 3) (conflict 1)))) (branch 10 (branch 11 (needMore 7) (branch 21 (conflict 2)
+    (branch 23 (needMore 4) (branch 25 (needMore 7) (conflict 6))))) (branch 20 (branch 16
+    (needMore 3) (branch 18 (needMore 6) (conflict 1))) (branch 22 (branch 8 (needMore 6) (branch 18
+    (needMore 1) (conflict 3))) (branch 24 (branch 11 (needMore 9) (branch 21 (conflict 2)
+    (branch 23 (needMore 4) (branch 25 (needMore 8) (conflict 6))))) (conflict 5)))))) (branch 21
+    (branch 9 (branch 6 (needMore 1) (branch 11 (needMore 5) (branch 23 (conflict 4) (branch 25
+    (needMore 5) (conflict 6))))) (branch 23 (branch 8 (needMore 3) (branch 13 (needMore 5)
+    (branch 25 (needMore 5) (branch 27 (needMore 5) (conflict 8))))) (conflict 4))) (conflict 2)))
+    (conflict 0)))) (branch 6 (branch 16 (branch 10 (branch 11 (branch 12 (needMore 7) (branch 15
+    (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 12) (conflict 11))))) (branch 25
+    (branch 12 (needMore 7) (branch 13 (needMore 9) (branch 27 (needMore 9) (branch 29 (needMore 8)
+    (conflict 12))))) (branch 27 (branch 7 (needMore 2) (branch 21 (needMore 2) (branch 23
+    (needMore 4) (conflict 6)))) (branch 29 (branch 7 (needMore 2) (branch 21 (needMore 2)
+    (branch 23 (needMore 4) (conflict 6)))) (conflict 10))))) (branch 20 (branch 18 (branch 12
+    (needMore 6) (branch 13 (needMore 6) (branch 27 (needMore 6) (branch 29 (needMore 6)
+    (conflict 12))))) (conflict 1)) (branch 22 (branch 8 (branch 12 (needMore 6) (branch 13
+    (needMore 6) (branch 27 (needMore 6) (branch 29 (needMore 6) (conflict 12))))) (branch 18
+    (conflict 1) (conflict 3))) (branch 24 (branch 7 (branch 17 (needMore 0) (branch 19 (needMore 0)
+    (branch 21 (needMore 4) (conflict 2)))) (branch 8 (branch 18 (conflict 1) (conflict 3))
+    (branch 12 (branch 11 (needMore 9) (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25
+    (needMore 8) (conflict 6))))) (branch 26 (branch 11 (needMore 10) (branch 15 (needMore 0)
+    (branch 28 (needMore 6) (conflict 11)))) (conflict 7))))) (conflict 5))))) (branch 18 (branch 8
+    (branch 10 (branch 11 (needMore 7) (branch 25 (needMore 7) (branch 27 (needMore 6) (branch 29
+    (needMore 6) (conflict 10))))) (branch 20 (conflict 1) (branch 22 (conflict 3) (branch 24
+    (branch 9 (needMore 4) (branch 14 (needMore 6) (branch 26 (needMore 6) (branch 28 (needMore 6)
+    (conflict 9))))) (conflict 5))))) (branch 20 (conflict 1) (branch 22 (branch 7 (branch 17
+    (needMore 0) (branch 19 (needMore 0) (branch 21 (needMore 4) (conflict 2)))) (branch 12
+    (branch 13 (needMore 6) (branch 27 (needMore 6) (branch 29 (needMore 6) (conflict 12))))
+    (branch 24 (branch 10 (needMore 6) (conflict 5)) (branch 26 (branch 11 (needMore 9) (branch 15
+    (needMore 0) (branch 28 (needMore 6) (conflict 11)))) (conflict 7))))) (conflict 3))))
+    (branch 20 (branch 8 (branch 7 (branch 17 (needMore 0) (branch 19 (needMore 0) (branch 21
+    (needMore 4) (conflict 2)))) (branch 11 (branch 12 (needMore 8) (branch 22 (conflict 3)
+    (branch 24 (needMore 5) (branch 26 (needMore 8) (conflict 7))))) (branch 21 (branch 17
+    (needMore 0) (branch 19 (needMore 0) (conflict 2))) (branch 23 (branch 9 (needMore 7) (branch 19
+    (needMore 0) (conflict 4))) (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 7)
+    (branch 29 (needMore 7) (conflict 10)))) (conflict 6)))))) (branch 22 (branch 10 (branch 7
+    (needMore 2) (branch 12 (needMore 6) (branch 24 (conflict 5) (branch 26 (needMore 6)
+    (conflict 7))))) (branch 24 (branch 9 (needMore 4) (branch 14 (needMore 6) (branch 26
+    (needMore 6) (branch 28 (needMore 6) (conflict 9))))) (conflict 5))) (conflict 3))) (conflict 1))))
+    (branch 7 (branch 17 (branch 15 (branch 11 (branch 10 (needMore 5) (branch 25 (needMore 6)
+    (branch 27 (needMore 7) (branch 29 (needMore 7) (conflict 10))))) (branch 21 (branch 19
+    (conflict 0) (conflict 2)) (branch 23 (branch 9 (needMore 7) (branch 19 (conflict 0)
+    (conflict 4))) (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 7) (branch 29
+    (needMore 7) (conflict 10)))) (conflict 6))))) (branch 19 (branch 21 (branch 8 (needMore 3)
+    (branch 12 (needMore 11) (branch 22 (needMore 3) (branch 24 (needMore 5) (branch 26 (needMore 9)
+    (conflict 7)))))) (conflict 2)) (conflict 0))) (branch 19 (branch 15 (branch 9 (branch 11
+    (needMore 7) (branch 21 (conflict 2) (branch 23 (conflict 4) (branch 25 (needMore 7)
+    (conflict 6))))) (branch 21 (conflict 2) (branch 23 (branch 8 (needMore 3) (branch 13
+    (needMore 7) (branch 25 (needMore 6) (branch 27 (needMore 7) (conflict 8))))) (conflict 4))))
+    (conflict 0)) (branch 21 (branch 9 (branch 8 (branch 18 (needMore 1) (branch 20 (needMore 1)
+    (branch 22 (needMore 5) (conflict 3)))) (branch 12 (branch 13 (needMore 9) (branch 23
+    (conflict 4) (branch 25 (needMore 6) (branch 27 (needMore 9) (conflict 8))))) (branch 22
+    (branch 18 (needMore 1) (branch 20 (needMore 1) (conflict 3))) (branch 24 (branch 10
+    (needMore 8) (branch 20 (needMore 1) (conflict 5))) (branch 26 (branch 11 (needMore 6)
+    (branch 15 (conflict 0) (branch 28 (needMore 8) (conflict 11)))) (conflict 7)))))) (branch 23
+    (branch 11 (branch 8 (needMore 3) (branch 13 (needMore 7) (branch 25 (conflict 6) (branch 27
+    (needMore 7) (conflict 8))))) (branch 25 (branch 10 (needMore 5) (branch 27 (needMore 7)
+    (branch 29 (needMore 7) (conflict 10)))) (conflict 6))) (conflict 4))) (conflict 2)))) (branch 8
+    (branch 18 (branch 16 (branch 12 (branch 11 (needMore 6) (branch 15 (needMore 0) (branch 26
+    (needMore 7) (branch 28 (needMore 8) (conflict 11))))) (branch 22 (branch 20 (conflict 1)
+    (conflict 3)) (branch 24 (branch 10 (needMore 8) (branch 20 (conflict 1) (conflict 5)))
+    (branch 26 (branch 11 (needMore 6) (branch 15 (needMore 0) (branch 28 (needMore 8) (conflict 11))))
+    (conflict 7))))) (branch 20 (branch 22 (branch 9 (needMore 4) (branch 13 (needMore 12)
+    (branch 23 (needMore 4) (branch 25 (needMore 6) (branch 27 (needMore 10) (conflict 8))))))
+    (conflict 3)) (conflict 1))) (branch 20 (branch 16 (branch 10 (branch 12 (needMore 8) (branch 22
+    (conflict 3) (branch 24 (conflict 5) (branch 26 (needMore 8) (conflict 7))))) (branch 22
+    (conflict 3) (branch 24 (branch 9 (needMore 4) (branch 14 (needMore 8) (branch 26 (needMore 7)
+    (branch 28 (needMore 8) (conflict 9))))) (conflict 5)))) (conflict 1)) (branch 22 (branch 10
+    (branch 11 (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25 (needMore 9) (conflict 6))))
+    (branch 25 (branch 21 (needMore 2) (branch 23 (needMore 4) (conflict 6))) (branch 27 (branch 12
+    (needMore 7) (branch 13 (needMore 8) (branch 16 (conflict 1) (branch 29 (needMore 9)
+    (conflict 12))))) (branch 29 (branch 9 (needMore 4) (branch 13 (needMore 9) (branch 23
+    (needMore 4) (conflict 8)))) (conflict 10))))) (branch 24 (branch 12 (branch 9 (needMore 4)
+    (branch 14 (needMore 8) (branch 26 (conflict 7) (branch 28 (needMore 8) (conflict 9)))))
+    (branch 26 (branch 11 (needMore 6) (branch 15 (needMore 0) (branch 28 (needMore 8) (conflict 11))))
+    (conflict 7))) (conflict 5))) (conflict 3)))) (branch 9 (branch 19 (branch 15 (branch 17
+    (conflict 0) (branch 21 (branch 23 (needMore 9) (conflict 4)) (conflict 2))) (branch 17
+    (branch 13 (branch 12 (needMore 7) (branch 16 (needMore 1) (branch 27 (needMore 8) (branch 29
+    (needMore 9) (conflict 12))))) (branch 23 (branch 21 (conflict 2) (conflict 4)) (branch 25
+    (branch 11 (needMore 9) (branch 21 (conflict 2) (conflict 6))) (branch 27 (branch 10
+    (needMore 5) (branch 11 (needMore 6) (branch 29 (needMore 9) (conflict 10)))) (conflict 8)))))
+    (conflict 0))) (branch 21 (branch 17 (branch 15 (branch 11 (needMore 8) (branch 23 (conflict 4)
+    (branch 25 (needMore 9) (conflict 6)))) (conflict 0)) (conflict 2)) (branch 23 (branch 11
+    (branch 10 (branch 20 (needMore 1) (branch 22 (needMore 3) (branch 24 (needMore 7) (conflict 5))))
+    (branch 25 (conflict 6) (branch 27 (branch 13 (needMore 9) (conflict 8)) (branch 29 (branch 12
+    (needMore 7) (branch 13 (conflict 8) (branch 16 (needMore 1) (conflict 12)))) (conflict 10)))))
+    (branch 25 (branch 13 (branch 10 (needMore 5) (branch 27 (conflict 8) (branch 29 (needMore 9)
+    (conflict 10)))) (branch 27 (branch 12 (needMore 7) (branch 16 (needMore 1) (branch 29
+    (needMore 9) (conflict 12)))) (conflict 8))) (conflict 6))) (conflict 4)))) (branch 10
+    (branch 20 (branch 16 (branch 18 (conflict 1) (branch 22 (branch 24 (needMore 10) (conflict 5))
+    (conflict 3))) (branch 18 (branch 14 (branch 11 (needMore 6) (branch 25 (needMore 6) (branch 27
+    (needMore 8) (branch 29 (needMore 12) (conflict 10))))) (branch 24 (branch 22 (conflict 3)
+    (conflict 5)) (branch 26 (branch 12 (needMore 10) (branch 22 (conflict 3) (conflict 7)))
+    (branch 28 (branch 11 (needMore 6) (branch 12 (needMore 7) (branch 15 (needMore 0) (conflict 11))))
+    (conflict 9))))) (conflict 1))) (branch 22 (branch 18 (branch 16 (branch 12 (needMore 9)
+    (branch 24 (conflict 5) (branch 26 (needMore 10) (conflict 7)))) (conflict 1)) (conflict 3))
+    (branch 24 (branch 12 (branch 11 (branch 21 (needMore 2) (branch 23 (needMore 4) (branch 25
+    (needMore 8) (conflict 6)))) (branch 25 (branch 21 (needMore 2) (branch 23 (needMore 4)
+    (conflict 6))) (branch 27 (branch 13 (needMore 11) (branch 23 (needMore 4) (conflict 8)))
+    (branch 29 (branch 15 (needMore 0) (branch 26 (conflict 7) (branch 28 (needMore 9) (conflict 11))))
+    (conflict 10))))) (branch 26 (branch 14 (branch 11 (needMore 6) (branch 15 (needMore 0)
+    (branch 28 (conflict 9) (conflict 11)))) (branch 28 (branch 11 (needMore 6) (branch 25
+    (needMore 6) (branch 27 (needMore 8) (branch 29 (needMore 12) (conflict 10))))) (conflict 9)))
+    (conflict 7))) (conflict 5)))) (branch 11 (branch 21 (branch 17 (branch 15 (branch 19
+    (conflict 0) (branch 23 (needMore 6) (conflict 4))) (branch 19 (conflict 2) (conflict 0)))
+    (branch 19 (branch 15 (branch 25 (needMore 6) (branch 27 (needMore 8) (branch 29 (needMore 12)
+    (conflict 10)))) (conflict 0)) (conflict 2))) (branch 23 (branch 19 (branch 17 (branch 13
+    (needMore 10) (branch 25 (conflict 6) (branch 27 (needMore 11) (conflict 8)))) (conflict 2))
+    (conflict 4)) (branch 25 (branch 13 (branch 12 (branch 22 (needMore 3) (branch 24 (needMore 5)
+    (branch 26 (needMore 9) (conflict 7)))) (branch 15 (branch 17 (needMore 2) (branch 19
+    (conflict 2) (conflict 0))) (branch 26 (branch 22 (needMore 3) (branch 24 (needMore 5)
+    (conflict 7))) (branch 28 (branch 14 (needMore 12) (branch 24 (needMore 5) (conflict 9)))
+    (conflict 11))))) (branch 27 (branch 29 (branch 12 (needMore 7) (branch 15 (needMore 0)
+    (branch 26 (needMore 7) (branch 28 (needMore 9) (conflict 11))))) (conflict 10)) (conflict 8)))
+    (conflict 6)))) (branch 12 (branch 22 (branch 18 (branch 16 (branch 20 (conflict 1) (branch 24
+    (needMore 7) (conflict 5))) (branch 20 (conflict 3) (conflict 1))) (branch 20 (branch 16
+    (branch 15 (needMore 0) (branch 26 (needMore 7) (branch 28 (needMore 9) (conflict 11))))
+    (conflict 1)) (conflict 3))) (branch 24 (branch 20 (branch 18 (branch 14 (needMore 11)
+    (branch 26 (conflict 7) (branch 28 (needMore 12) (conflict 9)))) (conflict 3)) (conflict 5))
+    (branch 26 (branch 14 (branch 13 (branch 23 (needMore 4) (branch 25 (needMore 6) (branch 27
+    (needMore 10) (conflict 8)))) (branch 16 (branch 18 (needMore 3) (branch 20 (conflict 3)
+    (conflict 1))) (branch 27 (branch 23 (needMore 4) (branch 25 (needMore 6) (conflict 8)))
+    (branch 29 (branch 25 (needMore 6) (conflict 10)) (conflict 12))))) (branch 28 (branch 15
+    (branch 17 (needMore 2) (branch 19 (needMore 2) (conflict 0))) (conflict 11)) (conflict 9)))
+    (conflict 7)))) (branch 13 (branch 23 (branch 19 (branch 15 (branch 17 (conflict 0) (branch 21
+    (conflict 4) (conflict 2))) (branch 17 (branch 21 (conflict 2) (branch 25 (needMore 8)
+    (conflict 6))) (conflict 0))) (branch 21 (branch 17 (branch 15 (needMore 11) (conflict 0))
+    (conflict 2)) (conflict 4))) (branch 25 (branch 21 (branch 19 (branch 15 (needMore 10)
+    (branch 17 (conflict 2) (conflict 0))) (conflict 4)) (conflict 6)) (branch 27 (branch 29
+    (branch 16 (branch 18 (needMore 3) (branch 20 (needMore 3) (conflict 1))) (conflict 12))
+    (conflict 10)) (conflict 8)))) (branch 14 (branch 24 (branch 20 (branch 16 (branch 18
+    (conflict 1) (branch 22 (conflict 5) (conflict 3))) (branch 18 (branch 22 (conflict 3)
+    (branch 26 (needMore 9) (conflict 7))) (conflict 1))) (branch 22 (branch 18 (branch 16
+    (needMore 12) (conflict 1)) (conflict 3)) (conflict 5))) (branch 26 (branch 22 (branch 20
+    (branch 16 (needMore 11) (branch 18 (conflict 3) (conflict 1))) (conflict 5)) (conflict 7))
+    (branch 28 (branch 15 (branch 17 (branch 19 (conflict 0) (branch 21 (needMore 4) (conflict 2)))
+    (branch 19 (branch 21 (needMore 6) (conflict 2)) (conflict 0))) (conflict 11)) (conflict 9))))
+    (branch 15 (branch 17 (branch 19 (conflict 0) (branch 21 (branch 23 (branch 25 (conflict 6)
+    (branch 27 (needMore 10) (conflict 8))) (conflict 4)) (conflict 2))) (branch 19 (branch 21
+    (branch 23 (conflict 4) (branch 25 (branch 27 (needMore 11) (conflict 8)) (conflict 6)))
+    (conflict 2)) (conflict 0))) (branch 16 (branch 18 (branch 20 (conflict 1) (branch 22 (branch 24
+    (branch 26 (conflict 7) (branch 28 (conflict 11) (conflict 9))) (conflict 5)) (conflict 3)))
+    (branch 20 (branch 22 (branch 24 (conflict 5) (branch 26 (branch 28 (needMore 12) (conflict 9))
+    (conflict 7))) (conflict 3)) (conflict 1))) (branch 17 (branch 19 (branch 21 (conflict 2)
+    (branch 23 (branch 25 (branch 27 (conflict 8) (branch 29 (conflict 12) (conflict 10)))
+    (conflict 6)) (conflict 4))) (conflict 0)) (branch 18 (branch 20 (branch 22 (conflict 3)
+    (branch 24 (branch 26 (branch 28 (conflict 9) (conflict 11)) (conflict 7)) (conflict 5)))
+    (conflict 1)) (branch 19 (conflict 0) (branch 20 (conflict 1) (branch 21 (conflict 2) (branch 22
+    (conflict 3) (branch 23 (conflict 4) (branch 24 (conflict 5) (branch 25 (conflict 6) (branch 26
+    (conflict 7) (branch 27 (conflict 8) (branch 28 (conflict 9) (branch 29 (conflict 10)
+    (inSpan [false, false, false, false, false, false, false, false, false, false, false, false, false])))))))))))))))))))))))))))))))
+
+def cyclic_30_4_6_Z_prune : PruneCertificate := {
+  opp := [
+    [true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, false],
+    [false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false],
+    [false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false],
+    [false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false],
+    [false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false],
+    [false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false],
+    [false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false],
+    [false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false],
+    [false, false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false],
+    [false, false, false, false, false, false, false, false, false, true, true, false, false, false, true, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false],
+    [true, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, false, true],
+    [false, true, false, false, false, false, false, false, false, false, false, true, true, false, false, true, false, false, false, false, false, false, false, false, false, false, true, false, true, false],
+    [false, false, true, false, false, false, false, false, false, false, false, false, true, true, false, false, true, false, false, false, false, false, false, false, false, false, false, true, false, true]
+  ],
+  same := [
+    [true, false, false, false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true],
+    [false, true, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, false, false, false, false, false, false, false, false, false, true, false, false, false],
+    [true, false, true, false, false, false, false, false, false, false, false, false, false, true, false, false, true, true, false, false, false, false, false, false, false, false, false, true, false, false],
+    [false, true, false, true, false, false, false, false, false, false, false, false, false, false, true, false, false, true, true, false, false, false, false, false, false, false, false, false, true, false],
+    [true, false, true, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, true],
+    [false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false, false, false],
+    [false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false, false],
+    [false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false, false],
+    [false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false, false],
+    [false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false, false],
+    [false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false, false],
+    [false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false, false],
+    [false, false, false, false, false, false, false, false, true, false, true, false, true, false, false, false, false, false, false, false, false, false, true, false, false, false, true, true, false, false]
+  ],
+  tree := cyclic_30_4_6_Z_tree
+}
+
+set_option maxRecDepth 1000000 in
+theorem cyclic_30_4_6_Z_accepts :
+    checkPruneCertificate cyclic_30_4_6 Sector.Z 6 cyclic_30_4_6_Z_prune = true := by decide +kernel
+
+theorem cyclic_30_4_6_Z_lower_bound :
+    ∀ d : Nat, exactDistance? Sector.Z cyclic_30_4_6 = some d → 6 ≤ d :=
+  pruneCertificate_lower_bound cyclic_30_4_6 Sector.Z 6 cyclic_30_4_6_Z_prune cyclic_30_4_6_Z_accepts
+
+set_option maxRecDepth 1000000 in
+theorem cyclic_30_4_6_Z_witness :
+    witnessValid cyclic_30_4_6 Sector.Z 6
+      [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, false, false, false, false, false, false, false, false, false, false, false, true] = true := by decide +kernel
+
+theorem cyclic_30_4_6_Z_exact :
+    exactDistance? Sector.Z cyclic_30_4_6 = some 6 :=
+  pruneCertificate_equality cyclic_30_4_6 Sector.Z 6 cyclic_30_4_6_Z_prune cyclic_30_4_6_Z_accepts _ cyclic_30_4_6_Z_witness
 
 end CodeCalculus.CertificateInstances

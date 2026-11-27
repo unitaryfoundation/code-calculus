@@ -80,7 +80,7 @@ Three choices inside this are worth naming:
 
 ## 3. Derived, not stored
 
-Three quantities the encoding may carry but the calculus does **not** treat as
+Four quantities the encoding may carry but the calculus does **not** treat as
 state:
 
 - **`n = |Q|`.** Computed from `Q`.
@@ -152,7 +152,7 @@ representation **assumes** that the displayed rows span their row space, and
 **does not** compute rank to verify it.
 
 The basis is I1: `$X = ⟨rows_X⟩$` is *definitional* — the row space **is** the
-span of the display, not a property of the display). Under that reading an independent-display check is not needed for
+span of the display, not a property of the display. Under that reading an independent-display check is not needed for
 soundness, because there is no gap between "the display" and "the row space".
 
 **The cost of the decision, stated.** The evaluator is sound **on spanning
@@ -219,3 +219,105 @@ obligation this presentation layer was said to defer
 (`OBL-REBASE-GENERATION`) is discharged at [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.26.
 
 It claims no soundness. It fixes an encoding, and the soundness theorem is owed.
+
+## 9. External presentations: the ingestion contract
+
+A *matrix presentation* is how a source outside this repository writes a CSS
+code: a qubit count `n`, a logical count `k`, and two lists of check
+supports, `checks.X` and `checks.Z`, on the qubit labels `0, …, n − 1`. This
+is the shape of a `qldpc-challenge` entry. A presentation is not a state. Its
+rows carry no identifiers, and they may be dependent. This section fixes the
+state a presentation is translated to and the hash that ties a Lean term
+back to the presentation it came from.
+
+### 9.1 Canonical order
+
+Each support is written in increasing order. The rows of each sector are then
+sorted as lists, in lexicographic order. A row presented twice is kept twice.
+
+### 9.2 The ingested state
+
+| Element | Value |
+| --- | --- |
+| `Q` | `{0, …, n − 1}` |
+| `rows` | the `X` rows, then the `Z` rows. Within a sector the canonical rows are read in order, and a row is retained when it is not in the span of the rows already retained in that sector |
+| identifiers | the `i`-th retained `X` row is `a_i` and the `i`-th retained `Z` row is `b_i`, counting from 1 |
+| `used` | the retained identifiers, and nothing else |
+
+A presentation is **malformed**, and no state is produced, when it is not a
+CSS presentation (for example an entry that lists general stabilizers), when
+a support repeats a qubit or names one outside `Q`, when an `X` row and a `Z`
+row overlap on an odd number of qubits, or when the declared `k` is not
+`n − rank(checks.X) − rank(checks.Z)`.
+
+Four properties follow, and a translation that lacks one of them does not
+implement this contract.
+
+- The ingested state is a function of `n` and of the two multisets of
+  supports. Presentations that differ in the order of their rows, or in the
+  order of the qubits inside a support, ingest to the same state with the
+  same identifiers. Rows are unordered in a state (§2), and identifiers are
+  not, which is why the order has to be fixed before identifiers are given.
+- The translation is phase-insensitive (§4). Only supports travel. Stabilizer
+  signs and any choice of logical operators in the source are not read.
+- Each sector of the ingested state has the row space of the presented matrix
+  of that sector, and every retained row is a presented row. No row is
+  rewritten.
+- `used` holds no retired identifier. An ingested state has no history.
+
+`CodeState.from_challenge` in `machine/state.py` reads the rows in the
+presented order and is not this translation. The pinned replay uses it, and
+its state for a presentation has the same rows under other identifiers
+whenever the presented order is not the canonical one.
+
+### 9.3 The binding hash
+
+The binding hash of a presentation is the SHA-256 digest, in lowercase
+hexadecimal, of the ASCII string
+
+```text
+{"X":[[…],…],"Z":[[…],…]}
+```
+
+with the rows of each sector in canonical order, the key `X` before the key
+`Z`, and no whitespace. This is the `checks_sha256` of `qldpc-challenge`
+(`verify/check_certs.py`) for a CSS entry, and the two repositories must
+produce the same digest for the same entry.
+
+The hash covers every presented row, including the dependent rows that
+ingestion drops. It does not cover `n`: two presentations that differ by
+qubits no check touches have the same hash. A binding therefore compares `n`
+as well as the hash.
+
+### 9.4 The Lean module and what binds it
+
+A generated Lean module carries, for an ingested state named `c`:
+
+- `c_presentation`, the presentation in canonical order, as a literal;
+- `c_checks_sha256`, the binding hash, as a string;
+- `c`, the ingested state, with a proof that it is well formed (§6);
+- `c_binds`, the statement `presentationBinds c c_presentation c_span = true`
+  of `lean/CodeCalculus/Ingestion.lean`, by kernel evaluation.
+
+`presentationBinds` holds when the qubit list of `c` is `0, …, n − 1`, every
+row of `c` is a presented row of its sector, and every presented row is the
+combination of the rows of `c` that the supplied coefficients `c_span` name.
+The coefficients are checked and not trusted.
+
+Lean does not compute the hash. The comparison is made outside Lean
+(`binding_failures` in `machine/ingestion.py`): the literal is read back out
+of the Lean source, hashed, and compared with the recorded string and with
+the hash of the source presentation, and its `n` is compared with the
+source's.
+
+**What this does and does not establish.** The translation is untrusted. A
+wrong translation fails kernel evaluation, or produces a literal with another
+hash. What is relied on is the Lean kernel, the definition of
+`presentationBinds`, the reader that extracts the literal from the Lean
+source, the SHA-256 implementation, and the identity of the source document.
+A theorem about `c` remains a statement about the Lean term `c`. The binding
+identifies the row spaces of that term with those of the literal, and the
+hash identifies the literal with the source. Nothing here bounds a distance.
+Distance bounds for an ingested state come from certificates
+([`CLAIMS.md`](CLAIMS.md), *Mechanized checker*), whose kernel check
+enumerates every vector below the bound and is practical only for small `n`.

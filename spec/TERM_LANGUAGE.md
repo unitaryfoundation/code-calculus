@@ -62,6 +62,15 @@ where $H_X$ and $H_Z$ are binary matrices with the same number of columns,
 the parity-check matrices of two classical codes of one length
 (`OPERATIONAL_SEMANTICS.md` §2 card).
 
+Since 2026-11-18 the expressions also include the mapping-cone constructor
+
+$$
+e ::= \mathrm{cone}(\partial_A, \partial_B, f_1, f_0)
+$$
+
+where $\partial_A, \partial_B, f_1, f_0$ are binary matrices satisfying the
+row-vector chain-map premise $\partial_A f_0 = f_1 \partial_B$ (`OPERATIONAL_SEMANTICS.md` §2 card, §4.41).
+
 Since 2026-11-19 the expressions also include the nullary and
 qubit-set base constructors and the two interface constructors
 
@@ -101,6 +110,7 @@ m \;::=\; \mathrm{skip}
 \;\mid\; \mathrm{hadamard}_T
 \;\mid\; \mathrm{rebase}_{\tau;M}
 \;\mid\; \mathrm{cnotSwap}_U
+\;\mid\; \mathrm{split}_{Q_A; R}
 \;\mid\; m_1; m_2
 $$
 
@@ -124,11 +134,12 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `E-PEEL` | command | $m ::= \mathrm{peel}_{q,\tau;r}$ | `peel(q, τ; r)` |
 | `E-PUNCTURE` | command | $m ::= \mathrm{puncture}_q$ | `puncture(q)` |
 | `E-EXTEND` | command | $m ::= \mathrm{extend}_{\Delta;\vec u}$ | `extend(Δ; [(τ₁,u₁),…])` |
-| `E-LOCAL-HADAMARD` | command | $m ::= \mathrm{hadamard}_T$ | `hadamard(T)` — admitted for $T=Q$ or $T=\varnothing$ |
+| `E-LOCAL-HADAMARD` | command | $m ::= \mathrm{hadamard}_T$ | `hadamard(T)` — admitted for $T\subseteq Q$ under the row-space splitting guard (includes $T=Q$, $T=\varnothing$) |
 | `P-REBASE` | command | $m ::= \mathrm{rebase}_{\tau;M}$ | `rebase(τ; M)`, $M\in\mathrm{GL}(m,2)$ |
 | `C-COLUMN-CNOT` | command | $m ::= \mathrm{cnotSwap}_U$ | `cnotSwap(U)`, $U\in\mathrm{GL}(Q,2)$ (admitted 2026-11-18) |
+| `E-SPLIT` | command | $m ::= \mathrm{split}_{Q_A; R}$ | `split(Q_A; R)`, separating deletion on block $Q_A \subseteq Q$ and cut-row set $R$ (admitted 2026-11-25; derived over `C-DELETE-CHECK`) |
 | `L-HGP` | expression-constructor | $e ::= \mathrm{hgp}(H_1,H_2)$ | `hgp(H₁, H₂)`, two binary matrices (admitted 2026-11-11) |
-| `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B)$ | `lift_G(A, B)`, $G$ a finite group (abelian by cyclic orders, or nonabelian via an explicit multiplication table / permutation generators), $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11; generalized 2026-11-22) |
+| `L-LIFTED` | expression-constructor | $e ::= \mathrm{lift}_G(A,B) \mid \mathrm{lift}_{G;H}(A,B)$ | `lift_G(A, B)` or `lift_{G;H}(A, B)`, $G$ a finite group (abelian by cyclic orders, or nonabelian via an explicit multiplication table / permutation generators), $A$ and $B$ matrices over $\mathbb{F}_2[G]$ (admitted 2026-11-11; generalized 2026-11-22); optional subgroup $H \le G$ by generators, with $B$ over $\mathbb{F}_2[N_G(H)]$, for the coset lift (2026-11-26, `OPERATIONAL_SEMANTICS.md` §4.49) |
 | `L-GROUP-ALGEBRA` | expression-constructor | $e ::= \mathrm{twoblock}_G(a,b)$ | `twoblock_G(a, b)`, $a, b \in \mathbb{F}_2[G]$ for a finite group $G$ (abelian or nonabelian, with explicit left/right regular representations) (admitted 2026-11-11; generalized 2026-11-22) |
 | `A-CONCAT` | expression-constructor | $e ::= \mathrm{concat}(e_O, e_I; \vec B)$ | `concat(e_O, e_I; blocks)`, CSS outer and inner factors with a block partition (admitted 2026-11-11) |
 | `A-PRODUCT` | expression-constructor | $e ::= \mathrm{product}(e_A, e_B)$ | `product(e_A, e_B)`, the CSS tensor product of two well-formed CSS states (admitted 2026-11-11) |
@@ -137,14 +148,13 @@ So $e$ always denotes a state and $m$ denotes a *partial* state transformer.
 | `L-TANNER` | expression-constructor | $e ::= \mathrm{tanner}(n;\Lambda_X,\Lambda_Z;\iota_X,\iota_Z)$ | `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)`, local checks on the two vertex classes of an incidence structure; no derivation unless the local checks of the two classes commute (admitted 2026-11-11) |
 | `L-TILE` | expression-constructor | $e ::= \mathrm{tile}(\tau;\alpha;\beta)$ | `tile(tiles; placements; boundary rules)`; no derivation unless the placed rows of the two sectors commute (admitted 2026-11-11) |
 | `L-NESTED-CSS` | expression-constructor | $e ::= \mathrm{nested}(H_X,H_Z)$ | `nested(H_X, H_Z)`, two binary parity-check matrices with equally many columns; no derivation unless every row of the one has even overlap with every row of the other (admitted 2026-11-13) |
-| `L-MAPPING-CONE` | expression-constructor | $e ::= \mathrm{cone}(\partial_A,\partial_B,f_1,f_0)$ | `cone(∂_A, ∂_B, f_1, f_0)`, four binary matrices with the chain-map premise $\partial_B f_1 = f_0 \partial_A$; no derivation unless the premise holds (admitted 2026-11-18) |
+| `L-MAPPING-CONE` | expression-constructor | $e ::= \mathrm{cone}(\partial_A,\partial_B,f_1,f_0)$ | `cone(∂_A, ∂_B, f_1, f_0)`, four binary matrices with the row-vector chain-map premise $\partial_A f_0 = f_1 \partial_B$; no derivation unless the premise holds (admitted 2026-11-18) |
 | `L-EMPTY` | expression-constructor | $e ::= \mathrm{empty}$ | `empty`, the 0-qubit CSS code with empty display and empty `used` (admitted 2026-11-19) |
 | `L-FREE` | expression-constructor | $e ::= \mathrm{free}(Q)$ | `free(Q)`, the check-free CSS code on a finite qubit-label set $Q \subset \mathbb{N}$ (admitted 2026-11-19) |
 | `A-PULLBACK` | expression-constructor | $e ::= \mathrm{pullback}(e_1, e_2, e_I; \phi_1, \phi_2)$ | `pullback(e₁, e₂, e_I; φ₁, φ₂)`, fiber product along CSS code morphisms $\phi_i : C_i \to I$; no derivation unless $\phi_i$ are CSS code morphisms and the pulled-back rows commute (admitted 2026-11-19) |
 | `A-PUSHOUT` | expression-constructor | $e ::= \mathrm{pushout}(e_1, e_2, e_S; \psi_1, \psi_2)$ | `pushout(e₁, e₂, e_S; ψ₁, ψ₂)`, amalgamated sum along CSS code morphisms $\psi_i : S \to C_i$; no derivation unless $\psi_i$ are CSS code morphisms and the pushed-forward rows commute (admitted 2026-11-19)
 | `L-PAIR-PARTITION` | expression-constructor | $e ::= \mathrm{pair\_partition}(p; B_X, B_Z)$ | `pair_partition(p; B_X, B_Z)`, paired affine/circulant permutation block matrices over lift size $p \ge 1$ with even column count $L \ge 2$; no derivation unless the paired relative affine maps match on each block-row pair so the natural rows commute (admitted 2026-11-22) |
 | `PP-SCALE` | expression-constructor | $e ::= \mathrm{pp\_scale}(e; P)$ | `pp_scale(e; P)`, explicit extension of a PP-presented CSS code $e$ to target lift size $P \ge 2$; no derivation unless the input is PP-presented with unit slopes, the PP conditions and SNF reproduction check pass, $k' > 0$, and the generated rows commute (promoted 2026-11-22) |
-
 | `C-SEQUENCE` | command | $m ::= m_1;m_2$ | `m₁ ; m₂` |
 | `P-RELABEL` | presentation-operation | **none** | — |
 
@@ -153,19 +163,20 @@ the qubit $q$, spliced sector $\tau$, and ordered list of displayed row IDs;
 that list must contain exactly the selected-sector rows touching $q$. Distance
 prices are judgment inputs, not command arguments or state fields.
 
-`E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD` (the $T=Q$
-sector-swap instance only) and `P-REBASE` were added as commands on
+`E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD` and `P-REBASE` were added as commands on
 2026-10-23, under the same decision that admitted their conditional cells
 (`JUDGMENT_LAYER.md` §2f); their transitions are typed at
 `OPERATIONAL_SEMANTICS.md` §2 and their sound admission — the Gate 6
 extensions' soundness obligation — is discharged under the stated hypotheses
 (`OBL-GATE6-CSS-EXTENSIONS`, §4.32). Distances carry no command argument for any of
 these: every conditional distance hypothesis remains a judgment input. The
-general split-subset instance of the local Hadamard
-($\varnothing\subsetneq T\subsetneq Q$) is **not** a command: the term
-`hadamard(T)` is admitted for $T=Q$ (the sector exchange of the whole
-display) and for $T=\varnothing$ (the identity); it is inapplicable for any
-other $T$ (`OPERATIONAL_SEMANTICS.md` §2, §4.27). A $T$ that lists a label
+term `hadamard(T)` applies to every $T\subseteq Q$ along which both row
+spaces split: every displayed row restricted to $T$ lies in its own sector's
+span. This covers $T=Q$ (the sector exchange of the whole display),
+$T=\varnothing$ (the identity), and the split-subset instance
+$\varnothing\subsetneq T\subsetneq Q$, whose mixed rows are re-presented by the
+canonical update with the canonical mint (`OPERATIONAL_SEMANTICS.md` §2,
+§4.27). A $T\not\subseteq Q$ or a failed guard is inapplicable. A $T$ that lists a label
 twice is **malformed** rather than inapplicable: a list with repeats does not
 name a subset, so there is no reading of it as one.
 
@@ -190,9 +201,23 @@ to be proved, not a command.
 sector's row space. It is a different thing from the retained-presentation data
 shape of the same name, which is a signature field of a later-layer constructor.
 
-Other `E-*` moves need support/interface predicates,
-`A-*` and `L-*` constructors need typed classical, algebraic, graph or cellulation
-inputs, and `X-*` needs an extended state model.
+`E-SPLIT` is admitted as the command production $m ::= \mathrm{split}_{Q_A; R}$
+(dated maintainer decision 2026-11-25, issue #546): the separating deletion
+takes a finite set $Q_A$ of distinct qubit labels and an explicit finite set $R$
+of distinct generator identifiers covering every displayed row that crosses
+$(Q_A, Q \setminus Q_A)$, and factors as the `C-SEQUENCE` of `C-DELETE-CHECK`
+over $R$ (`OPERATIONAL_SEMANTICS.md` §2, §4.48). A list $Q_A$ that repeats a
+qubit label or a list $R$ that repeats an identifier is **malformed** rather
+than inapplicable (a list with repeats does not name a set, matching
+`hadamard(T)` and `graft`), whereas a qubit outside $Q$, an undisplayed
+identifier in $R$, or an omitted crossing row is **inapplicable**
+(`no_derivation`). Conditional block-interval distance hypotheses are judgment
+inputs, not command arguments. The two-state projection reading is refused
+(returning two states is outside the command grammar and would be a shape
+change under `VERSIONING.md` §4.1).
+
+Other unadmitted `A-*` constructors (`A-QUOTIENT`) need typed quotient inputs,
+and `X-*` needs an extended state model.
 
 ## 3. Well-formed terms
 
@@ -202,10 +227,12 @@ inputs, and `X-*` needs an extended state model.
 - $m\triangleright \mathrm{glue}(S, T; [(X, \{0, 2\})])$
 - $\mathrm{graft}_{q,X;[a_1,a_2]}\triangleright S$
 - $\mathrm{peel}_{q,Z;a}\triangleright S$
-- $\mathrm{puncture}_a\triangleright S$
+- $\mathrm{puncture}_q\triangleright S$
 - $\mathrm{extend}_{\{5\};\,(X,\{1,5\})}\triangleright S$
 - $\mathrm{hadamard}_{Q}\triangleright S$
+- $\mathrm{hadamard}_{T}\triangleright S$ with $\varnothing\subsetneq T\subsetneq Q$ (applicable when both row spaces of $S$ split along $T$)
 - $\mathrm{rebase}_{X;M}\triangleright S$ with $M\in\mathrm{GL}(m_X,2)$
+- $\mathrm{split}_{\{0,1\};[a_1]}\triangleright S$
 - $\mathrm{skip}\triangleright S$
 - $\mathrm{delete}_a\triangleright \mathrm{hgp}(H_1,H_2)$ (a constructed state in expression position)
 - $m\triangleright \mathrm{concat}(S, T; \vec B)$
@@ -332,6 +359,18 @@ canonically minted disjoint from $\mathsf{used}_0$ and applicability premise
 $k' > 0$. Neither computes a distance (`JUDGMENT_LAYER.md` §2g, §2l).
 
 
+**Admission of `E-SPLIT` (2026-11-25).** By dated maintainer decision
+(MathysRennela, issue #546), the separating-deletion reading of `E-SPLIT`
+gained the command production $\mathrm{split}_{Q_A; R}$ (§1, §2) at rung 3
+(`transition-defined`) as a patch-level inventory instance on `stdCSS-3`
+meeting every item of `VERSIONING.md` §4.2, while the two-state projection
+reading is refused. The command takes an explicit cut $(Q_A, R)$ — $R$ covers
+every crossing row and may include additional displayed rows so `E-SPLIT`
+inverts every `E-GLUE` — and factors over `C-DELETE-CHECK` and `C-SEQUENCE`
+(`OPERATIONAL_SEMANTICS.md` §2 card, §4.48; conditional cell at
+`JUDGMENT_LAYER.md` §2a, §2f).
+
+
 ## 8. Contexts
 
 Gate 1 asks for a grammar of states, contexts, elementary moves, and sequential
@@ -354,5 +393,7 @@ with the state under `P-RELABEL`.
 
 This document is the Gate 1 artifact: it gives the grammar of states (§1, $e$),
 elementary moves (§1, $m$; §2), sequential terms (§1, $m_1;m_2$ and
-$m\triangleright e$), and contexts (§8). Gate 1 is ratified; Gates 2–7 remain
-unchecked and are out of this artifact's scope.
+$m\triangleright e$), and contexts (§8). Gate 1 is ratified. Gates 2–6 were
+ratified on 2026-11-19 and Gate 7 is ratified on 2026-11-26 for `stdCSS-3`
+([`GATES.md`](GATES.md)); all
+of them are out of this artifact's scope.

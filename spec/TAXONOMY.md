@@ -32,9 +32,9 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `E-GRAFT` | Row-space grafting | In-scope conditional CSS extension; transition soundness proved under the coverage guard (§4.12); interval soundness proved (§4.13) |
 | `E-PUNCTURE` | Puncturing | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23; soundness discharged (§4.32), conditional on hypotheses; distance prices blocked |
 | `E-EXTEND` | Qubit/check extension | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23 (row-added form); soundness discharged (§4.32), conditional on hypotheses |
-| `E-GLUE` | Interface gluing / merge | Conditional CSS extension admitted 2026-10-23; binary-only expression constructor `glue(e₁, e₂; seams)` (`TERM_LANGUAGE.md` §1–§2, decided 2026-11-18; no unary command production); evaluator transition (§4.31) and interval soundness (§4.32) discharged; future-$\Pi$ fields defined (`STATE_MODEL.md` §1a); CSS-level algebra of §4.31/§4.33 mechanized (`GlueExtraction.lean`) with geometric move-word gap recorded; `contract-stated` (rung 5, 2026-11-18; Gate 6 unchecked) |
-| `E-SPLIT` | Split | Candidate CSS extension (unadmitted) |
-| `E-LOCAL-HADAMARD` | Local Hadamard (per-qubit sector swap) | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23 for the $T=Q$ instance (§4.27); soundness discharged (§4.32), conditional on hypotheses |
+| `E-GLUE` | Interface gluing / merge | Conditional CSS extension admitted 2026-10-23; binary-only expression constructor `glue(e₁, e₂; seams)` (`TERM_LANGUAGE.md` §1–§2, decided 2026-11-18; no unary command production); evaluator transition (§4.31) and interval soundness (§4.32) discharged; future-$\Pi$ fields defined (`STATE_MODEL.md` §1a); CSS-level algebra of §4.31/§4.33 mechanized (`GlueExtraction.lean`) with geometric move-word gap recorded; `contract-stated` (rung 5, 2026-11-18) |
+| `E-SPLIT` | Split (separating deletion) | Conditional CSS extension admitted 2026-11-25 (maintainer decision, issue #546): separating deletion command `split(Q_A; R)` over a cut $(Q_A, R)$ (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2, §4.48), derived over `C-DELETE-CHECK`, `transition-defined`, meeting `VERSIONING.md` §4.2; two-state projection refused |
+| `E-LOCAL-HADAMARD` | Local Hadamard (per-qubit sector swap) | Conditional CSS extension admitted 2026-10-23; transition defined 2026-10-23 for the $T=Q$ instance and 2026-11-26 for the split-subset instance under the row-space splitting guard (§4.27); soundness discharged (§4.32), conditional on hypotheses |
 | `C-COLUMN-CNOT` | CSS-preserving column CNOT/SWAP transformation | Conditional CSS extension admitted 2026-11-18: state transformer by `U in GL(Q, 2)` with `H_X -> H_X U^{-1}`, `H_Z -> H_Z U^T`; `n' = n`, `k' = k`; `w`, `r` recomputed; distance window `[ceil(d_sigma / rho_sigma^-), rho_sigma d_sigma]` with four sector norms (§4.42); Hamming weight non-invariant; no zero-price generic CNOT layer |
 | `A-PRODUCT` | Algebraic product of code-level objects | Later algebraic constructor; the CSS tensor product admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
 | `A-CONCAT` | Concatenation | Later algebraic constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.34); the tower price provider is separate |
@@ -54,6 +54,10 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `L-TILE` | Tile or cellulation construction | Lower-level constructor; admitted 2026-11-11 as a typed expression constructor, `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35) |
 | `L-PAIR-PARTITION` | Pair-partition relative-permutation construction (CPM-PP / APM-PP) | Lower-level constructor; admitted 2026-11-22 as a typed expression constructor (`pair_partition(p; B_X, B_Z)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.46) |
 | `PP-SCALE` | Explicit extension (size scaling) of a pair-partition code (Kasai 2026) | Lower-level specialization constructor; promoted 2026-11-22 to a typed expression constructor (`pp_scale(e; P)`), `transition-defined` (`OPERATIONAL_SEMANTICS.md` §2 card, §4.47) |
+| `L-BRUHAT` | CSS codes from the Bruhat order of a Coxeter group | Lower-level constructor candidate (taxonomy-only, rung 1); distinct input type (Coxeter group + Bruhat interval) and chain complex from the Bruhat face poset; prior art Brádler, arXiv 2603.16036 (2026); see §3.8 candidate record (2026-11-26) |
+| `L-MONOMIAL` | Divisible decreasing monomial codes (monomial/Reed-Muller codes punctured at a downward-closed set on the Boolean hypercube) | Lower-level constructor candidate (taxonomy-only, rung 1); distinct input type and a closed-form distance parameter theorem; prior art Wills, arXiv 2608.24000 (2026); see §3.8 candidate record (2026-11-26) |
+| `L-BOOTSTRAP` | Quantum bootstrap product (codes from the bootstrap equation / fork complexes) | Lower-level constructor candidate (taxonomy-only, rung 1); distinct consistency-condition input and fork-complex output; generalizes HGP and fracton codes; prior art Li, arXiv 2601.22363 (2026); see §3.8 candidate record (2026-11-26) |
+| `X-EAQLRC` | Entanglement-assisted locally recoverable codes (CSS-like construction without the dual-containing condition) | Extended state model (candidate; prior art, arXiv 2607.27091 (2026)); uses pre-shared entanglement, so not representable in ordinary CSS state model; see §4 candidate record (2026-11-26) |
 | `X-GAUGE-FIX` | Gauge fixing | Extended state model |
 | `X-GAUGING` | Gauging / logical measurement by gauging | Extended state model (deferred) |
 | `X-LOCAL-CLIFFORD` | Local/block-Clifford conjugation | Extended state model (deferred) |
@@ -61,6 +65,7 @@ The following identifiers are stable cross-references for the proposal, work pla
 | `X-SYMPLECTIC-DOUBLE` | Symplectic doubling (general stabilizer → CSS) | Extended state model (deferred) |
 | `X-SYMPLECTIC-HALVE` | Symplectic halving (CSS → general stabilizer) | Extended state model (deferred) |
 | `X-DRESSED-QUOTIENT` | Dressed quotient (parent Pauli code + higher-form/cup-polynomial background + trivializing cover → commuting-projector code) | Extended state model (candidate; prior art Hsin, arXiv 2611.09538v1) |
+| `X-WEIGHT-REDUCTION` | Weight reduction to subsystem codes | Extended state model (candidate; §4.6) |
 
 ---
 
@@ -203,7 +208,7 @@ Also called restricted $r=1$ grafting in some deformation contexts.
 | **Input** | A CSS code, a qubit $q$, and one displayed stabilizer $r$ of a selected type |
 | **Output** | A code with $q$ and $r$ removed, with the remaining stabilizer supports restricted to the remaining qubits |
 | **Operation** | Remove one physical qubit together with a unique touching check |
-| **Conditions** | $q$ must occur in exactly one displayed generator of the selected type; the resulting restricted checks must remain CSS-orthogonal; required context about interfaces and support ownership must be updated |
+| **Conditions** | $q$ must occur in exactly one displayed generator of the selected type; the resulting restricted checks must remain CSS-orthogonal (the admitted transition at `OPERATIONAL_SEMANTICS.md` §4.28 reads the displayed rows only and updates no interface or support-ownership context field) |
 | **Parameter effects** | Usually $n'=n-1$ and $k'=k$ when exactly one independent check is removed; distances have no general monotonicity rule |
 | **Primitive / derived** | Candidate primitive or derived operation, depending on the chosen state model |
 | **Formalization status** | Transition defined 2026-10-23 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.28), under the 2026-10-23 Gate 6 admission (`JUDGMENT_LAYER.md` §2f). Applicability is the unique-touch premise (the consumer carries a redundant zero-check guard; §4.28 shows it never binds on a well-formed parent); $n'=n-1$ and $k'=k$ are proved exactly (§4.28). Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
@@ -270,6 +275,19 @@ Raw column deletion is not automatically a valid CSS transformation. If an $X$ r
 
 This is an extension family, not a single universally valid operation. The exact qubit placement and check update must be part of its type.
 
+**Specialization note (2026-11-26, prior art Reddy & Kashyap, arXiv 2608.19094).**
+The *appending construction* for logical diagonal gates — take an `[[n',k']]` CSS
+code $Q'$ and a target logical $Z$-rotation, extend $Q'$ by appending $n''$
+physical qubits to obtain an `[[n,k]]` CSS code with $n=n'+n''$, $k=k'$, realizing
+the target gate by a transversal physical $Z$-rotation on the appended qubits, with
+controllable distance loss — is a **specialization of `E-EXTEND`** (row-added
+extension) with a specific choice of added rows and a gate-realization hypothesis.
+The state update (add a qubit set $\Delta$ disjoint from $Q$ and an ordered list
+of well-typed, canonically-minted check rows over $Q\cup\Delta$) is exactly
+`E-EXTEND`; the logical-gate content is outside the object language (§1 circuit
+exclusion, `design/SCOPE.md` §4) and stays a hypothesis. No new taxonomy ID is
+minted. The distance-loss control enters as the `E-EXTEND` distance-loss conditional cell (`JUDGMENT_LAYER.md` §2a; `OPERATIONAL_SEMANTICS.md` §4.30, *Distance-loss cell*): a supplied, sourced loss $\ell_\tau$ gives the lower endpoint $\max(0, L_\tau-\ell_\tau)$, and the consumer checks its shape, not its truth.
+
 ## 2.10 Interface gluing / merge
 
 | Field | Description |
@@ -282,7 +300,7 @@ This is an extension family, not a single universally valid operation. The exact
 | **Parameter effects** | $n$, $k$, and distances depend on the interface; direct-sum formulas do not apply in general. Seam distance: the scalar relation $d=\min(d_A,d_B)$ is not admitted; settled as `false` as a universal (§4.33 counterexample), holding only instance-wise when a minimum-weight factor class survives the seam. The lower bound $d_\sigma(C)\ge\min(d_\sigma(C_A),d_\sigma(C_B))$ is proved (§4.31, §4.33 Claim 1). Evidence status `false` for the universal candidate claim |
 | **Primitive / derived** | Candidate derived operation |
 | **Formalization status** | Listed as a later geometric construction |
-| **Partial inverse** | Split, only when a cut and its boundary data are retained |
+| **Partial inverse** | `E-SPLIT` (separating deletion with cut $(Q_A, R_{\mathrm{seam}})$ where $R_{\mathrm{seam}}$ is the set of minted seam identifiers, §2.11, `OPERATIONAL_SEMANTICS.md` §4.48): restores the qubits and displayed rows of $C_A \oplus C_B$ in order, with $\mathsf{used}$ grown by $R_{\mathrm{seam}}$ (batch form of the add-then-delete law, §4.9) |
 
 **Review finding (second red-team pass, 2026-09-26) — dispositioned
 2026-09-26.** The **Conditions**
@@ -351,21 +369,31 @@ mechanized in `lean/CodeCalculus/GlueExtraction.lean` (building on
 `AdmissibleSeamFamily.lean`, and `Gate6Exact.lean`), with the irreducible
 geometric move-word $\to$ `AdmissibleSeam` gap recorded as a substrate
 boundary; and (3) `E-GLUE` advances to `contract-stated` (rung 5 in
-`CLAIMS.md`), remaining a Gate 6 conditional cell with Gate 6 unchecked.
+`CLAIMS.md`), remaining a Gate 6 conditional cell.
 
 ## 2.11 Split
 
 | Field | Description |
 | --- | --- |
-| **Status** | Candidate extension |
-| **Input** | A CSS code plus a cut/interface decomposition |
-| **Output** | One or more CSS codes, or a code with exposed interfaces |
-| **Operation** | Separate a code along a specified interface and update checks and qubits |
-| **Conditions** | The cut, boundary ownership, and induced stabilizer updates must be specified |
-| **Parameter effects** | No generic parameter formula; logical sectors may split, merge, or acquire interface modes |
-| **Primitive / derived** | Candidate derived operation |
-| **Formalization status** | Listed as a later geometric construction |
-| **Partial inverse** | Gluing with the retained interface data |
+| **Status** | Admitted conditional extension (2026-11-25, maintainer decision, issue #546; separating deletion admitted, two-state projection refused) |
+| **Input** | A presented CSS state $C$ and a cut $(Q_A, R)$: a qubit block $Q_A \subseteq Q$ and an explicit finite set $R$ of displayed generator identifiers |
+| **Output** | A single presented CSS state $C'$ on the same qubit namespace $Q' = Q$, separated at $Q_A$ (the "code with exposed interfaces" reading; the two-state projection reading is refused — see below) |
+| **Operation** | Delete every displayed row whose identifier lies in $R$, retaining all other displayed rows in order; retire the identifiers in $R$ in $\mathsf{used}$ (nothing minted) |
+| **Conditions** | (1) $Q_A \subseteq Q$; (2) every identifier in $R$ is displayed in $C$ (`DisplayedGenerator(r, pres)`); (3) every displayed row of $C$ that crosses $(Q_A, Q \setminus Q_A)$ (its support meets both $Q_A$ and $Q \setminus Q_A$) has its identifier in $R$. $R$ may include additional non-crossing displayed rows (e.g. intra-factor `E-GLUE` seam checks). Duplicate qubit labels in $Q_A$ or duplicate identifiers in $R$ are malformed; failure of (1)–(3) is inapplicable (`no_derivation`) |
+| **Parameter effects** | $n' = n$; $k' = k + t = k(C'\vert_A) + k(C'\vert_B)$ with $t = |R|$; $w' \le w$; $r' \le r$ with layout unchanged and honesty preserved; $\kappa'$ recomputed ($\kappa' \ge 2$ whenever both $Q_A$ and $Q \setminus Q_A$ are nonempty); $C'$ separated at $Q_A$. Distances: non-increase $d_\sigma(C') \le d_\sigma(C)$ and $d(C') \le d(C)$ (`proved`); exact unpriced distances `unavailable`; exact block-minimum identity $d_\sigma(C') = \min(d_\sigma(C'\vert_A), d_\sigma(C'\vert_B))$ and price decomposition $d_\sigma(C') = \min(d_\sigma(C), w_{\mathrm{del},\sigma}, w_{\mathrm{exp},\sigma})$ (`proved`, §4.48), giving the conditional priced cell on supplied restriction-display intervals (`JUDGMENT_LAYER.md` §2a, §2f). Minimum deletions over all displays of sector $\sigma$ is the row-space cut rank $c_\sigma = \operatorname{rank}(S_\sigma\vert_A) + \operatorname{rank}(S_\sigma\vert_B) - \operatorname{rank}(S_\sigma)$, attained after `P-REBASE` |
+| **Primitive / derived** | Derived command over `C-DELETE-CHECK` and `C-SEQUENCE` (`OBL-DERIVED-TERM-FACTORIZATION`), with admitted command production $\mathrm{split}_{Q_A; R}$ (`TERM_LANGUAGE.md` §1–§2) |
+| **Formalization status** | Transition defined 2026-11-25 (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2, §4.48; `JUDGMENT_LAYER.md` §2a–§2c, §2d.5, §2f, §4; `CLAIMS.md` `transition-defined`), meeting `VERSIONING.md` §4.2 at patch level on `stdCSS-3`; mechanized in `lean/CodeCalculus/SplitCommand.lean` (plus `Term.lean`, `Eval.lean`, `Soundness.lean`, `ExpandedSoundness.lean`, `Gate6Soundness.lean`, `Gate6Exact.lean`) |
+| **Partial inverse** | `E-GLUE` on a glued state (deleting the minted seam identifiers $R_{\mathrm{seam}}$ restores the qubits and rows of $C_A \oplus C_B$ with $\mathsf{used}$ grown by $R_{\mathrm{seam}}$), and in the other direction re-adding the deleted supports by `C-ADD-CHECK` restores both row spaces with fresh canonical identifiers and grown `used` (§4.48, batch form of §4.9) |
+
+**Projection refused (2026-11-25, maintainer decision, issue #546).** The
+alternative reading of the output — returning the two restriction displays
+$C'|_A$ and $C'|_B$ as separate states — is refused: `Eval` returns one state
+(returning two states would be a production of a new form, a shape change
+under `VERSIONING.md` §4.1 that is never folded), no
+kernel rule removes qubits while preserving block distance, and `used` has no
+canonical partition because retired identifiers have no row and therefore belong
+to neither block. Restriction displays are used only as the mathematical
+objects whose distances the conditional priced cell takes as hypotheses.
 
 **Prior art (2026-11-09).** Wang et al., *Decoupling 2D translation-invariant
 topological CSS codes*, arXiv 2608.09915 (2026), proves that every 2D
@@ -389,10 +417,10 @@ record.
 | **Output** | A CSS code on the same qubit namespace with the two sector row spaces conjugated at $q$ |
 | **Operation** | Apply the Hadamard at $q$: swap column $q$ of the $X$- and $Z$-type support data, exchanging the two sectors' contributions at that qubit |
 | **Conditions** | Both sector row spaces split along $q$ — for every row $v$ of $X$, $v|q \in X$, and for every row $w$ of $Z$, $w|q \in Z$. Then the column swap is applied row-wise (each row's entry at $q$ moves to the other sector) and the image is again a well-formed CSS presentation with unchanged ranks. Without the split the image need not be CSS; the former "none beyond a valid input" condition is withdrawn — see the qualification below |
-| **Parameter effects** | $n' = n$, $k' = k$, sector ranks unchanged (dimension counts). Distances: no generic rule for a single-qubit application; the full-qubit instance (global $X \leftrightarrow Z$ sector duality) exchanges them exactly, $d_X' = d_Z$ and $d_Z' = d_X$ (candidate effects pending derivation at contract stage) |
+| **Parameter effects** | $n' = n$, $k' = k$, $d' = d$. The full-qubit instance (global $X \leftrightarrow Z$ sector duality) exchanges the sector distances exactly, $d_X' = d_Z$ and $d_Z' = d_X$. A split subset $T$ exchanges them only on the factor code $C_T$: $d_X' = \min(d_Z(C_T), d_X(C_{Q\setminus T}))$ and $d_Z' = \min(d_X(C_T), d_Z(C_{Q\setminus T}))$, so each sector distance is at least $d$ (`OPERATIONAL_SEMANTICS.md` §4.27) |
 | **Primitive / derived** | Candidate primitive |
-| **Formalization status** | The **$T=Q$ instance — the global sector duality** — has a typed transition (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.27), admitted 2026-10-23 as a conditional cell under the Gate 6 decision (`JUDGMENT_LAYER.md` §2f). The general split-subset instance is **without a transition**: `hadamard(T)` terms with $\varnothing\subsetneq T\subsetneq Q$ are inapplicable in the admitted transition, whose row-wise image for a mixed row needs a rebasing argument not specified here. Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
-| **Partial inverse** | Itself at $q$ (the Hadamard is an involution; the $T=Q$ instance is involutive) |
+| **Formalization status** | The **$T=Q$ instance — the global sector duality** — has a typed transition (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2, §4.27), admitted 2026-10-23 as a conditional cell under the Gate 6 decision (`JUDGMENT_LAYER.md` §2f). The **split-subset instance** $\varnothing\subsetneq T\subsetneq Q$ has a typed transition under the decidable splitting guard above, read along $T$. A mixed row is re-presented by a deterministic canonical update that uses the canonical mint (`OPERATIONAL_SEMANTICS.md` §2 `E-LOCAL-HADAMARD` card, §4.27(b)). Sound admission discharged (`OBL-GATE6-CSS-EXTENSIONS`, §4.32) |
+| **Partial inverse** | Itself, with the same $T$. The $T=Q$ instance is involutive on labeled states. A split subset restores both row spaces, and restores the labeled state when the display has no mixed row (§4.27(b)) |
 
 **Review finding (second red-team pass, 2026-09-26) — dispositioned
 2026-09-26.** The **Conditions**
@@ -526,24 +554,12 @@ normative dependency.)*
  makes the constructor's dependence on its input presentation part of its
  signature. Any judgment transport over this constructor inherits it
  (`OBL-JUDGMENT-TRANSPORT`).
- - **Admission remains a Gate 7 question and is not decided here.** This
- disposition fixes the well-formedness *strategy* only. If Gate 7 declines
- admission, the `P-REBASE`-data boundary revision stands but no constructor
- needs it.
- - **Choosing a repair discharges no obligation.** In particular
- output is **live and unproved**, not discharged:
- it now asks whether the repaired output satisfies I1–I5, which is an open proof
- obligation. This disposition does not establish that the constructor is
- well-formed.
-
- **Scope limit, recorded against the recommendation.** Deferring to Gate 6 (the
- scoping note's position) was recommended on 2026-10-05 and declined: admission is
- a Gate 7 decision that may never occur, so a repair decided today may
- accommodate a constructor that is never admitted. That reasoning is retained here
- so the trade-off is auditable.
- lower-level constructors require typed input objects is Gate 7 (proposal §10,
- *constructor, family, and completeness decision*). Both remain open; neither is
- dispositioned here.
+ - **The repair is not an admission.** Choosing it discharges no obligation.
+ The CSS tensor product instance is admitted as `A-PRODUCT`, with output
+ well-formedness proved
+ ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.35). Gate 7
+ ([`GATES.md`](GATES.md) §10, ratified 2026-11-26) keeps typed inputs as
+ production arguments.
 - **Claim status.** The distance-gain statement for this constructor is
  `proposed`, not `established`: no derivation for it exists in this repository,
  and agreement between prior art and a candidate rule is evidence that may
@@ -555,21 +571,13 @@ normative dependency.)*
  fault-response certificates, and circuit distance have no field in
  $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$; those judgments are `not yet
  defined` here, not `unavailable`.
-- **Admission status.** §2.13 has no grammar production — `A-*`/`L-*` constructors
- need typed inputs (proposal §8; crosswalk in `spec/TERM_LANGUAGE.md §2`) — and it
- carries taxonomy-only rows for the L-* constructors; see [`CLAIMS.md`](CLAIMS.md)
- *Initial contract index* and no stable identifier, so it sits below the ladder's
- first rung (`taxonomy-only`) rather than on it. The families it would serve are
- indexed separately: `L-HGP` (canonical HGP amplifiers) and `A-DOUBLE` (duplication).
- Admission of the constructor itself was a Gate 7 matter when this bullet was
- written. **Superseded in part 2026-11-11:** `L-HGP`
- and `A-DOUBLE` are `transition-defined`, and the CSS tensor product instance
- of this record has the production `product(e_A, e_B)` under the stable
- identifier `A-PRODUCT`, also `transition-defined`
- (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35). Product structures other than
- the CSS tensor product still have no production. The bullet's closing
- clause is kept as it stood: the full scoping input is, which decides neither
- gate.
+- **Admission status.** The CSS tensor product instance of this record has the
+ production `product(e_A, e_B)` under the stable identifier `A-PRODUCT`
+ (`OPERATIONAL_SEMANTICS.md` §2 card, §4.35), `transition-defined`; the
+ related families `L-HGP` (canonical HGP amplifiers) and `A-DOUBLE`
+ (duplication) are `transition-defined` too ([`CLAIMS.md`](CLAIMS.md),
+ *Initial contract index*). Product structures other than the CSS tensor
+ product have no production.
 - **Exit-row effect.** None. Because no syntax production is affected, the syntax
  admitted by and its exit are unchanged.
 
@@ -587,17 +595,24 @@ normative dependency.)*
 | **Formalization status** | Expression production `concat(e_O, e_I; blocks)` admitted 2026-11-11 for CSS factors (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34), `transition-defined`; non-CSS inner inputs excluded |
 | **Partial inverse** | Generally none |
 
-**Flagged gap — non-CSS inner inputs.** The **Input** row reads
-"an outer code and an inner code" without stating whether "code" there means a
-CSS state. Three qLDPC board entries concatenate a CSS outer with a non-CSS
-stabilizer inner (`codes/512-54-24.json`, `codes/576-42-24.json`,
-`codes/672-28-30.json`, added 2026-10-14; read at challenge commit
-`6e1e41be3`): the composite is CSS, but the inner input is not representable in
-$C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$. Whether `A-CONCAT` admits such
-inputs under a typed interface, or whether those instances sit below the CSS
-layer, is an open question; until it is answered the **Input** row does not
-read onto them. This qualification changes how the record must be read and
-stays inline until the question is answered.
+**Refused input extension — non-CSS / symplectic inner inputs (decided
+2026-11-25, issue #573).** By dated maintainer decision (MathysRennela,
+2026-11-25), finite symplectic inner-matrix inputs for `A-CONCAT` are
+**refused**, and the **Input** row above reads onto `stdCSS` CSS states only.
+Three qLDPC board entries concatenate a CSS outer with a non-CSS stabilizer
+inner (`codes/512-54-24.json`, `codes/576-42-24.json`, `codes/672-28-30.json`,
+added 2026-10-14; read at challenge commit `6e1e41be3`). Neither the inner
+input nor the composite is representable in
+$C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$: each of the three composites is
+a non-CSS stabilizer code (`code_type: "stabilizer"`) whose stabilizer group is
+not generated by its X-type and Z-type elements (corrected 2026-11-24;
+`design/A_CONCAT_SYMPLECTIC_INNER_PROPOSAL.md` §2 in the development
+repository). Any CSS-composite guard refuses all three entries, and a CSS
+composite forces a CSS group on every block, so without outer stabilizers
+confined to a block the inner code is already CSS. Those instances sit below
+the CSS layer and require a non-CSS stabilizer state sort, which the 2026-11-18
+decision on issue #545 refused. This scope qualification stays inline so the
+**Input** row is read onto CSS states only.
 
 **Check-weight effect.** The **Parameter effects** row names block
 lengths, logical dimensions, and distance hypotheses but not check weight.
@@ -797,7 +812,7 @@ HGP is a genuine construction, but it should not be conflated with an operation 
 | **Conditions** | The coefficient algebra, involution/transpose convention, lift action, and orthogonality proof must be specified |
 | **Parameter effects** | Depend on base dimensions and lift size; degree and rank bounds require constructor-specific hypotheses |
 | **Primitive / derived** | Lower-level constructor |
-| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34) and generalized 2026-11-22 to finite nonabelian groups via explicit multiplication-table or permutation-generator presentations with commuting left/right regular representations $L(x), R(y)$ and antipode involution $g \mapsto g^{-1}$ (§4.44), `transition-defined` |
+| **Formalization status** | Expression production `lift_G(A, B)` admitted 2026-11-11 for finite abelian groups (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md` §2 card, §4.34) and generalized 2026-11-22 to finite nonabelian groups via explicit multiplication-table or permutation-generator presentations with commuting left/right regular representations $L(x), R(y)$ and antipode involution $g \mapsto g^{-1}$ (§4.44), `transition-defined`; optional subgroup argument for the coset lift (non-normal $H \le G$, $B$ over $\mathbb{F}_2[N_G(H)]$) admitted 2026-11-26 (§4.49) |
 | **Partial inverse** | Generally none |
 
 Normal-subgroup lifts are specializations of this layer, not automatically a new primitive.
@@ -933,7 +948,7 @@ particular, a logical gate on a code (such as a commuting Pauli-rotation family
 checked for codespace preservation, [`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md)
 §2h) leaves $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ unchanged
 and has no state update, so **no operation identifier is minted for a logical
-gate**; its codespace-preservation and weight-floor judgments belong to the
+gate**; its codespace-preservation, frame-reading, and weight-floor judgments belong to the
 judgment layer. Likewise, the *family-level* transport statement under the
 one-shot hollowed-tensor level map ([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2j) — the tower-level threshold and amplification claim — is a
 conditional rule over QLDPC code families rather than a single-state operation on
@@ -948,23 +963,109 @@ another PR.)
 **Specialization record (rung 3, transition-defined) — `PP-SCALE` (explicit extension of a pair-partition code).** Source: Kasai, *Increasing Quantum LDPC Code Distance through Explicit Extensions*, arXiv submit/8406448 (2026-11-21), read 2026-11-22. This is a specialization of the general *pair equal relative permutation maps* constructor (PRIOR_ART.md §1, Okada–Kasai v4 Thm 4), not a new primitive; it earns a record under §3.8 on four of the five criteria:
 
 - **Distinct input type.** A PP-presented CSS code `C₀` (equivalently a typed PP-parameter bundle `B = (M, Q, (e_j), λ, θ, conventions)` output by the extraction meta-procedure) plus a target size `P ≥ 2`. The bundle is constructor-side data, not part of `C = (Q, X, Z, pres, used)`.
-- **Distinct state update.** Construction of a *new* CSS state on `L·P` qubits: `Q'` a fresh namespace (canonically minted, disjoint from `used₀`), `X'/Z'` the rows assembled from `A(a,b)` blocks per (1) with slopes `a_q(P) = ∏_j r_j(P)^{Q_{qj}} (mod P)` (`r_j^{e_j}=1`) and shifts `b(P) = G(P) θ (mod P)` (`G = V C` from the SNF of the shift congruence matrix), `pres'` the generated display, `used'` all minted ids. No mutation of `C₀`.
+- **Distinct state update.** Construction of a *new* CSS state on `L·P` qubits: `Q'` a fresh namespace `{0, ..., L·P - 1}`, `X'/Z'` the rows assembled from `A(a,b)` blocks per (1) with slopes `a_q(P) = ∏_j r_j(P)^{Q_{qj}} (mod P)` (`r_j^{e_j}=1`) and shifts `b(P) = G(P) θ (mod P)` (`G = V C` from the SNF of the shift congruence matrix), `pres'` the generated display with identifiers canonically minted starting from `used₀`, `used'` the union of `used₀` with the newly minted ids. No mutation of `C₀`.
 - **Distinct CSS-orthogonality proof.** The PP conditions (2) at `P`, together with SNF invertibility over the integers, imply `H_X H_Z^T = 0` for every `P ≥ 2` (paper §2.1). This is a different proof shape from the direct-sum or graft orthogonality arguments.
 - **Distinct parameter theorem.** The Smith-normal-form parametrization of slopes and shifts with fixed coordinates `θ`, `λ`, `e_j`, and the reproduction check at `P₀` (paper §2.1, (3)–(5), Algorithms 1–2). The construction is total given a valid bundle: no candidate screening by distance.
 
 **Conditions (applicability premises).** (i) `C₀` is PP-presented and all original slopes are units; (ii) the PP conditions (2) hold at `P₀`; (iii) the SNF reproduction check passes ((3) and (5) reproduce the original arrays); (iv) `P ≥ 2`; (v) positive dimension `k = L·P − rank H_X − rank H_Z > 0`, checked separately (the paper states this is not automatic); (vi) generated rows independent as claimed. Absence of a derivation for (v) is part of the semantics (partial big-step), not a failure.
 
-**Parameter effects.** `n' = L·P`; `k' = L·P − rank_X' − rank_Z'` (rank bookkeeping over the retained display); `w' = L` (carries — each natural row has one 1 in each of the $L$ block columns, so row weight is the block-column count $L$); `d_X'`, `d_Z'`, `d'` have no generic formula and are `not yet defined` unless supplied as priced hypotheses; `r'` and Tanner connectivity are recomputed from the generated presentation. No automatic distance cell.
+**Parameter effects.** `n' = L·P`; `k' = L·P − rank_X' − rank_Z'` (rank bookkeeping over the retained display); `w' = L` (carries — each natural row has one 1 in each of the $L$ block columns, so row weight is the block-column count $L$); `d_X'`, `d_Z'`, `d'` have no generic formula and are `unavailable` automatically unless supplied as priced hypotheses; `r'` and Tanner connectivity are recomputed from the generated presentation. No automatic distance cell.
 
-**Judgment cells (per evaluation, scoped).** `w` carries; `n`, `k`, `r`, Tanner connectivity do not carry (recomputed); `d_X`/`d_Z`/`d` are `not yet defined` by default and become `conditional` when a verified interval `[d_lo, d_hi]` is supplied (recorded as a trusted upper/lower bound; the consumer checks input shape, not truth, per the priced-hypothesis boundary). The paper's verified intervals (e.g. `34 ≤ d ≤ 70`) enter as `upper_bound` claims only.
+**Judgment cells (per evaluation, scoped).** `w` carries; `n`, `k`, `r`, Tanner connectivity do not carry (recomputed); `d_X`/`d_Z`/`d` are `unavailable` automatically and become `conditional` when a supplied interval `[d_lo, d_hi]` is recorded as a priced hypothesis (consumer checks input shape, not truth, per the priced-hypothesis boundary; upper endpoints enter as `upper-bound` claims only).
 
-**Family-level structural bound (separate, no operation ID).** The paper's conjecture of a finite, size-independent structural upper bound `B` with improvement toward it as `P` grows is a *conditional family-level rule* over PP-scale families with fixed parameters, analogous to `JUDGMENT_LAYER.md` §2j. Under §3.8, **no taxonomy operation identifier is minted** for it. If admitted, it is recorded as a conditional rule with `B` as a trusted (conjectural) input, scoped as an upper ceiling, with monotonicity explicitly not assumed. Family closure and amplified lower bounds remain `unavailable` (`design/SCOPE.md` §4, issue #541).
+**Family-level structural bound (separate, no operation ID).** The paper's conjecture of a finite, size-independent structural upper bound `B` with improvement toward it as `P` grows is a *conditional family-level rule* over PP-scale families with fixed parameters, analogous to `JUDGMENT_LAYER.md` §2j. Under §3.8, **no taxonomy operation identifier is minted** for it. If admitted, it is recorded as a conditional rule with `B` as a trusted (conjectural) input, scoped as an upper ceiling, with monotonicity explicitly not assumed. Family closure and amplified lower bounds remain `unavailable` (`design/SCOPE.md` §4).
 
 **Formalization status.** Transition-defined (rung 3, 2026-11-22): grammar production `pp_scale(e; P)` added to `TERM_LANGUAGE.md` §1–§2; transition card at `OPERATIONAL_SEMANTICS.md` §2; dated hand derivation at `OPERATIONAL_SEMANTICS.md` §4.47 (Kasai §2.1 orthogonality argument in calculus notation, with the `k > 0` premise, canonical minting, and fresh-namespace update explicit); obligation entry `OBL-PP-SCALE` recorded in `OBLIGATIONS.md`; mechanized in `machine/constructors.py` and `lean/CodeCalculus/` (`Term.lean`, `Constructors.lean`, `Eval.lean`, `ConstructorAssembly.lean`, `ConstructorInstances.lean`).
 
 **Partial inverse.** None in general. Recovering `P₀` or the original code from a generated code is not unique (permutation equivalence; the paper notes normalization choices define different families).
 
 **Price-provider boundary.** The extraction meta-procedure (Algorithm 1) is admitted only as a source of constructor parameters, analogous to `A-CONCAT` tower factorization admitted only as a price provider (`design/SCOPE.md`). It is not a term production and not a state transformation; exposing it as a term would require an extended state carrying pair partitions and SNF data, which is not in `C`.
+
+---
+
+## 3.8a Candidate constructor records added 2026-11-26 (taxonomy-only, rung 1)
+
+These records name families identified by the 2026-11-26 internet scan (`notes/missed_constructions_scan_2026-11-26.md`) that satisfy §3.8's distinct-input / distinct-state-update / distinct-parameter-theorem criteria at the level of a candidate record. They are **not** admitted transitions: no grammar production, no typed transition, no obligation, and no claim status beyond the record. Each stays at rung 1 until a dated maintainer decision admits it: under the instance contract of [`VERSIONING.md`](VERSIONING.md) §4.2 if it is an instance of an existing interface, and with a new ordinal, or an additive fold, if it changes an interface (§4.1). Gate 7 (ratified 2026-11-26) admits none of them. They are recorded so the deferral is explicit rather than implicit, per `design/SCOPE.md` §4 (Gate 7 constructors are out of the stopping point). Typed-signature sketches and recommended dispositions for these records, for the §2.9 appending note and for `X-EAQLRC` (§4.9) are in `design/GATE7_CANDIDATE_EVALUATIONS.md`; they are recommendations only and change no record's rung.
+
+### Record: `L-BRUHAT` (CSS codes from the Bruhat order of a Coxeter group)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Lower-level constructor candidate (taxonomy-only, rung 1) |
+| **Input** | A Coxeter group (finite or infinite, reducible or not) given by its presentation, plus a collection of Bruhat intervals whose union is closed under going down in the Bruhat order (so convex, which the orthogonality argument needs; an arbitrary union of intervals is not orthogonal in general) and has nonzero homology in the selected degree, a degree selection, and the chain-complex extraction data derived from the Bruhat face poset. A single interval does not suffice: in its middle degrees it encodes no logical qubits (`design/GATE7_CANDIDATE_EVALUATIONS.md` §1) |
+| **Output** | A CSS code on the qubits and checks of the extracted chain complex |
+| **Operation** | Interpret the Bruhat order as the face poset of a regular CW complex; take the chain complex of a Bruhat interval; extract two- or three-term (length-three) complexes readable as $X$/$Z$ check maps of a CSS code |
+| **Conditions** | The Coxeter presentation, the Bruhat interval, and the chain-complex extraction (boundary maps) must be typed; the resulting $X$ and $Z$ spaces must be orthogonal |
+| **Parameter effects** | Constructor-specific; examples include controlled stabilizer weights (e.g. $[[6006,924,\{\le 14,\le 7\}]]$, $[[22880,3432,\{\le 8,\le 16\}]]$) and irregular-weight codes (e.g. $[[571,199,\{5,5\}]]$). The source's weight-reduction method for rare heavy stabilizers acts on a finished code and is **not** part of this constructor. No generic distance formula |
+| **Primitive / derived** | Lower-level constructor (not a transformation of an existing CSS state) |
+| **Formalization status** | Candidate record added 2026-11-26 from prior art (Brádler, arXiv 2603.16036 (2026)). No grammar production, no typed transition, no obligation. Admission needs a dated maintainer decision (see the section introduction) |
+| **Partial inverse** | None stated |
+
+**Why it is a candidate rather than an alias.** Under §3.8 the family has a distinct input type (Coxeter group + Bruhat interval, not a classical code, matrix, graph, or cellulation), a distinct orthogonality proof (Bruhat face-poset incidence), and a distinct parameter theorem (weight control via interval structure). It is not a specialization of `L-NESTED-CSS`, `L-MAPPING-CONE`, `L-TILE`, or `L-HGP`: the incidence structure is poset-interval, not a user-supplied chain map or cellulation.
+
+### Record: `L-MONOMIAL` (divisible decreasing monomial codes)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Lower-level constructor candidate (taxonomy-only, rung 1) |
+| **Input** | A monomial/Reed-Muller-type code on the Boolean hypercube plus a downward-closed puncturing set (and, for the randomized instance, a protected set of points) |
+| **Output** | A CSS code whose logical qubits are created by the puncturing |
+| **Operation** | Form a divisible decreasing monomial code and puncture it at a downward-closed set on the Boolean hypercube, with a closed-form distance for the punctured code |
+| **Conditions** | The monomial family, the divisibility conditions, and the downward-closed puncturing set must be typed; the resulting $X$/$Z$ spaces must be orthogonal |
+| **Parameter effects** | Constructor-specific; includes a closed-form expression for the distance of the punctured code (a parameter theorem). Transversal (strong) $T$-gate property is a logical-gate property and stays outside the object language (§1 circuit exclusion) |
+| **Primitive / derived** | Lower-level constructor |
+| **Formalization status** | Candidate record added 2026-11-26 from prior art (Wills, arXiv 2608.24000 (2026)). No grammar production, no typed transition, no obligation. Admission needs a dated maintainer decision (see the section introduction) |
+| **Partial inverse** | None stated |
+
+**Why it is a candidate rather than an alias.** Under §3.8 the family has a distinct input type (monomial family + downward-closed puncturing set, not arbitrary parity-check matrices) and a distinct parameter theorem (the closed-form distance). It is not a specialization of `E-PUNCTURE`, which is a state transformation on an existing code, not a from-scratch constructor, nor of `L-NESTED-CSS`.
+
+### Record: `L-BOOTSTRAP` (quantum bootstrap product)
+
+| Field | Description |
+| --- | --- |
+| **Status** | Lower-level constructor candidate (taxonomy-only, rung 1) |
+| **Input** | Input codes together with a solution of the "bootstrap equation" consistency condition on multiple components |
+| **Output** | A CSS code whose chain complex is a "fork complex" (chain groups and boundary maps with multiple components) |
+| **Operation** | Solve the bootstrap consistency condition to obtain a chain complex that is not a simple tensor product of the inputs' complexes |
+| **Conditions** | The bootstrap equation must be satisfied; the resulting fork complex must define a valid CSS code ($X \perp Z$) |
+| **Parameter effects** | Constructor-specific; can surpass HGP rate upper bounds and produce self-correcting codes from constant-energy-barrier inputs. No generic distance formula |
+| **Primitive / derived** | Lower-level constructor |
+| **Formalization status** | Candidate record added 2026-11-26 from prior art (Li, arXiv 2601.22363 (2026)). No grammar production, no typed transition, no obligation. Admission needs a dated maintainer decision (see the section introduction) |
+| **Partial inverse** | None stated |
+
+**Why it is a candidate rather than an alias.** Under §3.8 the family has a distinct input type (a consistency equation over multiple components, not two chain complexes with a tensor product) and a distinct output (fork complexes). It generalizes `L-HGP` and fracton (X-cube) codes. It does **not** factor through `A-PRODUCT`: the admitted `product(e_A, e_B)` is the CSS tensor product of two presented states, and a fork complex is in general not a tensor product of its components (`design/GATE7_CANDIDATE_EVALUATIONS.md` §3).
+
+### Specialization note: coset lifted product (under `L-LIFTED`)
+
+**Recorded 2026-11-26 (prior art Rajpurohit–Lalitha–Garani, arXiv 2610.12782).**
+The coset lifted product (CLP) generalizes `L-LIFTED` from normal-subgroup lifts to
+non-normal subgroup coset actions: given a finite group $G$, a (possibly non-normal)
+subgroup $H \le G$, a protograph $A$ over $\mathbb F_2[G]$ and $B$ over
+$\mathbb F_2[N_G(H)]$, it produces a CSS code via left/right coset actions on
+$G/H$. For odd-order groups it gives a dimension formula as a sum over irreducible
+representations of $G$ of HGP dimensions. Under §3.8 this is a **specialization of
+`L-LIFTED`** (non-normal coset action + normalizer + representation-theoretic
+dimension formula), not a new primitive and not a new state update: the underlying
+lift action is the same typed product, with a generalized group action. The
+non-normal case is a distinct input condition and a distinct dimension formula,
+which may earn a named record of its own if admitted, but it does not change the
+state model. The coset lift is admitted as the optional subgroup argument of
+`lift_G(A, B)`, with the normalizer as a typing premise on $B$
+(`OPERATIONAL_SEMANTICS.md` §2 `L-LIFTED` card, §4.49;
+`OBL-COSET-LIFT-INPUTS`). No taxonomy ID is minted. The dimension formula is
+not transcribed, because $k$ is computed exactly.
+
+### Specialization note: fair-density parity-check codes (under `L-HGP`)
+
+**Recorded 2026-11-26 (prior art, arXiv 2609.01181).**
+Fair-density parity-check (FDPC) codes used as components in hypergraph products,
+with structured sparsification replacing dense checks by lower-weight checks while
+retaining a minimum-distance guarantee, are a **specialization of `L-HGP`** with a
+new component family (FDPC) and a sparsification step. The sparsification is a
+component-level check-weight reduction, not a state transformation on a finished
+code, so no new taxonomy ID is minted. The analytical logical-multiplicity data
+is a candidate priced-hypothesis source (lower bounds / enumerations) consistent
+with the consumer's trusted-input boundary. It is not admitted; admission needs a dated maintainer decision.
 
 ---
 
@@ -1151,6 +1252,24 @@ discharge of any obligation.
 
 This record does not make gauging a calculus operation. The parent is CSS, but the gauged output leaves the ordinary-CSS model, so it joins the deferred extended-state layer alongside `X-GAUGE-FIX`. The paper's fault-tolerance and circuit-distance statements are evidence about the construction, not proofs of calculus claims, and they do not enter the judgment layer without a Gate 6 admission decision and supplied hypotheses. Circuit-level content is a non-goal of the first phase and is recorded here only as scope context.
 
+## 4.9 Entanglement-assisted locally recoverable codes (candidate)
+
+### Record: `X-EAQLRC`
+
+| Field | Description |
+| --- | --- |
+| **Status** | Candidate extended-state constructor (taxonomy-only, rung 1); not admitted; no grammar production |
+| **Input** | Two classical codes (without the ordinary dual-containing/self-orthogonality condition) plus pre-shared maximally entangled pairs, plus locality data |
+| **Output** | An entanglement-assisted CSS-like code with locality $r$ (not an ordinary CSS code in $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$) |
+| **Operation** | Relax the dual-containing constraint by assuming noiseless halves of pre-shared entangled pairs; build extended stabilizers with controlled supports; derive a CSS-like construction from two classical codes without the ordinary dual-containing condition |
+| **Conditions** | The sufficient support conditions on extended stabilizers must hold; the entanglement resource must be typed and accounted for (it is not part of the ordinary CSS state) |
+| **Parameter effects** | Constructor-specific; includes locality upper bounds and a Singleton-like bound for CSS-like EAQLRCs, with optimal families from $\ell$-intersection pairs of MDS codes and block parity-check matrices. Distance and rate depend on the classical inputs and the entanglement resource |
+| **Primitive / derived** | Candidate constructor of the extended-state layer |
+| **Formalization status** | Candidate record added 2026-11-26 from prior art (arXiv 2607.27091 (2026)). No transition, no grammar production, no obligation. Gate 6 admission of the extended-state layer (currently refused for v0.3.0, `design/SCOPE.md` §4) precedes any promotion |
+| **Partial inverse** | None stated |
+
+**Why it is a candidate rather than an alias.** Under §3.8 the family has a distinct input type (classical codes + entanglement resource, with the dual-containing condition dropped), a distinct state update (extended stabilizers rather than ordinary CSS checks), and distinct parameter theorems (locality bounds, Singleton-like bound). It is not representable in $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$ because the entanglement resource and extended stabilizers have no field there, so it joins the extended-state layer. It is not an instance of `L-NESTED-CSS` or `C-ADD-CHECK`.
+
 ---
 
 # Gate 7 constructor signatures
@@ -1168,6 +1287,474 @@ The signature record itself admitted no constructor; ten of the fifteen
 at rung 3 (`transition-defined`) in 2026-11-11/13 (
 [`CLAIMS.md`](CLAIMS.md)), while the remaining five stay at rung 1
 (`taxonomy-only`). Promotion above rung 1 remains maintainer work.
+
+# Gate 7 decision matrices
+
+Recorded 2026-11-24 as inputs to the Gate 7 decision, which was ratified on
+2026-11-26 for `stdCSS-3` on these inputs
+([`GATES.md`](GATES.md) §10, *Gate 7*). Neither matrix adds a production, a
+transition, a judgment cell, or a consumer path.
+
+## Typed-input decision matrix
+
+**Argument kinds.** Each argument of a production is one of three kinds.
+
+- A *lower-level object* is a finite object from outside the state sort: a
+  binary matrix, a finite group presentation, a group-algebra element or
+  matrix, a group action, local codes with vertex embeddings, tiles with
+  placements and boundary rules, a qubit-label set, a lift size with block
+  descriptors, a new row support, or an invertible matrix.
+- A *state expression* is evaluated to a presented state.
+- *Selection data* refers into the value of a state expression: a displayed
+  identifier, a qubit of $Q$, a sector, a subset or partition of $Q$, a map
+  between two evaluated namespaces, or a wiring keyed by displayed
+  identifiers. It is well-typed only relative to that state and is checked
+  against it.
+
+**Statuses.** A production is **required** when it takes at least one
+lower-level object, which no presented state determines and the term must
+therefore supply. It is **derived** when every argument is a state expression
+or selection data, so it needs no lower-level object. An argument is
+**optional** when the card states a default for it, computed from the other
+arguments. The optional status is recorded beside the primary one.
+
+**Decision recorded.** Typed inputs stay arguments of their production or
+command. None becomes a field of $C=(Q,X,Z,\mathsf{pres},\mathsf{used})$
+([`STATE_MODEL.md`](STATE_MODEL.md) §1). Constructor-side data that a state does
+not carry, such as the PP-parameter bundle of `PP-SCALE`, is supplied with the
+term and is never read from the state ([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §1).
+Priced hypotheses are judgment inputs, never production arguments; see
+*Conditional cells* below the table.
+
+| ID | Production | Lower-level objects | State expressions and selection data | Status | Why |
+| --- | --- | --- | --- | --- | --- |
+| `L-HGP` | `hgp(H₁, H₂)` | $H_1$, $H_2$ binary, all dimensions $\ge 1$ | — | required | The output is a function of two classical parity-check matrices. No CSS state is an input. |
+| `L-LIFTED` | `lift_G(A, B)`, `lift_{G;H}(A, B)` | $G$ (cyclic orders, multiplication table, or permutation generators); $A$ over $\mathbb{F}_2[G]$; $B$ over $\mathbb{F}_2[G]$, or over $\mathbb{F}_2[N_G(H)]$ with $H$; $H \le G$ by generators | — | required; $H$ optional (default $\{e\}$, the regular lift) | The group and the algebra entries fix the lift. Over the trivial group the term reads as `hgp(A, B)`. |
+| `L-GROUP-ALGEBRA` | `twoblock_G(a, b)` | $G$; $a, b \in \mathbb{F}_2[G]$ | — | required | The $1 \times 1$ restriction of the `L-LIFTED` input: `twoblock_G(a, b)` equals `lift_G((a), (b*))` row for row (`OPERATIONAL_SEMANTICS.md` §4.34, §4.44). |
+| `L-BALANCED` | `balanced_G(H₁, α₁; H₂, α₂)` | $G$; $H_1$, $H_2$; a right action $\alpha_1$ and a left action $\alpha_2$ | — | required | Equivariance is a typing condition, so an input that fails it is malformed. The actions are part of the input type and are not checked against a state. |
+| `L-TANNER` | `tanner(n; Λ_X, Λ_Z; ι_X, ι_Z)` | $n$; local codes $\Lambda_X$, $\Lambda_Z$; vertex embeddings $\iota_X$, $\iota_Z$ | — | required | The incidence structure is the input. Commutation is an applicability premise (no derivation when it fails), and no expansion hypothesis is an input. |
+| `L-TILE` | `tile(τ; α; β)` | tiles; placements; identifications and removed checks | — | required | The cellulation is the input. Interface orthogonality is an applicability premise. |
+| `L-NESTED-CSS` | `nested(H_X, H_Z)` | $H_X$, $H_Z$, each with at least one row, with equally many columns | — | required | The two classical codes are the input. Nesting is an applicability premise. |
+| `L-MAPPING-CONE` | `cone(∂_A, ∂_B, f₁, f₀)` | four binary matrices | — | required | Two two-term complexes and a chain map. The chain-map identity is an applicability premise. |
+| `L-PAIR-PARTITION` | `pair_partition(p; B_X, B_Z)` | $p$; block matrices of affine descriptors | — | required | The affine permutation blocks are the input. The pairing condition is an applicability premise. |
+| `L-EMPTY` | `empty` | none | none | derived (nullary) | The output is fixed, so nothing is supplied. |
+| `L-FREE` | `free(Q)` | a finite label set $Q \subset \mathbb{N}$ | — | required | The qubit namespace is the whole input, and no state precedes it. |
+| `PP-SCALE` | `pp_scale(e; P)` | $P$; the PP-parameter bundle or the target block matrices | $e$, a PP-presented state | required | The PP presentation is constructor-side data that $C$ does not carry, so it cannot be read off the value of $e$. |
+| `A-CONCAT` | `concat(e_O, e_I; B⃗)` | — | $e_O$, $e_I$; the block list $\vec B$, a partition of $Q_O$; the representatives | derived; representatives optional | Every argument is read from or checked against the two factors. The representatives default to the dual logical bases of the inner level data. Non-CSS inner codes are not inputs (§2.14). |
+| `A-PRODUCT` | `product(e_A, e_B)` | — | $e_A$, $e_B$ | derived | The product structure is fixed as the CSS tensor product. The output depends on the two displays (`OPERATIONAL_SEMANTICS.md` §4.35). |
+| `A-DOUBLE` | `double_{w,s}(e)` | — | $e$; the wiring $w$, keyed by displayed identifiers; the flag $s$ | derived; $s$ optional | The wiring names subsets of displayed supports. $s$ defaults to absent, and the empty wiring gives the plain two-sheet cover. |
+| `A-PULLBACK` | `pullback(e₁, e₂, e_I; φ₁, φ₂)` | — | $e_1$, $e_2$, $e_I$; total qubit maps $\phi_1$, $\phi_2$ | derived | The maps run between the namespaces of the evaluated states. The morphism property is an applicability premise. |
+| `A-PUSHOUT` | `pushout(e₁, e₂, e_S; ψ₁, ψ₂)` | — | $e_1$, $e_2$, $e_S$; total qubit maps $\psi_1$, $\psi_2$ | derived | As for `A-PULLBACK`. |
+| `C-DIRECT-SUM` | `e₁ ⊕ e₂` | — | $e_1$, $e_2$ | derived | The disjointness of the namespaces and of `used` are premises. |
+| `E-GLUE` | `glue(e₁, e₂; u⃗)` | the seam checks $(\tau_i, \mathrm{supp}_i)$ | $e_1$, $e_2$ | required | The seam supports are new rows that neither factor carries. The seam certificate is a judgment input (`JUDGMENT_LAYER.md` §2e), not an argument. |
+| `C-SKIP` | `skip` | none | none | derived (nullary) | Nothing to supply. |
+| `C-DELETE-CHECK` | `delete_r` | — | $r$, a displayed identifier | derived | The deleted row is selected from the display. |
+| `C-ADD-CHECK` | `addStab_r` | the new row $r$ (sector and support in $Q$) | — | required | The added support is new data that the state does not carry. |
+| `E-GRAFT` | `graft(q, τ; r⃗)` | — | $q$, $\tau$, the ordered list $\vec r$ | derived | The set of rows in $\vec r$ is fixed by $(q, \tau)$. Their order is selection data. |
+| `E-PEEL` | `peel(q, τ; r)` | — | $q$, $\tau$, $r$ | derived | $r$ is the unique displayed $\tau$-row containing $q$. |
+| `E-PUNCTURE` | `puncture(q)` | — | $q$ | derived | The punctured qubit is selected from $Q$. |
+| `E-EXTEND` | `extend(Δ; u⃗)` | the fresh labels $\Delta$; the added rows $(\tau_i, \mathrm{supp}_i)$ | — | required | The new qubits and supports are not in the state. |
+| `E-LOCAL-HADAMARD` | `hadamard(T)` | — | $T \subseteq Q$ | derived | $T$ is selected from $Q$. The row-space splitting guard is an applicability premise, not an argument. |
+| `P-REBASE` | `rebase(τ; M)` | $M \in \mathrm{GL}(m, 2)$ | $\tau$ | required | The size $m$ is read off the display, but the entries of $M$ are not. |
+| `C-COLUMN-CNOT` | `cnotSwap(U)` | $U \in \mathrm{GL}(Q, 2)$ | — | required | $U$ is the argument of the command and the source of its computed distance window (`JUDGMENT_LAYER.md` §2k). |
+| `E-SPLIT` | `split(Q_A; R)` | — | $Q_A \subseteq Q$ (qubit block), $R$ (displayed cut-row identifiers) | derived | Both $Q_A$ and $R$ are selection data checked against the state ($Q_A \subseteq Q$, every $r \in R$ displayed, $R$ covering every crossing row); no lower-level object is supplied. The optional `split_block_intervals` pricing hypothesis is a judgment input (`JUDGMENT_LAYER.md` §2c), not a command argument. |
+| `C-SEQUENCE` | `m₁ ; m₂` | — | — | that of its steps | The arguments are those of $m_1$ and $m_2$, so the term is required when either step is. |
+
+**Not admitted.** `A-QUOTIENT`, `X-SYMPLECTIC-DOUBLE`, `X-SYMPLECTIC-HALVE`,
+`X-SUBSYSTEM`, and `X-GAUGE-FIX`, the five remaining candidates of the signature
+record, have no production. Their typed-input status is therefore not yet
+defined. Their signatures are recorded in `CONSTRUCTOR_SIGNATURES.md`.
+`P-RELABEL` has no row in this table because it has no grammar production: it
+is a congruence, not a command ([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2). It
+does have a row in the family-closure matrix below, which records that
+membership is invariant under it.
+
+**Conditional cells.** The conditional Gate 6 cells
+([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2f) and the conditional constructor
+cells (§2g.1) take hypotheses that the consumer supplies: prices, avoidance
+minima, seam certificates, factor witnesses, and sourced lower bounds. These are
+judgment inputs, not typed inputs. No production takes one as an argument
+([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md) §2). A missing hypothesis leaves the cell
+`unavailable` or `not yet defined` rather than making the term malformed, and the
+consumer checks the shape of a hypothesis, not its truth.
+
+**Dimension reading.** The `L-HGP` and `L-NESTED-CSS` cards state that their
+matrices are nonempty. The `L-LIFTED`, `L-BALANCED`, and `L-MAPPING-CONE` cards
+leave this implicit. The transcription rejects an empty matrix or an empty row
+(`_binary_matrix` and `_algebra_matrix` in `machine/constructors.py`). The
+family-closure matrix below uses that reading and marks each verdict that
+depends on it.
+
+## Family-closure matrix
+
+**The question.** Let $F$ be a family and $m$ a transformation. Is $F$ closed
+under $m$, that is, is every output of $m$ on a member of $F$ again a member?
+
+**Membership is code-level.** No field of $C$ records a family, so membership
+has to be read off the state. At the level of presented states (`≡`) closure
+already fails for `C-DELETE-CHECK`. Every constructor in the matrix mints its
+identifiers from an empty `used`, so in each output `used` is the set of
+displayed identifiers. After $\mathrm{delete}_r$ the retired identifier $r$ stays in
+`used` while it is no longer displayed (`OPERATIONAL_SEMANTICS.md` §2,
+`C-DELETE-CHECK`). The matrix therefore reads membership on codes. A state $C$
+is in $F_c$ when some well-typed input of constructor $c$ that has a derivation
+evaluates to a state with as many qubits as $C$ and, under some bijection of
+the qubits, the same $X$ and $Z$ row spaces. The display, the identifiers,
+`used`, and the qubit labels are ignored. For a binary transformation
+(`C-DIRECT-SUM`, `E-GLUE`), closure means that two members on disjoint
+namespaces give a member. A relabeled copy of a member is a member.
+
+**The families.**
+
+- *HGP, lifted, balanced, Tanner, tile, nested CSS, and mapping cone* are
+  $F_c$ for $c$ = `L-HGP`, `L-LIFTED`, `L-BALANCED`, `L-TANNER`, `L-TILE`,
+  `L-NESTED-CSS`, and `L-MAPPING-CONE`.
+- *Decoupling* is the class of translation-invariant CSS codes of
+  [`DECOUPLING_CONSTRUCTOR.md`](../design/DECOUPLING_CONSTRUCTOR.md). No
+  production, taxonomy identifier, or state field defines it: $C$ has no
+  lattice and no translation action.
+- *Gate realization* is, for a fixed gate $U$ on a fixed $Q$
+  ([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2h), the family
+  $G_U = \{C \text{ on } Q : \mathsf{preserves}_U(C)\}$. It depends on the labels by
+  definition, since $U$ acts on named qubits.
+
+**Verdicts.**
+
+- *closed*: `proved`, with the derivation in this section or the cited one.
+- *closed when …*: `proved` under the stated side condition.
+- *not closed*: the closure claim is `false`, and the counterexample is
+  recorded.
+- *open*: no derivation in either direction; evidence `open`.
+- *not yet defined*: the family, or the action of $m$ on it, has no definition
+  in this state model; `not-applicable`.
+
+The rows are the thirteen admitted transformations other than `C-SEQUENCE`,
+together with the `P-RELABEL` congruence, which is not a command. Closure under
+`C-SEQUENCE` follows from closure under each step, so it has no row of its
+own. Every counterexample below is a one-step term.
+
+**What this matrix does not do.** It enters no judgment cell and no consumer
+path. Family closure as a carried judgment, family-level completeness, and
+amplified distance lower bounds remain `unavailable`, as stated in
+[`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2j and §2l and in
+[`SCOPE.md`](../design/SCOPE.md) §4. A *closed* verdict says only that the
+output code is again a member. It transports no parameter, distance, or
+witness.
+
+| Transformation | HGP | lifted | balanced | Tanner | tile | nested CSS | mapping cone | decoupling | gate realization |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `C-SKIP` | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | not yet defined | closed (GR1) |
+| `P-RELABEL` | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | not yet defined | not closed for a fixed $U$ (GR3); closed when $U$ is relabeled with the state |
+| `P-REBASE` | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | closed (L1) | not yet defined | closed (GR1) |
+| `C-DELETE-CHECK` | not closed (H2) | not closed (H2) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not closed (GR4) |
+| `C-ADD-CHECK` | not closed (H1) | not closed (H1) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not closed (GR6); closed iff $\Phi_{J(s)}(l) \in \pi\mathbb{Z}$ for every $l \in \Lambda(\mathcal{S}(C'), J(s))$, decided for rational angles (§2h, Corollary 7.1; in particular when every generator commutes with the added row, or when all angles are $\pi/4$ and $V_s \in \mathcal{S}(C')$) |
+| `C-DIRECT-SUM` | closed when the summands share a factor matrix (H6); otherwise open | open | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | closed when $U$ is supported on one summand and read as the identity on the other, the one namespace change §2h transports |
+| `E-GRAFT` | open | open | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not yet defined (GR5) |
+| `E-PEEL` | not closed (H4) | not closed (H4) | not closed (H4) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 2$; closed on $n \ge 3$ (U2) | not yet defined | not yet defined (GR5) |
+| `E-PUNCTURE` | not closed (H3) | not closed (H3) | not closed (H3) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 1$; closed on $n \ge 2$ (U1) | not closed at $n = 2$; closed on $n \ge 3$ (U2) | not yet defined | not yet defined (GR5) |
+| `E-EXTEND` | not closed (H1) | not closed (H1) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not yet defined (GR5) |
+| `E-LOCAL-HADAMARD` ($T = Q$) | closed (H7) | closed (H8) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not closed (GR2) |
+| `C-COLUMN-CNOT` | open | open | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not closed (GR3) |
+| `E-GLUE` | not closed (H5) | not closed (H5) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not yet defined (GR5) |
+| `E-SPLIT` | not closed (H2) | not closed (H2) | open (B) | closed (U) | closed (U) | closed (U) | closed (U) | not yet defined | not closed (GR4) |
+
+`E-LOCAL-HADAMARD` at $T = \varnothing$ is the identity and falls under (L1). The
+split-subset instance has no row here: its family-closure verdicts are
+not yet defined. The
+mapping-cone column, and the lifted and balanced verdicts that rest on (J1) or
+(J2), use the nonempty-matrix reading of the typed-input matrix above. The
+instance checks and the counterexamples are replayed in
+[`test_family_closure.py`](../machine/test_family_closure.py). That agreement is
+evidence that the derivations are transcribed as stated. It is not a proof.
+
+**(L1) Transformations that keep the code.** `C-SKIP` leaves the state
+unchanged. `P-REBASE` leaves both row spaces unchanged
+(`OPERATIONAL_SEMANTICS.md` §4.26, *Row space*). `P-RELABEL` is a bijection of
+the qubits, and membership is invariant under such bijections by definition.
+Each therefore maps a member to a member. ∎
+
+**(U) The universal families.** Write $\mathrm{CSS}_{\ge c}$ for the well-formed
+CSS states on at least $c$ qubits.
+
+- $F_{\mathrm{nested}} = \mathrm{CSS}_{\ge 1}$. The card requires $n \ge 1$, so
+  $F_{\mathrm{nested}} \subseteq \mathrm{CSS}_{\ge 1}$. Conversely, relabel a state
+  with $n \ge 1$ onto $\{0, \ldots, n-1\}$ in order. It then has the code of
+  $\mathrm{nested}(H_X, H_Z)$, where the rows of $H_X$ and $H_Z$ are its displayed
+  rows and a sector with no displayed row is given by one zero row. The premise
+  is I1 (`OPERATIONAL_SEMANTICS.md` §4.36, *Relation to `L-TANNER`*, the
+  genericity statement).
+- $F_{\mathrm{Tanner}} = \mathrm{CSS}_{\ge 1}$. By §4.36,
+  $\mathrm{nested}(H_X, H_Z) = \mathrm{tanner}(n; H_X, H_Z; \iota, \iota)$ with
+  $\iota$ the identity embedding, so $F_{\mathrm{nested}} \subseteq F_{\mathrm{Tanner}}$.
+  The card requires $n \ge 1$.
+- $F_{\mathrm{tile}} = \mathrm{CSS}_{\ge 1}$. Take one tile with $t = n$ local
+  qubits whose local $X$- and $Z$-row supports are the displayed supports of $C$
+  relabeled onto $\{0, \ldots, n-1\}$, one placement on the sites
+  $0, \ldots, n-1$, and no identifications or removed checks. The site classes
+  are then the sites, the natural rows are the displayed rows, and interface
+  orthogonality is I1 of $C$. In the other direction, the card requires $t \ge 1$
+  and a nonempty list of placements, so every output has $n \ge 1$.
+- $F_{\mathrm{cone}} = \mathrm{CSS}_{\ge 2}$, under the nonempty-matrix reading.
+  Every output has $n = a_0 + b_1 \ge 2$. Conversely, take a state with $n \ge 2$
+  and check matrices $H_X$ and $H_Z$ (one zero row for an empty sector). Put
+  $a_0 = n - 1$ and $b_1 = 1$. Let $\partial_A$ be $H_Z$ without its last column,
+  $f_1$ the last column of $H_Z$, $f_0$ the transpose of $H_X$ without its last
+  column, and $\partial_B$ the transpose of the last column of $H_X$. By the card,
+  the natural $Z$-rows are then the rows of $H_Z$ and the natural $X$-rows are
+  the rows of $H_X$. At row $j$ of $H_Z$ and row $r$ of $H_X$, the chain-map
+  premise reads
+  $\sum_{i < n-1} H_Z[j, i] H_X[r, i] = H_Z[j, n-1] H_X[r, n-1]$. Over
+  $\mathbb{F}_2$ this is $H_Z H_X^{T} = 0$, which is I1.
+
+Every admitted transformation maps a well-formed state to a well-formed state
+(`OBL-WELL-FORMEDNESS-PRESERVATION`: `OPERATIONAL_SEMANTICS.md` §4.7 for the
+kernel, §4.12 for the graft, §4.26–§4.32 for the Gate 6 commands, §4.42 for
+the column CNOT, and §4.48 for `E-SPLIT`). A family $\mathrm{CSS}_{\ge c}$ is therefore closed under $m$
+exactly when $m$ never takes a member to fewer than $c$ qubits. The qubit count
+is unchanged by delete, add, rebase, the sector exchange, the column CNOT, and `E-SPLIT`.
+It grows by $|\Delta|$ under extend and is $n_A + n_B$ under the direct sum and
+the glue. It drops by one under graft, peel, and puncture, so only those three
+can leave the family.
+
+- *(U1), $c = 1$.* $\mathrm{puncture}_0$ on $\mathrm{free}(\{0\})$, and
+  $\mathrm{peel}_{0, X; r}$ on the one-qubit state whose only row is the $X$-row
+  $\{0\}$, both reach the empty state, which has $n = 0$. So these two are not
+  closed at $n = 1$ and are closed on members with $n \ge 2$.
+- *(U2), $c = 2$.* Puncture any two-qubit member, for example
+  $\mathrm{free}(\{0, 1\})$, or apply $\mathrm{peel}_{0, X; r}$ to the state with rows
+  $X_0$ and $Z_1$. Both reach $n = 1$. So these two are not closed at $n = 2$ and
+  are closed on members with $n \ge 3$.
+- *Graft never leaves either family.* The card requires $q$ to lie in a
+  $\tau$-row and in an opposite-sector row. On one qubit both rows would be
+  $\{q\}$, and their overlap is odd, against I1, so graft has no derivation at
+  $n = 1$. On two qubits an $X$-row and a $Z$-row through $q$ overlap evenly only
+  if both are $\{0, 1\}$. Then $X = \langle X_0 X_1 \rangle$ and
+  $Z = \langle Z_0 Z_1 \rangle$, because each sector lies in the orthogonal
+  complement $\{00, 11\}$ of the other. Grafting either sector at $q$ removes its
+  only row and leaves the other qubit in no $\tau$-row. The card requires every
+  remaining qubit to lie in a check of each sector, so there is no derivation
+  here either. ∎
+
+**(H) HGP, lifted, and balanced.** Both invariants below read the input
+matrices as nonempty. The `L-HGP` card says so, and for `L-LIFTED` and
+`L-BALANCED` this is the transcription's reading.
+
+- *(J1), all three: $n \ge 2$.* For `L-HGP`, $n = n_1 n_2 + m_1 m_2$. For
+  `L-LIFTED`, $n = \ell(n_A n_B + m_A m_B)$. For `L-BALANCED`, $n$ counts the
+  orbits of the pairs of column indices and the orbits of the pairs of row
+  indices, and both sets of pairs are nonempty.
+- *(J2), HGP and lifted: $X = 0$ if and only if $Z = 0$.* In `hgp(H₁, H₂)` the
+  left parts of the $X$-rows $(a, j)$ meet every entry of $H_1$, because
+  $n_2 \ge 1$, and their right parts meet every entry of $H_2$, because
+  $m_1 \ge 1$. So every $X$-row is empty if and only if $H_1 = 0$ and $H_2 = 0$.
+  The $Z$-rows $(i, b)$ meet the same entries, because $n_1, m_2 \ge 1$. Hence
+  $X = 0 \iff H_1 = H_2 = 0 \iff Z = 0$. For `lift_G(A, B)` and
+  `lift_{G;H}(A, B)` the argument runs on the block matrices, not on the
+  algebra entries. The $X$-rows meet the left blocks through every
+  $L_H(A[a,i])$ and the right blocks through every $R_H(B[b,j]^*)$. So
+  $X = 0$ if and only if all of these matrices are zero. Likewise $Z = 0$ if
+  and only if every $R_H(B[b,j])$ and every $L_H(A[a,i]^*)$ is zero. Since
+  $L_H(x^*) = L_H(x)^T$ and $R_H(y^*) = R_H(y)^T$, and a matrix is zero
+  exactly when its transpose is, $X = 0 \iff Z = 0$. Here $H = \{e\}$ is the
+  regular lift. The entry-level reading $L(x) = 0 \iff x = 0$ holds only for
+  the regular lift: with $H = G$, $L_H(g + g') = 0$. For `L-BALANCED`
+  over a nontrivial group, (J2) is not derived: the card defines an orbit row by
+  parities over the orbit, and these may cancel.
+
+Two members of all three families serve as seeds.
+$E_0 = \mathrm{hgp}([0], [0])$ is two qubits with no rows.
+$E_1 = \mathrm{hgp}([1], [0])$ has $X = \langle X_0 \rangle$ and
+$Z = \langle Z_1 \rangle$: the $X$-row $(0, 0)$ is the left qubit $0$, and the
+$Z$-row $(0, 0)$ is the right qubit $1$. Over the trivial group the `L-LIFTED`
+and `L-BALANCED` cards evaluate to `hgp` row for row, so the seeds are members
+of those families too.
+
+- *(H1)* $\mathrm{addStab}_{r:X} \triangleright E_0$ with $r = \{0\}$, and
+  $\mathrm{extend}_{\Delta; (X, \{0\})} \triangleright E_0$ for any fresh $\Delta$,
+  give $X \ne 0$ and $Z = 0$. This violates (J2).
+- *(H2)* $\mathrm{delete}_r \triangleright E_1$ — and likewise
+  $\mathrm{split}_{\{0\}; \{r\}} \triangleright E_1$, whose crossing set is
+  empty so $R = \{r\}$ is valid (§4.48) — with $r$ the $Z$-row, gives
+  $X \ne 0$ and $Z = 0$. This violates (J2).
+- *(H3)* $\mathrm{puncture}_0 \triangleright E_0$ has $n = 1$. This violates (J1).
+- *(H4)* $\mathrm{peel}_{0, X; r} \triangleright E_1$, with $r$ the unique $X$-row
+  containing $0$, has $n = 1$. This violates (J1).
+- *(H5)* Let $E_0'$ be a copy of $E_0$ on $\{2, 3\}$, with no rows and an empty
+  `used`. Then $\mathrm{glue}(E_0, E_0'; [(X, \{0\})])$ has $X = \langle X_0 \rangle$
+  and $Z = 0$ on four qubits. This violates (J2).
+- *(H6) Distributivity of `hgp`.* Write $H \oplus H'$ for the block-diagonal
+  matrix. Then $\mathrm{hgp}(H \oplus H', K)$ has the code of
+  $\mathrm{hgp}(H, K) \oplus \mathrm{hgp}(H', K)$, and $\mathrm{hgp}(K, H \oplus H')$
+  has the code of $\mathrm{hgp}(K, H) \oplus \mathrm{hgp}(K, H')$. *Derivation.*
+  The row and column index sets of $H \oplus H'$ are disjoint unions of those of
+  $H$ and $H'$, and the entries between the two blocks are $0$. In
+  $\mathrm{hgp}(H \oplus H', K)$ every qubit, $(i, j)$ or $(a, b)$, has its first
+  index in one block. The $X$-row $(a, j)$ has support
+  $\{(i, j) : (H \oplus H')[a, i] = 1\} \cup \{(a, b) : K[b, j] = 1\}$, whose
+  first indices all lie in the block of $a$. On that block it is the $X$-row
+  $(a, j)$ of $\mathrm{hgp}(H, K)$ or of $\mathrm{hgp}(H', K)$. The $Z$-row
+  $(i, b)$ behaves the same way. So the qubits split into two blocks that no row
+  crosses, and each block carries one summand. For the second argument, exchange
+  the roles of the two indices. ∎ Hence the direct sum of two HGP members that
+  share their first or their second factor matrix is an HGP member.
+- *(H7) The sector exchange of `hgp`.* Let $C = \mathrm{hgp}(H_1, H_2)$ and
+  $C' = \mathrm{hgp}(H_1^{T}, H_2^{T})$. The left qubits of $C'$ are the pairs
+  $(a, b)$ and its right qubits are the pairs $(i, j)$. The $X$-row $(i, b)$ of
+  $C'$ has support $\{(a, b) : H_1[a, i] = 1\} \cup \{(i, j) : H_2[b, j] = 1\}$.
+  This is the support of the $Z$-row $(i, b)$ of $C$ under the bijection that
+  sends the left qubit $(i, j)$ of $C$ to the right qubit $(i, j)$ of $C'$, and
+  the right qubit $(a, b)$ of $C$ to the left qubit $(a, b)$ of $C'$. In the same
+  way the $Z$-row $(a, j)$ of $C'$ is the $X$-row $(a, j)$ of $C$. So
+  $\mathrm{hadamard}_Q \triangleright C$ (§4.27) has the code of $C'$, and the
+  transposes are nonempty. ∎
+- *(H8) The sector exchange of `lift`.* Let $C = \mathrm{lift}_G(A, B)$ and
+  $C' = \mathrm{lift}_G(A', B')$, where $A'[i, a] = A[a, i]^*$ and
+  $B'[j, b] = B[b, j]^*$. The $X$-row $(i, b, h)$ of $C'$ carries row $h$ of
+  $L(A'[i, a]) = L(A[a, i]^*)$ on the qubits $(a, b, \cdot)$ for every $a$, and
+  row $h$ of $R(B'[j, b]^*) = R(B[b, j])$ on the qubits $(i, j, \cdot)$ for every
+  $j$. Under the bijection of (H7), with the group coordinate fixed, this is the
+  $Z$-row $(i, b, h)$ of $C$. Symmetrically, using $(x^*)^* = x$, the $Z$-row
+  $(a, j, h)$ of $C'$ is the $X$-row $(a, j, h)$ of $C$. This holds for every
+  finite group, abelian or not. ∎
+- *Open cells.* The column CNOT keeps $n$ and keeps each sector zero or nonzero.
+  A graft output has every remaining qubit in rows of both sectors. The direct
+  sum preserves (J1) and (J2). So neither invariant decides the column CNOT, the
+  graft, or the general direct sum, and those cells stay open. At $n = 2$ the
+  column CNOT is closed for HGP and lifted. A two-qubit member of either family
+  is `hgp` of $1 \times 1$ matrices, by (J1) and the nonempty reading. The two-qubit
+  CSS codes with both sectors nonzero are, up to relabeling, those of
+  $\mathrm{hgp}([1],[0])$ and $\mathrm{hgp}([1],[1])$, and a column operation
+  keeps each sector zero or nonzero. This does not decide larger $n$.
+- *(B) Balanced.* (H3) and (H4) use only (J1), so they hold. The trivial-group
+  members do not decide the other cells, and (J2) is not derived for a
+  nontrivial group, so those cells stay open.
+
+**(GR) Gate realization.**
+
+- *(GR1)* $\mathsf{preserves}_U(C)$ depends only on
+  $\mathcal{S}(C) = \langle X, Z \rangle$: its carrier is `span` (§2h). `C-SKIP`
+  and `P-REBASE` keep $\mathcal{S}(C)$ (§4.26). §2h records a cell for `C-SKIP`
+  and none for `P-REBASE`. The `P-REBASE` verdict here is a family-level fact
+  read off the carrier, not a judgment cell.
+- *(GR2) The sector exchange.* Let $Q = \{0, 1\}$, let $C$ have the single
+  $X$-row $\{0, 1\}$, and let $U = \exp(i \frac{\pi}{4} X_0)$. The row commutes
+  with $X_0$, so $V = I$ and $\mathsf{preserves}_U(C)$ holds (Lemma 3,
+  `OPERATIONAL_SEMANTICS.md` §4.37). $\mathrm{hadamard}_Q$ gives the single
+  $Z$-row $\{0, 1\}$, which anticommutes with $X_0$. So $V = i X_0$, which is not
+  in $\mathcal{S}(C')$ by Lemma 1 because its phase is $i$, and
+  $\mathsf{preserves}_U(C')$ fails.
+- *(GR3) The column SWAP.* Let $C$ have the single $X$-row $\{0\}$, and let
+  $U = \exp(i \frac{\pi}{4} Z_1)$. Then $\mathsf{preserves}_U(C)$ holds. Let
+  $P \in \mathrm{GL}(Q, 2)$ be the permutation matrix that exchanges the columns
+  $0$ and $1$ (§2k). Then $\mathrm{cnotSwap}_P$, which is also the relabeling that
+  exchanges $0$ and $1$, gives the single $X$-row $\{1\}$. This row anticommutes
+  with $Z_1$, so $V = i Z_1 \notin \mathcal{S}$. If instead $U$ is relabeled with
+  the state, $\mathsf{preserves}_{P_\pi U P_\pi^\dagger}(\pi \cdot C)$ holds if and
+  only if $\mathsf{preserves}_U(C)$ does, because the codespace of $\pi \cdot C$ is
+  $P_\pi \mathcal{V}(C)$.
+- *(GR4)* The deletion counterexample of §4.37, and for `E-SPLIT` the same
+  single-row deletion realized as $\mathrm{split}_{Q; \{r\}}$ (whose crossing
+  set is empty, so $R = \{r\}$ is valid and produces the identical child state).
+- *(GR5)* `E-GRAFT`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, and `E-GLUE` change the
+  namespace while $U$ stays fixed on $Q$. Membership of the output in $G_U$ is
+  therefore not defined without a rule that transports $U$, and §2h records no
+  cell for `E-GRAFT` or for the Gate 6 transitions.
+- *(GR6) The check addition.* Let $Q = \{0\}$, let $C$ have no rows, and let
+  $U = \exp(i \theta X_0)$ with $\theta$ not a multiple of $\pi$. The codespace
+  of $C$ is the whole space, so $\mathsf{preserves}_U(C)$ holds.
+  $\mathrm{addStab}_{r:Z}$ with $r = \{0\}$ has a derivation, and the child's
+  codespace is spanned by $|0\rangle$. Since
+  $U|0\rangle = \cos\theta\,|0\rangle + i\sin\theta\,|1\rangle$ leaves it,
+  $\mathsf{preserves}_U(C')$ fails. At $\theta = \pi/4$ this is Lemma 3 of §4.37:
+  $Z_0$ anticommutes with $X_0$, and $V = iX_0 \notin \mathcal{S}(C')$. Membership
+  in $G_U$ is defined at every angle, and Corollary 7.1 of §4.37 (issue #572,
+  `stdCSS-3` / `v0.3.2`) decides the carry cell from the display alone for every rational
+  angle $\theta \in \pi\mathbb{Q}$ (its
+  reading in a logical frame is Row C of §2h).
+
+**Decoupling.** Every cell is `not yet defined`. The candidate of
+[`DECOUPLING_CONSTRUCTOR.md`](../design/DECOUPLING_CONSTRUCTOR.md) §1 is a
+certificate-checked relation between two presented states, not a constructor.
+Its translation-invariant input class has no representation in $C$.
+
+## Completeness feasibility decision (Gate 7, issue #606)
+
+**Decision recorded (2026-11-25, maintainer decision, MathysRennela; Option
+(a)).** A scoped, non-circular **generation and transition completeness**
+theorem over the elementary move fragment is feasible and is opened as the
+proof obligation `OBL-ELEMENTARY-COMPLETENESS` in
+[`OBLIGATIONS.md`](OBLIGATIONS.md) (evidence status `open`; folded into
+`stdCSS-3` / `v0.3.2` by maintainer decision 2026-11-26, originally opened as an
+axis-4 shape obligation per [`VERSIONING.md`](VERSIONING.md) §4.1).
+This decision is strictly about **code-level reachability**; it leaves the
+project's deliberate **judgment incompleteness**
+([`SCOPE.md`](../design/SCOPE.md) §2, [`GATES.md`](GATES.md) §11 —
+`unavailable` deletion-distance lower bounds and no inferability claim)
+completely unchanged.
+
+**Why naive completeness statements are circular or obstructed.**
+
+1. *Circular one-shot constructors.* Derivation **(U)** above shows that
+   `L-NESTED-CSS`, `L-TANNER`, `L-TILE`, and `L-MAPPING-CONE` each generate
+   $\mathrm{CSS}_{\ge 1}$ or $\mathrm{CSS}_{\ge 2}$ in a single constructor
+   call, only because they accept the entire target parity-check matrices
+   $(H_X, H_Z)$ as raw lower-level input. That is circular and does not count
+   as generation completeness.
+2. *Presentation-exact (`≡`) obstruction.* Identifier history `used` is
+   monotonically non-decreasing across every command and never reuses a retired
+   identifier (`STATE_MODEL.md` I3; `OBL-FIXED-NAMESPACE-REACHABILITY`,
+   `OPERATIONAL_SEMANTICS.md` §4.17). Completeness therefore holds only **up to
+   code equivalence** (identical qubit set $Q$ and identical stabilizer row
+   spaces $X, Z$, with canonical identifier allocation), never at literal `≡`.
+3. *Structured-family non-closure (and scope).* In the family-closure matrix
+   above, derivations **(H1)–(H5)** show that `L-HGP` and `L-LIFTED` are
+   **not closed** under `C-ADD-CHECK` and `E-EXTEND` (H1), `C-DELETE-CHECK`
+   (H2), `E-PUNCTURE` (H3), `E-PEEL` (H4), and `E-GLUE` (H5); for
+   `L-BALANCED`, only `E-PUNCTURE` (H3) and `E-PEEL` (H4) are decided
+   (`not closed`), while `C-DELETE-CHECK`, `C-ADD-CHECK`, `E-EXTEND`, and
+   `E-GLUE` remain `open` (B). Non-closure under a move says only that some
+   step leaves the family, not that two members have no path staying inside it;
+   what follows from the matrix is that the elementary bridge of the sketch
+   below leaves these families, so `OBL-ELEMENTARY-COMPLETENESS` makes no
+   family-internal claim. Likewise, the family-closure matrix has no
+   bounded-weight LDPC family, and `OBL-ELEMENTARY-COMPLETENESS` makes no
+   bounded-weight preservation claim.
+4. *Capacity boundary (H-4).* The 70,000-name finite identifier enumeration
+   (`STATE_MODEL.md` I3) bounds the total identifiers minted along any finite
+   derivation.
+
+**Scoped non-circular feasibility argument.** Fix the elementary fragment
+comprising the nullary seed `L-EMPTY` and the elementary commands
+`C-DELETE-CHECK`, `C-ADD-CHECK`, `E-PUNCTURE`, `E-EXTEND` (restricted to
+single bare-qubit additions $|\Delta| = 1, \vec u = \varnothing$), and
+`C-SEQUENCE`. Every step adds or removes at most one qubit or one check vector;
+no constructor consumes a whole target check matrix pair.
+
+- *Generation completeness (from `L-EMPTY`):* for any well-formed CSS state
+  $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ with
+  $\dim X + \dim Z \le 70{,}000$, apply $|Q|$ single-qubit empty-addition
+  `E-EXTEND` steps to reach the check-free code on $Q$ (zero mints,
+  $\mathsf{used} = \varnothing$), then insert a displayed basis of $X$ followed
+  by a displayed basis of $Z$ via `C-ADD-CHECK` ($\dim X + \dim Z$ canonical
+  mints; commutation holds by I1 and independence by I2 at every step).
+- *Variable-namespace transition completeness:* extending
+  `OBL-FIXED-NAMESPACE-REACHABILITY` (§4.17) across distinct finite namespaces,
+  for any two well-formed CSS states $C_1$ on $Q_1$ and $C_2$ on $Q_2$
+  satisfying the H-4 capacity bound
+  $|\mathsf{used}(C_1)| + \dim X_2 + \dim Z_2 \le 70{,}000$: (i) delete every
+  displayed check of $C_1$ via `C-DELETE-CHECK` (zero mints, reaching the
+  check-free code on $Q_1$); (ii) remove each qubit $q \in Q_1 \setminus Q_2$
+  via `E-PUNCTURE` (zero mints; on a check-free state I1–I5 hold vacuously down
+  to $n = 0$, §4.29); (iii) add each qubit $q \in Q_2 \setminus Q_1$ via
+  `E-EXTEND` with $\Delta = \{q\}, \vec u = \varnothing$ (zero mints, §4.30);
+  and (iv) insert a displayed basis of $X_2$ and $Z_2$ via `C-ADD-CHECK`
+  ($\dim X_2 + \dim Z_2$ mints, all within H-4 capacity).
+
+This feasibility sketch demonstrates why `OBL-ELEMENTARY-COMPLETENESS` is
+non-circular and achievable, and does **not** discharge it; the formal hand
+derivation and Lean mechanization remain `open`. The check-free bridge
+collapses distance to 1 along the intermediate path and implies no
+distance-preserving path or judgment completeness.
 
 # 5. Operation dependencies
 
@@ -1220,8 +1807,8 @@ The two branches should not be silently identified. A lower-level constructor ma
 | Row-space grafting | In-scope conditional extension (`E-GRAFT`); transition soundness proved (§4.12) |
 | Puncturing | Admitted conditional extension 2026-10-23; transition defined (§2.8), soundness discharged (§4.32) |
 | Qubit/check extension | Admitted conditional extension 2026-10-23; transition defined (§2.9), soundness discharged (§4.32) |
-| Merge/glue/split | `E-GLUE` admitted conditional extension 2026-10-23, evaluator transition 2026-10-27 (§4.31), logical-witness and boundary/edge-label fields defined (`STATE_MODEL.md` §1/§1a), `transition-defined` (2026-11-11); `E-SPLIT` remains an unadmitted candidate extension |
-| Local Hadamard (per-qubit sector swap) | Conditional extension admitted 2026-10-23; the **$T=Q$ instance has a typed transition** (§2.12: the sector exchange of the whole display); the general split-subset instance's conditions require both row spaces to split along the conjugated qubits and its row-wise conjugation mechanics are **not** specified |
+| Merge/glue/split | `E-GLUE` admitted conditional extension 2026-10-23, binary-only expression constructor (`TERM_LANGUAGE.md` §1–§2, 2026-11-18), evaluator transition (§4.31), logical-witness and boundary/edge-label fields defined (`STATE_MODEL.md` §1a), `contract-stated` (rung 5, 2026-11-18); `E-SPLIT` separating deletion admitted 2026-11-25 as a derived command production `split(Q_A; R)` over `C-DELETE-CHECK` (`transition-defined`, §4.48; two-state projection refused) |
+| Local Hadamard (per-qubit sector swap) | Conditional extension admitted 2026-10-23; the **$T=Q$ instance has a typed transition** (§2.12: the sector exchange of the whole display). The **split-subset instance has a typed transition** too (2026-11-26): it requires both row spaces to split along $T$, and its canonical update is specified in `OPERATIONAL_SEMANTICS.md` §2 and §4.27(b) |
 | Duplication ("double it") | Later algebraic branch; factorization question open (`A-CONCAT` vs. cover/lift vs. duality-assisted) |
 | Tensor, homological product, concatenation | Algebraic branch |
 | Mapping cone and quotient/subspace operations | Algebraic branch |

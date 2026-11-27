@@ -56,6 +56,8 @@ def Command.isStep : Command → Bool
   | .extend _ _ => true
   | .hadamard _ => true
   | .rebase _ _ => true
+  | .cnotSwap _ => true
+  | .split _ _ => true
   | _ => false
 
 /-- A chain whose every step is one single (non-sequence) command. -/
@@ -207,34 +209,39 @@ theorem derives_gen_of_displayed (dMeasure : Field → CodeState → Nat)
               (ih _ hs r σ S hold)
           · exact Derives.genExtendMint i delta adds _ _ ({ id := r, sector := σ, support := S }) hs ht hstep hnew
       | hadamard T =>
-          if hT : T.isEmpty = true then
-            have hts := eval_hadamard_eq hstep
-            have hrow' : { id := r, sector := σ, support := S } ∈ s.rows := by
-              rw [hts] at hrow
-              simp [hadamardState, hT] at hrow
-              exact hrow
-            exact cast (congrArg (Derives dMeasure cs)
-              (congrArg (fun x => Ann.gen (i + 1) r x S) (if_pos hT)))
-              (Derives.genHadamard i r σ S T _ _ hs ht hstep (ih _ hs r σ S hrow'))
-          else
-            have hts := eval_hadamard_eq hstep
-            have hrow' : { id := r, sector := σ, support := S } ∈ t.rows := hrow
-            rw [hts] at hrow'
-            have hT' : T.isEmpty = false := Bool.eq_false_of_ne_true hT
-            simp [hadamardState, hT'] at hrow'
-            have hmem := List.mem_map.mp hrow'
-            obtain ⟨row0, hrow0, hswap⟩ := hmem
-            have hrow0' : row0 ∈ s.rows := hrow0
-            have hr : row0.id = r := congrArg Row.id hswap
-            have hσ : oppositeSector row0.sector = σ := congrArg Row.sector hswap
-            have hS : row0.support = S := congrArg Row.support hswap
-            have heq : Ann.gen (i + 1) row0.id (if T.isEmpty = true then row0.sector else oppositeSector row0.sector) row0.support =
-                Ann.gen (i + 1) r σ S := by
-              rw [if_neg hT]
-              rw [hr, hS, hσ]
-            exact cast (congrArg (Derives dMeasure cs) heq)
-              (Derives.genHadamard i row0.id row0.sector row0.support T _ _ hs ht hstep
-                (ih _ hs row0.id row0.sector row0.support hrow0'))
+          rcases eval_hadamard_cases hstep with ⟨hg, _⟩ | ⟨hsplit, _, hts0, _⟩
+          · if hT : T.isEmpty = true then
+              have hts := eval_hadamard_eq hstep hg
+              have hrow' : { id := r, sector := σ, support := S } ∈ s.rows := by
+                rw [hts] at hrow
+                simp [hadamardState, hT] at hrow
+                exact hrow
+              exact cast (congrArg (Derives dMeasure cs)
+                (congrArg (fun x => Ann.gen (i + 1) r x S) (if_pos hT)))
+                (Derives.genHadamard i r σ S T _ _ hs ht hstep hg (ih _ hs r σ S hrow'))
+            else
+              have hts := eval_hadamard_eq hstep hg
+              have hrow' : { id := r, sector := σ, support := S } ∈ t.rows := hrow
+              rw [hts] at hrow'
+              have hT' : T.isEmpty = false := Bool.eq_false_of_ne_true hT
+              simp [hadamardState, hT'] at hrow'
+              have hmem := List.mem_map.mp hrow'
+              obtain ⟨row0, hrow0, hswap⟩ := hmem
+              have hrow0' : row0 ∈ s.rows := hrow0
+              have hr : row0.id = r := congrArg Row.id hswap
+              have hσ : oppositeSector row0.sector = σ := congrArg Row.sector hswap
+              have hS : row0.support = S := congrArg Row.support hswap
+              have heq : Ann.gen (i + 1) row0.id (if T.isEmpty = true then row0.sector else oppositeSector row0.sector) row0.support =
+                  Ann.gen (i + 1) r σ S := by
+                rw [if_neg hT]
+                rw [hr, hS, hσ]
+              exact cast (congrArg (Derives dMeasure cs) heq)
+                (Derives.genHadamard i row0.id row0.sector row0.support T _ _ hs ht hstep hg
+                  (ih _ hs row0.id row0.sector row0.support hrow0'))
+          · have hrow' : ({ id := r, sector := σ, support := S } : Row) ∈
+                (splitHadamardState s T).rows := by
+              rw [← hts0]; exact hrow
+            exact Derives.genHadamardSplit i T _ _ _ hs ht hstep hsplit hrow'
       | rebase sector matrix =>
           have hts := eval_rebase_eq hstep
           subst hts
@@ -244,6 +251,25 @@ theorem derives_gen_of_displayed (dMeasure : Field → CodeState → Nat)
             exact Derives.genRebase i r σ S sector matrix _ _ hs ht hstep hsurvives
               (ih _ hs r σ S hmem.1)
           · exact Derives.genRebaseMint i sector matrix _ _ ({ id := r, sector := σ, support := S }) hs ht hstep hnew
+      | cnotSwap U =>
+          have hts := eval_cnotSwap_eq hstep
+          subst hts
+          obtain ⟨row0, hrow0, htr⟩ := List.mem_map.mp hrow
+          have hr : row0.id = r := congrArg Row.id htr
+          have hσ : row0.sector = σ := congrArg Row.sector htr
+          have hS : cnotSwapSupport s.Q U row0.sector row0.support = S :=
+            congrArg Row.support htr
+          have heq : Ann.gen (i + 1) row0.id row0.sector
+              (cnotSwapSupport s.Q U row0.sector row0.support) = Ann.gen (i + 1) r σ S := by
+            rw [hS, hr, hσ]
+          exact cast (congrArg (Derives dMeasure cs) heq)
+            (Derives.genCnotSwap i row0.id row0.sector row0.support U _ _ hs ht hstep
+              (ih _ hs row0.id row0.sector row0.support hrow0))
+      | split QA R =>
+          have hts := eval_split_eq hstep
+          subst hts
+          obtain ⟨hmem, hnot⟩ := (mem_deleteAll_rows R s _).mp hrow
+          exact Derives.genSplit i r σ S QA R _ _ hs ht hstep hnot (ih _ hs r σ S hmem)
       | seq _ _ => cases hm
 
 /-- The seam condition of `Derives.shift_gen` holds when the composed chain
@@ -487,7 +513,7 @@ theorem derives_gate6_suffix_row3 (dMeasure : Field → CodeState → Nat) :
   Derives.genPeel 1 3 0 Sector.X [0, 1, 2] 1 Sector.Z _ _ rfl rfl eval_peel_gate6SeamS2
     (by decide)
     (Derives.genHadamard 0 3 Sector.Z [0, 1, 2] [0, 1, 2, 3, 4] _ _ rfl rfl
-      eval_hadamard_gate6SeamS1
+      eval_hadamard_gate6SeamS1 (Or.inl (List.Perm.refl _))
       (Derives.genInput 3 Sector.Z [0, 1, 2] _ rfl (by rw [gate6SeamS1_rows]; simp)))
 
 /-- Segment-2 derivation from `genInput` at the seam `gate6SeamS1`: row `5`
@@ -499,7 +525,7 @@ theorem derives_gate6_suffix_row5 (dMeasure : Field → CodeState → Nat) :
   Derives.genPeel 1 5 0 Sector.Z [0, 2, 3, 4] 1 Sector.Z _ _ rfl rfl eval_peel_gate6SeamS2
     (by decide)
     (Derives.genHadamard 0 5 Sector.X [0, 2, 3, 4] [0, 1, 2, 3, 4] _ _ rfl rfl
-      eval_hadamard_gate6SeamS1
+      eval_hadamard_gate6SeamS1 (Or.inl (List.Perm.refl _))
       (Derives.genInput 5 Sector.X [0, 2, 3, 4] _ rfl (by rw [gate6SeamS1_rows]; simp)))
 
 /-- Seam transport on the composed Gate 6 chain via

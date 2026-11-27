@@ -3,6 +3,7 @@ import CodeCalculus.Fixtures
 import CodeCalculus.FixtureReplay
 import CodeCalculus.WellFormedBool
 import CodeCalculus.Soundness
+import CodeCalculus.CertificateInstances
 
 /-!
 # Fixture replays under `Eval` and `EvalExpr` (WP6)
@@ -20,6 +21,10 @@ transitions themselves against `machine/fixtures/mvp_fixtures.json`:
 - every `no_derivation` fixture has a negative theorem `¬ ∃ t, Eval term
   initial t`, closed on the premise the JSON names as failing (the pair
   fixtures W15 and W21 keep their negative theorems in `FixtureReplay.lean`);
+- W25 is recorded as `no_derivation` for a claim about a certificate, and
+  its term derives: the term has a positive theorem here, and the
+  certificate is replayed below, with the checker of
+  `CertificateChecker.lean`;
 - every transcribed state's well-formedness verdict is restated as the
   predicate `EncodingWellFormed` (or its negation), through `wellFormedBool_iff`
   and a kernel `decide` of the Boolean test, so this module does not inherit
@@ -94,7 +99,24 @@ theorem fixture_W15_S_R_prime_wf : EncodingWellFormed fixture_W15_S_R_prime :=
 theorem fixture_W21_S_R_double_prime_wf : EncodingWellFormed fixture_W21_S_R_double_prime :=
   encodingWellFormed_of_bool (by decide)
 
+theorem fixture_W25_initial_wf : EncodingWellFormed fixture_W25_initial :=
+  encodingWellFormed_of_bool (by decide)
+theorem fixture_W25_result_wf : EncodingWellFormed fixture_W25_result :=
+  encodingWellFormed_of_bool (by decide)
+theorem fixture_W26_S_L_wf : EncodingWellFormed fixture_W26_S_L :=
+  encodingWellFormed_of_bool (by decide)
+theorem fixture_W26_S_R_shared_wf : EncodingWellFormed fixture_W26_S_R_shared :=
+  encodingWellFormed_of_bool (by decide)
+theorem fixture_W29_initial_wf : EncodingWellFormed fixture_W29_initial :=
+  encodingWellFormed_of_bool (by decide)
+theorem fixture_W29_result_wf : EncodingWellFormed fixture_W29_result :=
+  encodingWellFormed_of_bool (by decide)
+
 theorem fixture_W1_initial_not_wf : ¬ EncodingWellFormed fixture_W1_initial :=
+  not_encodingWellFormed_of_bool (by decide)
+theorem fixture_W27_initial_not_wf : ¬ EncodingWellFormed fixture_W27_initial :=
+  not_encodingWellFormed_of_bool (by decide)
+theorem fixture_W28_initial_not_wf : ¬ EncodingWellFormed fixture_W28_initial :=
   not_encodingWellFormed_of_bool (by decide)
 theorem fixture_W2_initial_not_wf : ¬ EncodingWellFormed fixture_W2_initial :=
   not_encodingWellFormed_of_bool (by decide)
@@ -191,6 +213,60 @@ theorem fixture_W16_eval :
 theorem fixture_W23_eval :
     Eval (Command.delete 0) fixture_W23_initial fixture_W23_result :=
   Eval.delete (by decide) (independentGenerator_of_bool (by decide)) (by decide)
+
+/-- W25: the term `delete_{a1}` itself derives, and gives A1. -/
+theorem fixture_W25_eval :
+    Eval (Command.delete 0) fixture_W25_initial fixture_W25_result :=
+  Eval.delete (by decide) (independentGenerator_of_bool (by decide)) (by decide)
+
+/-- The kill certificate for `3 ≤ d_X` on W0, the parent state of W25: the
+    three vectors of weight one have odd overlap with the `Z`-row, and the
+    three of weight two are in the span of the `X`-rows. -/
+def fixture_W25_certificate : SectorCertificate := {
+  sector := Sector.X,
+  bound := 3,
+  kills := [
+    { support := [], reason := KillReason.inSpan [false, false] },
+    { support := [1], reason := KillReason.oddOverlap [1, 2, 3] },
+    { support := [2], reason := KillReason.oddOverlap [1, 2, 3] },
+    { support := [3], reason := KillReason.oddOverlap [1, 2, 3] },
+    { support := [1, 2], reason := KillReason.inSpan [true, false] },
+    { support := [2, 3], reason := KillReason.inSpan [false, true] },
+    { support := [1, 3], reason := KillReason.inSpan [true, true] }
+  ]
+}
+
+/-- The checker accepts the certificate on the parent. -/
+theorem fixture_W25_certificate_accepted :
+    checkCertificate fixture_W25_initial fixture_W25_certificate = true := by
+  decide
+
+/-- The certified bound holds on the parent. -/
+theorem fixture_W25_parent_lower_bound :
+    ExtNat.finite 3 ≤ exactDistanceExt Sector.X fixture_W25_initial :=
+  certificate_lower_bound_ext fixture_W25_initial fixture_W25_certificate (by decide)
+
+/-- The checker rejects the same certificate on the child `delete_{a1}`
+    gives: the vector of `{1, 2}` is no longer in the span of the `X`-rows. -/
+theorem fixture_W25_certificate_rejected_on_child :
+    checkCertificate fixture_W25_result fixture_W25_certificate = false := by
+  decide
+
+/-- The inherited claim is false of the child: its exact `X`-distance is
+    `2`, below the bound `3` of the certificate. -/
+theorem fixture_W25_child_distance :
+    exactDistance? Sector.X fixture_W25_result = some 2 := by
+  show exactDistance? Sector.X fixture_W3_result = some 2
+  rw [← CertificateInstances.w3_result_eq_fixture_W3_result]
+  exact CertificateInstances.w3_result_X_exact
+
+/-- W29: the deletion sequence `delete_{a1}; delete_{a2}` on W0. -/
+theorem fixture_W29_eval :
+    Eval (Command.seq (Command.delete 0) (Command.delete 1))
+      fixture_W29_initial fixture_W29_result :=
+  Eval.seq
+    (Eval.delete (by decide) (independentGenerator_of_bool (by decide)) rfl)
+    (Eval.delete (by decide) (independentGenerator_of_bool (by decide)) (by decide))
 
 /-- W14: the direct sum of the two summands is the transcribed result. -/
 theorem fixture_W14_result_eq :

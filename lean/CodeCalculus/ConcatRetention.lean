@@ -20,6 +20,9 @@ representatives, following `spec/OPERATIONAL_SEMANTICS.md` §4.34.
   state are independent.
 * `constructedState_rows_length_of_indep`: a constructed state whose
   natural rows are independent sector by sector displays all of them.
+* `combineRows_take_drop`: projecting a combination of length `nb * blockSize`
+  onto block `j` is the combination of the projected rows (corollary of
+  `combineRows_map_additive` and `additive_blockAt`).
 * `vecIndep_concat`: the natural rows of one sector of `A-CONCAT` are
   independent. The inner rows on copy `j` are separated from the other
   copies by the projection onto block `j`. The lifted outer rows are
@@ -476,6 +479,15 @@ theorem additive_blockAt (ℓ nb j : Nat) (hj : j < nb) :
   · intro a ha
     unfold blockAt
     rw [List.length_take, List.length_drop, ha, Nat.min_eq_left (by omega)]
+
+/-- Projecting a combination of length `nb * blockSize` onto block `j` is the
+    combination of the projected rows. -/
+theorem combineRows_take_drop (blockSize nb j : Nat) (vs : List (List Bool)) (cs : List Bool)
+    (hj : j < nb) (hvs : ∀ v ∈ vs, v.length = nb * blockSize) :
+    ((combineRows (nb * blockSize) vs cs).drop (j * blockSize)).take blockSize =
+      combineRows blockSize
+        (vs.map (fun v => (v.drop (j * blockSize)).take blockSize)) cs :=
+  combineRows_map_additive (additive_blockAt blockSize nb j hj) vs cs hvs
 
 /-- Block `j` of a list of blocks of one length is the `j`-th block. -/
 theorem blockAt_flatMap {α : Type} (ℓ : Nat) (F : α → List Bool) (d : α) :

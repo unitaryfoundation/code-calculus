@@ -1370,7 +1370,11 @@ class Gate6ConditionalCellTests(unittest.TestCase):
         self.assertTrue(any(c["cell"] == "E-LOCAL-HADAMARD sector swap"
                             for c in out.conditions))
 
-    def test_hadamard_refuses_the_general_split_subset(self):
+    def test_hadamard_refuses_a_subset_the_row_spaces_do_not_split_along(self):
+        # The split-subset instance is admitted under the row-space splitting
+        # guard (§4.27); qubit 0 of this code is not a split point, so the
+        # guard fails and there is no derivation. Admitted instances are
+        # covered in machine/test_split_hadamard.py.
         state = CodeState.from_challenge(graftable_code())
         with self.assertRaises(NoDerivation):
             apply_operation(state, {"op": "E-LOCAL-HADAMARD", "qubits": [0]})

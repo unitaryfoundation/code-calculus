@@ -1000,10 +1000,23 @@ def strict_improvement_d1_feasible(state, added_support, added_sector,
     result["exact_distance"] = 1
     result["exact"] = True
     result["d"] = 1
-    result["discharged"] = (result.get("reason") in
-                            ("all_killed_by_enumeration",
-                             "all_killed_requires_enumeration")
-                            and all_bare_killed)
+    same_sector_bare = []
+    if result.get("reason") == "all_killed_requires_enumeration":
+        try:
+            child_state = state.add_check(added_sector, tuple(added_support))
+            same_sector_bare = bare_logical_qubits(child_state, added_sector)
+        except NoDerivation:
+            # The added check does not apply to the child: nothing is
+            # discharged. A Malformed input propagates as a refusal.
+            same_sector_bare = [None]
+    result["discharged"] = (
+        (result.get("reason") == "all_killed_by_enumeration" and all_bare_killed)
+        or (
+            result.get("reason") == "all_killed_requires_enumeration"
+            and all_bare_killed
+            and not same_sector_bare
+        )
+    )
     result["k"] = k_value
     result["logical_sector"] = logical_sector
     result["bare_set"] = list(bare_set)
@@ -1176,9 +1189,6 @@ def sector_swap_if_beneficial(state, ledger, target_sector,
                                      min_sector_gap=min_sector_gap,
                                      require_exact_full_distance=require_exact_full_distance)
     return record["state"], record["ledger"]
-
-if __name__ == "__main__":
-    raise SystemExit(_main())
 
 def enumerate_seam_checks(left, right, *, max_size=3, sectors=("X", "Z")):
     """Enumerate admissible seam checks between two factors.
@@ -1796,7 +1806,7 @@ __all__ = [
 ]
 
 
-# Issue #540: mapping-cone / chain-map constructor (re-exported from experiments).
+# Mapping-cone / chain-map constructor (re-exported from experiments).
 try:
     from machine.experiments import mapping_cone as _mc540
 except Exception:
@@ -1811,3 +1821,7 @@ if _mc540 is not None:
     for _n in getattr(_mc540, "__all__", []):
         if _n not in globals():
             globals()[_n] = getattr(_mc540, _n)
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

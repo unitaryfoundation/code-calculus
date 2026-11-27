@@ -22,6 +22,7 @@ import CodeCalculus.SeamChains
 import CodeCalculus.ExactDistance
 import CodeCalculus.TermSoundness
 import CodeCalculus.Gate6Soundness
+import CodeCalculus.SplitHadamard
 import CodeCalculus.ExactPeel
 import CodeCalculus.ExactDirectSum
 import CodeCalculus.ExactPermute
@@ -33,11 +34,14 @@ import CodeCalculus.ExactGlueDistance
 import CodeCalculus.ExactGlueSurvival
 import CodeCalculus.LogicalWitness
 import CodeCalculus.WitnessFields
+import CodeCalculus.FuturePiFields
 import CodeCalculus.AdmissibleSeamFamily
 import CodeCalculus.Gate6Exact
 import CodeCalculus.GlueExtraction
 import CodeCalculus.CertificateChecker
 import CodeCalculus.CertificateInstances
+import CodeCalculus.Ingestion
+import CodeCalculus.IngestedInstances
 import CodeCalculus.Constructors
 import CodeCalculus.CayleyGroups
 import CodeCalculus.CayleyTables
@@ -48,6 +52,12 @@ import CodeCalculus.ConstructorOverlap
 import CodeCalculus.ConstructorRank
 import CodeCalculus.ConstructorRankTyped
 import CodeCalculus.ConcatRetention
+import CodeCalculus.RankNullity
+import CodeCalculus.TensorRank
+import CodeCalculus.HgpRank
+import CodeCalculus.MaskBlocks
+import CodeCalculus.ProductRank
+import CodeCalculus.ClosedK
 import CodeCalculus.BalancedOverlap
 import CodeCalculus.ConstructorRankNatural
 import CodeCalculus.SplitCommand
@@ -58,4 +68,5 @@ import CodeCalculus.FixtureReplay
 import CodeCalculus.WellFormedBool
 import CodeCalculus.FixtureEvalReplay
 import CodeCalculus.ExpandedSoundness
+import CodeCalculus.ColumnCnot
 import CodeCalculus.AxiomAudit

@@ -266,7 +266,7 @@ It is not a proof and it confirms no cell (AGENTS.md).
  parent.
 4. **Scope.** Both rows are stated for a CSS display across the kernel
  primitives. A mixed row needs a sign bit per row (ROADMAP, *Per-row sign*;
- refused for `v0.3.0` under ), and Lemma 1 is false without it.
+ refused for `stdCSS-3`), and Lemma 1 is false without it.
  The Gate 6 commands and `E-GRAFT` are not covered.
 
 Neither row mints an operation identifier, since a gate leaves the state
@@ -284,63 +284,62 @@ consumer support in `machine/intervals.py`
 `machine/consumer.json`, and the falsification harness in
 `machine/experiments/gate_realization_rows.py`
 (`machine/test_gate_realization_rows.py`). Addressability, logical action, and
-the non-$\pi/4$ anticommuting `C-ADD-CHECK` branch remain `not yet defined`.
+the non-$\pi/4$ anticommuting `C-ADD-CHECK` branch were initially left
+`not yet defined` and are now admitted in `stdCSS-3` / `v0.3.2` (§7).
 No operation identifier is minted for a logical gate.
 
----
+## 7. Frame reading
 
-## Completion note
+Recorded 2026-11-26. The normative statements are
+[`../spec/JUDGMENT_LAYER.md`](../spec/JUDGMENT_LAYER.md) §2h, Rows C–F,
+[`../spec/STATE_MODEL.md`](../spec/STATE_MODEL.md) §1a (*Eigenvalue
+reading*), and the derivations of
+[`../spec/OPERATIONAL_SEMANTICS.md`](../spec/OPERATIONAL_SEMANTICS.md)
+§4.37, Lemmas 5–11. This section says what changed relative to §2 and §5,
+and why.
 
-The four done-when items of the gate-realization row admission are settled and
-recorded in `spec/` and `machine/`:
+1. **The frame-free cell needed no frame.** Conjugation by the gate sends a
+   Pauli operator $P$ to $PW_P$, with $W_P$ the product of the doubled
+   rotations over the generators that anticommute with $P$ (Lemma 5). On a
+   codespace, $W_P$ acts through the sign patterns of those generators that
+   occur there, and which patterns occur is decided by the stabilizer group
+   alone: a pattern occurs iff it agrees with every product of generators
+   that is a stabilizer up to sign (Lemma 6). So preservation is decided at
+   every rational angle from the display (Lemma 7), and the addition cell of §2.1 is
+   one test at the added row (Corollary 7.1). The eigenvalues of
+   zero-syndrome logicals that §5 item 2 expected to need are summed over:
+   the frame-free cell is the conjunction of the source's condition over
+   every logical sector.
+2. **The frame reads one sector.** Reading the logical-witness field as a
+   frame, with consistency conditions F1 and F2 for its entries and
+   eigenvalues (Lemma 8), names one logical sector. On it the test becomes
+   the source's single equation
+   $\sum_j\epsilon_j\theta_j\ell_j^{(\lambda)}\in\pi\mathbb{Z}$ when the
+   frame resolves the generators (Corollary 9.1), and an equal-syndrome
+   family acts on the sector as the sign $(-1)^{\Phi/\pi}$ (Corollary 10.1,
+   the source's Theorem 1 in CSS form).
+3. **Logical action and addressability.** The logical action is recorded in
+   two forms: the scalar on a frame sector (Row D, every rational angle) and the
+   conjugation image of a frame entry (Row E, every Pauli target at
+   $\pi/4$, and $\pm$ the entry at every rational angle). Addressability (Row F) is
+   preservation plus commutation with every entry outside the addressed
+   ones. The field pairs no $X$-logical with a $Z$-logical, so Row F names
+   operators, not logical qubits.
+4. **Nothing in the state changes.** The frame is a parameter of the
+   predicate, like the gate. No operation identifier is minted, and the
+   admission ships in `stdCSS-3` / `v0.3.2` by maintainer decision
+   ([`../spec/VERSIONING.md`](../spec/VERSIONING.md) §5.3).
+5. **Angle domain and frame consistency.** The tests are decision procedures
+   for rational angles $\theta_j = a_j\pi$ only, where membership in
+   $\pi\mathbb{Z}$ is exact rational arithmetic; other angles are
+   `not yet defined` as decisions. The `C-ADD-CHECK` cell of Rows C and D
+   separates a transported frame that is not consistent on the child
+   (`not yet defined`: the predicate is not stated there) from a consistent
+   one without the group inclusion (`false`).
 
-1. **Row A — Gate survival** (`preserves_U`, assertion-language extension, axis 3)
- and the `C-ADD-CHECK` carry-table row. For a fixed commuting Pauli-rotation
- gate \(U = \prod_{j=1}^q \exp(i\epsilon_j\theta_j G_j)\) on \(Q\), the
- operator-indexed predicate \(\mathsf{preserves}_U(C)\) ("\(U\) maps the
- codespace \(\mathcal{V}(C)\) into itself", carrier `span`, CSS displays only)
- is admitted to the `stdCSS-3` / `v0.3.0` assertion language and carry table
- (`spec/JUDGMENT_LAYER.md` §2, §2h, §7.1–§7.4; `spec/CLAIMS.md`; dated hand
- derivations at `spec/OPERATIONAL_SEMANTICS.md` §4.37):
- - across `C-ADD-CHECK` adding row \(s\) with child \(C'\): carries at every
- angle \(\theta_j \ge 0\) when every generator \(G_j\) commutes with \(s\);
- at all angles \(\theta_j = \pi/4\), carries iff \(V_s \in \mathcal{S}(C')\)
- (one stabilizer-membership check at \(s\)); when some \(G_j\) anticommutes
- with \(s\) and some angle is not \(\pi/4\), stays `not yet defined`
- (depends on eigenvalues of zero-syndrome logical operators in a chosen frame);
- - across the remaining kernel primitives: carries across `C-SKIP`, across
- `C-DIRECT-SUM` when \(U\) is supported on one summand, and across
- `C-SEQUENCE` by composition; does not carry across `C-DELETE-CHECK`
- (`false`, two-qubit counterexample in §4.37; at \(\pi/4\) the child's own
- Lemma 3 test over its remaining rows decides it);
- - addressability and the logical action of an accepted gate remain
- `not yet defined` pending a logical-frame reading of the logical-witness
- field (`spec/STATE_MODEL.md` §1a).
-2. **Row B — Equal-syndrome generator weight floor** (\(\omega\)) and transport by
- weakening (axis 3). The property \(\omega(C)\) (the least \(w_{\max}\) over
- nontrivial equal-syndrome generator families on \(C\), \(+\infty\) if none;
- carrier `span`) enters the property inventory (`spec/CLAIMS.md`) and carry
- table (`spec/JUDGMENT_LAYER.md` §2, §2h) with the state-wise lower bound
- \(\omega(C) \ge \lceil d(C)/2 \rceil\) (Lemma 4,
- `spec/OPERATIONAL_SEMANTICS.md` §4.37). Transport by weakening — carrying the
- monotone image \(\lceil L_d/2 \rceil\) of the full-distance lower endpoint
- \(L_d\), re-read at each state and never substituted from the parent (refuted
- by the nine-qubit Shor-code deletion counterexample in §4.37) — is recorded
- as a claim shape in `spec/CLAIMS.md` and as structural schema 6 in
- `spec/JUDGMENT_LAYER.md` §7.2, and is implemented on the consumer ledger as
- `DistanceLedger.equal_syndrome_weight_floor` (`machine/intervals.py`).
-3. **No operation identifier is minted for a logical gate.** A logical gate
- leaves \(C = (Q, X, Z, \mathsf{pres}, \mathsf{used})\) unchanged and has no
- state update, so it never reaches `spec/TAXONOMY.md` §3.8's bar for a
- taxonomy operation identifier (`spec/TAXONOMY.md` §3.8;
- `spec/JUDGMENT_LAYER.md` §2h).
-4. **Consumer transcription and tests.** `machine/consumer.json` transcribes both
- rows under `gate_realization` (`source: spec/JUDGMENT_LAYER.md §2h`).
- `machine/experiments/gate_realization_rows.py` adds `Display.from_code_state`
- and `addition_survival_verdict` for the three-branch `C-ADD-CHECK` cell, with
- unit tests for all three branches and for ledger weakening transport in
- `machine/test_gate_realization_rows.py`.
-
-Addressability, logical action, and the non-\(\pi/4\) anticommuting `C-ADD-CHECK`
-branch remain `not yet defined` until a rule reading the logical-witness frame
-is admitted.
+The harness of §4 includes state-vector oracles for the frame predicates and a
+second sweep. At seed 572 with 400 random displays on one to four qubits,
+random frames, and random gates, it finds no disagreement with Lemmas 7–11
+and their corollaries (`python3 machine/experiments/gate_realization_rows.py`).
+Agreement is evidence that the derivations are transcribed as stated, not a
+proof.

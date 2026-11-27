@@ -12,12 +12,16 @@ import unittest
 
 from machine.certificates import (
     build_sector_lower_bound_certificate,
+    build_sector_lower_bound_tree_certificate,
     lean_certificate_term,
     lean_instance_block,
     lean_state_term,
+    lean_tree_instance_block,
+    lean_tree_term,
 )
 from machine.experiments.certificate_lean_instances import (
     OUTPUT,
+    cyclic_30_4_6,
     first_witness,
     generate,
     pinned_parent,
@@ -79,6 +83,84 @@ class LeanTranslationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 lean_instance_block(
                     "w3_result", state, certificate, witness=witness)
+
+
+class LeanTreeTranslationTests(unittest.TestCase):
+    """Pruning-tree instances (issue #574)."""
+
+    def test_tree_term_uses_positions_and_the_lean_constructors(self):
+        tree = ["branch", 7, ["need_more", 2],
+                ["branch", 9, ["conflict", 0], ["in_span", [1, 0]]]]
+        term = lean_tree_term(tree, [3, 7, 9])
+        self.assertEqual(
+            term.strip(),
+            "(branch 1 (needMore 2) (branch 2 (conflict 0) "
+            "(inSpan [true, false])))")
+        self.assertEqual(lean_tree_term(["bound"], [0]).strip(), "bound")
+        with self.assertRaises(ValueError):
+            lean_tree_term(["prune"], [0])
+
+    def test_long_tree_terms_are_wrapped(self):
+        state = pinned_parent()
+        certificate = build_sector_lower_bound_tree_certificate(state, "X", 3)
+        lines = lean_tree_term(certificate["tree"], list(state.Q)).split("\n")
+        self.assertGreater(len(lines), 3)
+        for line in lines:
+            self.assertTrue(line.startswith("    "))
+            self.assertLess(len(line), 140)
+        joined = " ".join(line.strip() for line in lines)
+        self.assertEqual(joined.count("("), joined.count(")"))
+
+    def test_block_states_the_bound_in_the_option_reading(self):
+        state = pinned_parent()
+        certificate = build_sector_lower_bound_tree_certificate(state, "Z", 3)
+        block = lean_tree_instance_block(
+            "parent", state, certificate, witness=first_witness(state, "Z", 3))
+        self.assertIn("def parent_Z_tree : PruneTree :=", block)
+        self.assertIn(
+            "checkPruneCertificate parent Sector.Z 3 parent_Z_prune = true "
+            ":= by decide +kernel", block)
+        self.assertIn(
+            "∀ d : Nat, exactDistance? Sector.Z parent = some d → 3 ≤ d",
+            block)
+        self.assertIn("exactDistance? Sector.Z parent = some 3", block)
+        # The matrices are the row vectors over Q, opposite sector first.
+        self.assertIn("  opp := [\n    [true, true, false, true, true,", block)
+        self.assertNotIn("native_decide", block)
+        self.assertNotIn("sorry", block)
+
+    def test_tree_block_refuses_what_the_module_could_not_build(self):
+        state = pinned_parent()
+        certificate = build_sector_lower_bound_tree_certificate(state, "X", 3)
+        with self.assertRaises(ValueError):
+            lean_tree_instance_block("w3_result", w3_result(), certificate)
+        broken = copy.deepcopy(certificate)
+        broken["bound"] = 4
+        with self.assertRaises(ValueError):
+            lean_tree_instance_block("parent", state, broken)
+        with self.assertRaises(ValueError):
+            lean_tree_instance_block("parent", state, certificate,
+                                     witness=(0, 1, 2))
+
+    def test_committed_module_carries_the_thirty_qubit_instance(self):
+        text = OUTPUT.read_text()
+        state = cyclic_30_4_6()
+        self.assertEqual((state.n(), state.k()), (30, 4))
+        for sector in ("X", "Z"):
+            stem = "cyclic_30_4_6_%s" % sector
+            self.assertIn(
+                "theorem %s_accepts :\n    checkPruneCertificate "
+                "cyclic_30_4_6 Sector.%s 6 %s_prune = true := by "
+                "decide +kernel" % (stem, sector, stem), text)
+            self.assertIn(
+                "theorem %s_exact :\n    exactDistance? Sector.%s "
+                "cyclic_30_4_6 = some 6" % (stem, sector), text)
+        # No well-formedness theorem for this term: too slow in the kernel.
+        self.assertNotIn("cyclic_30_4_6_wellFormed", text)
+        self.assertIn("theorem qldpc_10_2_3_b_wellFormed", text)
+        state.validate()
+        self.assertNotIn("native_decide", text)
+        self.assertNotIn("sorry", text)
 
 
 if __name__ == "__main__":

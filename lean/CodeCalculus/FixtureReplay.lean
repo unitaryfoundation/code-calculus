@@ -142,6 +142,58 @@ theorem fixture_W21_no_evalExpr (t : CodeState) :
       exact hU 50000 (by simp [fixture_W21_S_L, fixture_W14_S_L])
         (by simp [fixture_W21_S_R_double_prime])
 
+-- The supplementary probes W25 to W29. W27 and W28 are malformed states:
+-- W27 fails displayed independence in the Z sector, and W28 has a row
+-- whose support leaves `Q`.
+
+theorem fixture_W25_initial_wellFormed : wellFormedBool fixture_W25_initial = true := by
+  decide
+
+theorem fixture_W25_result_wellFormed : wellFormedBool fixture_W25_result = true := by
+  decide
+
+theorem fixture_W26_S_L_wellFormed : wellFormedBool fixture_W26_S_L = true := by
+  decide
+
+theorem fixture_W26_S_R_shared_wellFormed :
+    wellFormedBool fixture_W26_S_R_shared = true := by
+  decide
+
+theorem fixture_W27_initial_wellFormed : wellFormedBool fixture_W27_initial = false := by
+  decide
+
+theorem fixture_W28_initial_wellFormed : wellFormedBool fixture_W28_initial = false := by
+  decide
+
+theorem fixture_W29_initial_wellFormed : wellFormedBool fixture_W29_initial = true := by
+  decide
+
+theorem fixture_W29_result_wellFormed : wellFormedBool fixture_W29_result = true := by
+  decide
+
+/-- W26: the identifier p1 = 50000 is in both `used` sets, so the used-set
+    premise fails and no EvalExpr derivation exists. The qubit premise
+    holds, and the two `used` sets are unequal. -/
+theorem fixture_W26_no_evalExpr (t : CodeState) :
+    ¬ EvalExpr (StateExpr.directSum (StateExpr.base fixture_W26_S_L)
+        (StateExpr.base fixture_W26_S_R_shared)) t := by
+  intro h
+  cases h with
+  | directSum _hQ hU h1 h2 =>
+      cases h1
+      cases h2
+      exact hU 50000 (by simp [fixture_W26_S_L]) (by simp [fixture_W26_S_R_shared])
+
+/-- W26: the two `used` sets differ, so the refusal is not a refusal of
+    equal sets. -/
+theorem fixture_W26_used_ne : fixture_W26_S_L.used ≠ fixture_W26_S_R_shared.used := by
+  decide
+
+/-- W26: the qubit namespaces are disjoint. -/
+theorem fixture_W26_qubits_disjoint :
+    ∀ q ∈ fixture_W26_S_L.Q, q ∉ fixture_W26_S_R_shared.Q := by
+  decide
+
 -- Result states added in a later slice (W9, W16), checked by kernel `decide`.
 -- The `Eval` replays of every single-step and two-step fixture, positive and
 -- negative, are in `FixtureEvalReplay.lean`, together with the Bool/Prop

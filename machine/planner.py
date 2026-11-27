@@ -63,6 +63,7 @@ import copy
 import itertools
 import math
 import random
+import re
 
 from machine.state import identifier_rank as _identifier_rank
 from machine.priced_calculus import (
@@ -102,16 +103,109 @@ def new_applicability_record(enabled=None):
         record[family] = {"enabled": bool(enabled.get(family, default_enabled))}
         for reason in DROP_REASONS:
             record[family][reason] = 0
+        # The failed premise behind each ``apply_fail``, by name (issue #592).
+        record[family]["refusals"] = {}
+        # Most frequent blocking reason once no candidate survives (issue #652).
+        record[family]["blocking"] = None
     return record
 
 
-def _note_drop(diagnostics, operation, reason):
-    """Attribute one dropped candidate to its family and first drop reason."""
+# The drop stages that can block a family (issue #652).  ``enumerated`` and
+# ``survived`` are totals and ``improving`` annotates survivors, so none of
+# them is a reason.
+BLOCKING_STAGES = ("apply_fail", "bare_qubit", "disconnected", "derive_fail",
+                   "min_upper", "deep_refuted", "screened", "dominated",
+                   "over_budget")
+
+
+def applicability_blocking(diagnostics, candidates=None):
+    """Set each family's ``blocking`` in an applicability record, in place.
+
+    ``blocking`` is ``None`` for a family that was not asked for
+    (``enabled`` false: not tried differs from tried and empty) and for a
+    family with a usable child.  Otherwise it is the most frequent reason
+    its candidates were lost, ties broken by name, or ``"empty domain"``
+    when nothing was enumerated.  The reasons are the counts of
+    ``BLOCKING_STAGES``, with each ``apply_fail`` counted once: under the
+    premise ``refusals`` names when one was recorded, and as
+    ``apply_fail`` only for the remainder.
+
+    Without ``candidates`` a child is usable when it ``survived`` the
+    search's own stages.  With ``candidates`` (the list `plan` returned,
+    as a campaign reads it) a child is usable only when its verdict is not
+    ``prune``; the family's pruned children are recorded as
+    ``verdict_prune`` and count as a reason, since they derived and were
+    dropped by the target verdict.  Returns the record.  This is search
+    control: it reads counts and verdicts only.
+    """
+    usable, pruned = {}, {}
+    if candidates is not None:
+        for cand in candidates:
+            operation = cand.get("operation")
+            family = operation.get("op") if isinstance(operation, dict) else None
+            tally = pruned if cand.get("verdict") == "prune" else usable
+            tally[family] = tally.get(family, 0) + 1
+    for family, counts in diagnostics.items():
+        if not isinstance(counts, dict):
+            continue
+        if candidates is not None:
+            counts["verdict_prune"] = pruned.get(family, 0)
+        if not counts.get("enabled", True):
+            counts["blocking"] = None
+            continue
+        if candidates is None:
+            alive = counts.get("survived", 0)
+        else:
+            alive = usable.get(family, 0)
+        if alive > 0:
+            counts["blocking"] = None
+            continue
+        reasons = {stage: counts[stage] for stage in BLOCKING_STAGES
+                   if counts.get(stage, 0) > 0}
+        refusals = counts.get("refusals") or {}
+        if refusals:
+            rest = counts.get("apply_fail", 0) - sum(refusals.values())
+            reasons.pop("apply_fail", None)
+            if rest > 0:
+                reasons["apply_fail"] = rest
+            for premise, count in refusals.items():
+                reasons[premise] = reasons.get(premise, 0) + count
+        if counts.get("verdict_prune", 0) > 0:
+            reasons["verdict_prune"] = counts["verdict_prune"]
+        if reasons:
+            counts["blocking"] = max(sorted(reasons),
+                                     key=lambda name: reasons[name])
+        elif counts.get("enumerated", 0) == 0:
+            counts["blocking"] = "empty domain"
+        else:
+            counts["blocking"] = None
+    return diagnostics
+
+
+def refusal_reason(exc):
+    """The failed premise an exception names, with row identifiers erased.
+
+    ``Independent(a3; pres) fails`` and ``Independent(a7; pres) fails`` are
+    one reason, so the counts group by premise and not by row.
+    """
+    return re.sub(r"\(([^,;()]+)([,;])", r"(r\2", str(exc))
+
+
+def _note_drop(diagnostics, operation, reason, detail=None):
+    """Attribute one dropped candidate to its family and first drop reason.
+
+    ``detail`` is the exception of an ``apply_fail``; its premise is counted
+    under the family's ``refusals``.
+    """
     if diagnostics is None:
         return
     family = operation.get("op") if isinstance(operation, dict) else None
     if family in diagnostics:
         diagnostics[family][reason] += 1
+        if detail is not None:
+            refusals = diagnostics[family].setdefault("refusals", {})
+            key = refusal_reason(detail)
+            refusals[key] = refusals.get(key, 0) + 1
 
 
 def objective_improvement(candidate, parent_state, parent_ledger, objective,
@@ -155,9 +249,6 @@ def objective_improvement(candidate, parent_state, parent_ledger, objective,
                 _child_k = candidate.get("k", candidate["state"].k())
                 return (_child_k in targets and _child_k != parent_state.k())
             # Fall through to the plain axis comparison for other axes.
-        if axis == "n" and targets is not None:
-            return (candidate.get("n", candidate["state"].n()) in targets
-                    and candidate.get("n", candidate["state"].n()) != parent_state.n())
         return objective_improvement(candidate, parent_state, parent_ledger,
                                      axis, target_sector)
     child = candidate["state"]
@@ -179,9 +270,13 @@ def constructor_candidates(parent_state, parent_ledger, specs, target,
     Each derived child gets a ``DistanceLedger.for_constructed`` ledger (which
     starts at ``[0, +inf)``: **no automatic distance rule**) and a structural
     profile flagging direct sums before staging.  Non-deriving specs are
-    recorded with a reason rather than silently skipped.
+    recorded with a reason rather than silently skipped.  A spec whose
+    constructor derives but whose ledger inputs are refused is recorded as
+    ``derived: True`` with ``ledger_refused`` and no candidate, so the two
+    cases stay apart in the record.
     """
-    from machine.constructors import construct, structural_profile
+    from machine.constructors import (LEDGER_INPUT_KEYS, construct,
+                                      structural_profile)
     from machine.intervals import DistanceLedger as _Ledger
 
     out = []
@@ -195,20 +290,33 @@ def constructor_candidates(parent_state, parent_ledger, specs, target,
         try:
             res = construct(spec)
             child = res["state"]
-        except (NoDerivation, Malformed) as exc:
-            entry["reason"] = "%s: %s" % (type(exc).__name__, str(exc))
-            out.append(entry)
-            continue
-        try:
             child.validate()
-        except Malformed as exc:
-            entry["reason"] = "Malformed: %s" % str(exc)
+        except (NoDerivation, Malformed) as exc:
+            reason = "%s: %s" % (type(exc).__name__, str(exc))
+            # Re-run without the ledger inputs only to classify the failure:
+            # if the bare spec derives, the constructor did and the refusal
+            # belongs to the ledger inputs.
+            bare = {k: v for k, v in spec.items() if k not in LEDGER_INPUT_KEYS}
+            if len(bare) == len(spec):
+                entry["reason"] = reason
+                out.append(entry)
+                continue
+            try:
+                child = construct(bare)["state"]
+                child.validate()
+            except (NoDerivation, Malformed):
+                entry["reason"] = reason
+                out.append(entry)
+                continue
+            profile = structural_profile(child)
+            entry.update({"derived": True, "ledger_refused": reason,
+                          "connected": profile["connected"],
+                          "blocks": profile["blocks"]})
             out.append(entry)
             continue
-        ledger = _Ledger.for_constructed(
-            child, lower_bounds=spec.get("lower_bounds"),
-            witnesses=spec.get("witnesses"),
-            constructor_cell=spec.get("constructor_cell"))
+        ledger = res.get("ledger")
+        if ledger is None:
+            ledger = _Ledger.for_constructed(child)
         profile = structural_profile(child)
         candidate = {
             "operation": {"op": name, "constructor": name},
@@ -217,6 +325,7 @@ def constructor_candidates(parent_state, parent_ledger, specs, target,
             "verdict": ledger.decide(target),
             "n": child.n(),
             "k": child.k(),
+            "connected": profile["connected"],
             "constructor_profile": profile,
         }
         entry.update({"derived": True, "candidate": candidate,
@@ -332,6 +441,210 @@ def reduce_display(state):
 
 
 _reduce_display_state = reduce_display
+
+
+def weight_one_logicals(state):
+    """Per sector, the qubits that carry a weight-1 logical.
+
+    The single-qubit support ``{q}`` is a logical of sector ``s`` exactly
+    when no opposite-sector row contains ``q`` (it commutes with every
+    opposite check) and ``{q}`` is outside the span of the ``s`` rows.  Both
+    are finite checks over the display, so a nonempty list is a validated
+    witness of weight 1 and the sector distance of the state is 1.  A bare
+    qubit (``has_bare_qubit``) is the case where ``q`` is in no row of
+    either sector.
+    """
+    found = {}
+    for sector in ("X", "Z"):
+        opposite = "Z" if sector == "X" else "X"
+        touched = set()
+        for row in state.sector_rows(opposite):
+            touched.update(row.support)
+        same = [row.mask for row in state.sector_rows(sector)]
+        found[sector] = [q for q in state.Q if q not in touched
+                         and not in_span(support_mask((q,)), same)]
+    return found
+
+
+# Parent-level applicability report (issue #592).  The search record of
+# ``new_applicability_record`` counts what a search did.  This report asks
+# the earlier question for one parent and no ledger: over the whole domain
+# of each move family, which premise refuses each candidate, and which
+# screen removes each child that does derive.
+REPORT_FAMILIES = ("C-DELETE-CHECK", "E-PEEL", "E-PUNCTURE", "E-GRAFT",
+                   "P-REBASE", "E-EXTEND")
+CHILD_SCREENS = ("bare_qubit", "weight_one_logical", "disconnected",
+                 "over_weight_cap")
+NO_SECTOR_ROW_AT_QUBIT = "no displayed %s-row contains the qubit"
+
+
+def _report_domain(state, family):
+    """Every candidate of ``family`` over ``state``, premises unchecked.
+
+    Each item is ``(operation, None)`` or ``(None, reason)`` when the
+    candidate cannot be written as an operation at all.
+    """
+    if family == "C-DELETE-CHECK":
+        for row in state.rows:
+            yield {"op": "C-DELETE-CHECK", "row_id": row.id}, None
+    elif family == "E-PEEL":
+        for sector in ("X", "Z"):
+            for qubit in state.Q:
+                touching = [row for row in state.sector_rows(sector)
+                            if qubit in row.support]
+                if not touching:
+                    yield None, NO_SECTOR_ROW_AT_QUBIT % sector
+                    continue
+                yield {"op": "E-PEEL", "qubit": qubit, "sector": sector,
+                       "row_id": touching[0].id}, None
+    elif family == "E-PUNCTURE":
+        for qubit in state.Q:
+            yield {"op": "E-PUNCTURE", "qubit": qubit}, None
+    elif family == "E-GRAFT":
+        for sector in ("X", "Z"):
+            for qubit in state.Q:
+                touching = [row for row in state.sector_rows(sector)
+                            if qubit in row.support]
+                yield {"op": "E-GRAFT", "qubit": qubit, "sector": sector,
+                       "ordered_row_ids": [row.id for row in touching]}, None
+    elif family == "P-REBASE":
+        for op in _rebase_candidates(state):
+            yield op, None
+    elif family == "E-EXTEND":
+        fresh = max(state.Q) + 1 if state.Q else 0
+        yield {"op": "E-EXTEND", "new_qubits": (fresh,), "additions": []}, None
+        for sector in ("X", "Z"):
+            for qubit in state.Q:
+                yield {"op": "E-EXTEND", "new_qubits": (),
+                       "additions": [[sector, [qubit]]]}, None
+
+
+def _column_weights(state):
+    summary = {}
+    for sector in ("X", "Z"):
+        weights = {q: 0 for q in state.Q}
+        for row in state.sector_rows(sector):
+            for q in row.support:
+                weights[q] += 1
+        histogram = {}
+        for value in weights.values():
+            histogram[value] = histogram.get(value, 0) + 1
+        summary[sector] = {
+            "min": min(weights.values()) if weights else 0,
+            "max": max(weights.values()) if weights else 0,
+            "histogram": dict(sorted(histogram.items())),
+        }
+    return summary
+
+
+def move_applicability_report(state, *, weight_cap=None,
+                              include_disconnected=False, rebase=True):
+    """Why each move family does or does not give a usable child of ``state``.
+
+    For every family of ``REPORT_FAMILIES`` the whole candidate domain is
+    tried: every displayed row for a deletion, every qubit and sector for a
+    peel or a graft, every qubit for a puncture, every elementary row mix
+    for a rebase, and the planner's bounded additions for an extension.
+    The planner's own enumerators skip candidates it can see will fail, so
+    their output cannot say why a family is empty.  Each candidate lands in
+    exactly one place:
+
+    * ``refusals[reason]``: ``apply_operation`` refused it, and ``reason``
+      is the premise it named (``refusal_reason``);
+    * ``screens[name]``: it derived, and the child fails the first of
+      ``CHILD_SCREENS`` that applies: a bare qubit or another validated
+      weight-1 logical (the child has distance 1), a disconnected Tanner
+      graph unless ``include_disconnected``, or a displayed check weight
+      above ``weight_cap`` when one is given;
+    * ``usable``: it derived and passed every screen.
+
+    ``blocking`` is ``None`` when ``usable > 0`` and otherwise the most
+    frequent reason, which is the premise to retarget the parent against.
+    ``example`` holds one operation per reason.  ``best_child_w`` is the
+    least displayed check weight among the derived children.
+
+    ``parent`` records ``n``, ``k``, the displayed check weight, the number
+    of rows and of dependent rows per sector, the per-sector column-weight
+    histogram, and the parent's own weight-1 logicals.  A peel needs a qubit
+    of column weight 1 in its sector, so ``column_weight[sector]["min"]``
+    above 1 means the family is empty for that sector whatever is searched.
+
+    The report reads the state given, with no display reduction, so a
+    dependent row shows as a refused deletion.  A graft is tried in the
+    natural order of the rows at the qubit only, as the planner does.  This
+    is search control: it reads no ledger, moves no endpoint, and says
+    nothing about a child's distance beyond the validated weight-1
+    witnesses.
+    """
+    if not isinstance(state, CodeState):
+        raise Malformed("move_applicability_report needs a CodeState")
+    if weight_cap is not None and (
+            not isinstance(weight_cap, int) or isinstance(weight_cap, bool)
+            or weight_cap < 1):
+        raise Malformed("weight_cap must be a positive integer")
+    reduced = _reduce_display_state(state)
+    parent = {
+        "n": state.n(),
+        "k": state.k(),
+        "w": state.w(),
+        "rows": {sector: len(state.sector_rows(sector))
+                 for sector in ("X", "Z")},
+        "dependent_rows": {
+            sector: len(state.sector_rows(sector))
+            - len(reduced.sector_rows(sector)) for sector in ("X", "Z")},
+        "column_weight": _column_weights(state),
+        "weight_one_logicals": weight_one_logicals(state),
+        "components": tanner_components(state),
+    }
+    families = {}
+    for family in REPORT_FAMILIES:
+        entry = {"enabled": True, "domain": 0, "derived": 0, "usable": 0,
+                 "refusals": {}, "screens": {}, "example": {},
+                 "best_child_w": None, "blocking": None}
+        families[family] = entry
+        if family == "P-REBASE" and not rebase:
+            entry["enabled"] = False
+            continue
+        for op, reason in _report_domain(state, family):
+            entry["domain"] += 1
+            if op is not None:
+                try:
+                    child = apply_operation(state, copy.deepcopy(op))
+                except (NoDerivation, Malformed) as refusal:
+                    reason = refusal_reason(refusal)
+            if reason is not None:
+                entry["refusals"][reason] = entry["refusals"].get(reason, 0) + 1
+                if op is not None:
+                    entry["example"].setdefault(reason, op)
+                continue
+            entry["derived"] += 1
+            child_w = child.w()
+            if entry["best_child_w"] is None or child_w < entry["best_child_w"]:
+                entry["best_child_w"] = child_w
+            if has_bare_qubit(child):
+                screen = "bare_qubit"
+            elif any(weight_one_logicals(child).values()):
+                screen = "weight_one_logical"
+            elif not include_disconnected and tanner_components(child) != 1:
+                screen = "disconnected"
+            elif weight_cap is not None and child_w > weight_cap:
+                screen = "over_weight_cap"
+            else:
+                entry["usable"] += 1
+                continue
+            entry["screens"][screen] = entry["screens"].get(screen, 0) + 1
+            entry["example"].setdefault(screen, op)
+        if entry["usable"] == 0:
+            reasons = dict(entry["refusals"])
+            reasons.update(entry["screens"])
+            if reasons:
+                entry["blocking"] = max(
+                    sorted(reasons), key=lambda name: reasons[name])
+            else:
+                entry["blocking"] = "empty domain"
+    return {"parent": parent, "families": families,
+            "weight_cap": weight_cap,
+            "include_disconnected": bool(include_disconnected)}
 
 
 def _extend_candidates(state, diagnostics=None):
@@ -545,12 +858,89 @@ def candidate_moves(state, structural=True, reduce_display=True,
             yield op
 
 
+def _refine_qubit_colors(colors, rows, incident):
+    """Split qubit color classes until each is stable under row signatures.
+
+    ``rows`` is a list of ``(sector, support)`` and ``incident[q]`` the row
+    indices touching ``q``.  Colors are ranks of signatures that depend only
+    on colors and incidence, never on qubit labels, and each signature leads
+    with the old color, so refinement splits classes without reordering them.
+    """
+    while True:
+        row_sigs = [(sector, tuple(sorted(colors[q] for q in supp)))
+                    for sector, supp in rows]
+        sigs = [(colors[q], tuple(sorted(row_sigs[r] for r in incident[q])))
+                for q in range(len(colors))]
+        rank_of = {sig: i for i, sig in enumerate(sorted(set(sigs)))}
+        refined = [rank_of[sig] for sig in sigs]
+        if len(rank_of) == len(set(colors)):
+            return refined
+        colors = refined
+
+
+def _exact_canonical_form(n, X, Z):
+    """Canonical ``(X, Z)`` relabeling of qubits ``0..n-1``.
+
+    Two inputs give the same form exactly when one qubit permutation maps
+    each sector's multiset of row supports onto the other's.  Qubits are
+    partitioned by label-independent signatures; while a class has several
+    members, each is individualized in turn and the partition refined again.
+    The form is the least relabeling over all resulting total orders.
+    """
+    rows = [("X", s) for s in X] + [("Z", s) for s in Z]
+    incident = [[] for _ in range(n)]
+    for r, (_, supp) in enumerate(rows):
+        for q in set(supp):
+            incident[q].append(r)
+
+    def relabel(supports, perm):
+        return tuple(sorted(
+            tuple(sorted(perm[i] for i in supp)) for supp in supports))
+
+    identity = tuple(range(n))
+    base = (relabel(X, identity), relabel(Z, identity))
+
+    def interchangeable(u, v):
+        swap = list(identity)
+        swap[u], swap[v] = v, u
+        return (relabel(X, swap), relabel(Z, swap)) == base
+
+    best = None
+
+    def search(colors):
+        nonlocal best
+        cells = {}
+        for q, color in enumerate(colors):
+            cells.setdefault(color, []).append(q)
+        split = [color for color, cell in cells.items() if len(cell) > 1]
+        if not split:
+            form = (relabel(X, colors), relabel(Z, colors))
+            if best is None or form < best:
+                best = form
+            return
+        target = min(split)
+        tried = []
+        for v in cells[target]:
+            # If swapping v with a tried qubit preserves the state, both
+            # branches reach the same set of relabelings.  Neither qubit is
+            # individualized yet, so the swap fixes the earlier choices.
+            if any(interchangeable(u, v) for u in tried):
+                continue
+            tried.append(v)
+            child = [2 * color + 1 for color in colors]
+            child[v] -= 1
+            search(_refine_qubit_colors(child, rows, incident))
+
+    search(_refine_qubit_colors([0] * n, rows, incident))
+    return best
+
+
 def _canonical_state_key(state):
     """Best-effort canonical key for a ``CodeState`` up to qubit permutation.
 
-    For small codes (n <= 8) an exact brute-force canonical form is used.
-    For larger codes a (weaker) invariant signature is used; this is a
-    performance fallback, not an exact equivalence test.
+    For small codes (n <= 8) an exact canonical form is used.  For larger
+    codes a (weaker) invariant signature is used; this is a performance
+    fallback, not an exact equivalence test.
     """
     qubits = sorted(state.Q)
     index = {q: i for i, q in enumerate(qubits)}
@@ -561,16 +951,7 @@ def _canonical_state_key(state):
     n = len(qubits)
     k = state.k()
     if n <= 8:
-        best = None
-        for perm in itertools.permutations(range(n)):
-            tX = tuple(sorted(
-                tuple(sorted(perm[i] for i in supp)) for supp in X))
-            tZ = tuple(sorted(
-                tuple(sorted(perm[i] for i in supp)) for supp in Z))
-            rep = (tX, tZ)
-            if best is None or rep < best:
-                best = rep
-        return (n, k, best)
+        return (n, k, _exact_canonical_form(n, X, Z))
     return (n, k,
             tuple(sorted(len(s) for s in X)),
             tuple(sorted(len(s) for s in Z)))
@@ -1058,6 +1439,12 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
     """
     if target is None:
         _upper = ledger.full.upper
+        if _upper is not None and _upper < 1:
+            # A code with a logical has distance at least 1, so an upper
+            # endpoint below 1 is a malformed ledger, not a target to plan for.
+            raise Malformed(
+                "the ledger's full-distance upper endpoint is %r; it must be "
+                "at least 1 to serve as the default target" % (_upper,))
         target = _upper if _upper is not None else 10 ** 9
     if deep_verify is False and deep_check is not None:
         deep_verify = deep_check
@@ -1141,6 +1528,7 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
         for family in MOVE_FAMILIES:
             for reason in DROP_REASONS:
                 diagnostics[family].setdefault(reason, 0)
+            diagnostics[family].setdefault("refusals", {})
 
     if skip_low_distance and min_child_upper is None:
         min_child_upper = 3
@@ -1166,7 +1554,6 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
             _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "disconnected")
         if swap["applied"] and (include_disconnected
                                 or tanner_components(swap["state"]) == 1):
-            _note_drop(diagnostics, {"op": "E-LOCAL-HADAMARD"}, "survived")
             results.append({
                 "operation": swap["operation"],
                 "state": swap["state"],
@@ -1185,8 +1572,8 @@ def plan(state, ledger, target=None, *, include_disconnected=False, structural=T
         _note_drop(diagnostics, op, "enumerated")
         try:
             child = apply_operation(working_state, op)
-        except (NoDerivation, Malformed):
-            _note_drop(diagnostics, op, "apply_fail")
+        except (NoDerivation, Malformed) as refusal:
+            _note_drop(diagnostics, op, "apply_fail", detail=refusal)
             continue
         if structural and has_bare_qubit(child) and target is not None and target > 1:
             _note_drop(diagnostics, op, "bare_qubit")
@@ -1401,7 +1788,12 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
     full objects.  Stops early when no non-prune candidate survives.  Each
     termination record carries a ``stop_reason`` (``no-survivor``,
     ``operation-failed``, or ``step-limit-reached``) as descriptive reporting;
-    it does not change the campaign.  This is consumer-side search control: it never recomputes a
+    it does not change the campaign.  Every record carries ``applicability``,
+    the step's per-family record (`new_applicability_record`) filled by its
+    `plan` call: the drop counts, the ``refusals`` by premise, the children
+    pruned by verdict (``verdict_prune``), and ``blocking``
+    (`applicability_blocking`), so a record says why a parent yielded no
+    usable child without a re-run.  This is consumer-side search control: it never recomputes a
     distance or discharges an obligation.  ``support_search`` defaults to ``True``, so each
     surviving child runs ``bounded_support_search``; pass ``False`` (or a
     config dict) to control or disable that cost.
@@ -1414,8 +1806,11 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
     history = []
     cur_state, cur_ledger = state, ledger
     for step in range(steps):
+        # This step's applicability record, filled by the plan call itself
+        # and read against its verdicts (issue #652).
+        _diagnostics = new_applicability_record()
         cands = plan(
-            cur_state, cur_ledger, target,
+            cur_state, cur_ledger, target, diagnostics=_diagnostics,
             structural=structural, reduce_display=reduce_display,
             reduce_by_domination=reduce_by_domination,
             sector_targeted=sector_targeted, target_sector=target_sector,
@@ -1431,11 +1826,13 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
             groups=groups, level_data=level_data, tower_inner=tower_inner,
             tower_groups=tower_groups, **kwargs,
         )
+        applicability_blocking(_diagnostics, cands)
         survivors = [c for c in cands if c["verdict"] != "prune"]
         if not survivors:
             _record = {"step": step, "chosen": None, "verdict": None,
                        "candidates": len(cands), "reason": "no survivor",
-                       "stop_reason": "no-survivor"}
+                       "stop_reason": "no-survivor",
+                       "applicability": _diagnostics}
             history.append(_record)
             if log_path is not None:
                 with open(log_path, "a") as fh:
@@ -1459,6 +1856,7 @@ def run_campaign(state, ledger, target, *, steps=5, structural=True,
             "n": chosen["n"], "k": chosen["k"], "w": chosen["w"],
             "candidates": len(cands), "survivors": len(survivors),
             "slug": _slug,
+            "applicability": _diagnostics,
         }
         # apply the move to advance the campaign state
         try:
@@ -1879,14 +2277,16 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
         entries = constructor_candidates(state, ledger, [spec], target,
                                          objective, _target_sector)
         for entry in entries:
+            cand = entry.get("candidate")
+            # Honour the same connectivity screen as planner moves unless
+            # the caller asked for disconnected candidates; a screened
+            # constructor uses no budget and its record says why.
+            if cand is not None and not (include_disconnected
+                                         or cand.get("connected", True)):
+                entry["screened"] = "disconnected"
             constructor_records.append({k: v for k, v in entry.items()
                                         if k != "candidate"})
-            if not entry.get("derived"):
-                continue
-            cand = entry["candidate"]
-            # Honour the same connectivity screen as planner moves unless
-            # the caller asked for disconnected candidates.
-            if not (include_disconnected or cand.get("connected", True)):
+            if cand is None or "screened" in entry:
                 continue
             evaluated += 1
 
@@ -1960,6 +2360,9 @@ def bounded_sector_search(state, ledger, target_sector, *, target=None, budget=1
     else:
         stop_reason = "max-depth-reached"
     budget_declined = 0 if truncated else budget - evaluated
+
+    # Why each family gave no surviving child (issue #652).
+    applicability_blocking(diagnostics)
 
     return {
         "candidates": improving,

@@ -126,10 +126,10 @@
     },
     "E-LOCAL-HADAMARD": {
       "Q": "unchanged",
-      "rows": "swap the sector label of every displayed row; supports, identifiers and used unchanged",
-      "ids": "unchanged",
-      "used": "unchanged",
-      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.27",
+      "rows": "T = Q: swap the sector label of every displayed row; supports, identifiers and used unchanged. Split subset: the canonical update of the OPERATIONAL_SEMANTICS.md section 2 card, in identifier order (rows inside T swap sector, rows disjoint from T stay, each mixed row is replaced by its kept pieces)",
+      "ids": "T = Q: unchanged. Split subset: a mixed row's first kept piece inherits its identifier, a second is minted canonically, a mixed row with no kept piece is retired",
+      "used": "T = Q: unchanged. Split subset: retain retired IDs and add minted IDs",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md sections 2 and 4.27",
       "source": "spec/STATE_MODEL.md \u00a74"
     },
     "E-PEEL": {
@@ -164,6 +164,14 @@
       "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.31",
       "source": "spec/STATE_MODEL.md \u00a74"
     },
+    "E-SPLIT": {
+      "Q": "unchanged",
+      "rows": "remove every displayed row whose identifier lies in R, keeping remaining rows in order",
+      "ids": "retire all identifiers in R; no mint",
+      "used": "unchanged (retired identifiers in R retained)",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 4.48",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
     "L-HGP": {
       "Q": "fresh 0..n-1 with n = n1 n2 + m1 m2",
       "rows": "the retained independent display of the natural hypergraph-product rows (section 4.34)",
@@ -173,7 +181,7 @@
       "source": "spec/STATE_MODEL.md \u00a74"
     },
     "L-LIFTED": {
-      "Q": "fresh 0..n-1 with n = |G| (nA nB + mA mB)",
+      "Q": "fresh 0..n-1 with n = |G| (nA nB + mA mB), or n = [G:H] (nA nB + mA mB) with a subgroup argument (section 4.49)",
       "rows": "the retained independent display of the lifted-product rows (section 4.34)",
       "ids": "mint canonically from the empty used set",
       "used": "the minted identifiers",
@@ -290,7 +298,22 @@
       "ids": "mint canonically from used_0",
       "used": "used_0 union the minted identifiers",
       "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (PP-SCALE card) and section 4.47",
-
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "C-COLUMN-CNOT": {
+      "Q": "unchanged",
+      "rows": "transform displayed X-rows by U^{-1} and Z-rows by U^T (section 4.42)",
+      "ids": "retained (no minting or retirement)",
+      "used": "unchanged",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (C-COLUMN-CNOT card) and section 4.42",
+      "source": "spec/STATE_MODEL.md \u00a74"
+    },
+    "L-MAPPING-CONE": {
+      "Q": "fresh 0..n-1, n = a_0 + b_1",
+      "rows": "the retained independent display of the mapping-cone rows (section 4.41)",
+      "ids": "mint canonically from the empty used set",
+      "used": "the minted identifiers",
+      "authority": "spec/STATE_MODEL.md section 4 and spec/OPERATIONAL_SEMANTICS.md section 2 (L-MAPPING-CONE card) and section 4.41",
       "source": "spec/STATE_MODEL.md \u00a74"
     }
   }

@@ -25,7 +25,7 @@ the prose wins and the transcription is fixed.
  vocabulary, admission ladder.
 7. [`OBLIGATIONS.md`](OBLIGATIONS.md) — every open obligation and its status.
 8. [`GATES.md`](GATES.md) — proof gates and non-goals (Gate 0 passed
- 2026-10-27; Gate 1 ratified 2026-10-29; Gates 2–6 ratified 2026-11-19; Gate 7 unchecked).
+ 2026-10-27; Gate 1 ratified 2026-10-29; Gates 2–6 ratified 2026-11-19; Gate 7 ratified 2026-11-26).
 9. [`VOCABULARY.md`](VOCABULARY.md) — controlled vocabulary; use these terms
  exactly.
 10. [`TAXONOMY.md`](TAXONOMY.md) — operation inventory, stable IDs, extension

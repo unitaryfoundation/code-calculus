@@ -239,6 +239,61 @@ def deleteState (s : CodeState) (r : Nat) : CodeState :=
   , rows := s.rows.filter (fun row => row.id ≠ r)
   , used := s.used }
 
+/-- Iterated deletion: `deleteState` over a list of row identifiers.
+    This is the state update of `E-SPLIT` (`Command.split`). -/
+def deleteAll (s : CodeState) : List Nat → CodeState
+  | [] => s
+  | r :: rest => deleteAll (deleteState s r) rest
+
+theorem deleteAll_Q (R : List Nat) : ∀ s : CodeState, (deleteAll s R).Q = s.Q := by
+  induction R with
+  | nil => intro s; rfl
+  | cons r rest ih => intro s; exact ih (deleteState s r)
+
+theorem deleteAll_used (R : List Nat) : ∀ s : CodeState, (deleteAll s R).used = s.used := by
+  induction R with
+  | nil => intro s; rfl
+  | cons r rest ih => intro s; exact ih (deleteState s r)
+
+/-- A row is displayed after `deleteAll` exactly when it was displayed
+    before and its identifier is not among those deleted. -/
+theorem mem_deleteAll_rows (R : List Nat) :
+    ∀ (s : CodeState) (row : Row),
+      row ∈ (deleteAll s R).rows ↔ row ∈ s.rows ∧ row.id ∉ R := by
+  induction R with
+  | nil =>
+      intro s row
+      exact ⟨fun h => ⟨h, fun hmem => nomatch hmem⟩, fun h => h.1⟩
+  | cons r rest ih =>
+      intro s row
+      show row ∈ (deleteAll (deleteState s r) rest).rows ↔ _
+      rw [ih (deleteState s r) row]
+      show (row ∈ s.rows.filter (fun row => row.id ≠ r) ∧ row.id ∉ rest) ↔ _
+      rw [List.mem_filter]
+      constructor
+      · rintro ⟨⟨hmem, hne⟩, hrest⟩
+        refine ⟨hmem, fun hin => ?_⟩
+        rcases List.mem_cons.mp hin with h | h
+        · exact (of_decide_eq_true hne) h
+        · exact hrest h
+      · rintro ⟨hmem, hnot⟩
+        exact ⟨⟨hmem, decide_eq_true (fun h => hnot (h ▸ List.mem_cons_self))⟩,
+          fun h => hnot (List.mem_cons_of_mem _ h)⟩
+
+/-- `deleteAll` preserves the relative order of surviving rows. -/
+theorem deleteAll_rows_sublist (R : List Nat) :
+    ∀ s : CodeState, (deleteAll s R).rows.Sublist s.rows := by
+  induction R with
+  | nil => intro s; exact List.Sublist.refl _
+  | cons r rest ih =>
+      intro s
+      exact (ih (deleteState s r)).trans List.filter_sublist
+
+/-- Every displayed row lies inside `QA` or misses it: no row meets both
+    sides of the partition of the qubits into `QA` and the rest. -/
+def Separated (QA : List Nat) (s : CodeState) : Prop :=
+  ∀ row ∈ s.rows, (∀ q ∈ row.support, q ∈ QA) ∨ (∀ q ∈ row.support, q ∉ QA)
+
 /-- The sector opposite to the given one. -/
 def oppositeSector : Sector → Sector
   | Sector.X => Sector.Z
@@ -548,6 +603,282 @@ def extendState (s : CodeState) (delta : List Nat)
 def hadamardState (s : CodeState) (T : List Nat) : CodeState :=
   if T.isEmpty then s else swapState s
 
+/-! ### `C-COLUMN-CNOT` state update (`spec/OPERATIONAL_SEMANTICS.md` §4.42) -/
+
+/-- Shape check: `U` is an `n × n` binary matrix. -/
+def boolMatShape (U : List (List Bool)) (n : Nat) : Bool :=
+  U.length == n && U.all (fun row => row.length == n)
+
+/-- Transpose of an `n × n` binary matrix. -/
+def boolMatTranspose (n : Nat) (U : List (List Bool)) : List (List Bool) :=
+  (List.range n).map (fun j =>
+    (List.range n).map (fun i => (U.getD i []).getD j false))
+
+/-- `n × n` identity matrix over `F₂`. -/
+def boolMatId (n : Nat) : List (List Bool) :=
+  (List.range n).map (fun i => (List.range n).map (fun j => i == j))
+
+/-- Matrix multiplication over `F₂` of two `n × n` binary matrices. -/
+def boolMatMul (n : Nat) (A B : List (List Bool)) : List (List Bool) :=
+  (List.range n).map (fun i =>
+    (List.range n).map (fun j =>
+      (List.range n).foldl (fun acc k =>
+        Bool.xor acc (((A.getD i []).getD k false) && ((B.getD k []).getD j false))) false))
+
+/-- Row-vector times matrix over `F₂`: `(v M)_j = ∑_i v_i M_{i,j}`. -/
+def vecMulMat (n : Nat) (v : List Bool) (M : List (List Bool)) : List Bool :=
+  (List.range n).map (fun j =>
+    (List.range n).foldl (fun acc i =>
+      Bool.xor acc ((v.getD i false) && ((M.getD i []).getD j false))) false)
+
+/-- Swap two list entries by index (no-op when indices coincide or are out of bounds). -/
+def swapListAt {α : Type} (xs : List α) (i j : Nat) : List α :=
+  if i = j then xs
+  else
+    match xs[i]?, xs[j]? with
+    | some a, some b => (xs.set i b).set j a
+    | _, _ => xs
+
+private def findPivotRowAux (col idx : Nat) : List (List Bool) → Option Nat
+  | [] => none
+  | row :: rest =>
+      if idx ≥ col && row.getD col false then some idx
+      else findPivotRowAux col (idx + 1) rest
+
+/-- Deterministic Gauss–Jordan inversion over `F₂` for an `n × n` binary matrix. -/
+def gf2InvBool (U : List (List Bool)) : Option (List (List Bool)) :=
+  let n := U.length
+  if !boolMatShape U n then none
+  else
+    let aug0 : List (List Bool) :=
+      (List.range n).map (fun i =>
+        U.getD i [] ++ (List.range n).map (fun j => i == j))
+    let augFinal := (List.range n).foldl (fun acc col =>
+      match acc with
+      | none => none
+      | some mat =>
+          match findPivotRowAux col 0 mat with
+          | none => none
+          | some piv =>
+              let mat1 := swapListAt mat col piv
+              let pivRow := mat1.getD col []
+              let mat2 := (List.range n).map (fun r =>
+                let row := mat1.getD r []
+                if r != col && row.getD col false then
+                  List.zipWith Bool.xor row pivRow
+                else row)
+              some mat2) (some aug0)
+    augFinal.map (fun mat => mat.map (fun row => row.drop n))
+
+/-- Decidable check that `U` is `n × n` and invertible over `F₂`, certified
+    directly by two-sided multiplication against `gf2InvBool U`. -/
+def cnotMatrixOkBool (U : List (List Bool)) (n : Nat) : Bool :=
+  boolMatShape U n &&
+  match gf2InvBool U with
+  | some Uinv =>
+      boolMatShape Uinv n &&
+      (boolMatMul n U Uinv == boolMatId n) &&
+      (boolMatMul n Uinv U == boolMatId n)
+  | none => false
+
+/-- Structural applicability premise of `C-COLUMN-CNOT` (§4.42). -/
+def cnotMatrix_ok (U : List (List Bool)) (n : Nat) : Prop :=
+  cnotMatrixOkBool U n = true
+
+/-- Support transformed by `C-COLUMN-CNOT` (§4.42): X-rows by `U⁻¹`, Z-rows
+    by `Uᵀ`, sorted onto the display contract. -/
+def cnotSwapSupport (Q : List Nat) (U : List (List Bool)) (σ : Sector) (S : List Nat) :
+    List Nat :=
+  let n := Q.length
+  let v := Q.map (fun q => S.contains q)
+  let M := match σ with
+    | Sector.X => (gf2InvBool U).getD (boolMatId n)
+    | Sector.Z => boolMatTranspose n U
+  let v' := vecMulMat n v M
+  sortNat ((Q.zip v').filterMap (fun p => if p.2 then some p.1 else none))
+
+def cnotSwapRow (Q : List Nat) (U : List (List Bool)) (r : Row) : Row :=
+  { id := r.id, sector := r.sector, support := cnotSwapSupport Q U r.sector r.support }
+
+/-- State update of `C-COLUMN-CNOT`: `Q` and `used` unchanged; each displayed
+    row retains its identifier and sector while its support transforms by `U⁻¹`
+    (X-sector) or `Uᵀ` (Z-sector). -/
+def cnotSwapState (s : CodeState) (U : List (List Bool)) : CodeState :=
+  { Q := s.Q, rows := s.rows.map (cnotSwapRow s.Q U), used := s.used }
+
+/-! ### Split-subset `hadamard` (`0 < |T| < |Q|`, issue #571)
+
+The canonical update of `spec/OPERATIONAL_SEMANTICS.md` §2 (`E-LOCAL-HADAMARD`
+card) and §4.27, transcribed from `machine/state.py` `local_hadamard`. -/
+
+/-- The inner piece `supp ∩ T` of a support. -/
+def innerPiece (T sup : List Nat) : List Nat := sup.filter (fun q => T.contains q)
+
+/-- The outer piece `supp ∖ T` of a support. -/
+def outerPiece (T sup : List Nat) : List Nat := sup.filter (fun q => ¬ T.contains q)
+
+/-- A row is `T`-pure when it lies inside `T` or is disjoint from it. -/
+def isPureRow (T : List Nat) (r : Row) : Bool :=
+  (innerPiece T r.support).isEmpty || (outerPiece T r.support).isEmpty
+
+/-- A pure row's output sector: a nonempty row inside `T` changes sector, a row
+    disjoint from `T` keeps it. -/
+def pureSector (T : List Nat) (r : Row) : Sector :=
+  if (outerPiece T r.support).isEmpty ∧ ¬ (innerPiece T r.support).isEmpty then
+    oppositeSector r.sector
+  else r.sector
+
+/-- The positional bitmask of a support over `Q` (the mask `rowBitmask` gives
+    a row with that support). -/
+def pieceMask (Q sup : List Nat) : Nat := rowBitmask Q ⟨0, Sector.X, sup⟩
+
+/-- The F₂ basis (positional bitmasks over `Q`) of a sector's displayed rows. -/
+def sectorBasis (s : CodeState) (σ : Sector) : List Nat :=
+  ((sectorRows s σ).map (rowBitmask s.Q)).foldl insertBasis []
+
+/-- The decidable row-space splitting guard: every displayed row restricted to
+    `T` lies in its own sector's span (`v|_T ∈ X` for all `v ∈ X`, and
+    `w|_T ∈ Z` for all `w ∈ Z`, by linearity of restriction). -/
+def splitGuard (s : CodeState) (T : List Nat) : Bool :=
+  s.rows.all (fun r =>
+    reduceByBasis (sectorBasis s r.sector) (pieceMask s.Q (innerPiece T r.support)) = 0)
+
+/-- The running output basis of one sector. -/
+def basisFor (xb zb : List Nat) : Sector → List Nat
+  | Sector.X => xb
+  | Sector.Z => zb
+
+/-- Insert a mask into the running basis of one sector. -/
+def insertFor (xb zb : List Nat) (σ : Sector) (m : Nat) : List Nat × List Nat :=
+  match σ with
+  | Sector.X => (insertBasis xb m, zb)
+  | Sector.Z => (xb, insertBasis zb m)
+
+/-- Insert a row into a list sorted by identifier rank (`Row.id`, the fixed
+    enumeration order of `State.lean`), preserving order. -/
+def insertRowByRank (r : Row) (rs : List Row) : List Row :=
+  match rs with
+  | [] => [r]
+  | r' :: rest => if r.id ≤ r'.id then r :: rs else r' :: insertRowByRank r rest
+
+/-- Structurally recursive insertion sort of rows by identifier rank
+    (`Row.id`, the order of the fixed identifier enumeration); unfolds under
+    `decide`, unlike `List.mergeSort`. -/
+def sortRowsByRank (rs : List Row) : List Row :=
+  match rs with
+  | [] => []
+  | r :: rest => insertRowByRank r (sortRowsByRank rest)
+
+/-- The masks of the `T`-pure rows landing in output sector `σ`, in identifier
+    order (the order of the fixed identifier enumeration). -/
+def pureMasks (s : CodeState) (T : List Nat) (σ : Sector) : List Nat :=
+  (((sortRowsByRank s.rows).filter (isPureRow T)).filter (fun r => pureSector T r = σ)).map
+    (fun r => pieceMask s.Q r.support)
+
+/-- The output bases seeded with the `T`-pure rows of each output sector. -/
+def splitSeed (s : CodeState) (T : List Nat) : List Nat × List Nat :=
+  ((pureMasks s T Sector.X).foldl insertBasis [], (pureMasks s T Sector.Z).foldl insertBasis [])
+
+/-- One candidate piece against the running bases `b`: kept (`true`, and
+    inserted into the basis of its output sector `τ`) exactly when its mask is
+    independent of that basis. -/
+def pieceStep (Q : List Nat) (b : List Nat × List Nat) (τ : Sector) (p : List Nat) :
+    Bool × (List Nat × List Nat) :=
+  if reduceByBasis (basisFor b.1 b.2 τ) (pieceMask Q p) = 0 then (false, b)
+  else (true, insertFor b.1 b.2 τ (pieceMask Q p))
+
+/-- The entries a mixed row emits, given which of its two pieces are kept:
+    the first kept piece carries the row's identifier, a second is marked for
+    minting (`none`). -/
+def mixedEntries (T : List Nat) (r : Row) (ko ki : Bool) : List (Option Nat × Sector × List Nat) :=
+  (if ko then [(some r.id, r.sector, outerPiece T r.support)] else []) ++
+  (if ki then [(if ko then none else some r.id, oppositeSector r.sector,
+    innerPiece T r.support)] else [])
+
+/-- Pass 1 of the split update, as a recursion over a row list with the
+    running output bases `b` (`splitEntries` calls this in identifier order).
+    A pure row is emitted with its identifier and output sector. A mixed row
+    offers its outer piece in its own sector, then its inner piece in the
+    opposite sector (`pieceStep`). -/
+def splitGo (Q T : List Nat) : List Nat × List Nat → List Row →
+    List (Option Nat × Sector × List Nat)
+  | _, [] => []
+  | b, r :: rs =>
+      if isPureRow T r then (some r.id, pureSector T r, r.support) :: splitGo Q T b rs
+      else
+        let s1 := pieceStep Q b r.sector (outerPiece T r.support)
+        let s2 := pieceStep Q s1.2 (oppositeSector r.sector) (innerPiece T r.support)
+        mixedEntries T r s1.1 s2.1 ++ splitGo Q T s2.2 rs
+
+/-- The output bases after pass 1 (used only in proofs). -/
+def splitFinal (Q T : List Nat) : List Nat × List Nat → List Row → List Nat × List Nat
+  | b, [] => b
+  | b, r :: rs =>
+      if isPureRow T r then splitFinal Q T b rs
+      else
+        let s1 := pieceStep Q b r.sector (outerPiece T r.support)
+        let s2 := pieceStep Q s1.2 (oppositeSector r.sector) (innerPiece T r.support)
+        splitFinal Q T s2.2 rs
+
+/-- The entries of pass 1 over the whole display, read in identifier order
+    (the order of the fixed identifier enumeration). -/
+def splitEntries (s : CodeState) (T : List Nat) : List (Option Nat × Sector × List Nat) :=
+  splitGo s.Q T (splitSeed s T) (sortRowsByRank s.rows)
+
+/-- The number of identifiers the split update mints. -/
+def splitMintCount (s : CodeState) (T : List Nat) : Nat :=
+  ((splitEntries s T).filter (fun e => e.1.isNone)).length
+
+/-- Pass 2: inherited identifiers stay; each `none` entry takes the next
+    canonically minted identifier. -/
+def assignIds : List (Option Nat × Sector × List Nat) → List Nat → List Row
+  | [], _ => []
+  | (some id, σ, sup) :: rest, ids => ⟨id, σ, sup⟩ :: assignIds rest ids
+  | (none, σ, sup) :: rest, id :: ids => ⟨id, σ, sup⟩ :: assignIds rest ids
+  | (none, _, _) :: rest, [] => assignIds rest []
+
+/-- The split-subset `hadamard` state update (`0 < |T| < |Q|`): `Q` is
+    unchanged, the display is the canonical piece selection, and `used` grows
+    by the canonically minted identifiers. -/
+def splitHadamardState (s : CodeState) (T : List Nat) : CodeState :=
+  let ids := mintFresh s.used (splitMintCount s T)
+  { Q := s.Q
+  , rows := assignIds (splitEntries s T) ids
+  , used := s.used ++ ids }
+
+/-- The split instance's subset premise: `T` is a nonempty, repeat-free,
+    proper subset of `Q` (so it is disjoint from the `T = Q` and `T = ∅`
+    instances of `Eval.hadamard`). -/
+def ProperSubset (T Q : List Nat) : Prop :=
+  T ≠ [] ∧ T.Nodup ∧ supportSubset T Q ∧ ¬ (∀ q, q ∈ Q → q ∈ T)
+
+instance (T Q : List Nat) : Decidable (ProperSubset T Q) :=
+  inferInstanceAs (Decidable (T ≠ [] ∧ T.Nodup ∧ (∀ q, q ∈ T → q ∈ Q) ∧
+    ¬ (∀ q, q ∈ Q → q ∈ T)))
+
+/-- `T` covers the namespace: every qubit of `Q` is in `T`. On a repeat-free
+    `T ⊆ Q` this is the global instance `T = Q`; it is the constructive
+    discriminator the ledger transport branches on (deciding `List.Perm`
+    would bring `Classical.choice` into the transport). -/
+def CoversQ (T Q : List Nat) : Prop := ∀ q, q ∈ Q → q ∈ T
+
+instance (T Q : List Nat) : Decidable (CoversQ T Q) :=
+  inferInstanceAs (Decidable (∀ q, q ∈ Q → q ∈ T))
+
+theorem coversQ_of_perm {T Q : List Nat} (h : T.Perm Q) : CoversQ T Q :=
+  fun _ hq => h.mem_iff.mpr hq
+
+theorem not_coversQ_of_properSubset {T Q : List Nat} (h : ProperSubset T Q) :
+    ¬ CoversQ T Q := h.2.2.2
+
+/-- A proper subset is never a permutation of `Q` and never empty, so the
+    split instance is disjoint from the `T = Q` / `T = ∅` instances. -/
+theorem not_perm_or_nil_of_properSubset {T Q : List Nat} (h : ProperSubset T Q) :
+    ¬ (T.Perm Q ∨ T = []) := by
+  rintro (hp | hn)
+  · exact h.2.2.2 (fun q hq => hp.mem_iff.mpr hq)
+  · exact h.1 hn
+
 /-- State update for the structural graft transition. -/
 def graftState (s : CodeState) (qubit : Nat) (sector : Sector)
     (orderedIds : List Nat) : CodeState :=
@@ -636,6 +967,18 @@ inductive Eval : Command → CodeState → CodeState → Prop where
       s' = hadamardState s T →
       EncodingWellFormed s' →
       Eval (Command.hadamard T) s s'
+  /-- `E-LOCAL-HADAMARD`, split-subset instance (`0 < |T| < |Q|`, issue #571):
+      a proper subset, the row-space splitting guard, the canonical update,
+      and the checked output premises (`EncodingWellFormed`, `k' = k`, mint
+      capacity) that §4.27 derives by hand. -/
+  | hadamardSplit {T : List Nat} {s s' : CodeState} :
+      ProperSubset T s.Q →
+      splitGuard s T = true →
+      s' = splitHadamardState s T →
+      EncodingWellFormed s' →
+      stateK s' = stateK s →
+      MintsWithinCapacity s.used (splitMintCount s T) →
+      Eval (Command.hadamard T) s s'
   | peel {q : Nat} {tau : Sector} {r_id : Nat} {s s' : CodeState} :
       q ∈ s.Q →
       (∃ row, row ∈ s.rows ∧ row.id = r_id ∧ row.sector = tau ∧
@@ -657,6 +1000,24 @@ inductive Eval : Command → CodeState → CodeState → Prop where
       EncodingWellFormed s' →
       MintsWithinCapacity s.used adds.length →
       Eval (Command.extend delta adds) s s'
+  | cnotSwap {U : List (List Bool)} {s s' : CodeState} :
+      cnotMatrix_ok U s.Q.length →
+      s' = cnotSwapState s U →
+      EncodingWellFormed s' →
+      Eval (Command.cnotSwap U) s s'
+  /-- `E-SPLIT` (admitted 2026-11-25): separating deletion of an explicit
+      displayed cut-row set `R` covering all rows crossing `QA` vs `Q \ QA`.
+      Well-formedness of `deleteAll s R` follows from `EncodingWellFormed s`
+      via `wf_deleteAll` (`WellFormedness.lean`), so it is not a rule premise. -/
+  | split {QA R : List Nat} {s s' : CodeState} :
+      QA.Nodup →
+      (∀ q ∈ QA, q ∈ s.Q) →
+      R.Nodup →
+      (∀ r ∈ R, DisplayedGenerator r s) →
+      (∀ row ∈ s.rows,
+        (∀ q ∈ row.support, q ∈ QA) ∨ (∀ q ∈ row.support, q ∉ QA) ∨ row.id ∈ R) →
+      s' = deleteAll s R →
+      Eval (Command.split QA R) s s'
 
 /-- Evaluation of a closed construction term. -/
 inductive EvalTerm : ClosedTerm → CodeState → Prop where
@@ -883,6 +1244,11 @@ noncomputable def denote : Command → CodeState → Option CodeState
   | Command.hadamard T, s =>
       if (T.Perm s.Q ∨ T = []) ∧ EncodingWellFormed (hadamardState s T) then
         some (hadamardState s T)
+      else if ProperSubset T s.Q ∧ splitGuard s T = true
+          ∧ EncodingWellFormed (splitHadamardState s T)
+          ∧ stateK (splitHadamardState s T) = stateK s
+          ∧ MintsWithinCapacity s.used (splitMintCount s T) then
+        some (splitHadamardState s T)
       else none
   | Command.peel q tau r_id, s =>
       if q ∈ s.Q
@@ -903,6 +1269,20 @@ noncomputable def denote : Command → CodeState → Option CodeState
           ∧ EncodingWellFormed (extendState s delta adds)
           ∧ MintsWithinCapacity s.used adds.length then
         some (extendState s delta adds)
+      else none
+  | Command.cnotSwap U, s =>
+      if cnotMatrix_ok U s.Q.length
+          ∧ EncodingWellFormed (cnotSwapState s U) then
+        some (cnotSwapState s U)
+      else none
+  | Command.split QA R, s =>
+      if QA.Nodup
+          ∧ (∀ q ∈ QA, q ∈ s.Q)
+          ∧ R.Nodup
+          ∧ (∀ r ∈ R, DisplayedGenerator r s)
+          ∧ (∀ row ∈ s.rows,
+              (∀ q ∈ row.support, q ∈ QA) ∨ (∀ q ∈ row.support, q ∉ QA) ∨ row.id ∈ R) then
+        some (deleteAll s R)
       else none
 
 /-- Every derivation yields the denotation's `some` branch (spec §1a). -/
@@ -1361,6 +1741,16 @@ theorem eval_denote {m : Command} {s s' : CodeState}
       · rename_i hNot
         rw [← hs'] at hNot
         exact absurd (⟨hperm, hwf⟩) hNot
+  | hadamardSplit hsub hguard hs' hwf hk hcap =>
+      simp only [denote]
+      split
+      · rename_i hPre
+        exact absurd hPre.1 (not_perm_or_nil_of_properSubset hsub)
+      · split
+        · rw [hs']
+        · rename_i _ hNot
+          rw [← hs'] at hNot
+          exact absurd (⟨hsub, hguard, hwf, hk, hcap⟩) hNot
   | peel hq hrow hlen1 hno hs' hwf =>
       simp only [denote]
       split
@@ -1382,6 +1772,19 @@ theorem eval_denote {m : Command} {s s' : CodeState}
       · rename_i hNot
         rw [← hs'] at hNot
         exact absurd (⟨hok, hwf, hcap⟩) hNot
+  | cnotSwap hok hs' hwf =>
+      simp only [denote]
+      split
+      · rw [hs']
+      · rename_i hNot
+        rw [← hs'] at hNot
+        exact absurd (⟨hok, hwf⟩) hNot
+  | split hQAnd hQA hRnd hRdisp hcut hs' =>
+      simp only [denote]
+      split
+      · rw [hs']
+      · rename_i hNot
+        exact absurd (⟨hQAnd, hQA, hRnd, hRdisp, hcut⟩) hNot
 
 /-- The denotation's `some` branch has a derivation (spec §1a). -/
 theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
@@ -1446,7 +1849,12 @@ theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
         obtain ⟨hperm, hwf⟩ := hPre
         cases hEq
         exact Eval.hadamard hperm rfl hwf
-      · exact absurd hEq (by simp)
+      · split at hEq
+        · rename_i _ hPre
+          obtain ⟨hsub, hguard, hwf, hk, hcap⟩ := hPre
+          cases hEq
+          exact Eval.hadamardSplit hsub hguard rfl hwf hk hcap
+        · exact absurd hEq (by simp)
   | peel q tau r_id =>
       intro s s' hEq
       simp only [denote] at hEq
@@ -1473,6 +1881,24 @@ theorem denote_some_eval : ∀ (m : Command) (s s' : CodeState),
         obtain ⟨hok, hwf, hcap⟩ := hPre
         cases hEq
         exact Eval.extend hok rfl hwf hcap
+      · exact absurd hEq (by simp)
+  | cnotSwap U =>
+      intro s s' hEq
+      simp only [denote] at hEq
+      split at hEq
+      · rename_i hPre
+        obtain ⟨hok, hwf⟩ := hPre
+        cases hEq
+        exact Eval.cnotSwap hok rfl hwf
+      · exact absurd hEq (by simp)
+  | split QA R =>
+      intro s s' hEq
+      simp only [denote] at hEq
+      split at hEq
+      · rename_i hPre
+        obtain ⟨hQAnd, hQA, hRnd, hRdisp, hcut⟩ := hPre
+        cases hEq
+        exact Eval.split hQAnd hQA hRnd hRdisp hcut rfl
       · exact absurd hEq (by simp)
 
 /-- The derived denotation is adequate for the command relation:
@@ -1509,9 +1935,16 @@ theorem eval_unique {m : Command} {s s1 s2 : CodeState}
   | rebase _ _ heq1 _ =>
       cases h2 with
       | rebase _ _ heq2 _ => rw [heq1, heq2]
-  | hadamard _ heq1 _ =>
+  | hadamard hp1 heq1 _ =>
       cases h2 with
       | hadamard _ heq2 _ => rw [heq1, heq2]
+      | hadamardSplit hsub _ _ _ _ _ =>
+          exact absurd hp1 (not_perm_or_nil_of_properSubset hsub)
+  | hadamardSplit hsub _ heq1 _ _ _ =>
+      cases h2 with
+      | hadamard hp2 _ _ =>
+          exact absurd hp2 (not_perm_or_nil_of_properSubset hsub)
+      | hadamardSplit _ _ heq2 _ _ _ => rw [heq1, heq2]
   | peel _ _ _ _ heq1 _ =>
       cases h2 with
       | peel _ _ _ _ heq2 _ => rw [heq1, heq2]
@@ -1521,6 +1954,12 @@ theorem eval_unique {m : Command} {s s1 s2 : CodeState}
   | extend _ heq1 _ =>
       cases h2 with
       | extend _ heq2 _ => rw [heq1, heq2]
+  | cnotSwap _ heq1 _ =>
+      cases h2 with
+      | cnotSwap _ heq2 _ => rw [heq1, heq2]
+  | split _ _ _ _ _ heq1 =>
+      cases h2 with
+      | split _ _ _ _ _ heq2 => rw [heq1, heq2]
 
 /-- Sequencing associates in the derived denotation (spec §1a;
     `OBL-SEQUENCE-ASSOCIATIVITY` WP4 slice). -/
@@ -1921,19 +2360,105 @@ def twoQubitState : CodeState :=
   , rows := [⟨1, Sector.X, [0, 1]⟩]
   , used := [1] }
 
-/-- A hadamard term with a subset strictly between ∅ and Q is refused: the
-    constructor's first premise admits only `T = Q` or `T = []` (the
-    review-dispositioned split-subset mechanics are outside the state update —
-    OPERATIONAL_SEMANTICS.md §4.27). -/
-theorem not_eval_hadamard_subset :
-    ¬ Eval (Command.hadamard [0]) twoQubitState
-        (hadamardState twoQubitState [0]) := by
+/-- A hadamard term with a subset strictly between ∅ and Q is refused when the
+    row spaces do not split along it: `T = [0]` is neither `Q` nor `[]`, and
+    the splitting guard fails (`{0} ∉ span{{0,1}}`; OPERATIONAL_SEMANTICS.md
+    §4.27). The refusal holds for every candidate child. -/
+theorem not_eval_hadamard_subset (s' : CodeState) :
+    ¬ Eval (Command.hadamard [0]) twoQubitState s' := by
   intro h
   cases h with
   | hadamard h1 _ _ =>
       rcases h1 with hfl | hn
       · exact absurd hfl.length_eq (by decide)
       · exact absurd hn (by decide)
+  | hadamardSplit _ hguard _ _ _ _ =>
+      exact absurd hguard (by decide)
+
+/-- A split-subset example (issue #571): the Z display `{0,1,3,4}`, `{1,2}`,
+    `{3,4}`, `{4,5}` splits along `T = {0,1,2}`. -/
+def splitExampleState : CodeState :=
+  { Q := [0, 1, 2, 3, 4, 5]
+  , rows := [⟨1, Sector.Z, [0, 1, 3, 4]⟩, ⟨2, Sector.Z, [1, 2]⟩,
+             ⟨3, Sector.Z, [3, 4]⟩, ⟨4, Sector.Z, [4, 5]⟩]
+  , used := [1, 2, 3, 4] }
+
+/-- The canonical update on the example: the mixed row's outer piece `{3,4}`
+    is dependent on the pure `Z` rows and is dropped; its inner piece `{0,1}`
+    inherits identifier `1` in the `X` sector; nothing is minted. -/
+theorem splitHadamardState_example :
+    splitHadamardState splitExampleState [0, 1, 2] =
+      { Q := [0, 1, 2, 3, 4, 5]
+      , rows := [⟨1, Sector.X, [0, 1]⟩, ⟨2, Sector.X, [1, 2]⟩,
+                 ⟨3, Sector.Z, [3, 4]⟩, ⟨4, Sector.Z, [4, 5]⟩]
+      , used := [1, 2, 3, 4] } := by
+  decide
+
+/-- The split-subset example derives. -/
+theorem eval_hadamard_split_example :
+    Eval (Command.hadamard [0, 1, 2]) splitExampleState
+      (splitHadamardState splitExampleState [0, 1, 2]) :=
+  Eval.hadamardSplit (by decide) (by decide) rfl
+    ((wellFormedBool_iff _).mp (by decide)) (by decide) (by decide)
+
+/-- A minting example: the X display `{0,1}`, `{0,2}`, `{0,1,2}` with
+    `T = {0}`: every row is mixed; the first row's inner piece is minted. -/
+def splitMintState : CodeState :=
+  { Q := [0, 1, 2]
+  , rows := [⟨1, Sector.X, [0, 1]⟩, ⟨2, Sector.X, [0, 2]⟩, ⟨3, Sector.X, [0, 1, 2]⟩]
+  , used := [1, 2, 3] }
+
+/-- Row `1` keeps `{1}` and mints its inner piece `{0}` (identifier `0`, the
+    first natural not in `used`); row `2` keeps `{2}`; row `3` has no kept
+    piece and retires. -/
+theorem splitHadamardState_mint_example :
+    splitHadamardState splitMintState [0] =
+      { Q := [0, 1, 2]
+      , rows := [⟨1, Sector.X, [1]⟩, ⟨0, Sector.Z, [0]⟩, ⟨2, Sector.X, [2]⟩]
+      , used := [1, 2, 3, 0] } := by
+  decide
+
+theorem eval_hadamard_split_mint_example :
+    Eval (Command.hadamard [0]) splitMintState
+      (splitHadamardState splitMintState [0]) :=
+  Eval.hadamardSplit (by decide) (by decide) rfl
+    ((wellFormedBool_iff _).mp (by decide)) (by decide) (by decide)
+
+/-- A 4-row split example (`Q = {0..6}`, `T = {0, 1, 2}`) where reading rows
+    in display order would depend on row order (changing which identifier
+    retires and whether a fresh identifier is minted). -/
+def splitOrderStateSorted : CodeState :=
+  { Q := [0, 1, 2, 3, 4, 5, 6]
+  , rows := [⟨0, Sector.X, [0, 3, 4, 5, 6]⟩, ⟨1, Sector.X, [0]⟩,
+             ⟨2, Sector.X, [0, 5, 6]⟩, ⟨3, Sector.X, [0, 2, 5, 6]⟩]
+  , used := [0, 1, 2, 3] }
+
+def splitOrderStateSwapped : CodeState :=
+  { Q := [0, 1, 2, 3, 4, 5, 6]
+  , rows := [⟨0, Sector.X, [0, 3, 4, 5, 6]⟩, ⟨1, Sector.X, [0]⟩,
+             ⟨3, Sector.X, [0, 2, 5, 6]⟩, ⟨2, Sector.X, [0, 5, 6]⟩]
+  , used := [0, 1, 2, 3] }
+
+def splitOrderStateReversed : CodeState :=
+  { Q := [0, 1, 2, 3, 4, 5, 6]
+  , rows := [⟨3, Sector.X, [0, 2, 5, 6]⟩, ⟨2, Sector.X, [0, 5, 6]⟩,
+             ⟨1, Sector.X, [0]⟩, ⟨0, Sector.X, [0, 3, 4, 5, 6]⟩]
+  , used := [0, 1, 2, 3] }
+
+/-- Reading rows in identifier order produces the exact same child (no minting,
+    `used = [0, 1, 2, 3]`) across sorted, swapped, and reversed parent row
+    orders. -/
+theorem splitHadamardState_order_invariant_example :
+    splitHadamardState splitOrderStateSorted [0, 1, 2] =
+      { Q := [0, 1, 2, 3, 4, 5, 6]
+      , rows := [⟨0, Sector.X, [3, 4, 5, 6]⟩, ⟨1, Sector.Z, [0]⟩,
+                 ⟨2, Sector.X, [5, 6]⟩, ⟨3, Sector.Z, [0, 2]⟩]
+      , used := [0, 1, 2, 3] } ∧
+    splitHadamardState splitOrderStateSwapped [0, 1, 2] =
+      splitHadamardState splitOrderStateSorted [0, 1, 2] ∧
+    splitHadamardState splitOrderStateReversed [0, 1, 2] =
+      splitHadamardState splitOrderStateSorted [0, 1, 2] := by
+  decide
 
 /-- Puncturing a qubit outside the namespace is refused (`q ∈ s.Q` fails). -/
 theorem not_eval_puncture_unknown :
@@ -2135,6 +2660,13 @@ theorem eval_used_within_capacity {m : Command} {s s' : CodeState}
       · exact hs id hid
       · simp only [swapState] at hid
         exact hs id hid
+  | hadamardSplit _ _ heq _ _ hcap =>
+      rw [heq]
+      intro id hid
+      simp only [splitHadamardState, List.mem_append] at hid
+      rcases hid with h1 | h2
+      · exact hs id h1
+      · exact hcap id h2
   | peel _ _ _ _ heq _ =>
       rw [heq]
       intro id hid
@@ -2150,5 +2682,12 @@ theorem eval_used_within_capacity {m : Command} {s s' : CodeState}
       rcases hid with h1 | h2
       · exact hs id h1
       · exact hcap id h2
+  | cnotSwap _ heq _ =>
+      rw [heq]
+      intro id hid
+      exact hs id hid
+  | split _ _ _ _ _ heq =>
+      rw [heq, deleteAll_used]
+      exact hs
 
 end CodeCalculus

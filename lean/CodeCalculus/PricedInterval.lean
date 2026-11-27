@@ -601,7 +601,7 @@ theorem priced_interval_soundness
                 · exact leOpt_none (δ s').z
     | hadamard T =>
         cases hEval with
-        | hadamard _ _ _ =>
+        | hadamard _ _ _ | hadamardSplit _ _ _ _ _ _ =>
             simp [propagateCmd, Interval.contains]
             constructor
             · constructor
@@ -617,6 +617,36 @@ theorem priced_interval_soundness
     | rebase sector matrix =>
         cases hEval with
         | rebase _ _ _ _ =>
+            simp [propagateCmd, Interval.contains]
+            constructor
+            · constructor
+              · exact some_zero_leOpt (δ s').full
+              · exact leOpt_none (δ s').full
+            · constructor
+              · constructor
+                · exact some_zero_leOpt (δ s').x
+                · exact leOpt_none (δ s').x
+              · constructor
+                · exact some_zero_leOpt (δ s').z
+                · exact leOpt_none (δ s').z
+    | cnotSwap U =>
+        cases hEval with
+        | cnotSwap _ _ _ =>
+            simp [propagateCmd, Interval.contains]
+            constructor
+            · constructor
+              · exact some_zero_leOpt (δ s').full
+              · exact leOpt_none (δ s').full
+            · constructor
+              · constructor
+                · exact some_zero_leOpt (δ s').x
+                · exact leOpt_none (δ s').x
+              · constructor
+                · exact some_zero_leOpt (δ s').z
+                · exact leOpt_none (δ s').z
+    | split QA R =>
+        cases hEval with
+        | split _ _ _ _ _ _ =>
             simp [propagateCmd, Interval.contains]
             constructor
             · constructor
@@ -794,6 +824,8 @@ theorem propagateCmd_monotone (m : Command) (s s' : CodeState) (H : Hyp)
   | extend a b => exact DistanceLedger.refines_refl _
   | hadamard a => exact DistanceLedger.refines_refl _
   | rebase a b => exact DistanceLedger.refines_refl _
+  | cnotSwap a => exact DistanceLedger.refines_refl _
+  | split a b => exact DistanceLedger.refines_refl _
   | seq m1 m2 => exact DistanceLedger.refines_refl _
 
 /-- The same for the transported output including the `k = 0` collapse: the

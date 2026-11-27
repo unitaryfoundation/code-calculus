@@ -16,8 +16,8 @@ notes. Internal red-team records, issue numbers, and branch names are omitted.
 - Never claim a proof. Agreement between an example and a rule is evidence,
  never confirmation.
 - Do not discharge a proof obligation with an axiom or `sorry`. The audited
- `CodeCalculus` library must build with `0 sorry` and no new axioms; accepted
- assumptions in `lean/extra/ClosedK.lean` are frozen in `AXIOMS.md`.
+ `CodeCalculus` library must build with `0 sorry` and no new axioms;
+ `AXIOMS.md` records the accepted assumptions, and none remain.
 - Do not merge pull requests, create tags, or publish without maintainer
  approval.
 - `spec/` wins every disagreement with `machine/` and `lean/`.

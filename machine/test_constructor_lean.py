@@ -138,10 +138,59 @@ class ConstructorLeanTests(unittest.TestCase):
 
                         "product_naturalOrthogonal"):
             self.assertIn("theorem %s" % theorem, assembly)
-        self.assertIn("theorem evalExpr_balancedTable_wf",
-                      lean_source("BalancedOverlap.lean"))
+        balanced = lean_source("BalancedOverlap.lean")
+        for theorem in ("balanced_overlap", "balanced_naturalOrthogonal",
+                        "evalExpr_balanced_wellFormed",
+                        "cayleyBalanced_naturalOrthogonal",
+                        "evalExpr_balancedTable_wf"):
+            self.assertIn("theorem %s" % theorem, balanced)
         self.assertIn("theorem wf_constructedState",
                       lean_source("ConstructorWellFormedness.lean"))
+        natural = lean_source("ConstructorRankNatural.lean")
+        for theorem in ("tannerState_k_ge", "tannerState_k_of_indep",
+                        "evalExpr_tanner_k_ge", "evalExpr_tanner_k_of_indep",
+                        "tileState_k_ge", "tileState_k_of_indep",
+                        "evalExpr_tile_k_ge", "evalExpr_tile_k_of_indep",
+                        "rankBitmasks_eq_length_iff_indep",
+                        "tannerState_k_eq_counting_iff",
+                        "tileState_k_eq_counting_iff",
+                        "tannerState_k_ge_localRank",
+                        "evalExpr_tanner_k_ge_localRank",
+                        "tannerState_k_of_disjoint_views",
+                        "evalExpr_tanner_k_of_disjoint_views",
+                        "tanner_k_not_determined_by_params",
+                        "tile_k_not_determined_by_params"):
+            self.assertIn("theorem %s" % theorem, natural)
+        concat = lean_source("ConcatRetention.lean")
+        for theorem in ("combineRows_take_drop", "vecIndep_concatInner",
+                        "vecIndep_concat", "concatState_rows_length",
+                        "concatState_k_closed", "evalExpr_concat_k"):
+            self.assertIn("theorem %s" % theorem, concat)
+
+    def test_future_pi_field_sketch_theorems_are_present(self):
+        future_pi = lean_source("FuturePiFields.lean")
+        for theorem in (
+            "constructionRecord_ofExpr_valid",
+            "constructionRecord_transportCmd_valid",
+            "constructionRecord_transportCmdPure_valid",
+            "constructionRecord_directSum_valid",
+            "constructionRecord_glue_valid",
+            "constructionRecord_concat_valid",
+            "constructionRecord_product_valid",
+            "constructionRecord_double_valid",
+            "constructionRecord_ppScale_valid",
+            "frame_toLogField_sound",
+            "frame_toLogField_onePerClass",
+            "transportFrame_wellFormed_of_dual",
+            "frame_wellFormed_deleteState",
+            "frame_wellFormed_addState",
+            "frame_wellFormed_rebaseState",
+            "frame_wellFormed_swapState",
+            "frame_wellFormed_directSumState",
+            "frame_wellFormed_glueState",
+            "frame422_wellFormed",
+        ):
+            self.assertIn("theorem %s" % theorem, future_pi)
 
 
 if __name__ == "__main__":

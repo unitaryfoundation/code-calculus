@@ -1,5 +1,6 @@
 import CodeCalculus.ExactPeel
 import CodeCalculus.ExactGraft
+import CodeCalculus.SplitHadamard
 
 namespace CodeCalculus
 
@@ -163,13 +164,24 @@ theorem gate6_interval_soundness_exact
       | rebase _ hok hs' _ =>
           subst hs'
           exact exactDist_rebaseState s σ M hwf.1 hok)
-    (fun T s s' _ h hT => by
+    (fun T s s' _ h hT hp => by
       cases h with
+      | hadamardSplit hsub _ _ _ _ _ =>
+          exact absurd hp (not_coversQ_of_properSubset hsub)
       | hadamard _ hs' _ =>
           subst hs'
           cases T with
           | nil => exact absurd rfl hT
           | cons a T' => exact exactDist_swapState s)
+    (fun T s s' hwf h hT hnc => by
+      cases h with
+      | hadamard hg _ _ =>
+          rcases hg with hp | hn
+          · exact absurd (coversQ_of_perm hp) hnc
+          · exact absurd hn hT
+      | hadamardSplit _ hguard hs' _ _ _ =>
+          subst hs'
+          exact exactDist_splitHadamardState s hwf.1 T hguard)
     (fun _ _ _ _ _ hwf h => exactDist_peel_relations hwf h)
     (fun _ _ _ hwf h => exactDist_extend_nil hwf h) H
 

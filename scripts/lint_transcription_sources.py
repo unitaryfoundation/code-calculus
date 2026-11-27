@@ -38,9 +38,16 @@ such as `C-SKIP`. The checks are:
      held to this rule, since no `source` can point at them.
 
 The covered tables are consumer.json `interval_rules`, `geometry.carry_rules`,
-`decision.rules`, and `conditional_inputs`, and semantics.json `rules`. Any
-other object carrying a `source` key is checked for resolution (1 to 3) but is
-not required to exist.
+`decision.rules`, and `conditional_inputs`, and semantics.json `rules` and
+`layout_cells.cells`. Any other object carrying a `source` key is checked for
+resolution (1 to 3) but is not required to exist.
+
+ 10. (added 2026-11-10) semantics.json `layout_cells.cells` is an
+     operation table: each cell's id is a taxonomy ID, its `source` names the
+     operation, its `derivation` (when present) resolves like a `source`, and
+     the set of cell ids equals the set of transition rule ids, so no
+     transition lacks a layout cell and no cell names a transition that does
+     not exist.
 
 Run from the repository root. Exit 0 when clean, 1 with findings on stdout.
 Standard library only.
@@ -349,7 +356,25 @@ def main():
         check_operation_rule(rule, op_id, where)
         checked += 1
 
-    walk_other_sources(semantics, "", ["rules"])
+    # Check 10: the layout cells form an operation table in step with the
+    # transition rules.
+    layout_cells = semantics.get("layout_cells", {}).get("cells", {})
+    for op_id, cell in layout_cells.items():
+        where = "semantics.json layout_cells.cells[%s]" % op_id
+        check_taxonomy(op_id, where, taxonomy_text)
+        check_operation_rule(cell, op_id, where)
+        if isinstance(cell, dict) and "derivation" in cell:
+            resolve(cell["derivation"], where + " (derivation)")
+        if op_id not in rule_ids:
+            finding("%s: no transition rule with that id in semantics.json rules"
+                    % where)
+        checked += 1
+    for op_id in sorted(rule_ids):
+        if op_id not in layout_cells:
+            finding("semantics.json rules (%s): no layout cell with that id in "
+                    "layout_cells.cells" % op_id)
+
+    walk_other_sources(semantics, "", ["rules", "layout_cells/cells"])
 
     for op_id in interval_rules:
         if op_id not in rule_ids:

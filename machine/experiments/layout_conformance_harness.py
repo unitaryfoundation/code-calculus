@@ -54,7 +54,7 @@ from priced_conformance_harness import random_state  # noqa: E402
 
 MOVES = ("C-SKIP", "C-DELETE-CHECK", "C-ADD-CHECK", "C-SEQUENCE",
          "C-DIRECT-SUM", "E-GRAFT", "E-PEEL", "E-PUNCTURE",
-         "E-LOCAL-HADAMARD", "P-REBASE", "E-EXTEND", "E-GLUE")
+         "E-LOCAL-HADAMARD", "P-REBASE", "E-EXTEND", "E-GLUE", "E-SPLIT")
 
 DEFAULT_CASES = 150
 DEFAULT_SEED = 20261110
@@ -64,7 +64,7 @@ DEFAULT_REPORT_PATH = os.path.join(tempfile.gettempdir(),
 # Moves whose radius cell is a non-increase, and moves whose cell is a
 # non-decrease; a sequence drawn from one set composes to the same direction.
 NON_INCREASING = ("C-SKIP", "C-DELETE-CHECK", "E-PEEL", "E-PUNCTURE",
-                  "E-LOCAL-HADAMARD")
+                  "E-LOCAL-HADAMARD", "E-SPLIT")
 NON_DECREASING = ("C-SKIP", "C-ADD-CHECK", "E-LOCAL-HADAMARD")
 
 HALF = Fraction(1, 2)
@@ -350,6 +350,28 @@ def check_delete(case):
                            parent_sq=str(r), child_sq=str(r2))
         _check_consumer_single_step(case, {"op": "C-DELETE-CHECK", "row_id": row.id},
                                     child, r2, honest(layout, case.layers))
+
+
+def check_split(case, rng):
+    state, layout = case.state, case.layout
+    if len(state.Q) < 2:
+        return
+    r = radius_sq(layout, state)
+    size = rng.randint(1, len(state.Q) - 1)
+    block = sorted(rng.sample(list(state.Q), size))
+    crossing_ids = [row.id for row in state.crossing_rows(block)]
+    others = [row.id for row in state.rows if row.id not in crossing_ids]
+    extra = rng.sample(others, rng.randint(0, min(1, len(others)))) if others else []
+    cut_ids = crossing_ids + extra
+    child = state.split(block, cut_ids)
+    case.transit("E-SPLIT")
+    r2 = radius_sq(layout, child)
+    if r2 > r:
+        case.violation("E-SPLIT", "r' <= r", block=block, cut_ids=cut_ids,
+                       parent_sq=str(r), child_sq=str(r2))
+    _check_consumer_single_step(
+        case, {"op": "E-SPLIT", "block": block, "cut_ids": cut_ids},
+        child, r2, honest(layout, case.layers))
 
 
 def check_add(case, rng, attempts=4):
@@ -713,6 +735,7 @@ def run_case(rng, state, layout, layers, other=None, other_layout=None):
         case.note("dishonest_parent_cases")
     check_skip(case)
     check_delete(case)
+    check_split(case, rng)
     check_add(case, rng)
     check_graft(case)
     check_peel(case)

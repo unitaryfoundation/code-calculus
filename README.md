@@ -25,7 +25,8 @@ construction steps and asks for re-measurement only when the current bounds
 cannot decide a target. It is evidence about whether the interface is useful; it
 does not establish the calculus's soundness theorem.
 
-**Status.** Gates 0–6 are ratified (2026-11-19); Gate 7 is unchecked. The
+**Status.** Gates 0–7 are ratified (Gates 2–6 on 2026-11-19; Gate 7 for
+`stdCSS-3` on 2026-11-26). The
 calculus is intended to be sound and deliberately incomplete. No soundness
 claim is machine-proved in full: the named obligations have dated hand
 derivations in `spec/OPERATIONAL_SEMANTICS.md` §4, and the Lean development
@@ -90,12 +91,15 @@ A transformation is a term, not a procedure. The grammar has two categories:
 
 ```
 e ::= S | e₁ ⊕ e₂ | glue(e₁, e₂; u)
- | hgp(H₁, H₂) | lift(G; B_X, B_Z) | twoblock(G; a, b) | concat(e_O, e_I; L)
- | product(e_A, e_B) | double(e; w, s) | balanced(G; H₁, act₁, H₂, act₂)
- | tanner(n; Λ_X, Λ_Z, E_X, E_Z) | tile(n; T, P) | nested(H_X, H_Z)
+ | hgp(H₁, H₂) | lift_G(A, B) | twoblock_G(a, b) | concat(e_O, e_I; B)
+ | product(e_A, e_B) | double(e; w, s) | balanced_G(H₁, α₁; H₂, α₂)
+ | tanner(n; Λ_X, Λ_Z; ι_X, ι_Z) | tile(τ; α; β) | nested(H_X, H_Z)
+ | cone(∂_A, ∂_B, f₁, f₀) | empty | free(Q)
+ | pullback(e₁, e₂, e_I; φ₁, φ₂) | pushout(e₁, e₂, e_S; ψ₁, ψ₂)
+ | pair_partition(p; B_X, B_Z) | pp_scale(e; P)
 m ::= skip | delete_r | addStab_r | graft(q, τ; [r₁,…])
  | peel(q, τ; r) | puncture_q | extend(Δ; u) | hadamard_T | rebase(τ; M)
- | m₁ ; m₂
+ | cnotSwap_U | m₁ ; m₂
 ```
 
 A **closed construction term** is `m ▷ e`: evaluate the state expression `e`,
@@ -106,10 +110,11 @@ then execute command `m`. For example
 ```
 
 deletes generator `a` and then adds generator `b`. `C-DIRECT-SUM` (`⊕`),
-`E-GLUE` (`glue`), and the ten `stdCSS-3` constructors (`L-HGP`, `L-LIFTED`,
-`L-GROUP-ALGEBRA`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`, `L-BALANCED`,
-`L-TANNER`, `L-TILE`, `L-NESTED-CSS`) are expression constructors, not commands
-over an existing state.
+`E-GLUE` (`glue`), and the admitted expression constructors (`L-HGP`,
+`L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`,
+`L-BALANCED`, `L-TANNER`, `L-TILE`, `L-NESTED-CSS`, `L-MAPPING-CONE`,
+`L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT`, `L-PAIR-PARTITION`,
+`PP-SCALE`) are expression constructors, not commands over an existing state.
 
 Three outcomes are kept distinct, and the fixture suite keeps them distinct:
 
@@ -202,7 +207,7 @@ carry only when the consumer supplies a stated hypothesis:
 | `C-ADD-CHECK` (direct-sum extinction) | `d' = d_B` | trusted factor distance `d_B` + structural side conditions |
 | `E-GRAFT`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-GLUE`, `P-REBASE`, constructors (radius) | exact radius `r` | honest supplied layout where required (`spec/JUDGMENT_LAYER.md` §2d.5) |
 | `A-CONCAT` towers | deletion/exposure price input | tower structure (`machine/tower_prices.py`; separate from the `A-CONCAT` expression constructor) |
-| Ten `stdCSS-3` constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`, `L-NESTED-CSS`) | exact `n` and `k`; ledger starts at `[0, +∞)` | sourced lower bounds and child-valid witnesses only (`spec/JUDGMENT_LAYER.md` §2g) |
+| Admitted expression constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`, `L-NESTED-CSS`, `L-MAPPING-CONE`, `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT`, `L-PAIR-PARTITION`, `PP-SCALE`) | exact `n` and `k`; ledger starts at `[0, +∞)` | sourced lower bounds and child-valid witnesses only (`spec/JUDGMENT_LAYER.md` §2g); conditional lower-bound cells from sourced factor bounds for five of them (`L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`; §2g.1) |
 
 Without the hypothesis the corresponding cell is `unavailable`, not a guess. The
 consumer checks that inputs are present and records their evidence reference; it
@@ -227,7 +232,8 @@ fields: they are not part of state identity, not minted, and not transported by
 ## Status
 
 - **Gates:** Gate 0 (record completeness) and Gate 1 (formal syntax) are
- ratified. Gates 2–6 are ratified (2026-11-19); Gate 7 is unchecked. See `spec/GATES.md`.
+ ratified. Gates 2–6 are ratified (2026-11-19); Gate 7 is ratified for
+ `stdCSS-3` (2026-11-26). See `spec/GATES.md`.
 - **Obligations:** every obligation in scope has a dated hand derivation in
  `spec/OPERATIONAL_SEMANTICS.md` §4; the ledger is `spec/OBLIGATIONS.md`.
  Machine-checked soundness is **not** claimed in full. `OBL-JUDGMENT-SOUNDNESS`
@@ -252,7 +258,7 @@ Four layers. One authority per topic: the same fact is not stated twice.
 | --- | --- | --- |
 | `spec/` | Normative calculus: representation, state model, term language, operational semantics, judgment layer, claims, obligations | Wins every disagreement |
 | `machine/` | `state.json`, `semantics.json`, `consumer.json`, executable interval consumer, fixtures | Derived; where it disagrees with prose, prose wins and the transcription is fixed |
-| `lean/` | Partial Lean 4 mechanization (`AXIOMS.md` records the four non-audited rank axioms in `lean/extra/ClosedK.lean`) | Certifies only the theorems it states |
+| `lean/` | Partial Lean 4 mechanization (`AXIOMS.md` records the accepted Lean assumptions; none remain) | Certifies only the theorems it states |
 | root | Framing and process: `README.md`, `AGENTS.md`, `AUTHORITY.md`, `AXIOMS.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | Process only |
 
 `CHANGELOG.md` is the dated record of notable changes across releases. `spec/`
@@ -329,7 +335,7 @@ If you use code-calculus in your work, please cite the repository:
  title = {code-calculus: A formal calculus of transformations on CSS quantum error-correcting codes},
  author = {Mathys Rennela},
  year = {2026},
- version = {0.3.0},
+ version = {0.3.2},
  publisher = {Unitary Foundation},
  url = {https://github.com/unitaryfoundation/code-calculus},
  license = {Apache-2.0}

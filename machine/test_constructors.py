@@ -421,6 +421,40 @@ class TannerTests(unittest.TestCase):
         distances = exact_distances(state)
         self.assertEqual((distances["X"], distances["Z"]), (3, 3))
 
+    def test_the_counting_bound_and_its_equality_case(self):
+        # Issue #527. k is at least n minus the number of natural rows
+        # (`tannerState_k_ge` in Lean), with equality when the natural rows of
+        # each sector are independent (`tannerState_k_of_indep`). The toric
+        # code has 18 natural rows on 18 qubits and k = 2, so the bound is
+        # not a formula for k: two rows are dependent and are dropped.
+        stars, faces = self.toric_views(3)
+        state, dropped = tanner_code(18, [[1, 1, 1, 1]], [[1, 1, 1, 1]], stars, faces)
+        rows = len(stars) + len(faces)
+        self.assertEqual((rows, dropped), (18, 2))
+        self.assertGreater(logical_count(state), len(state.Q) - rows)
+        # Independent natural rows: two X rows and one Z row on four qubits.
+        state, dropped = tanner_code(4, [[1, 1]], [[1, 1]], [[0, 1], [2, 3]], [[0, 1]])
+        self.assertEqual(dropped, 0)
+        self.assertEqual(logical_count(state), 4 - 2 - 1)
+
+    def test_local_rank_bound_disjoint_views_and_nogo_pair(self):
+        # Disjoint views with a redundant local row (rank(LX) = 1 < len(LX) = 2):
+        # k = n - |viewsX|*rank(LX) - |viewsZ|*rank(LZ) = 4 - 2*1 - 1*1 = 1.
+        redundant_lx = [[1, 1], [1, 1]]
+        state, dropped = tanner_code(
+            4, redundant_lx, [[1, 1, 1, 1]], [[0, 1], [2, 3]], [[0, 1, 2, 3]])
+        self.assertEqual((len(state.Q), logical_count(state), dropped), (4, 1, 2))
+        # No-go pair (`tanner_k_not_determined_by_params` in Lean): identical
+        # (n, LX, LZ, |viewsX|, |viewsZ|) with distinct, nodup views yield
+        # k = 0 (path) vs k = 1 (triangle).
+        lx, lz = [[1, 1]], [[1, 1, 1, 1]]
+        s_path, d_path = tanner_code(
+            4, lx, lz, [[0, 1], [1, 2], [2, 3]], [[0, 1, 2, 3]])
+        s_tri, d_tri = tanner_code(
+            4, lx, lz, [[0, 1], [1, 2], [0, 2]], [[0, 1, 2, 3]])
+        self.assertEqual((logical_count(s_path), d_path), (0, 0))
+        self.assertEqual((logical_count(s_tri), d_tri), (1, 1))
+
     def test_local_checks_that_do_not_commute_have_no_derivation(self):
         with self.assertRaises(NoDerivation):
             tanner_code(3, [[1, 1]], [[1, 1]], [[0, 1]], [[1, 2]])
@@ -570,6 +604,19 @@ class TileTests(unittest.TestCase):
             [both], [(0, [0, 1, 2, 3]), (0, [4, 5, 6, 7])],
             identifications=[(0, 4), (1, 5), (2, 6), (3, 7)])
         self.assertEqual((len(state.Q), logical_count(state), dropped), (4, 2, 2))
+
+    def test_no_param_closed_form_pair(self):
+        # No-go pair (`tile_k_not_determined_by_params` in Lean): identical
+        # tiles, qubit count (4), placement count (4), and kept row counts
+        # (3 X, 1 Z) yield k = 0 vs k = 1.
+        tiles = [{"qubits": 2, "X": [[0, 1]], "Z": []},
+                 {"qubits": 4, "X": [], "Z": [[0, 1, 2, 3]]}]
+        s_path, d_path = tile_assembly(
+            tiles, [(0, [0, 1]), (0, [1, 2]), (0, [2, 3]), (1, [0, 1, 2, 3])])
+        s_tri, d_tri = tile_assembly(
+            tiles, [(0, [0, 1]), (0, [1, 2]), (0, [0, 2]), (1, [0, 1, 2, 3])])
+        self.assertEqual((len(s_path.Q), logical_count(s_path), d_path), (4, 0, 0))
+        self.assertEqual((len(s_tri.Q), logical_count(s_tri), d_tri), (4, 1, 1))
 
     def test_an_interface_that_does_not_commute_has_no_derivation(self):
         tiles = [self.tile(2, "X"), self.tile(2, "Z")]
@@ -1380,3 +1427,65 @@ class PairPartitionAndPpScaleTests(unittest.TestCase):
                 state,
                 intervals={"d": {"lower": 5, "upper": 2, "source": "invalid interval"}},
             )
+
+
+class CosetLiftTests(unittest.TestCase):
+    """The coset lift lift_{G,H}(A, B) (issue #675; section 4.49)."""
+
+    # In S3_TABLE, s = 3 has order 2 and r = 1 has order 3; H = <s> = {0, 3}
+    # is not normal, and N_{S3}(H) = H.
+    A = [[[0, 1], [1, 4]], [[2], [0, 5]]]
+    B = [[[0, 3], [3]], [[0], [0, 3]]]
+
+    def test_trivial_subgroup_is_the_regular_lift_row_for_row(self):
+        from machine.constructors import lifted_product
+        g = {"table": S3_TABLE}
+        regular, d0 = lifted_product(g, self.A, [[[0, 1], [3]], [[4], [2, 5]]])
+        coset, d1 = lifted_product(g, self.A, [[[0, 1], [3]], [[4], [2, 5]]], [])
+        self.assertEqual(row_sets(regular), row_sets(coset))
+        self.assertEqual((regular.used, d0), (coset.used, d1))
+        abelian, _ = lifted_product((3,), [[[0, 1]]], [[[0, 2]]])
+        abelian_h, _ = lifted_product((3,), [[[0, 1]]], [[[0, 2]]], [])
+        self.assertEqual(row_sets(abelian), row_sets(abelian_h))
+
+    def test_non_normal_subgroup_gives_a_well_formed_state(self):
+        from machine.constructors import lifted_product
+        state, _ = lifted_product({"table": S3_TABLE}, self.A, self.B, [3])
+        # n = [G:H] (n_A n_B + m_A m_B) = 3 * (4 + 4)
+        self.assertEqual(len(state.Q), 24)
+        for x in state.sector_rows("X"):
+            for z in state.sector_rows("Z"):
+                self.assertEqual(bin(x.mask & z.mask).count("1") % 2, 0)
+
+    def test_random_normalizer_supported_inputs_are_orthogonal(self):
+        from machine.constructors import lifted_product
+        rng = random.Random(675)
+        for _ in range(40):
+            A = [[sorted(rng.sample(range(6), rng.randint(0, 3))) for _ in range(2)]
+                 for _ in range(rng.randint(1, 2))]
+            B = [[sorted(rng.sample([0, 3], rng.randint(0, 2))) for _ in range(2)]
+                 for _ in range(rng.randint(1, 2))]
+            state, _ = lifted_product({"table": S3_TABLE}, A, B, [3])
+            self.assertEqual(len(state.Q), 3 * (len(A[0]) * 2 + len(A) * len(B)))
+
+    def test_whole_group_subgroup_reduces_entries_to_parities(self):
+        from machine.constructors import lifted_product, hypergraph_product
+        state, _ = lifted_product({"table": S3_TABLE}, self.A, self.A, [1, 3])
+        parity = [[len(e) % 2 for e in row] for row in self.A]
+        hgp, _ = hypergraph_product(parity, parity)
+        self.assertEqual(row_sets(state), row_sets(hgp))
+
+    def test_b_term_outside_the_normalizer_is_malformed(self):
+        from machine.constructors import lifted_product
+        with self.assertRaises(Malformed):
+            lifted_product({"table": S3_TABLE}, self.A, [[[1]]], [3])
+        with self.assertRaises(Malformed):
+            lifted_product({"table": S3_TABLE}, self.A, self.B, 3)
+
+    def test_construct_reads_the_subgroup_key(self):
+        from machine.constructors import construct, lifted_product
+        result = construct({"constructor": "L-LIFTED", "group": {"table": S3_TABLE},
+                            "A": self.A, "B": self.B, "subgroup": [3]})
+        direct, _ = lifted_product({"table": S3_TABLE}, self.A, self.B, [3])
+        self.assertEqual(row_sets(result["state"]), row_sets(direct))
+        self.assertEqual(result["n"], 24)

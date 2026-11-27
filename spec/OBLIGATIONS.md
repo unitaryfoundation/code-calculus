@@ -98,20 +98,123 @@ ratification.
 
 | Obligation | `introduced-in` | `discharged-through` | Re-discharge disposition (§4.40) |
 | --- | --- | --- | --- |
-| `OBL-WELL-FORMEDNESS-PRESERVATION` | `stdCSS-1` | `stdCSS-3` (admitted operations and constructors) | **Discharged** for kernel five (§4.7), `E-GRAFT` (§4.12), six Gate 6 CSS cells (§4.26–§4.31), and ten `stdCSS-3` constructors (§4.34–§4.36); **restricted** away from unadmitted candidates (`open`) |
-| `OBL-PRIMITIVE-DETERMINISM` | `stdCSS-1` | `stdCSS-3` (fixed presentations; $\equiv$-invariance scoped) | **Discharged** as single-valuedness on fixed presentations across all `stdCSS-3` commands and constructors (H-4 capacity is a domain restriction); **restricted** away from $\equiv$-input invariance for display-order-reading ops (`P-REBASE`, `A-PRODUCT`, `A-DOUBLE`, `A-CONCAT`) |
-| `OBL-SKIP-IDENTITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands (§4.6: no admitted command reads `steps`, and `stdCSS-3` adds no new command production) |
-| `OBL-SEQUENCE-ASSOCIATIVITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands (§1a, §4.8: parametric in `Command`, single-valuedness holds for all `stdCSS-3` commands) |
+| `OBL-WELL-FORMEDNESS-PRESERVATION` | `stdCSS-1` | `stdCSS-3` (admitted operations and constructors) | **Discharged** for kernel five (§4.7), `E-GRAFT` (§4.12), six Gate 6 CSS cells (§4.26–§4.31), ten 2026-11-18 `stdCSS-3` constructors (§4.34–§4.36), `C-COLUMN-CNOT` (§4.42), `E-SPLIT` (§4.48, 2026-11-25; mechanized by `wf_of_eval_all` through `wf_deleteAll`, which derives I1–I5 from the parent rather than restating a premise), and all v0.3.x `stdCSS-3` constructors (`L-MAPPING-CONE` §4.41; `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` §4.43; nonabelian group inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, `L-BALANCED` §4.44; `L-PAIR-PARTITION` §4.46; `PP-SCALE` §4.47); **restricted** away from unadmitted candidates (`open`); mechanized across all `Command` constructors by `wf_of_eval_all` (`GraftWellFormedness.lean`) — deriving I1–I5 for the kernel five, `E-GRAFT`, and `P-REBASE`, and covering the remaining four Gate 6 cells and `Command.cnotSwap` through the well-formedness premise their transitions carry (`Eval.cnotSwap` takes `EncodingWellFormed s'` as a premise, so `wf_of_eval_all` restates that premise for `Command.cnotSwap`; preservation of I1–I5 under an invertible column map $U$ is hand-derived at §4.42 and not mechanized in Lean) — and across all `StateExpr` constructors by `wf_of_evalExpr` (`ExpandedSoundness.lean`) |
+| `OBL-PRIMITIVE-DETERMINISM` | `stdCSS-1` | `stdCSS-3` (fixed presentations; $\equiv$-invariance scoped) | **Discharged** as single-valuedness on fixed presentations across all `stdCSS-3` commands (including `C-COLUMN-CNOT`, §4.42, and `E-SPLIT`, §4.48, 2026-11-25, which is also $\equiv$-invariant under row-order permutations) and all seventeen admitted `stdCSS-3` constructors (§4.34–§4.36, §4.41–§4.47; H-4 capacity is a domain restriction), and the coset input of `L-LIFTED` (§4.49, 2026-11-26) by hand derivation only, which `evalExpr_unique` does not cover; **restricted** away from $\equiv$-input invariance for display-order-reading ops (`P-REBASE`, `A-PRODUCT`, `A-DOUBLE`, `A-CONCAT`, `A-PULLBACK`, `A-PUSHOUT`, `PP-SCALE`). Mechanized across every `StateExpr` constructor by `evalExpr_unique` (`ExpandedSoundness.lean`), across every `Command` (including `Command.cnotSwap` and `Command.split`) by `eval_unique` (`Eval.lean`), `eval_deterministic` (`KernelObligations.lean`), and `eval_cnotSwap_unique` (`ColumnCnot.lean`), and for closed terms by `evalTerm_unique` |
+| `OBL-SKIP-IDENTITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands including `C-COLUMN-CNOT` and `E-SPLIT` (§4.6, §4.40 item 3, §4.42, §4.48: no admitted command reads `steps`), mechanized over `Command.cnotSwap` by `eval_cnotSwap_skip_left` / `eval_cnotSwap_skip_right` (`ColumnCnot.lean`), and over `Command.split` by the `Command`-parametric laws of `KernelObligations.lean` |
+| `OBL-SEQUENCE-ASSOCIATIVITY` | `stdCSS-1` | `stdCSS-3` | **Discharged** across all `stdCSS-3` commands including `C-COLUMN-CNOT` and `E-SPLIT` (§1a, §4.8, §4.40 item 4, §4.42, §4.48: parametric in `Command`, single-valuedness holds for every `stdCSS-3` command), mechanized over the full `Command` type (including `Command.cnotSwap` and `Command.split`) by `seq_assoc_fwd`, `seq_assoc_bwd` (`KernelObligations.lean`), `denote_eval`, `denote_seq_assoc` (`Eval.lean`), and `eval_cnotSwap_seq_assoc` (`ColumnCnot.lean`) |
 | `OBL-DIRECT-SUM-LAWS` | `stdCSS-1` | `stdCSS-3` | **Discharged** through `stdCSS-3` (§4.8, re-evidenced for `Q` 2026-10-29; state model unchanged across `stdCSS-1`–`stdCSS-3`; §4.37 span properties respect $\approx$) |
-| `OBL-ORDER-INDEPENDENT-DELETION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to pure `C-DELETE-CHECK` / `C-SEQUENCE` batches; unchanged under `Q` in $\equiv$ and H-4 capacity (§4.15) |
-| `OBL-CROSS-SECTOR-PERMUTATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to opposite-sector kernel single-check pairs (`C-DELETE-CHECK`, `C-ADD-CHECK` under `C-SEQUENCE`); exhaustive four-case partition and side condition $\Pi$ stand under H-4 capacity (§4.10) |
-| `OBL-FIXED-NAMESPACE-REACHABILITY` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to fixed-namespace kernel `C-DELETE-CHECK` / `C-ADD-CHECK` / `C-SEQUENCE` paths up to canonical minting under remaining H-4 capacity ($\ge \dim X_1 + \dim Z_1$; §4.17) |
-| `OBL-PRESENTATION-CONJUGATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to the kernel five and `E-GRAFT` (§4.25; $\sigma$ leaves `used` untouched, so H-4 capacity is invariant); excludes Gate 6 cells and `stdCSS-3` constructors |
-| `OBL-DERIVED-TERM-FACTORIZATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to derived commands over the kernel five for a fixed ordered elementary expansion (§4.23; excludes primitive extensions and expression constructors) |
+| `OBL-ORDER-INDEPENDENT-DELETION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to pure `C-DELETE-CHECK` / `C-SEQUENCE` batches; unchanged under `Q` in $\equiv$ and H-4 capacity (§4.15); excludes `C-COLUMN-CNOT` and v0.3.x constructors |
+| `OBL-CROSS-SECTOR-PERMUTATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to opposite-sector kernel single-check pairs (`C-DELETE-CHECK`, `C-ADD-CHECK` under `C-SEQUENCE`); exhaustive four-case partition and side condition $\Pi$ stand under H-4 capacity (§4.10); excludes `C-COLUMN-CNOT` and v0.3.x constructors |
+| `OBL-FIXED-NAMESPACE-REACHABILITY` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to fixed-namespace kernel `C-DELETE-CHECK` / `C-ADD-CHECK` / `C-SEQUENCE` paths up to canonical minting under remaining H-4 capacity ($\ge \dim X_1 + \dim Z_1$; §4.17); excludes `C-COLUMN-CNOT` and v0.3.x constructors |
+| `OBL-PRESENTATION-CONJUGATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to the kernel five and `E-GRAFT` (§4.25; $\sigma$ leaves `used` untouched, so H-4 capacity is invariant); excludes Gate 6 cells, `C-COLUMN-CNOT`, and all `stdCSS-3` constructors |
+| `OBL-DERIVED-TERM-FACTORIZATION` | `stdCSS-1` | `stdCSS-3` (scoped) | **Explicitly restricted** to derived commands over the kernel five for a fixed ordered elementary expansion (§4.23; excludes primitive extensions, `C-COLUMN-CNOT`, and expression constructors); `E-SPLIT` (2026-11-25, §4.48) is an admitted instance factoring over `C-DELETE-CHECK` and `C-SEQUENCE` (`eval_split_iff_eval_splitCommand`) |
 | `OBL-CERTIFICATE-PATH-KEYING` | `stdCSS-1` | `stdCSS-3` (Gate 5 questions open) | **Discharged** for $(C, P, \sigma)$ keying and syntax-directed route-scoping matching `CertificateChecker.lean` (§4.24); the three Gate 5 design questions remain open |
-| `OBL-JUDGMENT-SOUNDNESS` | `stdCSS-1` | `stdCSS-3` (unconditional L3 inventory; hand derivation) | **Discharged** for unconditional L3 rules over kernel five (full property signature + §4.39 quotients + $\mathsf{gen}_i$), `E-GRAFT`, Gate 6 structural/`Ann.gen`, and `stdCSS-3` constructors' structural/WF rows; **restricted** away from conditional priced/certificate/layout-honesty cells, §2j family-level transport, `A-QUOTIENT` (§2i), and unadmitted candidates; Lean mechanization landed in `lean/CodeCalculus/ExpandedSoundness.lean`: `ExtDerives` over `ExtNat`, `TermModels`, `ext_judgment_soundness` and its `_exact` / `_exact_uncertified` / `_exact_admissible` instances, seam-certificate equality retained as `SeamCertSound` and discharged for `AdmissibleSeam`. The kernel slice remains in `Soundness.lean` / `TermSoundness.lean` |
-| `OBL-JUDGMENT-TRANSPORT` | `stdCSS-1` | `stdCSS-3` (single-state command sequences) | **Discharged** for positive transport (structural + single-polarity distance + surviving $\mathsf{gen}_i$) and `W13` refusal/seam condition across kernel, `E-GRAFT`, and unary Gate 6 command chains (§4.11, §4.37); **restricted** away from mixed opposite-polarity distance chains (`open`) and future-$\Pi$ certificate context mutation |
-| `OBL-PRICED-INTERVAL-SOUNDNESS` | `stdCSS-2` | `stdCSS-3` (core §8.3 slice) | **Explicitly restricted** to core §8.3 transformers (`C-SKIP`, `C-ADD-CHECK`, `C-DELETE-CHECK`, `E-GRAFT`, `C-DIRECT-SUM`, `C-SEQUENCE`, §4.13); Gate 6 covered by `OBL-GATE6-CSS-EXTENSIONS` (§4.32), `stdCSS-3` constructors initialize at $[0, +\infty)$ (§2g), and §2h–§2j alter no distance interval endpoint |
+| `OBL-JUDGMENT-SOUNDNESS` | `stdCSS-1` | `stdCSS-3` (unconditional L3 inventory; hand derivation) | **Discharged** for unconditional L3 rules over kernel five (full property signature + §4.39 quotients + $\mathsf{gen}_i$), `E-GRAFT`, Gate 6 structural/`Ann.gen` (including `E-SPLIT`, §4.48, 2026-11-25), `C-COLUMN-CNOT` ($n, k, \mathsf{wf}, \mathsf{gen}_i$, §4.42), and all seventeen admitted `stdCSS-3` constructors' structural/WF rows (§4.34–§4.36, §4.41, §4.43–§4.47: including `L-MAPPING-CONE`, `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT`, nonabelian `L-LIFTED`/`L-GROUP-ALGEBRA`/`L-BALANCED`, `L-PAIR-PARTITION`, `PP-SCALE`), and the coset input of `L-LIFTED` ($n$, $k$, $\mathsf{wf}$, §4.49, 2026-11-26) by hand derivation only, outside `ext_judgment_soundness_of_term`; **restricted** away from conditional priced/certificate/layout-honesty cells (including sector-split deletion price cells, `OBL-CONDITIONAL-CONSTRUCTOR-CELLS`, and `C-COLUMN-CNOT`'s §2k distance window), §2j family-level transport, `A-QUOTIENT` (§2i), and unadmitted candidates; Lean mechanization in `lean/CodeCalculus/ExpandedSoundness.lean` (`ExtDerives`, `TermModels`, `ext_judgment_soundness_of_term` and its `_exact*` instances, covering `Command.cnotSwap` — through the well-formedness premise `Eval.cnotSwap` carries, so `instCnotSwapWF` restates that premise via `wf_of_eval_all` and `eval_cnotSwap_k` relies on it, while I1–I5 preservation under invertible $U$ remains hand-derived at §4.42 and not mechanized — the `Command.split` structural, distance non-increase, WF, and `genSplit` rows, and every `StateExpr` constructor's structural carry rows) and `ColumnCnot.lean` |
+| `OBL-JUDGMENT-TRANSPORT` | `stdCSS-1` | `stdCSS-3` (single-state command sequences) | **Discharged** for positive transport (structural + single-polarity distance + surviving $\mathsf{gen}_i$) and `W13` refusal/seam condition across kernel, `E-GRAFT`, unary Gate 6 (including `E-SPLIT`), and `C-COLUMN-CNOT` command chains (§4.11, §4.37, §4.42, §4.48; `Transport.lean`, `SeamChains.lean`, `ExpandedSoundness.lean`); **restricted** away from mixed opposite-polarity distance chains (`open`), expression constructors (expression position only), and future-$\Pi$ certificate context mutation |
+| `OBL-PRICED-INTERVAL-SOUNDNESS` | `stdCSS-2` | `stdCSS-3` (core §8.3 slice) | **Explicitly restricted** to core §8.3 transformers (`C-SKIP`, `C-ADD-CHECK`, `C-DELETE-CHECK` including sector-split price cells, `E-GRAFT`, `C-DIRECT-SUM`, `C-SEQUENCE`, §4.13); Gate 6 (including `E-SPLIT`, §4.48) covered by `OBL-GATE6-CSS-EXTENSIONS` (§4.32, §4.48), `C-COLUMN-CNOT` by §2k/§4.42 (reset in `propagateCmd`), `stdCSS-3` constructors initialize at $[0, +\infty)$ (§2g) with conditional distance cells covered by `OBL-CONDITIONAL-CONSTRUCTOR-CELLS` (§4.45, `PricedInterval.lean`), and §2h–§2j alter no distance interval endpoint |
+
+**`E-EXTEND` distance-loss cell (2026-11-26, issue #677).** The cell
+lies outside the core §8.3 slice of `OBL-PRICED-INTERVAL-SOUNDNESS` and
+outside `OBL-JUDGMENT-SOUNDNESS`, which is restricted away from conditional
+priced cells. Its soundness is
+`OBL-EXTEND-DISTANCE-LOSS`, by hand derivation only. The Lean
+`gate6_interval_soundness` covers the unpriced `E-EXTEND` transformer and not
+this cell. No `discharged-through` value moves.
+
+**Coset inputs for `L-LIFTED` (2026-11-26, issue #675).** The rows above
+cover this instance as follows. `OBL-WELL-FORMEDNESS-PRESERVATION`,
+`OBL-PRIMITIVE-DETERMINISM` and `OBL-JUDGMENT-SOUNDNESS` cover it by the hand
+derivation of [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.49
+only. No Lean theorem that quantifies over `StateExpr` covers it, because
+`StateExpr` has no coset production (`OBL-COSET-LIFT-INPUTS`, *Owed*). Every
+restricted fragment in the table excludes it, as it excludes every expression
+constructor. No `discharged-through` value moves.
+
+**Scope of `stdCSS-3` in this table (updated 2026-11-25, issue #657).** The
+dispositions above now cover the complete `stdCSS-3` inventory, including every
+item published in `v0.3.0` and `v0.3.1` ([`VERSIONING.md`](VERSIONING.md)
+§5.2): `C-COLUMN-CNOT`, `L-MAPPING-CONE`, `L-EMPTY`, `L-FREE`, `A-PULLBACK`,
+`A-PUSHOUT`, the sector-split `C-DELETE-CHECK` price cells,
+`L-PAIR-PARTITION`, `PP-SCALE`, the nonabelian group inputs for `L-LIFTED`,
+`L-GROUP-ALGEBRA`, and `L-BALANCED`, and the conditional constructor cells
+(`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`). Every item meets the instance contract
+of [`VERSIONING.md`](VERSIONING.md) §4.2, and no `discharged-through` value
+moves. Separately, the Gate 7 completeness obligation
+`OBL-ELEMENTARY-COMPLETENESS` (opened 2026-11-25, issue #606; folded into
+`stdCSS-3` / `v0.3.2` by maintainer decision 2026-11-26) stays `open` and does
+not enter the discharged metatheorem rows above.
+
+**Gate 7 ratification (2026-11-26, issue #603).** Gate 7 is ratified for
+`stdCSS-3` ([`GATES.md`](GATES.md) §10, *Gate 7*). The ratification admits
+nothing: no `discharged-through` value in the table above moves, and no
+`stdCSS-3` claim rung changes. The Tier 2 decisions it relies on are recorded
+where each landed, and this ledger already reflects them: `E-SPLIT` in the
+rows above (§4.48), `C-COLUMN-CNOT` likewise (§4.42), and
+`OBL-ELEMENTARY-COMPLETENESS`, which stays `open` in `stdCSS-3` / `v0.3.2`
+as stated in the previous paragraph. The three Gate 7 questions bear on this
+ledger as follows.
+
+- **Typed inputs.** The required, optional, and derived verdicts of
+  [`TAXONOMY.md`](TAXONOMY.md), *Typed-input decision matrix*, stand. Typed
+  inputs stay arguments of their production or command and are never fields of
+  $C$. No obligation is opened or restricted, and priced hypotheses remain
+  judgment inputs under `OBL-PRICED-INPUT-SEMANTICS`.
+- **Family closure.** The verdicts of [`TAXONOMY.md`](TAXONOMY.md),
+  *Family-closure matrix*, are code-level membership facts, not soundness
+  results. They enter no judgment cell and no `discharged-through` value. Its
+  `open` and `not yet defined` cells keep those readings, and no obligation in
+  this ledger is opened for them.
+- **Completeness.** No completeness theorem is claimed for `stdCSS-3`.
+  `OBL-ELEMENTARY-COMPLETENESS` carries the one scoped statement (status `open`,
+  recorded in `stdCSS-3` / `v0.3.2`); judgment incompleteness is unchanged.
+
+**Split-subset `E-LOCAL-HADAMARD` (2026-11-26, issue #571).** The
+split-subset instance widens the input domain of an existing command
+($\varnothing\subsetneq T\subsetneq Q$ under the row-space splitting guard)
+and keeps the canonical-mint rule. It is admitted under the instance contract
+of [`VERSIONING.md`](VERSIONING.md) §4.2. Per row of the table above:
+
+- `OBL-WELL-FORMEDNESS-PRESERVATION`: discharged by hand at
+  [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.27(b). In Lean
+  the rule `Eval.hadamardSplit` carries well-formedness as a checked premise,
+  as the other Gate 6 rules do.
+- `OBL-PRIMITIVE-DETERMINISM`: discharged both as single-valuedness on fixed
+  presentations (`eval_deterministic` covers the new rule) and as
+  $\equiv$-input invariance (`splitHadamardState_equiv` in
+  `SplitHadamard.lean`): the canonical update reads displayed rows in
+  identifier order (the order of the fixed identifier enumeration) both for the
+  seed and for the mixed-row pass, making no choice and depending on no display
+  order. It is not restricted away from $\equiv$-input invariance.
+- `OBL-SKIP-IDENTITY` and `OBL-SEQUENCE-ASSOCIATIVITY`: covered. No production
+  is added, and `hadamard(T)` reads no `steps`.
+- `OBL-DIRECT-SUM-LAWS` and `OBL-CERTIFICATE-PATH-KEYING`: unaffected.
+- `OBL-ORDER-INDEPENDENT-DELETION`, `OBL-CROSS-SECTOR-PERMUTATION`,
+  `OBL-FIXED-NAMESPACE-REACHABILITY`, `OBL-PRESENTATION-CONJUGATION` and
+  `OBL-DERIVED-TERM-FACTORIZATION`: the instance lies outside their restricted
+  fragments.
+- `OBL-JUDGMENT-SOUNDNESS`: the structural rows ($n$, $k$, well-formedness)
+  and the $\mathsf{gen}_i$ sourcing row are discharged and mechanized
+  (`ExtDerives.instHadamardN`/`K`/`WF`, `genHadamardSplit`). The $d$ row is
+  discharged by hand (§4.27(b)). The Lean rule `instHadamardD` and the swap
+  rules are restricted to the global instance.
+- `OBL-JUDGMENT-TRANSPORT`: the seam condition holds, because every output row
+  is sourced (mechanized in `derives_gen_of_displayed` and its `ExtDerives`
+  counterpart). The distance transport is a single-polarity carry of $d$.
+- `OBL-PRICED-INTERVAL-SOUNDNESS` / `OBL-GATE6-CSS-EXTENSIONS`: the transformer
+  is sound by hand (§4.32). Lean proves `splitLedger` sound for the exact
+  distance (`exactDist_splitHadamardState`); it floors each sector at the full
+  lower endpoint only.
+
+**Frame-reading gate predicates (2026-11-26, issue #572; folded into
+`stdCSS-3` / `v0.3.2`).** The frame-reading gate predicates of
+[`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2h, Rows C–F (issue #572), were
+admitted on 2026-11-26 and folded into `stdCSS-3` / `v0.3.2` by maintainer
+decision ([`VERSIONING.md`](VERSIONING.md) §5.3). The §4 re-discharge audit
+against Rows C–F has not run: every `discharged-through` value above keeps its
+`stdCSS-3` reading on its named inventory, and no disposition above covers the
+new cells, whose evidence stands on the dated hand derivations of
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.37 (Lemmas 5–11)
+and is not mechanized.
 
 ---
 
@@ -346,7 +449,7 @@ transition. The result is evidence, not a machine-checked proof.
 **Ledger status:** discharged
 `spec/OPERATIONAL_SEMANTICS.md` §4.26. **Minted 2026-10-11** (maintainer
 decision) by splitting
-[`OBL-ROW-REPLACEMENT-FACTOR`](#obl-row-replacement-factor--row-replacement-factor),
+[`OBL-ROW-REPLACEMENT-FACTOR`](#obl-row-replacement-factor--row-replacement-factorization),
 whose third claim mixed a statement about the core moves with a statement about
 `P-REBASE`. The entry keeps the name and the number, so existing citations
 remain correct. The "deferred, and out of scope" status recorded before the
@@ -433,8 +536,9 @@ identifier allocation under remaining H-4 identifier capacity;
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.17, 2026-10-20), scoped to the all-deletions-first route.
 
 **Intended mechanization status:** Lean metatheorem after the kernel slices; it is the
-fixed-namespace reachability tier of §2 and a direct
-input to Gate 7.
+fixed-namespace reachability tier of §2, which
+`OBL-ELEMENTARY-COMPLETENESS` (the Gate 7 completeness obligation) extends
+across qubit namespaces.
 
 **Statement.** Let $C_0$ and $C_1$ be well-formed phase-insensitive CSS states
 on the same finite qubit namespace. Then $C_1$ is reachable from $C_0$ by a
@@ -587,11 +691,16 @@ entry format above.
 **Classification:** metatheorem.
 
 **Discharged through:** `stdCSS-3` (single-valuedness on fixed presentations
-discharged across all admitted `stdCSS-3` commands and constructors;
-$\equiv$-input invariance under row-order permutations explicitly restricted
-away from display-order-reading operations `P-REBASE`, `A-PRODUCT`,
-`A-DOUBLE`, and `A-CONCAT`; `spec/OPERATIONAL_SEMANTICS.md` §4.8, §4.40,
-2026-11-18).
+discharged across all admitted `stdCSS-3` commands — including `C-COLUMN-CNOT`,
+§4.42 — and all seventeen admitted `stdCSS-3` constructors, §4.34–§4.36 and
+§4.41–§4.47; $\equiv$-input invariance under row-order permutations explicitly
+restricted away from display-order-reading operations `P-REBASE`, `A-PRODUCT`,
+`A-DOUBLE`, `A-CONCAT`, `A-PULLBACK`, `A-PUSHOUT`, and `PP-SCALE`;
+`spec/OPERATIONAL_SEMANTICS.md` §4.8, §4.40, §4.42; mechanized by
+`evalExpr_unique` and `evalTerm_unique` in
+`lean/CodeCalculus/ExpandedSoundness.lean`, `eval_unique` in `Eval.lean`,
+`eval_deterministic` in `KernelObligations.lean`, and `eval_cnotSwap_unique`
+in `ColumnCnot.lean`).
 
 **Ledger status:** added 2026-09-30 (logical-framework panel, §5.3) — statement fixed; proved by hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8; evidence status `proved`. The provenance of this entry differs from those
 around it: it is **not** from the work plan's *Resolve* list or
@@ -665,10 +774,10 @@ value claim was corrected 2026-09-30 independently of this entry.
 
 ## `OBL-WELL-FORMEDNESS-PRESERVATION` — Output well-formedness of every primitive
 
-**Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`;
+**Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`, `C-COLUMN-CNOT`, `E-SPLIT` (2026-11-25, §4.48);
 constructor instances `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`
 (2026-11-11), `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`,
-`A-DOUBLE` (2026-11-11), `L-NESTED-CSS` (2026-11-13), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (2026-11-19), and `L-PAIR-PARTITION`, `PP-SCALE` (2026-11-22).
+`A-DOUBLE` (2026-11-11), `L-NESTED-CSS` (2026-11-13), `L-MAPPING-CONE` (2026-11-18), `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT` (2026-11-19), and `L-PAIR-PARTITION`, `PP-SCALE` (2026-11-22).
 
 **Semantic-contract field:** admission rule item 4 (`state-sound`).
 
@@ -684,7 +793,7 @@ constructors admitted the same day (`L-BALANCED`, `L-TANNER`,
 `L-TILE`, `A-PRODUCT`, `A-DOUBLE`; hand derivation §4.35, generalized to
 finite nonabelian groups for `L-BALANCED` in §4.44: the overlap is
 derived for `A-PRODUCT` and `L-BALANCED` and is an applicability premise of
-the other three), `A-PRODUCT` under repair (a) (see above); `proved` for
+the other three), `A-PRODUCT` under repair (a) (see below); `proved` for
 `L-NESTED-CSS`, admitted 2026-11-13 (hand derivation §4.36:
 the overlap is the applicability premise); `proved` for `L-EMPTY`, `L-FREE`,
 `A-PULLBACK`, and `A-PUSHOUT`, admitted 2026-11-19 (hand
@@ -706,7 +815,7 @@ the nine constructors admitted 2026-11-11 (§4.34, §4.35, and §4.44), for
 constructors: kernel five §4.7, `E-GRAFT` §4.12, six Gate 6 CSS cells
 §4.26–§4.31, and ten `stdCSS-3` constructors §4.34–§4.36; explicitly restricted
 away from unadmitted candidates, which remain `open`;
-`spec/OPERATIONAL_SEMANTICS.md` §4.40, 2026-11-18).
+`spec/OPERATIONAL_SEMANTICS.md` §4.40, 2026-11-18). The v0.3.x inventory of `spec/VERSIONING.md` §5.2 is derived at §4.41–§4.47.
 
 **Intended mechanization status:** one Lean lemma per kernel slice; input to
 Gates 2–4. Machine-checked (Lean 4, `lean/CodeCalculus/WellFormedness.lean`,
@@ -714,8 +823,8 @@ no `sorry`, no `native_decide`): the `C-SKIP`, `C-DELETE-CHECK`,
 `C-ADD-CHECK`, and `C-SEQUENCE` instances, as `wf_deleteState` (any
 deletion), `wf_addState` (under the `C-ADD-CHECK` premises), and `wf_of_eval`
 (every evaluation of a graft-free command: sequencing by induction on the
-evaluation, the Gate 6 cells through the well-formedness premise their
-transitions carry). The `C-DIRECT-SUM` instance is mechanized as
+evaluation, the Gate 6 cells and `Command.cnotSwap` through the well-formedness
+premise their transitions carry). The `C-DIRECT-SUM` instance is mechanized as
 `directSum_wellFormed`; the
 graft's preservation (§4.12) is mechanized as `wf_graftState` and
 `wf_graft_of_eval` (`lean/CodeCalculus/GraftWellFormedness.lean`,
@@ -727,8 +836,11 @@ output well-formedness, which `Eval.rebase` carries as a premise, is derived
 from the parent's well-formedness and the matrix's invertibility by
 `wf_rebaseState` (`lean/CodeCalculus/RebaseWellFormedness.lean`,
 no `sorry`, no `native_decide`), so that premise is redundant for the rebase
-(`eval_rebase_of_wf`); the other four Gate 6 transitions keep theirs as
-premises. The later-layer constructor instance is mechanized in part for
+(`eval_rebase_of_wf`); the other four Gate 6 transitions and `Eval.cnotSwap`
+keep theirs as premises (`wf_of_eval` and `wf_of_eval_all` restate that
+premise for `Command.cnotSwap`, while I1–I5 preservation under an invertible
+column map $U$ remains the hand derivation of §4.42 and is not mechanized in
+Lean). The later-layer constructor instance is mechanized in part for
 the four admitted constructors (
 `lean/CodeCalculus/ConstructorWellFormedness.lean` and
 `ConstructorOrthogonality.lean`): the retained display is well-formed when
@@ -744,10 +856,10 @@ with no hypothesis. Of the closed forms for $k$, those of
 (`ConstructorRankTyped.lean`, `ConstructorRank.lean`), that of `A-CONCAT`
 is proved together with the retention of every natural row
 (`ConcatRetention.lean`), and those of `L-HGP` and `A-PRODUCT`
-are proved modulo the four rank axioms `hgp_rankX`, `hgp_rankZ`,
-`product_rankX`, `product_rankZ` recorded in `lean/extra/ClosedK.lean`
-and in `AXIOMS.md`: these are accepted as `proposed (classical)`
-assumptions, not discharged obligations. The five constructors of
+are proved in `ClosedK.lean`. The four rank statements they rest on
+(`hgp_rankX`, `hgp_rankZ`, `product_rankX`, `product_rankZ`) were axioms
+of `lean/extra/ClosedK.lean` from 2026-11-16 and are theorems since
+2026-11-24 (`AXIOMS.md`). The five constructors of
 have Lean productions since
 (`lean/CodeCalculus/ConstructorAssembly.lean`): the overlap is proved for
 `A-PRODUCT`, is a premise of the rules of `A-DOUBLE`, `L-TANNER`, and
@@ -758,26 +870,17 @@ yields a well-formed state with no hypothesis.
 overlap as a premise (`evalExpr_nested_wf`).
 Evidence status unchanged.
 
-**Scope widened 2026-10-05).** This obligation was previously scoped to the five MVP primitives only. With
-repair (a) adopted, a later-layer algebraic constructor returning an **independent
-display** has a well-formedness obligation too, and that instance is now **live and
-unproved**. Two things follow, and neither is a discharge:
-
-- The MVP instances are **unchanged** by this disposition — I2/I5 and the
- `C-ADD-CHECK` independence premise were preserved precisely by choosing (a) over
- (b).
-- **Choosing the repair is not proving it.** This entry's evidence status stays
- `open` for the MVP instances and gains a further `open` instance for the
- constructor. The question "does the repaired output satisfy I1–I5?" is a proof
- obligation, not a consequence of the signature decision recorded in
- `spec/TERM_LANGUAGE.md` §2.
- The MVP instances are now proved (§4.7, 2026-10-20); the constructor
- instance remains open. The earlier "stays open for the MVP instances" framing
- is superseded by this block.
-
-The constructor's **admission** remains a Gate 7 question; this obligation records
-what would have to be discharged if it is admitted, and is not itself an
-admission.
+**Independent-display repair (a).** A later-layer algebraic constructor whose
+natural rows may be redundant returns an **independent display** and carries
+retained-presentation data of `P-REBASE` shape
+([`TAXONOMY.md`](TAXONOMY.md) §2.13). I2, I5, and the `C-ADD-CHECK`
+independence premise are unchanged. The constructor depends on its input
+presentation, and any judgment transport over it inherits that dependence
+(`OBL-JUDGMENT-TRANSPORT`). The repair discharges nothing by itself: each
+admitted constructor's well-formedness rests on its own derivation, cited
+above (`A-PRODUCT`, the CSS tensor product instance of that record: §4.35).
+Other product structures have no production, and the obligation is `open` for
+them.
 
 **Statement (restated per the disposition).** For each MVP *command*
 (`C-SKIP`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `C-SEQUENCE`) and every applicable
@@ -817,8 +920,10 @@ primitive's card ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2) ho
 **Classification:** metatheorem.
 
 **Discharged through:** `stdCSS-3` (discharged for all admitted commands of
-`stdCSS-3`, since no admitted command reads `steps` and `stdCSS-3` adds no new
-command production; `spec/OPERATIONAL_SEMANTICS.md` §4.6, §4.40, 2026-11-18).
+`stdCSS-3`, including `C-COLUMN-CNOT`, since no admitted command reads `steps`;
+`spec/OPERATIONAL_SEMANTICS.md` §4.6, §4.40 item 3, §4.42; mechanized over
+`Command.cnotSwap` by `eval_cnotSwap_skip_left` and `eval_cnotSwap_skip_right`
+in `lean/CodeCalculus/ColumnCnot.lean`).
 
 **Ledger status:** sharpened 2026-09-23 — statement fixed against the
 conventions above; **proof discharged** at
@@ -858,9 +963,11 @@ agree with $S'$ up to $\equiv$ (they add only a `skip` record to `steps`).
 **Classification:** metatheorem.
 
 **Discharged through:** `stdCSS-3` (discharged for all admitted commands of
-`stdCSS-3`: associativity is parametric in `Command`, and denotational adequacy
-holds via single-valuedness of `Eval`; `spec/OPERATIONAL_SEMANTICS.md` §1a,
-§4.8, §4.40, 2026-11-18).
+`stdCSS-3`, including `C-COLUMN-CNOT`: associativity is parametric in `Command`,
+and denotational adequacy holds via single-valuedness of `Eval`;
+`spec/OPERATIONAL_SEMANTICS.md` §1a, §4.8, §4.40 item 4, §4.42; mechanized
+over `Command.cnotSwap` by `seq_assoc_fwd`, `seq_assoc_bwd`, `denote_eval`,
+`denote_seq_assoc`, and `eval_cnotSwap_seq_assoc`).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.8, 2026-10-20).
 
@@ -1385,7 +1492,10 @@ operations.
 **Discharged through:** `stdCSS-3` (explicitly restricted to derived commands
 over the five kernel primitives for a fixed ordered elementary expansion,
 excluding primitive conditional extensions `E-GRAFT` / Gate 6 and expression
-constructors; `spec/OPERATIONAL_SEMANTICS.md` §4.23, §4.40, 2026-11-18).
+constructors; `spec/OPERATIONAL_SEMANTICS.md` §4.23, §4.40, 2026-11-18;
+`E-SPLIT` admitted 2026-11-25 as a derived command over `C-DELETE-CHECK` and
+`C-SEQUENCE`, §4.48, mechanized as `eval_split_iff_eval_splitCommand` in
+`lean/CodeCalculus/SplitCommand.lean`).
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.23, 2026-10-23).
 
@@ -1511,7 +1621,7 @@ including §4.37 and §4.39; explicitly restricted away from conditional
 priced/certificate/honest-layout cells, §2j family-level transport,
 `A-QUOTIENT` §2i, and unadmitted candidates; full Lean mechanization stays open
 and Gate 5 remains unchecked; `spec/OPERATIONAL_SEMANTICS.md`
-§4.11, §4.40, 2026-11-18).
+§4.11, §4.40, §4.42, 2026-11-18 / 2026-11-25). Covers the full `stdCSS-3` inventory including the v0.3.x items of `spec/VERSIONING.md` §5.2; see *Re-discharge status of metatheorems*, *Scope of `stdCSS-3`*.
 
 **Ledger status:** proved (hand derivation `spec/OPERATIONAL_SEMANTICS.md` §4.11, 2026-10-20).
 
@@ -1542,9 +1652,13 @@ The expanded-operation-set mechanization is
 `ext_judgment_soundness` and its `_exact`, `_exact_uncertified`, and
 `_exact_admissible` instances; seam-certificate equality is retained as
 `SeamCertSound` and proved for `AdmissibleSeam`. It covers the kernel
-commands, `E-GRAFT`, all five unary Gate 6 moves, `C-DIRECT-SUM`,
-`E-GLUE` (uncertified and certified under `seamCert`), and the ten typed
-constructors; the conditional priced cells are mechanized elsewhere
+commands, `E-GRAFT`, all five unary Gate 6 moves, `Command.cnotSwap` (through
+the well-formedness premise `Eval.cnotSwap` carries: `instCnotSwapWF` restates
+that premise via `wf_of_eval_all` and `eval_cnotSwap_k` relies on it, while
+I1–I5 preservation under an invertible column map $U$ remains hand-derived at
+§4.42 and not mechanized in Lean), `C-DIRECT-SUM`,
+`E-GLUE` (uncertified and certified under `seamCert`), and all seventeen
+admitted `StateExpr` constructors; the conditional priced cells are mechanized elsewhere
 (`PricedInterval.lean`, `Gate6Exact.lean`). The two derivation systems
 relate by documentation only: `Soundness.lean` / `TermSoundness.lean` keep
 the `Nat`-valued sentinel reading for fixed-namespace rows, while
@@ -1860,6 +1974,14 @@ required) display/twisted certificates; the consumer validates input shape and
 consistency against validated lifted witnesses, never the truth of supplied
 factor lower bounds.
 
+**Extended 2026-11-25 (issue #546):** `split_block_intervals` (`JUDGMENT_LAYER.md`
+§2c, §2f; `OPERATIONAL_SEMANTICS.md` §4.48; `machine/consumer.json`) supplies
+restriction-display intervals $[L_A, U_A]$ and $[L_B, U_B]$ with a nonempty
+evidence reference for `E-SPLIT`; the consumer validates shape and structural
+consistency (including no infinite lower endpoint when $k' > 0$ and no
+contradiction with carried/witness upper endpoints), never the truth of the
+supplied block bounds.
+
 **Statement.** Give each supplied lower bound, exact deletion/exposure price,
 and minimum-weight-class enumeration a typed meaning that states what fact it
 asserts and which state/transition it refers to. The consumer must not treat a
@@ -1902,7 +2024,9 @@ recorded count is the fieldnote's $0$-of-$736$ above.
 
 **Taxonomy IDs:** `C-SKIP`, `C-DIRECT-SUM`, `C-DELETE-CHECK`, `C-ADD-CHECK`,
 `C-SEQUENCE`, `E-GRAFT`; since 2026-11-10 also `E-PEEL`, `E-PUNCTURE`,
-`E-LOCAL-HADAMARD` ($T=Q$), `P-REBASE`, `E-EXTEND`, and `E-GLUE`.
+`E-LOCAL-HADAMARD` ($T=Q$; a split subset since 2026-11-26), `P-REBASE`,
+`E-EXTEND`, and `E-GLUE`; since 2026-11-25 also `E-SPLIT` (§4.48:
+$\lambda' = \lambda$, $r' \le r$, honesty preserved).
 
 **Claim shape:** `equality` and `upper-bound` — **Evidence status:**
 `proved`.
@@ -1949,7 +2073,9 @@ be the interaction radius, with $r=0$ for an empty display. Then:
 4. *(extension transitions, 2026-11-10)* With $\lambda'=\lambda\vert_{Q'}$ for
  the child namespace $Q'$: `E-PEEL` and `E-PUNCTURE` give
  $r'=\max\{\mathrm{diam}_{\lambda'}(s):s\in\mathit{rows}'\}\le r$;
- `E-LOCAL-HADAMARD` ($T=Q$) gives $r'=r$; `P-REBASE` gives the exact
+ `E-LOCAL-HADAMARD` gives $r'=r$ at $T=Q$, and at a split subset gives
+ $r'\le r$, because every output support is a subset of a parent support
+ (§4.21); `P-REBASE` gives the exact
  recomputation $r'=\max\{\mathrm{diam}_\lambda(s):s\in\mathit{rows}'\}$ with
  no direction (both $r'>r$ and $r'<r$ occur); `E-EXTEND` with a supplied
  layout $\lambda'$ on $Q\cup\Delta$ agreeing with $\lambda$ on $Q$ gives
@@ -2070,10 +2196,51 @@ single connected graph, and deleting it exposes them in both predicates.
 The group predicate needs no cross-sector reduction on this all-X display; it
 was already split.
 
+## `OBL-EXTEND-DISTANCE-LOSS` — The `E-EXTEND` distance-loss conditional cell
+
+**Taxonomy IDs:** `E-EXTEND`.
+
+**Semantic-contract field:** admission rule item 5
+(`logical-parameter-honest`) for the namespace-growing instance under a
+supplied loss.
+
+**Claim shape:** `monotonicity` (lower-bound transport) under a hypothesis.
+
+**Classification:** conditional judgment cell. It is sound relative to the
+supplied hypothesis $d'_\tau \ge d_\tau - \ell_\tau$, which the consumer
+does not check.
+
+**Evidence status:** `proved` (hand derivation
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.30, *Distance-loss
+cell*, 2026-11-26) for the bookkeeping: under the hypothesis and the ledger
+invariant $L_\tau \le d_\tau$, the child lower endpoint
+$\max(0, L_\tau - \ell_\tau)$ is a sound bound. The hypothesis itself is an
+input and is never `proved` by this entry.
+
+**Introduced in:** `stdCSS-3`, patch-level inventory admitted under
+[`VERSIONING.md`](VERSIONING.md) §4.2 (2026-11-26, issue #677; §5.3).
+
+**Intended mechanization status:** not mechanized. The Lean Gate 6
+transformers (`gate6_interval_soundness`) cover the unpriced `E-EXTEND`
+cell only. Executable consumer: `machine/intervals.py`
+(`extend_distance_loss` hypothesis on the `E-EXTEND` transport), tested in
+`machine/test_extend_distance_loss.py`.
+
+**Statement.** Let `E-EXTEND` add $\Delta \ne \varnothing$ to a parent
+whose ledger carries sector lower endpoints $L_X, L_Z$ with
+$L_\tau \le d_\tau$. If the supplied losses satisfy
+$d'_\tau \ge d_\tau - \ell_\tau$, then $d'_\tau \ge \max(0, L_\tau -
+\ell_\tau)$ for each priced sector, and
+$d' \ge \min(\underline{d}'_X, \underline{d}'_Z)$, where an unpriced
+sector's $\underline{d}'$ is $0$.
+
+**Owed.** A Lean counterpart, conditional on the hypothesis, in the shape of
+`gate6_interval_soundness`.
+
 ## `OBL-GATE6-CSS-EXTENSIONS` — Sound admission of the CSS-level Gate 6 extensions
 
 **Taxonomy IDs:** `E-GLUE`, `E-PUNCTURE`, `E-PEEL`, `E-EXTEND`,
-`E-LOCAL-HADAMARD`, `P-REBASE`.
+`E-LOCAL-HADAMARD`, `P-REBASE`, and `E-SPLIT` (admitted 2026-11-25, §4.48).
 
 **Semantic-contract field:** per-operation contract rows in
 [`CLAIMS.md`](CLAIMS.md) (*Initial contract index*): `transition-defined` for
@@ -2171,11 +2338,13 @@ recorded in the decision log.
 | Move | definition | equality | monotonicity |
 | --- | --- | --- | --- |
 | `P-REBASE` | §4.26 (typed transition, GL-ness) | §4.26 (span/`n`/`k`/distance identity) | §4.32 (identity transformer); `JUDGMENT_LAYER.md` §2b row |
-| `E-LOCAL-HADAMARD` ($T=Q$) | §4.27 | §4.27 (sector distance exchange, $d'=d$) | §4.32 (swap transformer); `JUDGMENT_LAYER.md` §2b |
+| `E-LOCAL-HADAMARD` ($T=Q$) | §4.27(a) | §4.27(a) (sector distance exchange, $d'=d$) | §4.32 (swap transformer); `JUDGMENT_LAYER.md` §2b |
+| `E-LOCAL-HADAMARD` (split subset, 2026-11-26) | §2 card, §4.27(b) (splitting guard, canonical update, canonical mint) | §4.27(b) ($n'=n$, $k'=k$, $d'=d$; $T$-split sector distances) | §4.32 (carry-full, floor-sector transformer; Lean mechanizes the coarser floor at `L.full.lower`); `JUDGMENT_LAYER.md` §2b |
 | `E-PEEL` | §4.28 (applicability, injectivity) | §4.28 (`n'`, `k'` exact); the two sector distances exact as $d_\tau'=w_{\mathrm{avoid},\tau}(q)$ and $d_\sigma'=\min(d_\sigma,w_{\mathrm{expose},\sigma}(q))$ (2026-11-10), conditional on the consumer-supplied minima as the §2a price cells | §4.32 (selected-sector lower carries, opposite-sector lower carries less one and upper carries, full distance the minima of the sector endpoints); `JUDGMENT_LAYER.md` §2b admitted carries and §2a price cells; mechanized `peelLedger`, `peel_transformer_sound` |
 | `E-PUNCTURE` | §4.29 (applicability, structural effects) | §4.29 (`n'`, `k'` exact); the reduction to deletions followed by a free-qubit removal recorded 2026-11-10, whose price is the hole price, not admitted | §4.32 (reset transformer; no carried endpoint derivable, both directions refuted); `JUDGMENT_LAYER.md` §2b reset |
 | `E-EXTEND` | §4.30 (applicability, canonical mint) | §4.30 (`n'`, `k'` exact) | §4.32 (carry/reset under the stated hypotheses); `JUDGMENT_LAYER.md` §2b row |
 | `E-GLUE` | §4.31 (applicability, state update) | conditional — seam certificate hypothesis (Theorem 4 / claim 7.4 for $d_Z(Q)=\min(d_A,d_B)$); lower endpoints sound without it (§4.31) | §4.32 (lower endpoints sound without certificate; upper endpoints from witnesses); `JUDGMENT_LAYER.md` §2b/§2e |
+| `E-SPLIT` | §4.48 (separating deletion `split(Q_A; R)`, derived over `C-DELETE-CHECK`; two-state projection refused) | §4.48 (`n'=n`, `k'=k+\|R\|` exact; $d_\sigma(C') = \min(d_\sigma(C'\vert_A), d_\sigma(C'\vert_B)) = \min(d_\sigma(C), w_{\mathrm{del},\sigma}, w_{\mathrm{exp},\sigma})$ exact); priced block-interval cell conditional on `split_block_intervals` | §4.48 (unpriced: upper endpoints carry, lower endpoints reset to $0$, exact unpriced `unavailable`; priced: $[\min(L_A, L_B), \min(U_A, U_B, U_\sigma)]$, sound and monotone); mechanized in `SplitCommand.lean`, `Gate6Soundness.lean`, `Gate6Exact.lean` |
 
 The `definition` column discharges the typed-transition and applicability
 obligation; the `equality` column discharges the exact state/context update;
@@ -2289,7 +2458,7 @@ boundary (`OBL-PRICED-INPUT-SEMANTICS`) for supplied distance intervals.
 
 **Classification:** theorem (constructor well-formedness instance).
 
-**Introduced in:** `stdCSS-4` / `v0.4.0` candidate (2026-11-22).
+**Introduced in:** `stdCSS-3` / `v0.3.1` (2026-11-22).
 
 **Intended mechanization status:** Hand derivation at `OPERATIONAL_SEMANTICS.md`
 §4.47; Lean production `StateExpr.ppScale`, transition rule `EvalExpr.ppScale`,
@@ -2308,8 +2477,8 @@ $n' = L \cdot P$ qubits with $H_X' (H_Z')^T = 0 \pmod 2$; row identifiers are
 canonically minted starting from $\mathsf{used}_0$ (disjoint from
 $\mathsf{used}_0$, with $\mathsf{used}'$ the union);
 $k' = L \cdot P - \mathrm{rank}(H_X') - \mathrm{rank}(H_Z') > 0$; $w' = L$
-carries (each natural row has one 1 in each of the $L$ block columns); and $d, d_X, d_Z$ are `not yet defined`
-unless a verified interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is supplied, in
+carries (each natural row has one 1 in each of the $L$ block columns); and $d, d_X, d_Z$ are `unavailable` automatically
+unless a supplied interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is recorded as a priced hypothesis, in
 which case the ledger carries the conditional cell (`JUDGMENT_LAYER.md` §2g, §2l).
 
 **Hypotheses.** $C_0$ well-formed and PP-presented; original and target slopes
@@ -2321,8 +2490,10 @@ $\{0, \dots, L \cdot P - 1\}$; the parameter effects above hold; no automatic
 distance rule is attached beyond the supplied interval.
 
 **Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION` (§4.34 retained-display
-theorem, §4.44 pair-partition relative-affine orthogonality);
-`OBL-PRICED-INPUT-SEMANTICS`.
+theorem, §4.46 pair-partition relative-affine orthogonality);
+`OBL-PRICED-INPUT-SEMANTICS`. Automatic $d, d_X, d_Z$ are `unavailable` unless
+a supplied interval $[d_{\mathrm{lo}}, d_{\mathrm{hi}}]$ is recorded as a
+priced hypothesis.
 
 **Known edge cases and counterexamples.** $k' \le 0$: no derivation (partial
 big-step). Failed SNF reproduction check at $P_0$ or non-commuting blocks: no
@@ -2336,7 +2507,7 @@ derivation. Non-unit slope or $P < 2$: malformed or no derivation per card.
 (`logical-parameter-honest`) for finite nonabelian group inputs.
 
 **Claim shape:** `preservation` (output well-formedness on every well-typed
-finite group input, abelian or nonabelian) and `exact` ($n$ and $k$ closed
+finite group input, abelian or nonabelian) and `equality` ($n$ and $k$ closed
 forms / rank bookkeeping).
 
 **Classification:** definition and theorem (constructor well-formedness and
@@ -2345,7 +2516,7 @@ conservative extension of the abelian cyclic-order fragment).
 **Evidence status:** `proved` (hand derivation
 [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.44, 2026-11-22).
 
-**Introduced in:** `v0.4.0` target (2026-11-22, axis 2).
+**Introduced in:** `stdCSS-3` / `v0.3.1` (2026-11-22, axis 2).
 
 **Intended mechanization status:** machine-checked in Lean 4
 (`lean/CodeCalculus/ConstructorOverlap.lean` and
@@ -2442,6 +2613,53 @@ $\alpha_2(g h) = \alpha_2(g) \circ \alpha_2(h)$, is rejected at input validation
 
 ---
 
+## `OBL-COSET-LIFT-INPUTS` — Coset inputs for `L-LIFTED`
+
+**Taxonomy IDs:** `L-LIFTED`.
+
+**Semantic-contract field:** admission rule item 4 (`state-sound`) and item 5
+(`logical-parameter-honest`) for the optional subgroup argument.
+
+**Claim shape:** `preservation` (output well-formedness on every well-typed
+coset input) and `equality` ($n = [G:H]\,(n_A n_B + m_A m_B)$; $k$ by rank
+bookkeeping; row-for-row equality with the regular lift when $H$ is trivial).
+
+**Classification:** definition and theorem (constructor well-formedness and
+conservative extension of the regular lift).
+
+**Evidence status:** `proved` (hand derivation
+[`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §4.49, 2026-11-26).
+
+**Introduced in:** `stdCSS-3`, patch-level inventory admitted under
+[`VERSIONING.md`](VERSIONING.md) §4.2 (2026-11-26, issue #675; §5.3).
+
+**Intended mechanization status:** not mechanized. No Lean production or
+theorem covers the subgroup argument. The Lean `liftTable` production and
+`cayleyLift_naturalOrthogonal` cover the trivial-subgroup case only, through
+the row-for-row conservativity of §4.49. Executable consumer implementation in
+`machine/constructors.py` (`_coset_spec`, `_left_coset_rows`,
+`_right_coset_rows`, `lifted_product`), tested in
+`machine/test_constructors.py` (`CosetLiftTests`).
+
+**Statement.** Let $G$ be a finite group presented as in
+`OBL-NONABELIAN-GROUP-INPUTS`, let $H \le G$ be generated by a supplied list,
+and let $A \in \mathbb{F}_2[G]^{m_A \times n_A}$ and
+$B \in \mathbb{F}_2[N_G(H)]^{m_B \times n_B}$. With $L_H(x)$ and $R_H(y)$ the
+sums of the permutation matrices of the left action $cH \mapsto gcH$ and the
+right action $cH \mapsto cnH$ on $G/H$:
+
+1. $L_H(x)^T = L_H(x^*)$, $R_H(y)^T = R_H(y^*)$, and
+   $L_H(x) R_H(y) = R_H(y) L_H(x)$ over $\mathbb{F}_2$.
+2. Consequently every evaluation of `lift_G(A, B)` with the subgroup argument
+   is a well-formed state with $n = [G:H]\,(n_A n_B + m_A m_B)$.
+3. With $H = \{e\}$ the evaluation equals the regular `lift_G(A, B)` row for
+   row.
+
+**Owed.** A Lean counterpart: a coset production, its typing check (subgroup
+closure and the normalizer premise), and the orthogonality and
+well-formedness theorems. Until it lands, the evidence is the hand derivation
+and the machine tests only.
+
 ## `OBL-CONDITIONAL-CONSTRUCTOR-CELLS` — Conditional distance cells and factor-to-child witness lifting for admitted constructors
 
 **Taxonomy IDs:** `L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`.
@@ -2466,7 +2684,7 @@ Bravyi–Hastings 2014 / Audoux–Couvreur 2019, and §4.45); `proved` for the
 validity of the lifted witnesses on the constructed state (§4.45) and for interval
 soundness under the cell hypotheses (`lean/CodeCalculus/PricedInterval.lean`).
 
-**Introduced in:** `v0.4.0` target (2026-11-22, axis 3).
+**Introduced in:** `stdCSS-3` / `v0.3.1` (2026-11-22, axis 3).
 
 **Intended mechanization status:** machine-checked in Lean 4
 (`lean/CodeCalculus/PricedInterval.lean`, no `sorry`, no `native_decide`):
@@ -2559,6 +2777,100 @@ not apply without an explicit twisted-double certificate.
 
 ---
 
+## `OBL-ELEMENTARY-COMPLETENESS` — Scoped non-circular generation and variable-namespace transition completeness over the elementary fragment
+
+**Taxonomy IDs:** `L-EMPTY`, `C-DELETE-CHECK`, `C-ADD-CHECK`, `E-PUNCTURE`,
+`E-EXTEND`, `C-SEQUENCE`.
+
+**Semantic-contract field:** Gate 7 completeness decision (`GATES.md` §10;
+`TAXONOMY.md`, *Completeness feasibility decision (Gate 7, issue #606)*).
+
+**Claim shape:** `reachability` (code-level generation and transition
+completeness over the elementary move fragment, up to canonical identifier
+allocation).
+
+**Evidence status:** `open` (scoped feasibility argument recorded 2026-11-25,
+issue #606; full dated hand derivation and Lean mechanization owed).
+
+**Classification:** metatheorem (Gate 7 completeness obligation; axis-4 shape
+obligation under [`VERSIONING.md`](VERSIONING.md) §4.1).
+
+**Introduced in:** `stdCSS-3` / `v0.3.2` (opened 2026-11-25 by maintainer
+decision, MathysRennela, issue #606; folded into `stdCSS-3` / `v0.3.2` by
+maintainer decision 2026-11-26; stays `open` and moves no `discharged-through`
+value).
+
+**Ledger status:** `open`. Feasibility sketch recorded in
+[`TAXONOMY.md`](TAXONOMY.md) (*Completeness feasibility decision*, 2026-11-25).
+Opening this obligation establishes no completeness theorem and makes no claim
+about judgment inferability or distance preservation.
+
+**Intended mechanization status:** Lean 4 metatheorem over `EvalExpr` / `Eval`
+(`StateExpr.empty`, `Command.delete`, `Command.addStab`, `Command.puncture`,
+`Command.extend`, `Command.seq`), extending `OBL-FIXED-NAMESPACE-REACHABILITY`
+across finite qubit namespaces under the H-4 capacity predicate.
+
+**Statement.** Fix the elementary fragment consisting of the nullary seed
+`L-EMPTY` and the elementary commands `C-DELETE-CHECK`, `C-ADD-CHECK`,
+`E-PUNCTURE`, `E-EXTEND` (restricted to single bare-qubit additions
+$|\Delta| = 1, \vec u = \varnothing$), and `C-SEQUENCE`.
+
+1. *(Elementary generation completeness)* For every well-formed presented CSS
+   state $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ with
+   $\dim X + \dim Z \le 70{,}000$, there exists a finite command $m$ in
+   `{E-EXTEND (|Δ|=1, u⃗=∅), C-ADD-CHECK, C-SEQUENCE}` such that
+   $\mathrm{EvalTerm}(m \triangleright \mathrm{empty}, C')$ holds for a
+   well-formed state $C'$ with $Q' = Q$, $X' = X$, and $Z' = Z$ (code-level
+   equality on $Q$, with $\mathsf{used}'$ canonically minted from $\varnothing$
+   of cardinality $\dim X + \dim Z$).
+2. *(Variable-namespace elementary transition completeness)* For any two
+   well-formed presented CSS states $C_1$ on $Q_1$ and $C_2$ on $Q_2$
+   satisfying the H-4 capacity bound
+   $|\mathsf{used}(C_1)| + \dim X_2 + \dim Z_2 \le 70{,}000$, there exists a
+   finite command $m$ in
+   `{C-DELETE-CHECK, C-ADD-CHECK, E-PUNCTURE, E-EXTEND (|Δ|=1, u⃗=∅), C-SEQUENCE}`
+   such that $\mathrm{Eval}(m, C_1, C')$ holds for a well-formed state $C'$
+   with $Q' = Q_2$, $X' = X_2$, and $Z' = Z_2$ (extending
+   `OBL-FIXED-NAMESPACE-REACHABILITY` across distinct finite namespaces).
+
+**Hypotheses.** Input and target states are well-formed (I1–I5) over finite
+qubit namespaces $Q, Q_1, Q_2 \subset \mathbb{N}$ and satisfy the H-4 capacity
+bounds above.
+
+**Conclusion and explicit non-claims.** Establishes code-level generation and
+transition reachability of all finite standard CSS codes (within H-4 capacity)
+using strictly elementary single-qubit and single-check moves. Explicitly does
+**not** claim:
+
+- judgment completeness, distance inferability, or distance-preserving paths
+  (`design/SCOPE.md` §2 and `spec/GATES.md` §11 remain binding; the check-free
+  bridge collapses distance to 1 along intermediate states);
+- presentation-exact (`≡`) reachability (obstructed by monotone `used`);
+- family-internal transition completeness for named structured families
+  (`L-HGP`, `L-LIFTED`, `L-BALANCED`) or bounded-weight LDPC codes: in
+  [`TAXONOMY.md`](TAXONOMY.md) (*Family-closure matrix*), derivations
+  (H1)–(H5) show that `L-HGP` and `L-LIFTED` are not closed under
+  `C-ADD-CHECK`, `E-EXTEND` (H1), `C-DELETE-CHECK` (H2), `E-PUNCTURE` (H3),
+  `E-PEEL` (H4), and `E-GLUE` (H5), while for `L-BALANCED` only `E-PUNCTURE`
+  (H3) and `E-PEEL` (H4) are decided (`not closed`) and `C-DELETE-CHECK`,
+  `C-ADD-CHECK`, `E-EXTEND`, and `E-GLUE` remain `open` (B); the matrix
+  includes no bounded-weight LDPC family. Non-closure under a move does not
+  refute the existence of a family-internal path; it shows only that the
+  elementary bridge of the sketch leaves these families, so this obligation
+  makes no family-internal or bounded-weight claim;
+- circular one-shot generation via matrix-taking constructors (`L-NESTED-CSS`,
+  `L-TANNER`, `L-TILE`, `L-MAPPING-CONE`).
+
+**Dependencies.** `OBL-WELL-FORMEDNESS-PRESERVATION` (§4.7, §4.29, §4.30,
+§4.43); `OBL-FIXED-NAMESPACE-REACHABILITY` (§4.17).
+
+**Known edge cases and counterexamples.** Capacity exhaustion past 70,000
+identifiers blocks the addition phase (H-4); `n = 0` (`L-EMPTY`) is reached
+from any check-free state by `E-PUNCTURE` (§4.29, `TAXONOMY.md` derivation
+(U1)).
+
+---
+
 ## v0.2 candidates dispositioned 2026-11-10
 
 The candidates below were accepted by the maintainer on 2026-11-10 (see
@@ -2576,7 +2888,7 @@ in `machine/` and `the issue tracker` only.
 | Heuristic-result status (machine-side) | landed 2026-11-11: `heuristic_outcome` records on the strict-improvement enumeration fallback and the bounded sector search | `machine/priced_calculus.py`; `machine/planner.py`; `machine/test_heuristic_outcome.py` |
 | Distance-increasing constructor admission (`L-*`, `A-CONCAT`, `A-PRODUCT`, `A-DOUBLE`) | landed 2026-11-11: `L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT` admitted as `transition-defined` expression constructors, their well-formedness instances of `OBL-WELL-FORMEDNESS-PRESERVATION` proved (§4.34), no distance rule; `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE` admitted the same way by with typed inputs realized as finite objects and their instances proved (§4.35), three of them with a commutation premise | `TERM_LANGUAGE.md` §1, §2; `OPERATIONAL_SEMANTICS.md` §2 cards, §4.34, §4.35; `JUDGMENT_LAYER.md` §2g; typed signatures (`CONSTRUCTOR_SIGNATURES.md`); axis-2 change staged on the `stdCSS-3` candidate (`VERSIONING.md` §5.1) |
 | Puncturing/peeling distance prices (`E-PUNCTURE`/`E-PEEL`) | landed 2026-11-10: peel cells derived and admitted, puncture reduction recorded and refusal kept | `JUDGMENT_LAYER.md` §2a (two `E-PEEL` price cells), §2b, §2c (avoidance minimum), §2f; `OPERATIONAL_SEMANTICS.md` §4.28, §4.29; puncture's priced cell stays blocked on the D2 lower bound |
-| Gluing promotion (`E-GLUE`) | landed to rung 5 (`contract-stated`, 2026-11-18): both future-$\Pi$ fields defined in full (`STATE_MODEL.md` §1a); CSS-level algebra of §4.31/§4.33 mechanized (`ExactGlue*.lean`, `LogicalWitness.lean`, `WitnessFields.lean`, `AdmissibleSeamFamily.lean`, `GlueExtraction.lean`) with the irreducible geometric move-word $\to$ `AdmissibleSeam` substrate gap explicitly recorded; binary-only expression constructor decided (`TERM_LANGUAGE.md` §1–§2, no unary command production); Gate 6 unchecked and move stays a conditional cell | `CLAIMS.md` `E-GLUE` contract record (`contract-stated`, rung 5); `TERM_LANGUAGE.md` §1–§2 (`glue(e₁, e₂; seams)`); `OPERATIONAL_SEMANTICS.md` §4.31, §4.33; `lean/CodeCalculus/GlueExtraction.lean`; `ADMISSIBLE_SEAM_FAMILY.md` §4, §7 |
+| Gluing promotion (`E-GLUE`) | landed to rung 5 (`contract-stated`, 2026-11-18): both future-$\Pi$ fields defined in full (`STATE_MODEL.md` §1a); CSS-level algebra of §4.31/§4.33 mechanized (`ExactGlue*.lean`, `LogicalWitness.lean`, `WitnessFields.lean`, `AdmissibleSeamFamily.lean`, `GlueExtraction.lean`) with the irreducible geometric move-word $\to$ `AdmissibleSeam` substrate gap explicitly recorded; binary-only expression constructor decided (`TERM_LANGUAGE.md` §1–§2, no unary command production); move stays a conditional cell (Gate 6 ratified 2026-11-19) | `CLAIMS.md` `E-GLUE` contract record (`contract-stated`, rung 5); `TERM_LANGUAGE.md` §1–§2 (`glue(e₁, e₂; seams)`); `OPERATIONAL_SEMANTICS.md` §4.31, §4.33; `lean/CodeCalculus/GlueExtraction.lean`; `ADMISSIBLE_SEAM_FAMILY.md` §4, §7 |
 | Sector-swap exploitation (`E-LOCAL-HADAMARD`, `T=Q`) | landed 2026-11-11: consumer support (`sector_swap_exploitation`, planner `sector_swap`), full-distance invariance recorded; no derived cell needed, conjugation identity in `DERIVED_RELATIONS.md` §2b. Optional earned-bound guards added 2026-11-19: `min_sector_gap` on `other.lower - target.upper` and `require_exact_full_distance` on the carried full interval; refusal carries a `guard` field; defaults preserve the interval-driven behaviour | `machine/priced_calculus.py` (entrypoints), `machine/planner.py`, `machine/test_sector_swap.py`; no calculus obligation |
 | Layout-transfer judgment cells | landed 2026-11-10 | `JUDGMENT_LAYER.md` §2d.5 (one cell per transition); `machine/semantics.json` `layout_cells`; `machine/experiments/layout_conformance_harness.py`; `OBL-LOCALITY-TRANSPORT` clauses 4 and 5 |
 | Weight-3 exposure investigation | landed 2026-11-10: NP-hardness from column weight 3 on, by a column-splitting reduction from the general case; the provider's refusal is by design | `DERIVED_RELATIONS.md` §3a; `machine/priced_calculus.py` (`citation_status` of the refusal); `machine/experiments/weight3_split_reduction.py` |

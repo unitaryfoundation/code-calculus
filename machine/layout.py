@@ -327,10 +327,8 @@ def export_challenge_entry(parent, state, ledger, name, construction, date,
         _trials = trials if trials is not None else witness_trials
         _confidence = "upper_bound"
         if _trials is not None:
-            try:
-                _confidence = "%s (%s)" % (_confidence, witness_confidence(_trials))
-            except Exception:
-                pass
+            from machine.entrypoints import witness_confidence as _witness_confidence
+            _confidence = "%s (%s)" % (_confidence, _witness_confidence(_trials))
         side_witnesses[side] = {
             "value": best["value"],
             "confidence": _confidence,
@@ -338,7 +336,7 @@ def export_challenge_entry(parent, state, ledger, name, construction, date,
         }
         if _trials is not None:
             side_witnesses[side]["trials"] = _trials
-            side_witnesses[side]["witness_confidence"] = witness_confidence(_trials)
+            side_witnesses[side]["witness_confidence"] = _witness_confidence(_trials)
     _exported_d = min(side_witnesses["X"]["value"], side_witnesses["Z"]["value"])
     _child_params = "[[%d,%d,%d]]" % (state.n(), state.k(), _exported_d)
     if isinstance(name, str):

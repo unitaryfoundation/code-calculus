@@ -174,10 +174,13 @@ class DistanceLedger:
                 return _pos_int(val, label)
 
             if c_name == "L-HGP":
-                d1 = _pos_or_inf(constructor_cell.get("d1"), "L-HGP d1")
-                d2 = _pos_or_inf(constructor_cell.get("d2"), "L-HGP d2")
-                d1_t = _pos_or_inf(constructor_cell.get("d1_T"), "L-HGP d1_T")
-                d2_t = _pos_or_inf(constructor_cell.get("d2_T"), "L-HGP d2_T")
+                for req_key in ("d1", "d2", "d1_T", "d2_T"):
+                    if req_key not in constructor_cell:
+                        raise Malformed("L-HGP conditional cell requires explicit %s" % req_key)
+                d1 = _pos_or_inf(constructor_cell["d1"], "L-HGP d1")
+                d2 = _pos_or_inf(constructor_cell["d2"], "L-HGP d2")
+                d1_t = _pos_or_inf(constructor_cell["d1_T"], "L-HGP d1_T")
+                d2_t = _pos_or_inf(constructor_cell["d2_T"], "L-HGP d2_T")
                 cell_x = _min_upper(d2, d1_t)
                 cell_z = _min_upper(d1, d2_t)
                 if cell_x is None or cell_z is None:
@@ -230,7 +233,8 @@ class DistanceLedger:
                 wiring = constructor_cell.get("wiring")
                 wiring_empty = constructor_cell.get("wiring_empty", not bool(wiring))
                 if not wiring_empty:
-                    if not constructor_cell.get("twisted_certificate"):
+                    twisted_cert = constructor_cell.get("twisted_certificate")
+                    if not twisted_cert or (isinstance(twisted_cert, str) and not twisted_cert.strip()):
                         raise NoDerivation(
                             "A-DOUBLE conditional distance cell with non-empty wiring requires an explicit twisted_certificate")
                     cell_x = _pos_int(constructor_cell.get("d_X"), "A-DOUBLE twisted d_X")
@@ -325,6 +329,9 @@ class DistanceLedger:
                         seen.add(support)
                     uppers[side] = _min_upper(uppers[side], weight)
 
+        values["d"] = max(values["d"], min(values["X"], values["Z"]))
+        values["X"] = max(values["X"], values["d"])
+        values["Z"] = max(values["Z"], values["d"])
         full_upper = _min_upper(_min_upper(uppers["X"], uppers["Z"]), uppers["d"])
         sec_x = _transport_interval(values["X"], uppers["X"])
         sec_z = _transport_interval(values["Z"], uppers["Z"])
@@ -524,11 +531,10 @@ class DistanceLedger:
                 for side in ("X", "Z"):
                     if side in prices:
                         carried = out.sector[side].lower
-                        out.sector[side] = (
-                            Interval(prices[side], None)
-                            if carried is None
-                            else Interval(max(carried, prices[side]), None)
-                        )
+                        if carried is None:
+                            out.sector[side] = Interval(None, None)
+                        else:
+                            out.sector[side] = Interval(max(carried, prices[side]), None)
                 out.conditions.append({"cell": "C-ADD-CHECK sector-aware gauging",
                                        "status": "conditional",
                                        "prices": prices,
@@ -682,7 +688,9 @@ class DistanceLedger:
             # endpoint resets to zero and its upper endpoint carries, since
             # d'_sigma <= d_sigma for that sector.
             out.full = Interval(0, None)
-            tau = operation["sector"]
+            tau = operation.get("sector")
+            if tau not in ("X", "Z"):
+                raise Malformed("E-GRAFT operation requires sector 'X' or 'Z'")
             other = "Z" if tau == "X" else "X"
             out.sector[tau] = Interval(self.sector[tau].lower, None)
             out.sector[other] = Interval(0, self.sector[other].upper)
@@ -721,21 +729,65 @@ class DistanceLedger:
         elif op == "E-LOCAL-HADAMARD":
             if parent_state is None:
                 raise NoDerivation("E-LOCAL-HADAMARD transport needs the parent state")
-            qubits = sorted(operation.get("qubits", []))
+            raw_qubits = operation.get("qubits", [])
+            if not isinstance(raw_qubits, (list, tuple, set, frozenset)):
+                raise Malformed("E-LOCAL-HADAMARD qubits must be a collection of nonnegative integers")
+            qubits_list = list(raw_qubits)
+            if any(isinstance(q, bool) or not isinstance(q, int) or q < 0 for q in qubits_list):
+                raise Malformed("E-LOCAL-HADAMARD qubit labels must be nonnegative integers")
+            qubits = sorted(qubits_list)
             if len(set(qubits)) != len(qubits):
                 raise Malformed(
                     "E-LOCAL-HADAMARD lists a qubit label twice; a list with "
                     "repeats does not name a subset")
-            if set(qubits) != set() and set(qubits) != set(parent_state.Q):
-                # The transport is only licensed where the state transition is
-                # derivable (spec/TERM_LANGUAGE.md §2): T = Q or T = ∅, and
-                # inapplicable otherwise. Swapping the sector intervals of a
-                # proper subset T ⊊ Q would carry a judgment the transition
-                raise NoDerivation(
-                    "E-LOCAL-HADAMARD transport is admitted only for the T=Q "
-                    "sector exchange and the T=∅ identity "
-                    "(spec/OPERATIONAL_SEMANTICS.md §2, §4.27)")
-            if qubits:
+            tset = set(qubits)
+            split = bool(tset) and tset != set(parent_state.Q)
+            if split:
+                # 0 < |T| < |Q| (§4.27, split-subset instance). The transport
+                # is licensed only where the state transition derives: T ⊆ Q
+                # and both row spaces split along T.
+                if not tset <= set(parent_state.Q):
+                    raise NoDerivation(
+                        "E-LOCAL-HADAMARD subset T is not contained in Q")
+                if parent_state.hadamard_split_guard(tset) is not None:
+                    raise NoDerivation(
+                        "E-LOCAL-HADAMARD transport needs the splitting guard: "
+                        "both row spaces must split along T "
+                        "(spec/OPERATIONAL_SEMANTICS.md §4.27)")
+                # T-split decomposition: C = C_T ⊕ C_{Q\T}, and the move swaps
+                # the sectors of C_T only, so d' = d exactly while
+                # d_X' = min(d_Z(C_T), d_X(C_{Q\T})) and
+                # d_Z' = min(d_X(C_T), d_Z(C_{Q\T})) — factor distances the
+                # parent ledger does not carry. Each child sector distance is
+                # at least d, so both sector lower endpoints become the
+                # parent's lower bound on d; no sector upper endpoint carries.
+                # A parent witness inside T changes side, one disjoint from T
+                # keeps its side, and a mixed witness (not a pure-sector
+                # operator after H_T) is dropped; survivors are revalidated
+                # against the child by the shared tail below.
+                floor = self.full.lower
+                sector_floor = _min_upper(self.sector["X"].lower,
+                                          self.sector["Z"].lower)
+                if floor is None:
+                    floor = sector_floor
+                elif sector_floor is not None:
+                    floor = max(floor, sector_floor)
+                out.full = self.full
+                out.sector = {side: Interval(floor, None) for side in ("X", "Z")}
+                moved = {"X": [], "Z": []}
+                for side in ("X", "Z"):
+                    for witness in self.witnesses[side]:
+                        support = set(witness.get("support", ()))
+                        if support <= tset:
+                            moved[opposite_sector_name(side)].append(
+                                _copy_small_mapping(witness))
+                        elif not (support & tset):
+                            moved[side].append(_copy_small_mapping(witness))
+                out.witnesses = moved
+                out.conditions.append({"cell": "E-LOCAL-HADAMARD split subset",
+                                       "status": "structural",
+                                       "qubits": qubits})
+            elif qubits:
                 # §4.27: the full distance carries exactly (d' = d,
                 # weight-preserving conjugation), and the sector distances
                 # exchange exactly (d'_X = d_Z, d'_Z = d_X). Witnesses swap
@@ -780,63 +832,61 @@ class DistanceLedger:
                 # sector's endpoints as the graft price does, and `w_avoid`
                 # pins the selected sector exactly. Recorded as a structural
                 # cell, plus a conditional cell when a price is supplied.
-                if selected in ("X", "Z"):
-                    sel_lower = self.sector[selected].lower
-                    opp_lower = self.sector[other].lower
-                    opp_lower_less_one = (None if opp_lower is None
-                                          else max(opp_lower - 1, 0))
-                    opp_upper = self.sector[other].upper
-                    sel = Interval(sel_lower, None)
-                    opp = _transport_interval(opp_lower_less_one, opp_upper)
-                    price = hypothesis.get("peel_price")
-                    if price is not None:
-                        if not isinstance(price, dict):
-                            raise NoDerivation("peel price hypothesis must be an object")
-                        evidence = price.get("evidence")
-                        if not isinstance(evidence, str) or not evidence.strip():
-                            raise NoDerivation("peel price requires an evidence reference")
-                        w_expose = price.get("w_expose")
-                        w_avoid = price.get("w_avoid")
-                        if w_expose is None and w_avoid is None:
-                            raise NoDerivation("peel price needs w_expose, w_avoid, or both")
-                        if w_expose is not None and (not isinstance(w_expose, int)
-                                                     or isinstance(w_expose, bool)
-                                                     or w_expose < 0):
-                            raise NoDerivation("peel price w_expose must be a nonnegative integer")
-                        if w_avoid is not None and (not isinstance(w_avoid, int)
-                                                    or isinstance(w_avoid, bool)
-                                                    or w_avoid <= 0):
-                            raise NoDerivation("peel price w_avoid must be a positive integer")
-                        if w_expose is not None:
-                            # d_sigma' = min(d_sigma, w_expose): the price is
-                            # indexed to the opposite sector, as the graft's.
-                            opp = _transport_interval(
-                                _min_upper(opp_lower, w_expose),
-                                _min_upper(opp_upper, w_expose))
-                        if w_avoid is not None:
-                            # d_tau' = w_avoid exactly; a value below the
-                            # carried selected lower bound contradicts §4.28
-                            # and is refused, not widened.
-                            if sel_lower is not None and w_avoid < sel_lower:
-                                raise NoDerivation(
-                                    "peel price w_avoid %d is below the carried "
-                                    "selected-sector lower bound %d" % (w_avoid, sel_lower))
-                            sel = Interval(w_avoid, w_avoid)
-                        out.conditions.append({
-                            "cell": "E-PEEL price", "status": "conditional",
-                            "evidence": evidence, "selected_sector": selected,
-                            "exposure_sector": other,
-                            "w_expose": w_expose, "w_avoid": w_avoid})
-                    out.sector = {selected: sel, other: opp}
-                    # d' = min(d_tau', d_sigma'): both endpoints are minima of
-                    # the sector endpoints (`_min_upper` reads None as +inf,
-                    # which is the k = 0 reading of a missing lower bound).
-                    out.full = _transport_interval(
-                        _min_upper(sel.lower, opp.lower),
-                        _min_upper(sel.upper, opp.upper))
-                else:
-                    out.full = Interval(0, None)
-                    out.sector = {side: Interval(0, None) for side in ("X", "Z")}
+                if selected not in ("X", "Z"):
+                    raise Malformed("E-PEEL operation requires sector 'X' or 'Z'")
+                sel_lower = self.sector[selected].lower
+                opp_lower = self.sector[other].lower
+                opp_lower_less_one = (None if opp_lower is None
+                                      else max(opp_lower - 1, 0))
+                opp_upper = self.sector[other].upper
+                sel = Interval(sel_lower, None)
+                opp = _transport_interval(opp_lower_less_one, opp_upper)
+                price = hypothesis.get("peel_price")
+                if price is not None:
+                    if not isinstance(price, dict):
+                        raise NoDerivation("peel price hypothesis must be an object")
+                    evidence = price.get("evidence")
+                    if not isinstance(evidence, str) or not evidence.strip():
+                        raise NoDerivation("peel price requires an evidence reference")
+                    w_expose = price.get("w_expose")
+                    w_avoid = price.get("w_avoid")
+                    if w_expose is None and w_avoid is None:
+                        raise NoDerivation("peel price needs w_expose, w_avoid, or both")
+                    if w_expose is not None and (not isinstance(w_expose, int)
+                                                 or isinstance(w_expose, bool)
+                                                 or w_expose < 0):
+                        raise NoDerivation("peel price w_expose must be a nonnegative integer")
+                    if w_avoid is not None and (not isinstance(w_avoid, int)
+                                                or isinstance(w_avoid, bool)
+                                                or w_avoid <= 0):
+                        raise NoDerivation("peel price w_avoid must be a positive integer")
+                    if w_expose is not None:
+                        # d_sigma' = min(d_sigma, w_expose): the price is
+                        # indexed to the opposite sector, as the graft's.
+                        opp = _transport_interval(
+                            _min_upper(opp_lower, w_expose),
+                            _min_upper(opp_upper, w_expose))
+                    if w_avoid is not None:
+                        # d_tau' = w_avoid exactly; a value below the
+                        # carried selected lower bound contradicts §4.28
+                        # and is refused, not widened.
+                        if sel_lower is not None and w_avoid < sel_lower:
+                            raise NoDerivation(
+                                "peel price w_avoid %d is below the carried "
+                                "selected-sector lower bound %d" % (w_avoid, sel_lower))
+                        sel = Interval(w_avoid, w_avoid)
+                    out.conditions.append({
+                        "cell": "E-PEEL price", "status": "conditional",
+                        "evidence": evidence, "selected_sector": selected,
+                        "exposure_sector": other,
+                        "w_expose": w_expose, "w_avoid": w_avoid})
+                out.sector = {selected: sel, other: opp}
+                # d' = min(d_tau', d_sigma'): both endpoints are minima of
+                # the sector endpoints (`_min_upper` reads None as +inf,
+                # which is the k = 0 reading of a missing lower bound).
+                out.full = _transport_interval(
+                    _min_upper(sel.lower, opp.lower),
+                    _min_upper(sel.upper, opp.upper))
                 out.conditions.append({"cell": "E-PEEL", "status": "structural",
                                        "carried": "selected-lower,opposite-lower-less-one,"
                                                   "opposite-upper,full-min",
@@ -855,12 +905,49 @@ class DistanceLedger:
             new_qubits = tuple(operation.get("new_qubits", ()))
             additions = list(operation.get("additions", ()))
             added_sectors = {record[0] for record in additions if record}
+            loss = hypothesis.get("extend_distance_loss")
+            if loss is not None and not new_qubits:
+                raise NoDerivation("extend_distance_loss applies only when E-EXTEND "
+                                   "adds qubits (Delta nonempty); with Delta empty "
+                                   "the lower endpoints already carry")
             if new_qubits:
                 # §4.30: with a namespace change no distance rule is derivable;
                 # every interval resets its lower endpoint and only
                 # child-valid witnesses supply upper endpoints.
                 out.full = Interval(0, None)
                 out.sector = {side: Interval(0, None) for side in ("X", "Z")}
+                if loss is not None:
+                    # §4.30 distance-loss conditional cell (issue #677): a supplied,
+                    # sourced loss ell_tau licenses d'_tau >= d_tau - ell_tau,
+                    # so the child lower endpoint is max(0, L_tau - ell_tau).
+                    # The consumer checks shape only, never the loss itself.
+                    if not isinstance(loss, dict):
+                        raise NoDerivation("extend_distance_loss hypothesis must be an object")
+                    evidence = loss.get("evidence")
+                    if not isinstance(evidence, str) or not evidence.strip():
+                        raise NoDerivation("extend_distance_loss requires a nonempty "
+                                           "evidence reference")
+                    losses = {side: loss.get("loss_" + side) for side in ("X", "Z")}
+                    if all(v is None for v in losses.values()):
+                        raise NoDerivation("extend_distance_loss needs loss_X, loss_Z, or both")
+                    for side, value in losses.items():
+                        if value is None:
+                            continue
+                        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                            raise NoDerivation("extend_distance_loss loss_%s must be a "
+                                               "nonnegative integer" % side)
+                        parent_lower = self.sector[side].lower
+                        if parent_lower is None:
+                            raise NoDerivation("extend_distance_loss loss_%s needs a parent "
+                                               "%s distance (the parent has no %s logical)"
+                                               % (side, side, side))
+                        out.sector[side] = Interval(max(parent_lower - value, 0), None)
+                    out.full = Interval(min(out.sector["X"].lower, out.sector["Z"].lower),
+                                        None)
+                    out.conditions.append({
+                        "cell": "E-EXTEND distance loss", "status": "conditional",
+                        "evidence": evidence,
+                        "loss_X": losses["X"], "loss_Z": losses["Z"]})
             else:
                 # Δ = ∅: treated exactly as a C-ADD-CHECK sequence (§4.30):
                 # carry the lower endpoints and rebuild every upper endpoint
@@ -873,6 +960,135 @@ class DistanceLedger:
             out.conditions.append({"cell": "E-EXTEND", "status": "structural",
                                    "new_qubits": list(new_qubits),
                                    "additions": len(additions)})
+        elif op == "E-SPLIT":
+            # §4.48: separating deletion over cut (Q_A, R).
+            # Unpriced: lower endpoints reset to zero; upper endpoints carry
+            # (d'_sigma <= d_sigma by t-fold deletion non-increase).
+            # Priced (`split_block_intervals`): given restriction-display
+            # intervals [L_A, U_A] and [L_B, U_B] for sector sigma with
+            # evidence, sector sigma becomes
+            # [min(L_A, L_B), min(U_A, U_B, U_sigma)], and full distance
+            # takes the endpoint-by-endpoint minimum when both sectors are
+            # priced.
+            out.full = Interval(0, self.full.upper)
+            out.sector = {side: Interval(0, self.sector[side].upper)
+                          for side in ("X", "Z")}
+            price = hypothesis.get("split_block_intervals")
+            if price is not None:
+                if not isinstance(price, dict):
+                    raise NoDerivation("E-SPLIT split_block_intervals hypothesis must be an object")
+                evidence = price.get("evidence")
+                if not isinstance(evidence, str) or not evidence.strip():
+                    raise NoDerivation("E-SPLIT priced cell requires a nonempty evidence reference")
+
+                def _parse_ep(val, label):
+                    if val is None or val == "inf":
+                        return None
+                    if isinstance(val, bool) or not isinstance(val, int) or val < 0:
+                        raise NoDerivation(
+                            "E-SPLIT %s endpoint must be a nonnegative integer or 'inf'" % label
+                        )
+                    return val
+
+                def _parse_block_iv(spec, label):
+                    if isinstance(spec, Interval):
+                        return spec
+                    if isinstance(spec, (list, tuple)) and len(spec) == 2:
+                        lo = _parse_ep(spec[0], label + ".lower")
+                        hi = _parse_ep(spec[1], label + ".upper")
+                        return _transport_interval(lo, hi)
+                    if isinstance(spec, dict) and "lower" in spec and "upper" in spec:
+                        lo = _parse_ep(spec["lower"], label + ".lower")
+                        hi = _parse_ep(spec["upper"], label + ".upper")
+                        return _transport_interval(lo, hi)
+                    raise NoDerivation(
+                        "E-SPLIT %s must be an Interval, [lower, upper], or {'lower': ..., 'upper': ...}"
+                        % label
+                    )
+
+                raw_block = operation.get("block")
+                block_set = None
+                if (isinstance(raw_block, (list, tuple, set, frozenset))
+                        and all(isinstance(q, int) and not isinstance(q, bool) and q >= 0
+                                for q in raw_block)):
+                    candidate_block = set(raw_block)
+                    if candidate_block <= set(new_state.Q):
+                        block_set = candidate_block
+
+                priced_sectors = []
+                for side in ("X", "Z"):
+                    if side not in price or price[side] is None:
+                        continue
+                    sec_spec = price[side]
+                    if not isinstance(sec_spec, dict) or "A" not in sec_spec or "B" not in sec_spec:
+                        raise NoDerivation(
+                            "E-SPLIT split_block_intervals[%s] must supply both 'A' and 'B' intervals"
+                            % side
+                        )
+                    iv_a = _parse_block_iv(sec_spec["A"], "%s.A" % side)
+                    iv_b = _parse_block_iv(sec_spec["B"], "%s.B" % side)
+                    lo = _min_upper(iv_a.lower, iv_b.lower)
+                    hi = _min_upper(_min_upper(iv_a.upper, iv_b.upper), self.sector[side].upper)
+                    if lo is None and new_state.k() > 0:
+                        raise NoDerivation(
+                            "E-SPLIT split_block_intervals[%s] claims infinite distance on a k > 0 child"
+                            % side
+                        )
+                    if hi is not None and new_state.k() == 0:
+                        raise NoDerivation(
+                            "E-SPLIT split_block_intervals[%s] claims finite upper bound on a k = 0 child"
+                            % side
+                        )
+                    bare_w1 = _bare_weight_one_logicals(new_state, side)
+                    if bare_w1:
+                        if lo is None or lo > 1:
+                            raise NoDerivation(
+                                "E-SPLIT split_block_intervals[%s] lower bound %s "
+                                "contradicts validated weight-1 %s-logical [%d] in the child"
+                                % (side, "inf" if lo is None else lo, side, bare_w1[0])
+                            )
+                        if block_set is not None:
+                            for q in bare_w1:
+                                if q in block_set:
+                                    if iv_a.lower is None or iv_a.lower > 1:
+                                        raise NoDerivation(
+                                            "E-SPLIT split_block_intervals[%s].A lower bound %s "
+                                            "contradicts validated weight-1 %s-logical [%d] in block A"
+                                            % (side, "inf" if iv_a.lower is None else iv_a.lower, side, q)
+                                        )
+                                else:
+                                    if iv_b.lower is None or iv_b.lower > 1:
+                                        raise NoDerivation(
+                                            "E-SPLIT split_block_intervals[%s].B lower bound %s "
+                                            "contradicts validated weight-1 %s-logical [%d] in block B"
+                                            % (side, "inf" if iv_b.lower is None else iv_b.lower, side, q)
+                                        )
+                    out.sector[side] = _transport_interval(lo, hi)
+                    priced_sectors.append(side)
+                if not priced_sectors:
+                    raise NoDerivation(
+                        "E-SPLIT split_block_intervals requires at least one sector ('X' or 'Z')"
+                    )
+                if len(priced_sectors) == 2:
+                    full_lo = _min_upper(out.sector["X"].lower, out.sector["Z"].lower)
+                    full_hi = _min_upper(
+                        _min_upper(out.sector["X"].upper, out.sector["Z"].upper),
+                        self.full.upper,
+                    )
+                    out.full = _transport_interval(full_lo, full_hi)
+                else:
+                    full_hi = _min_upper(
+                        _min_upper(out.sector["X"].upper, out.sector["Z"].upper),
+                        self.full.upper,
+                    )
+                    out.full = _transport_interval(0, full_hi)
+                out.conditions.append({
+                    "cell": "E-SPLIT priced",
+                    "status": "conditional",
+                    "evidence": evidence,
+                    "sectors": sorted(priced_sectors),
+                })
+            out.conditions.append({"cell": "E-SPLIT", "status": "structural"})
         elif op == "E-GLUE":
             right_ledger = (operation.get("right_ledger")
                             or operation.get("right")
@@ -933,7 +1149,9 @@ class DistanceLedger:
                     out.full.lower, _min_upper(out.full.upper, sector_upper)
                 )
         if extinction_applied and new_state.k() != 0:
-            out.full = Interval(out.full.lower, extinction_factor)
+            out.full = _transport_interval(
+                out.full.lower, _min_upper(out.full.upper, extinction_factor)
+            )
         return out
 
     def decide(self, target):
@@ -1178,6 +1396,24 @@ class DistanceLedger:
         if self.full.lower is None:
             return None
         return (self.full.lower + 1) // 2
+
+def _bare_weight_one_logicals(state, side):
+    """Return sorted qubit labels q such that {q} is a validated weight-1
+    ``side``-logical of ``state``: q appears in no opposite-sector displayed
+    row and {q} lies outside the same-sector stabilizer span."""
+    if side not in ("X", "Z"):
+        raise Malformed("sector must be X or Z")
+    opposite = opposite_sector_name(side)
+    opp_touched = 0
+    for row in state.sector_rows(opposite):
+        opp_touched |= row.mask
+    same_masks = tuple(row.mask for row in state.sector_rows(side))
+    found = []
+    for q in state.Q:
+        bit = 1 << q
+        if not (opp_touched & bit) and not in_span(bit, same_masks):
+            found.append(q)
+    return tuple(found)
 
 def validate_witness(state, side, support, claimed_weight):
     if side not in ("X", "Z"):

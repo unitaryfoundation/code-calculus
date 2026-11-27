@@ -98,10 +98,12 @@ inductive StateExpr where
 
   deriving Repr, BEq, DecidableEq
 
-/-- Commands: the kernel primitives plus the admitted conditional graft and the five Gate 6 conditional cells.
-    `addStab` carries its sector and support; `graft` carries the grafted
-    qubit, the spliced sector, and the ordered list of selected-sector row
-    identifiers. Prices are not command arguments. -/
+/-- Commands: the kernel primitives plus the admitted conditional graft, the five
+    Gate 6 conditional cells, and the admitted separating deletion (`E-SPLIT`,
+    2026-11-25). `addStab` carries its sector and support; `graft` carries the
+    grafted qubit, the spliced sector, and the ordered list of selected-sector
+    row identifiers; `split` carries the qubit block `Q_A` and the cut-row
+    identifiers `R`. Prices are not command arguments. -/
 inductive Command where
   | skip : Command
   | delete : Nat → Command
@@ -112,6 +114,11 @@ inductive Command where
   | extend : List Nat → List (Sector × List Nat) → Command
   | hadamard : List Nat → Command
   | rebase : Sector → List (List Nat) → Command
+  /-- `C-COLUMN-CNOT`: `cnotSwap(U)`, an invertible binary matrix `U ∈ GL(Q, 2)`
+      transforming X-rows by `U⁻¹` and Z-rows by `Uᵀ` while retaining `Q`,
+      generator identifiers, and `used` (`spec/OPERATIONAL_SEMANTICS.md` §4.42). -/
+  | cnotSwap : List (List Bool) → Command
+  | split : List Nat → List Nat → Command
   | seq : Command → Command → Command
   deriving Repr, BEq, DecidableEq
 

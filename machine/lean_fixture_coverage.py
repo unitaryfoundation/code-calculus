@@ -79,6 +79,119 @@ def _parse_lean_theorems(path):
     return out
 
 
+# The ranks of the example-local identifiers in the pinned enumeration, as the
+# Lean transcription writes them: `a1 = 0`, `b1 = 10000`, `p1 = 50000`,
+# `q1 = 60000` (lean/CodeCalculus/FixtureEvalReplay.lean, module comment).
+_IDENTIFIER_BASE = {"a": 0, "b": 10000, "p": 50000, "q": 60000}
+
+
+def _identifier_rank(identifier):
+    m = re.fullmatch(r"([a-z])(\d+)", identifier)
+    if m is None or m.group(1) not in _IDENTIFIER_BASE:
+        return None
+    return _IDENTIFIER_BASE[m.group(1)] + int(m.group(2)) - 1
+
+
+def _parse_lean_states(path):
+    """Return {def_name: ("state", (Q, rows, used)) | ("alias", other_def)}."""
+    with open(path) as f:
+        text = f.read()
+
+    def numbers(inner):
+        return [int(x) for x in inner.replace(" ", "").split(",") if x]
+
+    out = {}
+    pattern = (r"def\s+(fixture_W\d+_\w+)\s*:\s*CodeState\s*:=\s*"
+               r"(\{.*?\n\}|fixture_W\d+_\w+)")
+    for m in re.finditer(pattern, text, re.S):
+        name, body = m.group(1), m.group(2)
+        if body.startswith("fixture_"):
+            out[name] = ("alias", body)
+            continue
+        rows = [(int(i), sec, numbers(sup)) for (i, sec, sup) in re.findall(
+            r"id := (\d+), sector := Sector\.(\w), support := \[(.*?)\]", body)]
+        out[name] = ("state", (
+            numbers(re.search(r"Q := \[(.*?)\]", body).group(1)),
+            rows,
+            numbers(re.search(r"used := \[(.*?)\]", body).group(1))))
+    return out
+
+
+def _resolve_lean_state(states, name):
+    kind, value = states[name]
+    return _resolve_lean_state(states, value) if kind == "alias" else value
+
+
+def _json_state(fixtures_by_id, state):
+    """The JSON state in the Lean encoding, or (None, reason).
+
+    A state is compared only when the JSON gives `Q`, both row lists, and
+    `used`, with every identifier in the transcription convention. A `ref`
+    is followed to the state it names.
+    """
+    while isinstance(state, dict) and "ref" in state:
+        ref = state["ref"]
+        parts = ref.split(".")
+        state = fixtures_by_id.get(parts[0])
+        for key in parts[1:] or ["initial_state"]:
+            if isinstance(state, dict) and key not in state and "expected" in state:
+                state = state["expected"]
+            state = state.get(key) if isinstance(state, dict) else None
+        if state is None:
+            return None, "the ref %s does not resolve" % ref
+    if not isinstance(state, dict):
+        return None, "the fixture records no such state"
+    missing = [k for k in ("Q", "rows_X", "rows_Z", "used") if k not in state]
+    if missing:
+        return None, "the JSON state omits %s" % ", ".join(missing)
+    rows = []
+    for sector, key in (("X", "rows_X"), ("Z", "rows_Z")):
+        for row in state[key]:
+            rows.append((_identifier_rank(row["id"]), sector,
+                         [int(c) for c in row["support"]]))
+    used = [_identifier_rank(u) for u in state["used"]]
+    if any(r[0] is None for r in rows) or any(u is None for u in used):
+        return None, "an identifier is outside the transcription convention"
+    return (list(state["Q"]), rows, used), None
+
+
+def transcription_report():
+    """Compare every transcribed Lean state with the JSON state it names.
+
+    Rows are compared as a set per state, because the JSON lists the `X`
+    rows before the `Z` rows and a Lean display may interleave them.
+    """
+    states = _parse_lean_states(LEAN_FIXTURES)
+    with open(FIXTURES_JSON) as f:
+        fixtures_by_id = {fx["id"]: fx for fx in json.load(f)["fixtures"]}
+    matched, mismatched, not_compared = [], [], {}
+    for name in sorted(states):
+        m = re.fullmatch(r"fixture_(W\d+)_(\w+)", name)
+        fixture = fixtures_by_id.get(m.group(1))
+        if fixture is None:
+            not_compared[name] = "no such fixture in the JSON"
+            continue
+        suffix = m.group(2)
+        if suffix == "initial":
+            source = fixture.get("initial_state")
+        elif suffix == "result":
+            source = (fixture.get("expected") or {}).get("result_state")
+        else:
+            source = (fixture.get("initial_state") or {}).get(suffix)
+        expected, reason = _json_state(fixtures_by_id, source)
+        if expected is None:
+            not_compared[name] = reason
+            continue
+        q, rows, used = _resolve_lean_state(states, name)
+        if (q == expected[0] and sorted(rows) == sorted(expected[1])
+                and used == expected[2]):
+            matched.append(name)
+        else:
+            mismatched.append(name)
+    return {"matched": matched, "mismatched": mismatched,
+            "not_compared": not_compared}
+
+
 def _expected_theorem_name(def_name):
     # fixture_W0_initial -> fixture_W0_initial_wellFormed
     return def_name + "_wellFormed"
@@ -170,9 +283,19 @@ def main():
         print("    their Python outcomes are not cross-checked.")
     else:
         print("  - All fixtures are transcribed into Lean.")
+    t = transcription_report()
     print("  - State encodings differ (Python uses string ids/supports; Lean uses")
-    print("    integer ids/support lists), so structural equality is not checked.")
-    return 0
+    print("    integer ids/support lists). The transcription check below reads")
+    print("    the Lean source as text and does not run Lean.")
+    print()
+    print("Transcription against the JSON (Q, rows as a set, used):")
+    print("  matching Lean states:             %d" % len(t["matched"]))
+    print("  mismatching Lean states:          %s"
+          % (", ".join(t["mismatched"]) or "none"))
+    print("  not compared (%d):" % len(t["not_compared"]))
+    for name in sorted(t["not_compared"]):
+        print("    %s: %s" % (name, t["not_compared"][name]))
+    return 1 if t["mismatched"] else 0
 
 
 if __name__ == "__main__":

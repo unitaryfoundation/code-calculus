@@ -59,6 +59,15 @@ jobs:
         run: python3 machine/experiments/layout_conformance_harness.py
       - name: Pinned qLDPC replay
         run: python3 machine/experiments/issue21_challenge_replay.py qldpc-challenge
+      - name: Asserted discovery-loop stress battery
+        run: python3 machine/experiments/stress_campaign.py --challenge-root qldpc-challenge --output /tmp/stress_campaign_metrics.json
+      - name: Upload stress-battery metrics artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stress-campaign-metrics
+          path: /tmp/stress_campaign_metrics.json
+          if-no-files-found: warn
 
   lean:
     name: Lean build (weekly)

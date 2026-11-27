@@ -25,14 +25,26 @@ proofs.
  `spec/CLAIMS.md`.
 - `priced_calculus.py` — compatibility shim re-exporting the focused modules below.
 - `state.py`, `intervals.py`, `layout.py`, `connectivity.py`, `tower_prices.py`, `constructors.py`, `sequence.py`, `entrypoints.py` — the executable interval consumer, split by concern. `priced_calculus.py` remains the documented implementation path for `semantics.json` / `consumer.json`.
+- `layout_provider.py` — consumer-side layout provider (issue #666). It
+ synthesizes an honest planar layout from a state's displayed Tanner graph
+ in three stages: a spectral or classical-MDS embedding, a rank-preserving
+ packing onto an integer grid with at most `layers` qubits per site, and a
+ deterministic move/swap refinement of `(r^2, sum of squared row
+ diameters)`. It reports the exact radius, the locality class, and a
+ rectilinear total grid distance `W` as ledger metadata. It is ledger-only:
+ it never alters a state, it refuses to replace a document's existing
+ layout unless asked, and it writes no `contributed_by` credit of its own.
+ The layout is a witness with no optimality claim
+ (`spec/JUDGMENT_LAYER.md` §2d.5). Run it as
+ `python3 -m machine.layout_provider entry.json out.json --layers 1`.
 - `symplectic_calculus.py`: machine-side companion for general (non-CSS)
  stabilizer codes: the symplectic state, the move set (`SYM-SKIP`,
  `SYM-DELETE-CHECK`, `SYM-ADD-CHECK`, `SYM-DIRECT-SUM`, and the cross-layer
  `X-SYMPLECTIC-DOUBLE` and `X-SYMPLECTIC-HALVE`), and the Pauli-distance
- ledger. Not an admitted calculus layer: the
- extended-state layer is a Gate 6 decision that has not been taken, and the
- companion interval rules are maintained in the development notes
- (`symplectic_move_set_2026-11-10.md`).
+ ledger. Not an admitted calculus layer: Gate 6 was ratified on 2026-11-19
+ with the extended-state layer refused (`spec/GATES.md`), and the companion
+ interval rules are kept in the development repository, not in the
+ public tree.
 - `planner.py`, `certificates.py` — consumer-side planning and certificate
  helpers. Bounded searches (the planner's sector-targeted search and the
  strict-improvement enumeration fallback) attach a `heuristic_outcome`
@@ -46,6 +58,22 @@ proofs.
  `test_certificate_lean.py` pins the committed file to the generator. The
  translation is untrusted and the Python checker stays the prototype:
  `certificate-checked` attaches to the theorems `lake build` accepts.
+ A second format, the pruning tree
+ (`build_sector_lower_bound_tree_certificate`,
+ `check_sector_lower_bound_tree_certificate`, `lean_tree_instance_block`),
+ covers the vectors below the bound by classes, so its size follows the
+ search and not the ball: about 4,500 nodes against 174,437 vectors for
+ the bound 6 on the 30-qubit instance. It uses no code symmetry.
+ `ingestion.py` translates an external matrix presentation into a Lean
+ `CodeState` under the contract of `spec/REPRESENTATION.md` §9: the
+ canonical row order, the binding hash (`checks_sha256`, the one
+ qldpc-challenge computes), the Lean block with its kernel-checked binding
+ theorem, and `binding_failures`, which re-derives the hash from the Lean
+ source. `experiments/code_state_lean_instances.py` regenerates
+ `lean/CodeCalculus/IngestedInstances.lean`, prints a module for one
+ presentation with `--presentation FILE --name NAME`, and checks the
+ committed bindings with `--verify`; `test_code_state_lean.py` pins all
+ three.
  The planner enumerates removals (deletion, peel, puncture),
  screens them, transports the carried ledger, and ranks the survivors;
  `bounded_support_search` is its recorded-budget search over
@@ -73,6 +101,22 @@ proofs.
   replay. A family with `enabled: false` (e.g. `P-REBASE` by default) was
   never tested — distinct from one that failed. This is search control: it
   moves no ledger endpoint and discharges no obligation.
+  Each family also carries `refusals`, which counts its `apply_fail` drops by
+  the premise `apply_operation` named (row identifiers erased).
+- **Parent-level applicability report (issue #592):**
+  `move_applicability_report(state, weight_cap=None)` answers, for one parent
+  and no ledger, why each move family does or does not give a usable child.
+  It tries the whole candidate domain of `C-DELETE-CHECK`, `E-PEEL`,
+  `E-PUNCTURE`, `E-GRAFT`, `P-REBASE`, and `E-EXTEND`, where the planner's
+  enumerators skip candidates they can see will fail. Each candidate is
+  counted once: under `refusals` by the failed premise, under `screens` when
+  the child has a bare qubit, another validated weight-1 logical
+  (`weight_one_logicals`, so the child has distance 1), a disconnected Tanner
+  graph, or a check weight above `weight_cap`, or as `usable`. `blocking`
+  names the most frequent reason when nothing is usable, and `parent` holds
+  the per-sector column-weight histogram a peel depends on.
+  `experiments/applicability_report.py ENTRY.json [--weight-cap W]` prints
+  the report as a table. Search control only: no endpoint moves.
 - **Objective-aware search (qldpc-challenge #7116):** `bounded_sector_search(...,
   objective=...)` selects the axis on which a candidate counts as improving:
   `"distance"` (default, the carried sector interval), `"weight"` (maximum
@@ -109,13 +153,27 @@ proofs.
  `n` ceiling (`ORACLE_N_CEILING`).
 - `fixture_conformance.py` — full fixture-conformance evaluator.
 - `lean_fixture_coverage.py` — record-by-record conformance against the Lean
- transcription.
+ transcription. It reports which fixtures Lean transcribes (all but `W24`),
+ and compares each transcribed Lean state, read as text, with the JSON state
+ it names; it exits non-zero on a mismatch.
 - `fixtures/`: `mvp_fixtures.json` (the state-level fixture surface),
  `qldpc_10_2_3_b.json`, and `symplectic_fixtures.json` (the symplectic
  move set's records, replayed by the symplectic harness; not part of the
  acceptance surface).
 - `experiments/`: the priced-conformance harness
- (`priced_conformance_harness.py`), the symplectic-conformance harness
+ (`priced_conformance_harness.py`), the asserted discovery-loop stress battery
+ (`stress_campaign.py`, issue #577 — four quadrants covering oracle import
+ hygiene, all 17 admitted constructors + Pareto/domination brute-force +
+ small-`n` oracle differential, medium-`n` pinned gate differential with
+ operational prune precision and re-measure rate, invariant fuzzing,
+ adversarial inputs, and an `n = 100–120` scale ladder; per-quadrant
+ wall-clock budgets are advisory metrics rather than consumer-invariant
+ violations; committed baseline recorded at
+ `experiments/stress_campaign_report.json` (whitelisted in `.gitignore`);
+ PR CI runs fast smoke-sized trials in `test_stress_campaign.py` and the full
+ battery runs weekly in `.github/workflows/weekly.yml`; empirical
+ falsification only, never a proof),
+ the symplectic-conformance harness
  (`symplectic_conformance_harness.py`, with the exhaustive Pauli-distance
  oracle), the layout-conformance harness
  (`layout_conformance_harness.py`: random states and layouts, every
@@ -155,8 +213,14 @@ to a `spec/` section naming its operation:
 sh scripts/lint_docs.sh
 ```
 
-The pinned qLDPC replay additionally needs the challenge repository at a
-pinned commit (see [`../README.md`](../README.md)).
+The pinned qLDPC replay and the full discovery-loop stress battery additionally
+need the challenge repository at a pinned commit (see [`../README.md`](../README.md));
+the offline quadrants of `stress_campaign.py` run without a challenge checkout
+(pass `--ci` for the minimal PR CI smoke trial counts):
+
+```sh
+python3 machine/experiments/stress_campaign.py --quick
+```
 
 ## Authority
 

@@ -9,15 +9,15 @@ from typing import List, Sequence, Tuple
 def _as_matrix(U, n=None):
     if not isinstance(U, (list, tuple)) or not U:
         raise ValueError("U must be a non-empty square matrix")
-    rows = [list(r) for r in U]
-    if any(not isinstance(r, (list, tuple)) for r in rows):
+    if any(not isinstance(r, (list, tuple)) for r in U):
         raise ValueError("U rows must be lists")
+    rows = [list(r) for r in U]
     width = len(rows[0])
-    if any(len(r) != width for r in rows):
+    if any(len(r) != width for r in rows) or len(rows) != width:
         raise ValueError("U must be square")
     if n is not None and (len(rows) != n or width != n):
         raise ValueError("U must be %dx%d" % (n, n))
-    if any(isinstance(v, bool) or v not in (0, 1) for r in rows for v in r):
+    if any(type(v) is not int or v not in (0, 1) for r in rows for v in r):
         raise ValueError("U entries must be 0 or 1")
     return rows
 

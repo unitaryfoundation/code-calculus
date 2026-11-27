@@ -57,6 +57,17 @@
    "consumer_check": "Require a nonnegative integer w_expose and/or a positive integer w_avoid, and a nonempty evidence reference; do not validate the underlying minima. A w_avoid below the carried selected-sector lower bound contradicts the sound carry and is refused (no derivation), never widened.",
    "source": "spec/JUDGMENT_LAYER.md \u00a72c"
   },
+  "extend_distance_loss": {
+   "for": "E-EXTEND with a nonempty added qubit set Delta (OPERATIONAL_SEMANTICS.md section 4.30, Distance-loss cell, 2026-11-26). Per-sector losses, each optional, at least one present.",
+   "fields": [
+    "loss_X",
+    "loss_Z",
+    "evidence"
+   ],
+   "claimed_rule": "Hypothesis d'_tau >= d_tau - loss_tau on the exact sector distances; then sector tau's lower endpoint is max(0, L_tau - loss_tau), upper endpoints come from child-valid witnesses only, and the full distance's lower endpoint is the minimum of the two sector lower endpoints (0 for an unpriced sector).",
+   "consumer_check": "Require a nonnegative integer loss_X and/or loss_Z and a nonempty evidence reference; do not validate the loss. Refused (no derivation) when Delta is empty, when the parent has no tau-logical (no L_tau), and when a child-valid witness falls below the priced lower endpoint.",
+   "source": "spec/JUDGMENT_LAYER.md \u00a72a"
+  },
   "strict_improvement": {
    "fields": [
     "base_distance",
@@ -90,7 +101,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2c"
   },
   "seam_certificate": {
-   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE is a binary-only expression constructor (TERM_LANGUAGE.md §1-§2, decided 2026-11-18; contract-stated rung 5, Gate 6 unchecked) with an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31); both future-Pi fields are defined (STATE_MODEL.md §1a) and the CSS-level algebra of Theorem 4 / claim 7.4 is mechanized from AdmissibleSeam (GlueExtraction.lean), while the geometric move-word -> AdmissibleSeam step stays a recorded substrate gap; the certificate remains a conditional judgment over factor codes and a seam attesting admissibility.",
+   "for": "E-GLUE conditional seam certificate (§2e). E-GLUE is a binary-only expression constructor (TERM_LANGUAGE.md §1-§2, decided 2026-11-18; contract-stated rung 5, conditional cell) with an admitted evaluator transition (OPERATIONAL_SEMANTICS.md §4.31); both future-Pi fields are defined (STATE_MODEL.md §1a) and the CSS-level algebra of Theorem 4 / claim 7.4 is mechanized from AdmissibleSeam (GlueExtraction.lean), while the geometric move-word -> AdmissibleSeam step stays a recorded substrate gap; the certificate remains a conditional judgment over factor codes and a seam attesting admissibility.",
    "fields": [
     "move_word_A",
     "move_word_B",
@@ -128,6 +139,17 @@
    "claimed_rule": "Raises constructed-root lower endpoints conditionally from consumer-supplied sourced factor/classical bounds (L-HGP, L-NESTED-CSS, A-CONCAT, A-PRODUCT, A-DOUBLE); deterministic factor-to-child lifted witnesses tighten upper endpoints only after passing validate_witness on the constructed state; any lower endpoint exceeding a validated witness weight is refused (no_derivation).",
    "consumer_check": "Require positive integer bounds (or inf where permitted for L-HGP), a nonempty source string, and an explicit display_certificate (A-PRODUCT) or twisted_certificate (A-DOUBLE with non-empty wiring); never validate the truth of supplied factor lower bounds, only input shape and consistency with validated witnesses.",
    "source": "spec/JUDGMENT_LAYER.md §2g.1"
+  },
+  "split_block_intervals": {
+   "for": "E-SPLIT (separating deletion, admitted 2026-11-25, issue #546; OPERATIONAL_SEMANTICS.md section 4.48). Optional restriction-display distance intervals for one or both sectors X and Z.",
+   "fields": [
+    "evidence",
+    "X (optional object with A and B intervals)",
+    "Z (optional object with A and B intervals)"
+   ],
+   "claimed_rule": "For each supplied sector sigma: d_sigma(C') = min(d_sigma(C'|_A), d_sigma(C'|_B)) <= d_sigma(C), so the sector interval becomes [min(L_A, L_B), min(U_A, U_B, U_sigma)]. When both X and Z are supplied, full distance d takes the endpoint-by-endpoint minimum of the two priced sector intervals intersected with the parent full upper endpoint U.",
+   "consumer_check": "Require a nonempty evidence reference, at least one sector ('X' or 'Z'), and valid closed intervals [L_A, U_A] and [L_B, U_B] (nonnegative integers or 'inf'/None for k=0 blocks); refuse an infinite lower bound on a k' > 0 child, a finite upper bound on a k' = 0 child, a sector or block lower endpoint above 1 contradicted by a validated weight-1 singleton logical (a child qubit in no opposite-sector displayed row whose singleton lies outside the same-sector span), or any lower endpoint exceeding a carried/witness upper endpoint. Never otherwise validate the truth of the supplied block bounds; the cell remains conditional.",
+   "source": "spec/JUDGMENT_LAYER.md §2c"
   }
  },
  "interval_rules": {
@@ -160,7 +182,7 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-LOCAL-HADAMARD": {
-   "rule": "Admitted for T=Q and for T=empty (the identity: every interval and witness carries unchanged, and the child state is the parent). At T=Q the full-distance interval keeps both endpoints (d' = d, the weight-preserving conjugation; §4.27). The two sector intervals swap (both endpoints; d'_X = d_Z and d'_Z = d_X), and every witness's side swaps, then each revalidates against the child as a child-side witness of the swapped sector (an old sigma-side witness is checked as a bar-sigma-side witness of the child; the old X-side support's commutation is against the child's X span -- the old Z span -- which is exactly the old parent fact).",
+   "rule": "Admitted for T=Q and for T=empty (the identity: every interval and witness carries unchanged, and the child state is the parent). At T=Q the full-distance interval keeps both endpoints (d' = d, the weight-preserving conjugation; §4.27). The two sector intervals swap (both endpoints; d'_X = d_Z and d'_Z = d_X), and every witness's side swaps, then each revalidates against the child as a child-side witness of the swapped sector (an old sigma-side witness is checked as a bar-sigma-side witness of the child; the old X-side support's commutation is against the child's X span -- the old Z span -- which is exactly the old parent fact). Split subset (0 < |T| < |Q|, admitted 2026-11-26, §4.27(b)): refused unless T is contained in Q and both row spaces split along T (no derivation otherwise). The full-distance interval keeps both endpoints (d' = d); both sector lower endpoints become max(full lower, min(X lower, Z lower)) since d'_sigma >= d; both sector upper endpoints reset to +inf. A witness supported inside T swaps side, one disjoint from T keeps its side, a mixed witness is dropped; survivors revalidate against the child. The sector intervals are never swapped at a split subset.",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-PEEL": {
@@ -172,12 +194,20 @@
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-EXTEND": {
-   "rule": "With Delta = empty the move is a C-ADD-CHECK sequence (§4.30): every sector carries its lower endpoint and rebuilds its upper endpoint from child-valid witnesses (adding a check can only raise a distance, so the pre-change upper endpoint is not a sound bound). With Delta nonempty no distance rule is derivable and none is admitted: every interval's lower endpoint resets to zero and only child-valid witnesses supply upper endpoints.",
+   "rule": "With Delta = empty the move is a C-ADD-CHECK sequence (§4.30): every sector carries its lower endpoint and rebuilds its upper endpoint from child-valid witnesses (adding a check can only raise a distance, so the pre-change upper endpoint is not a sound bound). With Delta nonempty no distance rule is derivable and none is admitted: every interval's lower endpoint resets to zero and only child-valid witnesses supply upper endpoints. Under a supplied extend_distance_loss hypothesis (Delta nonempty only), sector tau's lower endpoint is max(0, L_tau - loss_tau) instead (§4.30, Distance-loss cell).",
    "source": "spec/JUDGMENT_LAYER.md §2b"
   },
   "E-GLUE": {
    "rule": "Evaluator transition admitted (OPERATIONAL_SEMANTICS.md §4.31); the ledger transport is the §2e/§2f conditional cell. Lower endpoints: in every sector and the full distance, the minimum of the two factor ledgers' lower endpoints (the glued code is the direct sum with seam checks added; the direct sum's sector distances are the factor minima and adding a check never lowers a distance, so each glued distance is at least the minimum of the factor distances, OPERATIONAL_SEMANTICS.md §4.31). Upper endpoints: only the Z sector's, as the minimum of the two factors' Z upper endpoints, and only under an admissible seam certificate (identical move words with an evidence reference, §2e); the X and full upper endpoints are left to witnesses valid in the child: both factors' witnesses are carried into the glued child and kept only where they revalidate there (a factor witness meeting an opposite-sector seam check in an odd number of qubits, or turned into a stabilizer by a seam row, is dropped), so a surviving minimum-weight Z witness closes the Z interval without the certificate's claim (OPERATIONAL_SEMANTICS.md section 4.31, instance-wise equality, 2026-11-10). The consumer's ledger transport requires an admissible certificate and otherwise has no derivation, although §2f records the lower endpoints as sound without one. No scalar relation d = min(d_A, d_B) is admitted, and the logical-witness and boundary/edge-label fields are defined as future-Pi type sketches (STATE_MODEL.md §1/§1a).",
    "source": "spec/JUDGMENT_LAYER.md §2f"
+  },
+  "C-COLUMN-CNOT": {
+   "rule": "Sector endpoints transform by the computed window [ceil(L_sigma / rho_sigma^-), rho_sigma U_sigma] using the four norms of U in GL(Q, 2); full-distance endpoints follow the sector minima. Witnesses are not carried automatically and must be transported by the sector map and revalidated in the child (spec/OPERATIONAL_SEMANTICS.md §4.42).",
+   "source": "spec/JUDGMENT_LAYER.md §2k"
+  },
+  "E-SPLIT": {
+   "rule": "Unpriced: reset lower endpoints to zero in every sector and the full distance; carry parent upper endpoints by t-fold deletion non-increase (d'_sigma <= d_sigma, d' <= d) and tighten with surviving or new child-valid witnesses; exact unpriced distances are unavailable (spec/OPERATIONAL_SEMANTICS.md §4.48). Priced (conditional_inputs.split_block_intervals): for each supplied sector sigma, [min(L_A, L_B), min(U_A, U_B, U_sigma)] from restriction-display intervals [L_A, U_A] and [L_B, U_B]; when both X and Z are supplied, full distance takes the endpoint-by-endpoint minimum intersected with parent U.",
+   "source": "spec/JUDGMENT_LAYER.md §2b"
   }
  },
  "geometry": {
@@ -214,12 +244,20 @@
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "E-LOCAL-HADAMARD": {
-    "rule": "Q and every support are unchanged (only sector labels swap); r' = r. Exact.",
+    "rule": "T = Q: Q and every support are unchanged (only sector labels swap); r' = r. Exact. Split subset: Q and the layout are unchanged and every output support is a subset of a parent support; r' is recomputed over the child display and r' <= r.",
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
    },
    "P-REBASE": {
     "rule": "Q is unchanged and the layout is unchanged, but the selected sector's rows are replaced by GL(m,2) mixes whose supports are symmetric differences of the old supports; r' = max { diam_lambda(s) : s in rows' }, recomputed, with no guaranteed direction.",
     "source": "spec/JUDGMENT_LAYER.md §2d.2"
+   },
+   "C-COLUMN-CNOT": {
+    "rule": "Q and layout lambda are unchanged, while row supports change under U in GL(Q, 2); r' = max { diam_lambda(s) : s in rows' }, recomputed, with no guaranteed direction.",
+    "source": "spec/JUDGMENT_LAYER.md §2d.5"
+   },
+   "E-SPLIT": {
+    "rule": "Q and layout lambda are unchanged; r' = max { diam_lambda(s) : s in rows' }, exact, so r' <= r, and layout honesty is preserved (spec/OPERATIONAL_SEMANTICS.md §4.48).",
+    "source": "spec/JUDGMENT_LAYER.md §2d.5"
    },
    "E-EXTEND": {
     "rule": "Not inherited: the parent layout covers Q only, so a layout on Q union Delta must be supplied. When it is, r' = max(r, max { diam_lambda'(s) : s in the new rows }), so r' >= r. With Delta = empty the new rows are C-ADD-CHECK rows and the same rule applies.",
@@ -248,11 +286,59 @@
    "predicate": "preserves_U(C): for U = prod_j exp(i eps_j theta_j G_j) with pairwise commuting Hermitian Pauli generators G_j, whether U maps the codespace V(C) into itself (carrier: span; CSS displays only).",
    "carry_rules": {
     "C-SKIP": "carries",
-    "C-ADD-CHECK": "adding row s: carries at every angle when all G_j commute with s; at all angles pi/4, carries iff V_s is in the child stabilizer group S(C') (one span-membership check at s); when some G_j anticommutes with s and some angle is not pi/4, not yet defined (logical-witness eigenvalues); addressability and logical action remain not yet defined",
-    "C-DELETE-CHECK": "does not carry (false; counterexample on two qubits in OPERATIONAL_SEMANTICS.md §4.37); at pi/4 the child's own Lemma 3 test over its remaining rows decides it",
+    "C-ADD-CHECK": "adding row s: carries iff Phi_J(s)(l) = sum_{j in J(s)} eps_j theta_j l_j is in pi Z for every sign pattern l in Lambda(S(C'), J(s)), the eigenvalue patterns of the generators anticommuting with s that occur on V(C') (Corollary 7.1, OPERATIONAL_SEMANTICS.md §4.37); instances: every G_j commuting with s (carries at every angle) and all angles pi/4 (carries iff V_s is in S(C')). Before issue #572 the non-pi/4 anticommuting branch was not yet defined; decided for rational angles theta_j = a_j pi (a_j rational) by exact rational arithmetic over at most 2^|J(s)| sign patterns and membership tests; not yet defined as a decision for other angles",
+    "C-DELETE-CHECK": "does not carry (false; counterexample on two qubits in OPERATIONAL_SEMANTICS.md §4.37); the child's own Lemma 7 test over its remaining rows decides it at every rational angle",
     "C-DIRECT-SUM": "carries when U is supported on one summand",
     "C-SEQUENCE": "carries by composition of the step cells"
    },
+   "source": "spec/JUDGMENT_LAYER.md §2h",
+   "decision": "Lemma 7 (OPERATIONAL_SEMANTICS.md §4.37): preserves_U(C) iff, for every displayed row g, Phi_J(g)(l) is in pi Z for every l in Lambda(S(C), J(g)); at all angles pi/4 this is Lemma 3 (V_g in S(C)); a decision procedure for rational angles only (OPERATIONAL_SEMANTICS.md §4.37, Angle domain)."
+  },
+  "frame_reading": {
+   "frame": "A logical-witness field log (STATE_MODEL.md §1a) supplied with the state as a parameter of the predicate, like the gate; not state data, not carried by the consumer ledger. Consistent on C when its X- and Z-entries have even overlap (F1) and the eigenvalues of every set of one sector's entries summing into the row span multiply to +1 (F2); then the frame group S_F(C) = <S(C), eps_e f_e> is a stabilizer group and the frame sector V_F(C) is nonzero (Lemma 8).",
+   "angle_domain": "Every any-angle test is a decision procedure for rational angles theta_j = a_j pi with a_j rational and nonnegative: Phi(l) = r(l) pi with r(l) = sum eps_j l_j a_j rational, Phi in pi Z iff r(l) is an integer, exp(2i Phi) = -1 iff r(l) is in 1/2 + Z, and the sector phase z = exp(i r pi) is named by r mod 2. Exact rational arithmetic, no floating-point tolerance. For other angles no decision procedure is admitted and the cells that need one are not yet defined. Each test enumerates at most 2^m sign patterns and 2^m membership tests, m the number of generators involved (OPERATIONAL_SEMANTICS.md §4.37, Angle domain).",
+   "preserves_in_frame": {
+    "predicate": "preserves_U(C | F): U maps V_F(C) into V(C) (F consistent on C). Holds iff Phi_J(g)(l) is in pi Z for every displayed row g and every l in Lambda(S_F(C), J(g)) (Lemma 9). It maps the sector into V(C), not into itself; sector-to-sector follows from sector_phase, not from this predicate.",
+    "carry_rules": {
+     "C-SKIP": "carries",
+     "C-ADD-CHECK": "three cases on the transported frame F': (1) F' consistent on C' and S_F(C) contained in S_F'(C'): carries iff Phi_J(s)(l) is in pi Z for every l in Lambda(S_F'(C'), J(s)) (Corollary 9.1); when F' resolves J(s) (each L_j = G_j0 G_j acts on the sector as its eigenvalue l_j^(F')) this is the single equation sum_{j in J(s)} eps_j theta_j l_j^(F') in pi Z, the source's eigenvalue condition; (2) F' consistent and the inclusion fails: does not carry (false; one-qubit counterexample), the child decided by Lemma 9; (3) F' not consistent on C': not yet defined (the predicate is not stated at the child)",
+     "C-DELETE-CHECK": "does not carry (false; three-qubit counterexample in OPERATIONAL_SEMANTICS.md §4.37)",
+     "C-DIRECT-SUM": "carries on C_1 + C_2 when U is supported on Q_1, frame F_1 + F_2 extended by zero",
+     "C-SEQUENCE": "carries by composition of the step cells"
+    }
+   },
+   "sector_phase": {
+    "predicate": "phase_U(C | F) = z: U acts on V_F(C) as the scalar z, the logical action of U on a frame sector (F consistent on C). Holds iff exp(i Phi(l)) = z for every l in Lambda(S_F(C), {1..q}) (Lemma 10); for rational angles z = exp(i r pi) is named by a rational r in [0, 2). For an equal-syndrome family that F resolves, the scalar exists iff sum_j eps_j theta_j l_j^(F) = m pi and is (-1)^m (Corollary 10.1, the source's Theorem 1).",
+    "carry_rules": {
+     "C-SKIP": "carries",
+     "C-ADD-CHECK": "(1) F' consistent on C' and S_F(C) contained in S_F'(C'): carries with the same z; (2) F' consistent and the inclusion fails: does not carry (false; one-qubit counterexample); (3) F' not consistent on C': not yet defined",
+     "C-DELETE-CHECK": "does not carry (false; three-qubit counterexample)",
+     "C-DIRECT-SUM": "carries with the same z when U is supported on one summand",
+     "C-SEQUENCE": "carries by composition of the step cells"
+    }
+   },
+   "image": {
+    "predicate": "image_U(C; e) = P: U^dagger f_e U = P on V(C) for an entry e of a well-formed frame; with preserves_U(C), the logical action of U by conjugation (Lemma 11). All angles pi/4: holds iff P^{-1} f_e V_{f_e} is in S(C). Every angle, P = eta f_e with eta = +1 or -1: holds iff exp(2i Phi_J(f_e)(l)) = eta for every l in Lambda(S(C), J(f_e)). Other target and angle pairs: open.",
+    "carry_rules": {
+     "C-SKIP": "carries",
+     "C-ADD-CHECK": "carries for every entry the transport keeps",
+     "C-DELETE-CHECK": "does not carry (false; three-qubit counterexample)",
+     "C-DIRECT-SUM": "carries when U is supported on one summand; an entry of the other summand has image f_e",
+     "C-SEQUENCE": "carries by composition of the step cells"
+    }
+   },
+   "addresses": {
+    "predicate": "addresses_U(C; F, A): preserves_U(C) and U commutes on V(C) with f_e for every entry e of F outside A (Lemma 7 and Lemma 11 with P = f_e). When the classes outside A span a nondegenerate subspace of the logical space, U acts as the identity on the logical qubits they generate. The field carries no pairing of entries into qubits.",
+    "carry_rules": {
+     "C-SKIP": "carries",
+     "C-ADD-CHECK": "addresses_U(C'; F', A n F') holds iff the preserves_U test at s (Corollary 7.1)",
+     "C-DELETE-CHECK": "does not carry (false; three-qubit counterexample)",
+     "C-DIRECT-SUM": "carries on C_1 + C_2 when U is supported on Q_1, frame F_1 + F_2 extended by zero, and A is within F_1",
+     "C-SEQUENCE": "carries by composition of the step cells"
+    }
+   },
+   "not_defined": "No operation identifier is minted and C = (Q, X, Z, pres, used) is unchanged. No pairing of frame entries into logical qubits, no mixed (Y-type) frame entries, and no cells for E-GRAFT or the Gate 6 transitions.",
+   "introduced_in": "stdCSS-3 / v0.3.2",
    "source": "spec/JUDGMENT_LAYER.md §2h"
   },
   "equal_syndrome_weight_floor": {

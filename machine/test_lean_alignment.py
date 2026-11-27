@@ -152,8 +152,7 @@ class FixtureCoverageAlignmentTests(unittest.TestCase):
         import lean_fixture_coverage as lfc
         r = lfc.coverage_report()
         self.assertEqual(r["missing_theorems"], [])
-        self.assertEqual(r["lean_uncovered_fixtures"],
-                         ["W24", "W25", "W26", "W27", "W28", "W29"])
+        self.assertEqual(r["lean_uncovered_fixtures"], ["W24"])
 
     def test_eval_replay_module_present(self):
         path = os.path.join(ROOT, "lean", "CodeCalculus", "FixtureEvalReplay.lean")

@@ -15,11 +15,12 @@ that the display retains every natural row. That hypothesis is the
 independence of the natural rows of each sector, which is not
 proved here.
 
-The closed form for `L-HGP` is proved in `lean/extra/ClosedK.lean` from
-the rank axioms `hgp_rankX`, `hgp_rankZ`, and `hgp_arith`; the closed
-form for `A-PRODUCT` is proved there from `product_rankX`, `product_rankZ`,
-and `product_arith`. Both need the rank of a tensor-product matrix, which
-the mask-list rank lemmas of `ConstructorRank.lean` do not give.
+The closed form for `L-HGP` is proved in `ClosedK.lean` from the rank
+theorems `hgp_rankX` and `hgp_rankZ` and the arithmetic `hgp_arith`; the
+closed form for `A-PRODUCT` is proved there from `product_rankX`,
+`product_rankZ`, and `product_arith`. Both need the rank of a
+tensor-product matrix, which `TensorRank.lean`, `HgpRank.lean`, and
+`ProductRank.lean` supply.
 -/
 
 namespace CodeCalculus

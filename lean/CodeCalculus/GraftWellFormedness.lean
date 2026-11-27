@@ -1046,8 +1046,13 @@ theorem wf_of_eval_all {m : Command} {s t : CodeState} (h : Eval m s t)
     exact wf_graftState _ _ _ _ hwf hq htouch hlen hnodup hids hk
   | rebase _ _ _ hwf' => exact hwf'
   | hadamard _ _ hwf' => exact hwf'
+  | hadamardSplit _ _ _ hwf' _ _ => exact hwf'
   | peel _ _ _ _ _ hwf' => exact hwf'
   | puncture _ _ hwf' => exact hwf'
   | extend _ _ hwf' => exact hwf'
+  | cnotSwap _ _ hwf' => exact hwf'
+  | split _ _ _ _ _ heq =>
+    rw [heq]
+    exact wf_deleteAll _ _ hwf
 
 end CodeCalculus

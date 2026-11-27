@@ -319,18 +319,23 @@ theorem eval_rebase_k {σ : Sector} {M : List (List Nat)} {s t : CodeState}
 /-- `E-LOCAL-HADAMARD` preserves `n` (§4.27). -/
 theorem eval_hadamard_n {T : List Nat} {s t : CodeState}
     (h : Eval (Command.hadamard T) s t) : t.Q.length = s.Q.length := by
-  rw [eval_hadamard_eq h]
-  unfold hadamardState
-  split <;> rfl
+  rcases eval_hadamard_cases h with ⟨hg, hst⟩ | ⟨_, _, hst, _⟩
+  · rw [hst]
+    unfold hadamardState
+    split <;> rfl
+  · rw [hst]
+    rfl
 
 /-- `E-LOCAL-HADAMARD` preserves `k` (§4.27). -/
 theorem eval_hadamard_k {T : List Nat} {s t : CodeState}
     (h : Eval (Command.hadamard T) s t) : stateK t = stateK s := by
-  rw [eval_hadamard_eq h]
-  unfold hadamardState
-  split
-  · rfl
-  · exact stateK_swap s
+  rcases eval_hadamard_cases h with ⟨hg, hst⟩ | ⟨_, _, _, hk⟩
+  · rw [hst]
+    unfold hadamardState
+    split
+    · rfl
+    · exact stateK_swap s
+  · exact hk
 
 /-- `E-PEEL` preserves `k` (§4.28): `k' = k` exactly, from the well-formedness
     of input and output and the unique retirement of `r_id` and `q`. -/
@@ -453,6 +458,71 @@ theorem eval_extend_k {delta : List Nat} {adds : List (Sector × List Nat)}
       have hs := stateK_add_rows_length s hwf
       have ht := stateK_add_rows_length (extendState s delta adds) hwf'
       omega
+
+/-- `C-COLUMN-CNOT` preserves `n` (§4.42). -/
+theorem eval_cnotSwap_n {U : List (List Bool)} {s t : CodeState}
+    (h : Eval (Command.cnotSwap U) s t) : t.Q.length = s.Q.length := by
+  rw [eval_cnotSwap_eq h]
+  rfl
+
+/-- `C-COLUMN-CNOT` preserves `k` (§4.42): `Q` and displayed row count are
+    unchanged, and both input and output states are well-formed (relying on
+    the `EncodingWellFormed s'` premise carried by `Eval.cnotSwap`). -/
+theorem eval_cnotSwap_k {U : List (List Bool)} {s t : CodeState}
+    (h : Eval (Command.cnotSwap U) s t) (hwf : EncodingWellFormed s) :
+    stateK t = stateK s := by
+  cases h with
+  | cnotSwap _ hs' hwf' =>
+      subst hs'
+      have hQ : (cnotSwapState s U).Q.length = s.Q.length := rfl
+      have hR : (cnotSwapState s U).rows.length = s.rows.length := by
+        show (s.rows.map (cnotSwapRow s.Q U)).length = s.rows.length
+        exact List.length_map _
+      have hs := stateK_add_rows_length s hwf
+      have ht := stateK_add_rows_length (cnotSwapState s U) hwf'
+      omega
+
+/-- `E-SPLIT` preserves `n` (§4.48). -/
+theorem eval_split_n {QA R : List Nat} {s t : CodeState}
+    (h : Eval (Command.split QA R) s t) : t.Q.length = s.Q.length := by
+  rw [eval_split_eq h, deleteAll_Q]
+
+/-- Iterated `k` increase for `deleteAll` on distinct displayed rows of a
+    well-formed state (§4.48): `k' = k + |R|`. -/
+theorem stateK_deleteAll (R : List Nat) :
+    ∀ {s : CodeState}, EncodingWellFormed s → R.Nodup →
+      (∀ r ∈ R, DisplayedGenerator r s) →
+      stateK (deleteAll s R) = stateK s + R.length := by
+  induction R with
+  | nil =>
+      intro s _ _ _
+      rfl
+  | cons r rest ih =>
+      intro s hwf hnd hdisp
+      obtain ⟨row, hmem, hid⟩ := hdisp r List.mem_cons_self
+      have hind : IndependentGenerator r s := hid ▸ hwf.2.2.2.2.2.2.2 row hmem
+      have h1 : Eval (Command.delete r) s (deleteState s r) :=
+        Eval.delete ⟨row, hmem, hid⟩ hind rfl
+      have hk1 := stateK_delete_of_eval h1 hwf (ranksFit_of_wf s hwf)
+      have hnd' := List.nodup_cons.mp hnd
+      have hk2 := ih (wf_deleteState s r hwf) hnd'.2 (fun r' hr' => by
+        obtain ⟨row', hmem', hid'⟩ := hdisp r' (List.mem_cons_of_mem _ hr')
+        refine ⟨row', ?_, hid'⟩
+        show row' ∈ s.rows.filter (fun row => row.id ≠ r)
+        exact List.mem_filter.mpr ⟨hmem', decide_eq_true (fun h =>
+          hnd'.1 (by rw [← h, hid']; exact hr'))⟩)
+      show stateK (deleteAll (deleteState s r) rest) = stateK s + (r :: rest).length
+      rw [hk2, hk1, List.length_cons]
+      omega
+
+/-- `E-SPLIT` exact `k` bookkeeping (§4.48): `k' = k + |R|`. -/
+theorem eval_split_k {QA R : List Nat} {s t : CodeState}
+    (h : Eval (Command.split QA R) s t) (hwf : EncodingWellFormed s) :
+    stateK t = stateK s + R.length := by
+  cases h with
+  | split _ _ hRnd hRdisp _ hs' =>
+      subst hs'
+      exact stateK_deleteAll R hwf hRnd hRdisp
 
 /-- Determinism of `EvalExpr` across all thirteen state-expression constructors,
     choice-free (no `Classical.choice`). -/
@@ -647,6 +717,47 @@ theorem evalExpr_double_n_gen {e : StateExpr} {wiring : List (Nat × List Nat)}
       subst h1
       exact constructedState_n _ _
 
+/-- `k = 0` for `L-EMPTY` (§4.43). -/
+theorem evalExpr_empty_k {s : CodeState} (h : EvalExpr StateExpr.empty s) :
+    stateK s = 0 := by
+  cases h
+  rfl
+
+/-- `k = |Q|` for `L-FREE` (§4.43). -/
+theorem evalExpr_free_k {qs : List Nat} {s : CodeState}
+    (h : EvalExpr (StateExpr.free qs) s) :
+    stateK s = qs.length := by
+  cases h
+  rfl
+
+/-- General `n` lemma for `A-PULLBACK` on arbitrary sub-expressions (§4.43). -/
+theorem evalExpr_pullback_n_gen {e1 e2 eI : StateExpr}
+    {phi1 phi2 : List (Nat × Nat)} {s1 s2 sI s : CodeState}
+    (h1 : EvalExpr e1 s1) (h2 : EvalExpr e2 s2) (hI : EvalExpr eI sI)
+    (h : EvalExpr (StateExpr.pullback e1 e2 eI phi1 phi2) s) :
+    s.Q.length = (pullbackPairs s1 s2 phi1 phi2).length := by
+  cases h with
+  | pullback _ _ _ _ _ _ _ _ he1 he2 heI =>
+      have h1' := evalExpr_unique he1 h1
+      have h2' := evalExpr_unique he2 h2
+      have hI' := evalExpr_unique heI hI
+      subst h1'; subst h2'; subst hI'
+      exact constructedState_n _ _
+
+/-- General `n` lemma for `A-PUSHOUT` on arbitrary sub-expressions (§4.43). -/
+theorem evalExpr_pushout_n_gen {e1 e2 eS : StateExpr}
+    {psi1 psi2 : List (Nat × Nat)} {s1 s2 sS s : CodeState}
+    (h1 : EvalExpr e1 s1) (h2 : EvalExpr e2 s2) (hS : EvalExpr eS sS)
+    (h : EvalExpr (StateExpr.pushout e1 e2 eS psi1 psi2) s) :
+    s.Q.length = (pushoutClasses s1 s2 sS psi1 psi2).length := by
+  cases h with
+  | pushout _ _ _ _ _ _ _ _ he1 he2 heS =>
+      have h1' := evalExpr_unique he1 h1
+      have h2' := evalExpr_unique he2 h2
+      have hS' := evalExpr_unique heS hS
+      subst h1'; subst h2'; subst hS'
+      exact constructedState_n _ _
+
 /-! ## Section 3: Exact-distance discharge & seam-certificate equality bridge -/
 
 /-- The sector-distance field corresponding to a sector. -/
@@ -694,6 +805,7 @@ structure ExtMeasureLaws (dMeasure : ExtMeasure) : Prop where
     EncodingWellFormed s →
     Eval (Command.hadamard T) s t →
     T.isEmpty = false →
+    CoversQ T s.Q →
     dMeasure Field.dX t = dMeasure Field.dZ s ∧
     dMeasure Field.dZ t = dMeasure Field.dX s
   peel_rel : ∀ (q : Nat) (τ : Sector) (r_id : Nat) (s t : CodeState),
@@ -732,7 +844,7 @@ theorem extMeasureLaws_const (c : ExtNat) : ExtMeasureLaws (fun _ _ => c) where
   add_le := fun _ _ _ _ _ _ => ⟨ExtNat.le_refl c, ExtNat.le_refl c⟩
   graft_rel := fun _ _ _ _ _ _ _ => ⟨ExtNat.le_refl c, ExtNat.le_refl c⟩
   rebase_eq := fun _ _ _ _ _ _ => ⟨rfl, rfl⟩
-  hadamard_swap := fun _ _ _ _ _ _ => ⟨rfl, rfl⟩
+  hadamard_swap := fun _ _ _ _ _ _ _ => ⟨rfl, rfl⟩
   peel_rel := fun _ _ _ _ _ _ _ =>
     ⟨ExtNat.le_refl c, ExtNat.le_refl c, ExtNat.sub_one_le c⟩
   extend_nil_le := fun _ _ _ _ _ => ⟨ExtNat.le_refl c, ExtNat.le_refl c⟩
@@ -784,8 +896,10 @@ theorem extMeasureLaws_exact : ExtMeasureLaws exactExtMeasure where
           rw [← extNat_ofOption_exactDist_x, ← extNat_ofOption_exactDist_x, hd]
         · show exactDistanceExt Sector.Z (rebaseState s σ M) = exactDistanceExt Sector.Z s
           rw [← extNat_ofOption_exactDist_z, ← extNat_ofOption_exactDist_z, hd]
-  hadamard_swap := fun T s t _ h hne => by
+  hadamard_swap := fun T s t _ h hne hp => by
     cases h with
+    | hadamardSplit hsub _ _ _ _ _ =>
+        exact absurd hp (not_coversQ_of_properSubset hsub)
     | hadamard _ hs' _ =>
         subst hs'
         have hswap : hadamardState s T = swapState s := by
@@ -1121,8 +1235,8 @@ def ExtAnnTrue (dMeasure : ExtMeasure) (cs : List CodeState) : ExtAnn → Prop
     * `E-GLUE` X-sector or full-distance upper bounds, and Z-sector upper bound
       outside `seamCert`;
     * distance rows for any of the ten admitted constructors (§2g);
-    * `k` rows for `L-HGP` and `A-PRODUCT` (whose closed forms remain in the
-      non-audited `extra/ClosedK.lean` on four rank axioms). -/
+    * `k` rows for `L-HGP` and `A-PRODUCT` (whose closed forms are theorems
+      of `ClosedK.lean` and are not rules of this relation). -/
 inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
     (cs : List CodeState) : ExtAnn → Prop where
   -- Bridge between chain positions and concrete states (connects `EvalExpr`
@@ -1273,7 +1387,7 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
         (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.k)) (ExtAExpr.atom (.pos i Field.k)))
   | instHadamardD (i : Nat) (T : List Nat) (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
-      (hstep : Eval (Command.hadamard T) s t) :
+      (hstep : Eval (Command.hadamard T) s t) (hg : T.Perm s.Q ∨ T = []) :
       ExtDerives dMeasure seamCert cs
         (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.d)) (ExtAExpr.atom (.pos i Field.d)))
   | instHadamardWF (i : Nat) (T : List Nat) (s t : CodeState)
@@ -1287,12 +1401,12 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
         (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) f)) (ExtAExpr.atom (.pos i f)))
   | instHadamardSwapDX (i : Nat) (T : List Nat) (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
-      (hstep : Eval (Command.hadamard T) s t) (hT : T.isEmpty = false) :
+      (hstep : Eval (Command.hadamard T) s t) (hT : CoversQ T s.Q ∧ T.isEmpty = false) :
       ExtDerives dMeasure seamCert cs
         (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.dX)) (ExtAExpr.atom (.pos i Field.dZ)))
   | instHadamardSwapDZ (i : Nat) (T : List Nat) (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
-      (hstep : Eval (Command.hadamard T) s t) (hT : T.isEmpty = false) :
+      (hstep : Eval (Command.hadamard T) s t) (hT : CoversQ T s.Q ∧ T.isEmpty = false) :
       ExtDerives dMeasure seamCert cs
         (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.dZ)) (ExtAExpr.atom (.pos i Field.dX)))
   -- Gate 6: E-PEEL (§4.28)
@@ -1398,6 +1512,52 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
       (hstep : Eval (Command.extend [] adds) s t) :
       ExtDerives dMeasure seamCert cs
         (ExtAnn.le (ExtAExpr.atom (.pos i Field.d)) (ExtAExpr.atom (.pos (i + 1) Field.d)))
+  -- Admitted command: C-COLUMN-CNOT (§4.42; distance window is §2k / matrix-norm conditional)
+  | instCnotSwapN (i : Nat) (U : List (List Bool)) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.cnotSwap U) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.n)) (ExtAExpr.atom (.pos i Field.n)))
+  | instCnotSwapK (i : Nat) (U : List (List Bool)) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.cnotSwap U) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.k)) (ExtAExpr.atom (.pos i Field.k)))
+  | instCnotSwapWF (i : Nat) (U : List (List Bool)) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.cnotSwap U) s t) :
+      ExtDerives dMeasure seamCert cs (ExtAnn.wf (i + 1))
+  -- Admitted 2026-11-25: E-SPLIT (§4.48; separating deletion factors into deletions)
+  | instSplitN (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.n)) (ExtAExpr.atom (.pos i Field.n)))
+  | instSplitK (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.pos (i + 1) Field.k))
+          (ExtAExpr.add (ExtAExpr.atom (.pos i Field.k)) (ExtAExpr.const R.length)))
+  | instSplitWF (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs (ExtAnn.wf (i + 1))
+  | instSplitDX (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.le (ExtAExpr.atom (.pos (i + 1) Field.dX)) (ExtAExpr.atom (.pos i Field.dX)))
+  | instSplitDZ (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.le (ExtAExpr.atom (.pos (i + 1) Field.dZ)) (ExtAExpr.atom (.pos i Field.dZ)))
+  | instSplitD (i : Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.le (ExtAExpr.atom (.pos (i + 1) Field.d)) (ExtAExpr.atom (.pos i Field.d)))
   -- State expressions: uniform well-formedness across all 13 constructors
   | instExprWF (e : StateExpr) (s : CodeState)
       (he : EvalExpr e s) (hbase : ExprBaseWF e) :
@@ -1642,6 +1802,61 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
       (h : EvalExpr (StateExpr.nested HX HZ) s) :
       ExtDerives dMeasure seamCert cs
         (ExtAnn.eq (ExtAExpr.atom (.state s Field.n)) (ExtAExpr.const (matCols HX)))
+  -- State expressions: the v0.3.x stdCSS-3 inventory (§4.41, §4.43, §4.46, §4.47;
+  -- structural carry rows, no automatic distance rules)
+  | instConeN (DA DB F1 F0 : List (List Bool)) (s : CodeState)
+      (h : EvalExpr (StateExpr.cone DA DB F1 F0) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (matCols DA + DB.length)))
+  | instConeK (DA DB F1 F0 : List (List Bool)) (s : CodeState)
+      (h : EvalExpr (StateExpr.cone DA DB F1 F0) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.k))
+          (ExtAExpr.const
+            (coneN DA DB F1 F0 -
+              rankBitmasks (naturalMasks (coneN DA DB F1 F0) (coneVectors DA DB F1 F0) Sector.X) -
+              rankBitmasks (naturalMasks (coneN DA DB F1 F0) (coneVectors DA DB F1 F0) Sector.Z))))
+  | instEmptyN (s : CodeState)
+      (h : EvalExpr StateExpr.empty s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n)) (ExtAExpr.const 0))
+  | instEmptyK (s : CodeState)
+      (h : EvalExpr StateExpr.empty s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.k)) (ExtAExpr.const 0))
+  | instFreeN (qs : List Nat) (s : CodeState)
+      (h : EvalExpr (StateExpr.free qs) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n)) (ExtAExpr.const qs.length))
+  | instFreeK (qs : List Nat) (s : CodeState)
+      (h : EvalExpr (StateExpr.free qs) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.k)) (ExtAExpr.const qs.length))
+  | instPullbackN (e1 e2 eI : StateExpr) (phi1 phi2 : List (Nat × Nat))
+      (s1 s2 sI s : CodeState)
+      (h1 : EvalExpr e1 s1) (h2 : EvalExpr e2 s2) (hI : EvalExpr eI sI)
+      (h : EvalExpr (StateExpr.pullback e1 e2 eI phi1 phi2) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (pullbackPairs s1 s2 phi1 phi2).length))
+  | instPushoutN (e1 e2 eS : StateExpr) (psi1 psi2 : List (Nat × Nat))
+      (s1 s2 sS s : CodeState)
+      (h1 : EvalExpr e1 s1) (h2 : EvalExpr e2 s2) (hS : EvalExpr eS sS)
+      (h : EvalExpr (StateExpr.pushout e1 e2 eS psi1 psi2) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (pushoutClasses s1 s2 sS psi1 psi2).length))
+  | instPairPartitionN (p : Nat) (BX BZ : List (List (Nat × Nat))) (s : CodeState)
+      (h : EvalExpr (StateExpr.pairPartition p BX BZ) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (matCols BX * p)))
+  | instPpScaleN (e0 : StateExpr) (P : Nat) (BX BZ : List (List (Nat × Nat))) (s : CodeState)
+      (h : EvalExpr (StateExpr.ppScale e0 P BX BZ) s) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.eq (ExtAExpr.atom (.state s Field.n))
+          (ExtAExpr.const (matCols BX * P)))
   -- L3 order theory & MIN-ORDER on `ExtNat = ℕ ∪ {+∞}`
   | transit_le_le (x y z : ExtAExpr)
       (h1 : ExtDerives dMeasure seamCert cs (ExtAnn.le x y))
@@ -1740,6 +1955,7 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
       (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
       (hstep : Eval (Command.hadamard T) s t)
+      (hglobal : T.Perm s.Q ∨ T = [])
       (h : ExtDerives dMeasure seamCert cs (ExtAnn.gen i r σ S)) :
       ExtDerives dMeasure seamCert cs (ExtAnn.gen (i + 1) r
         (if T.isEmpty then σ else oppositeSector σ) S)
@@ -1749,12 +1965,30 @@ inductive ExtDerives (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
       (hstep : Eval (Command.rebase sector matrix) s t) (hsurvives : σ ≠ sector)
       (h : ExtDerives dMeasure seamCert cs (ExtAnn.gen i r σ S)) :
       ExtDerives dMeasure seamCert cs (ExtAnn.gen (i + 1) r σ S)
+  | genHadamardSplit (i : Nat) (T : List Nat) (s t : CodeState) (row : Row)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.hadamard T) s t)
+      (hsplit : ProperSubset T s.Q)
+      (hrow : row ∈ (splitHadamardState s T).rows) :
+      ExtDerives dMeasure seamCert cs (ExtAnn.gen (i + 1) row.id row.sector row.support)
   | genRebaseMint (i : Nat) (sector : Sector) (matrix : List (List Nat))
       (s t : CodeState) (row : Row)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
       (hstep : Eval (Command.rebase sector matrix) s t)
       (hrow : row ∈ rebaseMintedRows s sector matrix) :
       ExtDerives dMeasure seamCert cs (ExtAnn.gen (i + 1) row.id row.sector row.support)
+  | genCnotSwap (i r : Nat) (σ : Sector) (S : List Nat) (U : List (List Bool))
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.cnotSwap U) s t)
+      (h : ExtDerives dMeasure seamCert cs (ExtAnn.gen i r σ S)) :
+      ExtDerives dMeasure seamCert cs
+        (ExtAnn.gen (i + 1) r σ (cnotSwapSupport s.Q U σ S))
+  | genSplit (i r : Nat) (σ : Sector) (S : List Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) (hsurvives : r ∉ R)
+      (h : ExtDerives dMeasure seamCert cs (ExtAnn.gen i r σ S)) :
+      ExtDerives dMeasure seamCert cs (ExtAnn.gen (i + 1) r σ S)
 
 /-- Chain-level models predicate for the expanded operation set. -/
 structure ExtModels (dMeasure : ExtMeasure) (cs : List CodeState) (a : ExtAnn) : Prop where
@@ -1975,20 +2209,22 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
       · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue,
           eval_hadamard_k hstep]
       · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
-  | instHadamardD i T s t hi hj hstep =>
+  | instHadamardD i T s t hi hj hstep hg =>
       have hwfs := hctxt s (mem_of_getElem? hi)
       have hd : ExtNat.min (dMeasure .dX t) (dMeasure .dZ t) =
           ExtNat.min (dMeasure .dX s) (dMeasure .dZ s) := by
         cases hT : T.isEmpty with
         | true =>
             have hst : t = s := by
-              rw [eval_hadamard_eq hstep]
+              rw [eval_hadamard_eq hstep hg]
               unfold hadamardState
               rw [hT]
               rfl
             rw [hst]
         | false =>
-            obtain ⟨hx, hz⟩ := hlaws.hadamard_swap T s t hwfs hstep hT
+            have hp : CoversQ T s.Q := coversQ_of_perm
+              (hg.resolve_right (fun hn => by rw [hn] at hT; exact absurd hT (by decide)))
+            obtain ⟨hx, hz⟩ := hlaws.hadamard_swap T s t hwfs hstep hT hp
             rw [hx, hz, ExtNat.min_comm]
       refine ⟨ExtNat.min (dMeasure .dX s) (dMeasure .dZ s), ?_, ?_⟩
       · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hd]
@@ -1997,7 +2233,7 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
       exact ⟨t, hj, wf_of_eval_all hstep (hctxt s (mem_of_getElem? hi))⟩
   | instHadamardEmpty i f T s t hi hj hstep hT =>
       have hst : t = s := by
-        rw [eval_hadamard_eq hstep]
+        rw [eval_hadamard_eq hstep (Or.inr (List.isEmpty_iff.mp hT))]
         unfold hadamardState
         rw [hT]
         rfl
@@ -2007,13 +2243,13 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
       · simp only [extAexprValue, extAtomValue, hi, Option.map_some]
   | instHadamardSwapDX i T s t hi hj hstep hT =>
       have hwfs := hctxt s (mem_of_getElem? hi)
-      have hx := (hlaws.hadamard_swap T s t hwfs hstep hT).1
+      have hx := (hlaws.hadamard_swap T s t hwfs hstep hT.2 hT.1).1
       refine ⟨dMeasure .dZ s, ?_, ?_⟩
       · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hx]
       · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
   | instHadamardSwapDZ i T s t hi hj hstep hT =>
       have hwfs := hctxt s (mem_of_getElem? hi)
-      have hz := (hlaws.hadamard_swap T s t hwfs hstep hT).2
+      have hz := (hlaws.hadamard_swap T s t hwfs hstep hT.2 hT.1).2
       refine ⟨dMeasure .dX s, ?_, ?_⟩
       · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hz]
       · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
@@ -2125,6 +2361,133 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
         ExtNat.min_monotone hd.1 hd.2⟩
       · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
       · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue]
+  | instCnotSwapN i U s t hi hj hstep =>
+      have hn := eval_cnotSwap_n hstep
+      refine ⟨ExtNat.finite s.Q.length, ?_, ?_⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hn]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
+  | instCnotSwapK i U s t hi hj hstep =>
+      have hwfs := hctxt s (mem_of_getElem? hi)
+      have hk := eval_cnotSwap_k hstep hwfs
+      refine ⟨ExtNat.finite (stateK s), ?_, ?_⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hk]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
+  | instCnotSwapWF i U s t hi hj hstep =>
+      exact ⟨t, hj, wf_of_eval_all hstep (hctxt s (mem_of_getElem? hi))⟩
+  | instSplitN i QA R s t hi hj hstep =>
+      refine ⟨ExtNat.finite s.Q.length, ?_, ?_⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue,
+          eval_split_n hstep]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
+  | instSplitK i QA R s t hi hj hstep =>
+      have hwfs := hctxt s (mem_of_getElem? hi)
+      have hk := eval_split_k hstep hwfs
+      refine ⟨ExtNat.finite (stateK s + R.length), ?_, ?_⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue, hk]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue, ExtNat.add]
+  | instSplitWF i QA R s t hi hj hstep =>
+      exact ⟨t, hj, wf_of_eval_all hstep (hctxt s (mem_of_getElem? hi))⟩
+  | instSplitDX i QA R s t hi hj hstep =>
+      have hwfs := hctxt s (mem_of_getElem? hi)
+      have hd : dMeasure .dX t ≤ dMeasure .dX s ∧ dMeasure .dZ t ≤ dMeasure .dZ s := by
+        cases hstep with
+        | split _ _ hRnd hRdisp _ hs' =>
+            subst hs'
+            have hloop : ∀ (Rs : List Nat) (u : CodeState),
+                EncodingWellFormed u → Rs.Nodup → (∀ r ∈ Rs, DisplayedGenerator r u) →
+                dMeasure .dX (deleteAll u Rs) ≤ dMeasure .dX u ∧
+                dMeasure .dZ (deleteAll u Rs) ≤ dMeasure .dZ u := by
+              intro Rs
+              induction Rs with
+              | nil => intro u _ _ _; exact ⟨ExtNat.le_refl _, ExtNat.le_refl _⟩
+              | cons r rest ih =>
+                  intro u hwfU hndU hdispU
+                  obtain ⟨row, hmem, hid⟩ := hdispU r List.mem_cons_self
+                  have hind : IndependentGenerator r u := hid ▸ hwfU.2.2.2.2.2.2.2 row hmem
+                  have h1 : Eval (Command.delete r) u (deleteState u r) :=
+                    Eval.delete ⟨row, hmem, hid⟩ hind rfl
+                  obtain ⟨hx1, hz1⟩ := hlaws.delete_le r u (deleteState u r) hwfU h1
+                  have hnd' := List.nodup_cons.mp hndU
+                  obtain ⟨hx2, hz2⟩ := ih (deleteState u r) (wf_deleteState u r hwfU) hnd'.2
+                    (fun r' hr' => by
+                      obtain ⟨row', hmem', hid'⟩ := hdispU r' (List.mem_cons_of_mem _ hr')
+                      refine ⟨row', ?_, hid'⟩
+                      show row' ∈ u.rows.filter (fun row => row.id ≠ r)
+                      exact List.mem_filter.mpr ⟨hmem', decide_eq_true (fun h =>
+                        hnd'.1 (by rw [← h, hid']; exact hr'))⟩)
+                  exact ⟨ExtNat.le_trans hx2 hx1, ExtNat.le_trans hz2 hz1⟩
+            exact hloop R s hwfs hRnd hRdisp
+      refine ⟨dMeasure .dX t, dMeasure .dX s, ?_, ?_, hd.1⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
+  | instSplitDZ i QA R s t hi hj hstep =>
+      have hwfs := hctxt s (mem_of_getElem? hi)
+      have hd : dMeasure .dX t ≤ dMeasure .dX s ∧ dMeasure .dZ t ≤ dMeasure .dZ s := by
+        cases hstep with
+        | split _ _ hRnd hRdisp _ hs' =>
+            subst hs'
+            have hloop : ∀ (Rs : List Nat) (u : CodeState),
+                EncodingWellFormed u → Rs.Nodup → (∀ r ∈ Rs, DisplayedGenerator r u) →
+                dMeasure .dX (deleteAll u Rs) ≤ dMeasure .dX u ∧
+                dMeasure .dZ (deleteAll u Rs) ≤ dMeasure .dZ u := by
+              intro Rs
+              induction Rs with
+              | nil => intro u _ _ _; exact ⟨ExtNat.le_refl _, ExtNat.le_refl _⟩
+              | cons r rest ih =>
+                  intro u hwfU hndU hdispU
+                  obtain ⟨row, hmem, hid⟩ := hdispU r List.mem_cons_self
+                  have hind : IndependentGenerator r u := hid ▸ hwfU.2.2.2.2.2.2.2 row hmem
+                  have h1 : Eval (Command.delete r) u (deleteState u r) :=
+                    Eval.delete ⟨row, hmem, hid⟩ hind rfl
+                  obtain ⟨hx1, hz1⟩ := hlaws.delete_le r u (deleteState u r) hwfU h1
+                  have hnd' := List.nodup_cons.mp hndU
+                  obtain ⟨hx2, hz2⟩ := ih (deleteState u r) (wf_deleteState u r hwfU) hnd'.2
+                    (fun r' hr' => by
+                      obtain ⟨row', hmem', hid'⟩ := hdispU r' (List.mem_cons_of_mem _ hr')
+                      refine ⟨row', ?_, hid'⟩
+                      show row' ∈ u.rows.filter (fun row => row.id ≠ r)
+                      exact List.mem_filter.mpr ⟨hmem', decide_eq_true (fun h =>
+                        hnd'.1 (by rw [← h, hid']; exact hr'))⟩)
+                  exact ⟨ExtNat.le_trans hx2 hx1, ExtNat.le_trans hz2 hz1⟩
+            exact hloop R s hwfs hRnd hRdisp
+      refine ⟨dMeasure .dZ t, dMeasure .dZ s, ?_, ?_, hd.2⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
+  | instSplitD i QA R s t hi hj hstep =>
+      have hwfs := hctxt s (mem_of_getElem? hi)
+      have hd : dMeasure .dX t ≤ dMeasure .dX s ∧ dMeasure .dZ t ≤ dMeasure .dZ s := by
+        cases hstep with
+        | split _ _ hRnd hRdisp _ hs' =>
+            subst hs'
+            have hloop : ∀ (Rs : List Nat) (u : CodeState),
+                EncodingWellFormed u → Rs.Nodup → (∀ r ∈ Rs, DisplayedGenerator r u) →
+                dMeasure .dX (deleteAll u Rs) ≤ dMeasure .dX u ∧
+                dMeasure .dZ (deleteAll u Rs) ≤ dMeasure .dZ u := by
+              intro Rs
+              induction Rs with
+              | nil => intro u _ _ _; exact ⟨ExtNat.le_refl _, ExtNat.le_refl _⟩
+              | cons r rest ih =>
+                  intro u hwfU hndU hdispU
+                  obtain ⟨row, hmem, hid⟩ := hdispU r List.mem_cons_self
+                  have hind : IndependentGenerator r u := hid ▸ hwfU.2.2.2.2.2.2.2 row hmem
+                  have h1 : Eval (Command.delete r) u (deleteState u r) :=
+                    Eval.delete ⟨row, hmem, hid⟩ hind rfl
+                  obtain ⟨hx1, hz1⟩ := hlaws.delete_le r u (deleteState u r) hwfU h1
+                  have hnd' := List.nodup_cons.mp hndU
+                  obtain ⟨hx2, hz2⟩ := ih (deleteState u r) (wf_deleteState u r hwfU) hnd'.2
+                    (fun r' hr' => by
+                      obtain ⟨row', hmem', hid'⟩ := hdispU r' (List.mem_cons_of_mem _ hr')
+                      refine ⟨row', ?_, hid'⟩
+                      show row' ∈ u.rows.filter (fun row => row.id ≠ r)
+                      exact List.mem_filter.mpr ⟨hmem', decide_eq_true (fun h =>
+                        hnd'.1 (by rw [← h, hid']; exact hr'))⟩)
+                  exact ⟨ExtNat.le_trans hx2 hx1, ExtNat.le_trans hz2 hz1⟩
+            exact hloop R s hwfs hRnd hRdisp
+      refine ⟨ExtNat.min (dMeasure .dX t) (dMeasure .dZ t),
+        ExtNat.min (dMeasure .dX s) (dMeasure .dZ s), ?_, ?_,
+        ExtNat.min_monotone hd.1 hd.2⟩
+      · simp only [extAexprValue, extAtomValue, hj, Option.map_some, extFieldValue]
+      · simp only [extAexprValue, extAtomValue, hi, Option.map_some, extFieldValue]
   | instExprWF e s he hbase =>
       exact wf_of_evalExpr he hbase
   | instDirectSumN e1 e2 s1 s2 s h1 h2 hsum =>
@@ -2306,6 +2669,36 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
   | instNestedN HX HZ s h =>
       refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
       simp only [extAexprValue, evalExpr_nested_n h]
+  | instConeN DA DB F1 F0 s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_cone_n h]
+  | instConeK DA DB F1 F0 s h =>
+      refine ⟨ExtNat.finite (stateK s), rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_cone_k h]
+  | instEmptyN s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_empty_n h]
+  | instEmptyK s h =>
+      refine ⟨ExtNat.finite (stateK s), rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_empty_k h]
+  | instFreeN qs s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_free_n h]
+  | instFreeK qs s h =>
+      refine ⟨ExtNat.finite (stateK s), rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_free_k h]
+  | instPullbackN e1 e2 eI phi1 phi2 s1 s2 sI s h1 h2 hI h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_pullback_n_gen h1 h2 hI h]
+  | instPushoutN e1 e2 eS psi1 psi2 s1 s2 sS s h1 h2 hS h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_pushout_n_gen h1 h2 hS h]
+  | instPairPartitionN p BX BZ s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_pairPartition_n h]
+  | instPpScaleN e0 P BX BZ s h =>
+      refine ⟨ExtNat.finite s.Q.length, rfl, ?_⟩
+      simp only [extAexprValue, evalExpr_ppScale_n h]
   | transit_le_le _ _ _ _ _ ih1 ih2 =>
       obtain ⟨v, w, hxv, hyw, hvw⟩ := ih1
       obtain ⟨w2, u, hyw2, hzu, hw2u⟩ := ih2
@@ -2420,11 +2813,11 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
       refine ⟨t, hj, ?_⟩
       rw [eval_puncture_eq hstep]
       exact List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩
-  | genHadamard _ r σ S T s t hi hj hstep _ ih =>
+  | genHadamard _ r σ S T s t hi hj hstep hg _ ih =>
       obtain ⟨s0, hs0, hmem⟩ := ih
       have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
       refine ⟨t, hj, ?_⟩
-      rw [eval_hadamard_eq hstep]
+      rw [eval_hadamard_eq hstep hg]
       cases hT : T.isEmpty with
       | true =>
           have ht : hadamardState s T = s := by simp [hadamardState, hT]
@@ -2441,10 +2834,27 @@ theorem ext_judgment_soundness (dMeasure : ExtMeasure)
       refine ⟨t, hj, ?_⟩
       rw [eval_rebase_eq hstep]
       exact List.mem_append_left _ (List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩)
+  | genHadamardSplit _ T s t _ _ hj hstep hsplit hrow =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_hadamardSplit_eq hstep hsplit]
+      exact hrow
   | genRebaseMint _ _ _ _ t _ _ hj hstep hrow =>
       refine ⟨t, hj, ?_⟩
       rw [eval_rebase_eq hstep]
       exact List.mem_append_right _ hrow
+  | genCnotSwap _ r σ S U s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_cnotSwap_eq hstep]
+      exact List.mem_map.mpr
+        ⟨{ id := r, sector := σ, support := S }, hs ▸ hmem, rfl⟩
+  | genSplit _ _ _ _ _ R s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_split_eq hstep]
+      exact (mem_deleteAll_rows R s _).mpr ⟨hs ▸ hmem, hsurvives⟩
 
 /-- Soundness from the head state's well-formedness alone. -/
 theorem ext_judgment_soundness_of_head (dMeasure : ExtMeasure)
@@ -2753,9 +3163,9 @@ theorem ExtDerives.weaken {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
   | instHadamardK i T s t hi hj hstep =>
       exact ExtDerives.instHadamardK i T s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep
-  | instHadamardD i T s t hi hj hstep =>
+  | instHadamardD i T s t hi hj hstep hg =>
       exact ExtDerives.instHadamardD i T s t (getElem?_append_of_some hi)
-        (getElem?_append_of_some hj) hstep
+        (getElem?_append_of_some hj) hstep hg
   | instHadamardWF i T s t hi hj hstep =>
       exact ExtDerives.instHadamardWF i T s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep
@@ -2819,6 +3229,33 @@ theorem ExtDerives.weaken {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
   | instExtendNilD i adds s t hi hj hstep =>
       exact ExtDerives.instExtendNilD i adds s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep
+  | instCnotSwapN i U s t hi hj hstep =>
+      exact ExtDerives.instCnotSwapN i U s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instCnotSwapK i U s t hi hj hstep =>
+      exact ExtDerives.instCnotSwapK i U s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instCnotSwapWF i U s t hi hj hstep =>
+      exact ExtDerives.instCnotSwapWF i U s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitN i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitN i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitK i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitK i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitWF i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitWF i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitDX i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitDX i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitDZ i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitDZ i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
+  | instSplitD i QA R s t hi hj hstep =>
+      exact ExtDerives.instSplitD i QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep
   | instExprWF e s he hbase => exact ExtDerives.instExprWF e s he hbase
   | instDirectSumN e1 e2 s1 s2 s h1 h2 hsum =>
       exact ExtDerives.instDirectSumN e1 e2 s1 s2 s h1 h2 hsum
@@ -2873,6 +3310,18 @@ theorem ExtDerives.weaken {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
   | instTileK tiles placements idents removed s h =>
       exact ExtDerives.instTileK tiles placements idents removed s h
   | instNestedN HX HZ s h => exact ExtDerives.instNestedN HX HZ s h
+  | instConeN DA DB F1 F0 s h => exact ExtDerives.instConeN DA DB F1 F0 s h
+  | instConeK DA DB F1 F0 s h => exact ExtDerives.instConeK DA DB F1 F0 s h
+  | instEmptyN s h => exact ExtDerives.instEmptyN s h
+  | instEmptyK s h => exact ExtDerives.instEmptyK s h
+  | instFreeN qs s h => exact ExtDerives.instFreeN qs s h
+  | instFreeK qs s h => exact ExtDerives.instFreeK qs s h
+  | instPullbackN e1 e2 eI phi1 phi2 s1 s2 sI s h1 h2 hI h =>
+      exact ExtDerives.instPullbackN e1 e2 eI phi1 phi2 s1 s2 sI s h1 h2 hI h
+  | instPushoutN e1 e2 eS psi1 psi2 s1 s2 sS s h1 h2 hS h =>
+      exact ExtDerives.instPushoutN e1 e2 eS psi1 psi2 s1 s2 sS s h1 h2 hS h
+  | instPairPartitionN p BX BZ s h => exact ExtDerives.instPairPartitionN p BX BZ s h
+  | instPpScaleN e0 P BX BZ s h => exact ExtDerives.instPpScaleN e0 P BX BZ s h
   | transit_le_le x y z _ _ ih1 ih2 => exact ExtDerives.transit_le_le x y z ih1 ih2
   | transit_le_eq x y z _ _ ih1 ih2 => exact ExtDerives.transit_le_eq x y z ih1 ih2
   | transit_eq_le x y z _ _ ih1 ih2 => exact ExtDerives.transit_eq_le x y z ih1 ih2
@@ -2917,15 +3366,24 @@ theorem ExtDerives.weaken {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
   | genPuncture i r σ S q s t hi hj hstep hsurvives _ ih =>
       exact ExtDerives.genPuncture i r σ S q s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hsurvives ih
-  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+  | genHadamard i r σ S T s t hi hj hstep hg _ ih =>
       exact ExtDerives.genHadamard i r σ S T s t (getElem?_append_of_some hi)
-        (getElem?_append_of_some hj) hstep ih
+        (getElem?_append_of_some hj) hstep hg ih
+  | genHadamardSplit i T s t row hi hj hstep hsplit hrow =>
+      exact ExtDerives.genHadamardSplit i T s t row (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsplit hrow
   | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
       exact ExtDerives.genRebase i r σ S sector matrix s t (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hsurvives ih
   | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
       exact ExtDerives.genRebaseMint i sector matrix s t row (getElem?_append_of_some hi)
         (getElem?_append_of_some hj) hstep hrow
+  | genCnotSwap i r σ S U s t hi hj hstep _ ih =>
+      exact ExtDerives.genCnotSwap i r σ S U s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep ih
+  | genSplit i r σ S QA R s t hi hj hstep hsurvives _ ih =>
+      exact ExtDerives.genSplit i r σ S QA R s t (getElem?_append_of_some hi)
+        (getElem?_append_of_some hj) hstep hsurvives ih
 
 /-- Seam condition for generator-referencing claims in `ExtDerives`. -/
 def ExtSeamRowsDerived (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)
@@ -3101,12 +3559,12 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.instHadamardK (i + cs.length) T s t
         (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
-  | instHadamardD i T s t hi hj hstep =>
+  | instHadamardD i T s t hi hj hstep hg =>
       intro _
       simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.instHadamardD (i + cs.length) T s t
-        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hg
   | instHadamardWF i T s t hi hj hstep =>
       intro _
       simp only [ExtAnn.shift]
@@ -3233,6 +3691,60 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.instExtendNilD (i + cs.length) adds s t
         (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instCnotSwapN i U s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instCnotSwapN (i + cs.length) U s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instCnotSwapK i U s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instCnotSwapK (i + cs.length) U s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instCnotSwapWF i U s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instCnotSwapWF (i + cs.length) U s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitN i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitN (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitK i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitK (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitWF i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitWF (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitDX i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitDX (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitDZ i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitDZ (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
+  | instSplitD i QA R s t hi hj hstep =>
+      intro _
+      simp only [ExtAnn.shift, ExtAExpr.shift, ExtAtom.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.instSplitD (i + cs.length) QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep
   | instExprWF e s he hbase => intro _; exact ExtDerives.instExprWF e s he hbase
   | instDirectSumN e1 e2 s1 s2 s h1 h2 hsum =>
       intro _; exact ExtDerives.instDirectSumN e1 e2 s1 s2 s h1 h2 hsum
@@ -3288,6 +3800,18 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
   | instTileK tiles placements idents removed s h =>
       intro _; exact ExtDerives.instTileK tiles placements idents removed s h
   | instNestedN HX HZ s h => intro _; exact ExtDerives.instNestedN HX HZ s h
+  | instConeN DA DB F1 F0 s h => intro _; exact ExtDerives.instConeN DA DB F1 F0 s h
+  | instConeK DA DB F1 F0 s h => intro _; exact ExtDerives.instConeK DA DB F1 F0 s h
+  | instEmptyN s h => intro _; exact ExtDerives.instEmptyN s h
+  | instEmptyK s h => intro _; exact ExtDerives.instEmptyK s h
+  | instFreeN qs s h => intro _; exact ExtDerives.instFreeN qs s h
+  | instFreeK qs s h => intro _; exact ExtDerives.instFreeK qs s h
+  | instPullbackN e1 e2 eI phi1 phi2 s1 s2 sI s h1 h2 hI h =>
+      intro _; exact ExtDerives.instPullbackN e1 e2 eI phi1 phi2 s1 s2 sI s h1 h2 hI h
+  | instPushoutN e1 e2 eS psi1 psi2 s1 s2 sS s h1 h2 hS h =>
+      intro _; exact ExtDerives.instPushoutN e1 e2 eS psi1 psi2 s1 s2 sS s h1 h2 hS h
+  | instPairPartitionN p BX BZ s h => intro _; exact ExtDerives.instPairPartitionN p BX BZ s h
+  | instPpScaleN e0 P BX BZ s h => intro _; exact ExtDerives.instPpScaleN e0 P BX BZ s h
   | transit_le_le _ _ _ _ _ ih1 ih2 =>
       intro _
       exact ExtDerives.transit_le_le _ _ _
@@ -3400,13 +3924,19 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.genPuncture (i + cs.length) r σ S q s t
         (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hsurvives ih
-  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+  | genHadamard i r σ S T s t hi hj hstep hg _ ih =>
       intro hsrc
       have ih := ih (fun _ => hsrc rfl)
       simp only [ExtAnn.shift] at ih ⊢
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.genHadamard (i + cs.length) r σ S T s t
-        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep ih
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hg ih
+  | genHadamardSplit i T s t row hi hj hstep hsplit hrow =>
+      intro _
+      simp only [ExtAnn.shift]
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.genHadamardSplit (i + cs.length) T s t row
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hsplit hrow
   | genRebase i r σ S sector matrix s t hi hj hstep hsurvives _ ih =>
       intro hsrc
       have ih := ih (fun _ => hsrc rfl)
@@ -3420,6 +3950,20 @@ theorem ExtDerives.shift_cond {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy
       rw [Nat.add_right_comm i 1 cs.length]
       exact ExtDerives.genRebaseMint (i + cs.length) sector matrix s t row
         (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hrow
+  | genCnotSwap i r σ S U s t hi hj hstep _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [ExtAnn.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.genCnotSwap (i + cs.length) r σ S U s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep ih
+  | genSplit i r σ S QA R s t hi hj hstep hsurvives _ ih =>
+      intro hsrc
+      have ih := ih (fun _ => hsrc rfl)
+      simp only [ExtAnn.shift] at ih ⊢
+      rw [Nat.add_right_comm i 1 cs.length]
+      exact ExtDerives.genSplit (i + cs.length) r σ S QA R s t
+        (getElem?_shift_of_some hi) (getElem?_shift_succ_of_some hj) hstep hsurvives ih
 
 theorem ExtDerives.shift {dMeasure : ExtMeasure} {seamCert : SeamCertPolicy}
     (cs : List CodeState) {ds : List CodeState} {a : ExtAnn}
@@ -3525,32 +4069,37 @@ theorem ext_derives_gen_of_displayed (dMeasure : ExtMeasure) (seamCert : SeamCer
           · exact ExtDerives.genExtendMint i delta adds _ _ ({ id := r, sector := σ, support := S })
               hs ht hstep hnew
       | hadamard T =>
-          have hts := eval_hadamard_eq hstep
-          cases hT : T.isEmpty with
-          | true =>
-              have hrow' : { id := r, sector := σ, support := S } ∈ s.rows := by
-                rw [hts] at hrow
-                simp [hadamardState, hT] at hrow
-                exact hrow
-              have heq : ExtAnn.gen (i + 1) r (if T.isEmpty = true then σ else oppositeSector σ) S =
-                  ExtAnn.gen (i + 1) r σ S := by simp [hT]
-              rw [← heq]
-              exact ExtDerives.genHadamard i r σ S T _ _ hs ht hstep (ih _ hs r σ S hrow')
-          | false =>
-              have hrow' : { id := r, sector := σ, support := S } ∈ t.rows := hrow
-              rw [hts] at hrow'
-              simp [hadamardState, hT] at hrow'
-              obtain ⟨row0, hrow0, hswap⟩ := List.mem_map.mp hrow'
-              have hr : row0.id = r := congrArg Row.id hswap
-              have hσ : oppositeSector row0.sector = σ := congrArg Row.sector hswap
-              have hS : row0.support = S := congrArg Row.support hswap
-              have heq : ExtAnn.gen (i + 1) row0.id
-                  (if T.isEmpty = true then row0.sector else oppositeSector row0.sector)
-                  row0.support = ExtAnn.gen (i + 1) r σ S := by
-                simp [hT, hr, hσ, hS]
-              rw [← heq]
-              exact ExtDerives.genHadamard i row0.id row0.sector row0.support T _ _ hs ht hstep
-                (ih _ hs row0.id row0.sector row0.support hrow0)
+          rcases eval_hadamard_cases hstep with ⟨hg, _⟩ | ⟨hsplit, _, hts0, _⟩
+          · have hts := eval_hadamard_eq hstep hg
+            cases hT : T.isEmpty with
+            | true =>
+                have hrow' : { id := r, sector := σ, support := S } ∈ s.rows := by
+                  rw [hts] at hrow
+                  simp [hadamardState, hT] at hrow
+                  exact hrow
+                have heq : ExtAnn.gen (i + 1) r (if T.isEmpty = true then σ else oppositeSector σ) S =
+                    ExtAnn.gen (i + 1) r σ S := by simp [hT]
+                rw [← heq]
+                exact ExtDerives.genHadamard i r σ S T _ _ hs ht hstep hg (ih _ hs r σ S hrow')
+            | false =>
+                have hrow' : { id := r, sector := σ, support := S } ∈ t.rows := hrow
+                rw [hts] at hrow'
+                simp [hadamardState, hT] at hrow'
+                obtain ⟨row0, hrow0, hswap⟩ := List.mem_map.mp hrow'
+                have hr : row0.id = r := congrArg Row.id hswap
+                have hσ : oppositeSector row0.sector = σ := congrArg Row.sector hswap
+                have hS : row0.support = S := congrArg Row.support hswap
+                have heq : ExtAnn.gen (i + 1) row0.id
+                    (if T.isEmpty = true then row0.sector else oppositeSector row0.sector)
+                    row0.support = ExtAnn.gen (i + 1) r σ S := by
+                  simp [hT, hr, hσ, hS]
+                rw [← heq]
+                exact ExtDerives.genHadamard i row0.id row0.sector row0.support T _ _ hs ht hstep hg
+                  (ih _ hs row0.id row0.sector row0.support hrow0)
+          · have hrow' : ({ id := r, sector := σ, support := S } : Row) ∈
+                (splitHadamardState s T).rows := by
+              rw [← hts0]; exact hrow
+            exact ExtDerives.genHadamardSplit i T _ _ _ hs ht hstep hsplit hrow'
       | rebase sector matrix =>
           have hts := eval_rebase_eq hstep
           subst hts
@@ -3561,6 +4110,25 @@ theorem ext_derives_gen_of_displayed (dMeasure : ExtMeasure) (seamCert : SeamCer
               (ih _ hs r σ S hmem.1)
           · exact ExtDerives.genRebaseMint i sector matrix _ _
               ({ id := r, sector := σ, support := S }) hs ht hstep hnew
+      | cnotSwap U =>
+          have hts := eval_cnotSwap_eq hstep
+          subst hts
+          obtain ⟨row0, hrow0, htr⟩ := List.mem_map.mp hrow
+          have hr : row0.id = r := congrArg Row.id htr
+          have hσ : row0.sector = σ := congrArg Row.sector htr
+          have hS : cnotSwapSupport s.Q U row0.sector row0.support = S :=
+            congrArg Row.support htr
+          have heq : ExtAnn.gen (i + 1) row0.id row0.sector
+              (cnotSwapSupport s.Q U row0.sector row0.support) = ExtAnn.gen (i + 1) r σ S := by
+            rw [hS, hr, hσ]
+          rw [← heq]
+          exact ExtDerives.genCnotSwap i row0.id row0.sector row0.support U _ _ hs ht hstep
+            (ih _ hs row0.id row0.sector row0.support hrow0)
+      | split QA R =>
+          have hts := eval_split_eq hstep
+          subst hts
+          obtain ⟨hmem, hnot⟩ := (mem_deleteAll_rows R s _).mp hrow
+          exact ExtDerives.genSplit i r σ S QA R _ _ hs ht hstep hnot (ih _ hs r σ S hmem)
       | seq _ _ => cases hm
 
 theorem ext_seamRowsDerived_of_stepChain (dMeasure : ExtMeasure) (seamCert : SeamCertPolicy)

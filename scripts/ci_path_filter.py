@@ -24,6 +24,14 @@ PINNED_WORKFLOW_PATHS = {
     ".github/workflows/release.yml",
 }
 FIXTURE_PATH = "machine/fixtures/mvp_fixtures.json"
+# The formal-certificate generator and what it emits Lean from; the Lean job
+# builds a generated module end to end.
+FORMAL_CERT_PATHS = {
+    "machine/certificates.py",
+    "machine/ingestion.py",
+    "machine/experiments/formal_cert_from_challenge.py",
+    "scripts/check_formal_cert_pipeline.sh",
+}
 REQUIREMENTS_PATH = "machine/requirements.txt"
 
 
@@ -49,6 +57,7 @@ def classify_changed_paths(paths: Iterable[str]) -> dict[str, bool]:
         "code": any(path.startswith(CODE_PREFIXES) for path in changed),
         "lean": any(
             path.startswith(LEAN_PREFIXES) or path == FIXTURE_PATH
+            or path in FORMAL_CERT_PATHS
             for path in changed
         ),
         "pinned": any(_is_pinned_replay_path(path) for path in changed),

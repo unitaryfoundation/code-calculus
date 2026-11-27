@@ -34,6 +34,14 @@ this survey touches the specification, [`spec/`](../spec/) is authoritative.
 | Cross–Smith–Smolin–Zeng, *Codeword Stabilized Quantum Codes*, IEEE TIT 55(1), 433–438, 2009 (arXiv:0708.1021) | The CWS framework: a graph state plus a classical code supplies Pauli-$Z$ word operators and a linear detection criterion $\mathrm{Cl}_S(E)$. |
 | Aswanth–Kashyap, *Lifting an $[n,k,d]$ Binary Linear Code to an $[[n,k,d]]$ Quantum Stabilizer Code*, arXiv:2610.14192, 2026 | Existence lower bound for random-graph CWS lifting; outputs are generally non-CSS. |
 | Zhang–Wei–Tantivasadakarn, *Coupled-Layer Codes: Beyond Quantum Product Constructions*, arXiv:2608.10069 / arXiv:2603.08711, 2026 | Unifies tensor and balanced products with coupled-layer excitation condensation, including unitary (ZX-duality) balancing yielding non-CSS codes. |
+| Brádler, *CSS codes from the Bruhat order of Coxeter groups*, arXiv:2603.16036, 2026 | Chain complexes from the Bruhat face poset of a Coxeter group yield CSS codes with controlled or irregular stabilizer weights; recorded as candidate `L-BRUHAT` (`spec/TAXONOMY.md` §3.8a). |
+| Wills, *Improved Quantum Codes with Transversal T Gates*, arXiv:2608.24000, 2026 | Divisible decreasing monomial codes punctured at a downward-closed set on the Boolean hypercube, with a closed-form distance and transversal $T$; recorded as candidate `L-MONOMIAL` (`spec/TAXONOMY.md` §3.8a). |
+| Lin–Wu–Cheng, *Asymptotically Good Quantum Codes with Addressable Transversal T Gates*, arXiv:2609.35129, 2026 | AG codes over $\mathbb{F}_{1024}$ with a binary embedding; constant rate, linear distance, addressable transversal $T$ (prior art only; outputs are denoted by `nested(H_X, H_Z)`). |
+| Zhang, *Linear-Time Encodable Quantum Codes near the CSS GV Bound*, arXiv:2610.01277, 2026 | CSS codes approaching the CSS GV bound with logarithmic-depth, linear-size encoders (prior art only; encoder schedule is outside code-level scope). |
+| Rajpurohit–Lalitha–Garani, *Coset Lifted Product Codes*, arXiv:2610.12782, 2026 | Lifted product generalized to subgroup coset actions, admitted as coset inputs $\mathrm{lift}_{G;H}(A, B)$ for `L-LIFTED` (`spec/OPERATIONAL_SEMANTICS.md` §4.49). |
+| Li, *Quantum bootstrap product codes*, arXiv:2601.22363, 2026 | Bootstrap-equation consistency yielding fork complexes unifying HGP and fracton codes; recorded as candidate `L-BOOTSTRAP` (`spec/TAXONOMY.md` §3.8a). |
+| Fair-Density Parity-Check HGP codes, arXiv:2609.01181, 2026 | Sparsified FDPC components in hypergraph products with finite-length certified distances and analytical logical multiplicities (`L-HGP` specialization, `spec/TAXONOMY.md` §3.8a). |
+| Okada–Kasai, *High-Girth Regular Quantum LDPC Codes from Square-Base Hypergraph Products via CPM Lifts*, arXiv:2604.27817, 2026 | Square-base CSS-HGP with CPM lifts; orthogonality-forced 8-cycles cap Tanner girth at 8 (prior art only; girth is outside the current property inventory). |
 
 ### Key structural takeaways for the calculus
 
@@ -72,6 +80,9 @@ Two distinct kinds of operation appear in this literature:
 | Dua–Holmes–Gullans–Albert, *Qubit CSS codes with universal transversal gates*, arXiv:2610.06730, 2026 | Depth-one disjoint few-qubit logical gate layers and partition-distance formulation. |
 | Rabeti–Shirke–Dimitrova–Mahdavifar, *Logically Augmented Quantum LDPC Codes: Construction and Hierarchical Decoding*, arXiv:2611.07062, 2026 | Imposes additional stabilizer constraints on $n_L$ logical qubits of a primary CSS code via an auxiliary Logical Protection Code, giving $[[n, k - n_L + k_L, d_A]]$ (`C-ADD-CHECK` instance). |
 | Su–Gidney–et al., *Expurgation and puncturing-as-repair*, arXiv:2611.08744, 2026 | Expurgation (`C-ADD-CHECK`) and puncturing (`E-PUNCTURE`) to repair defective qLDPC stabilizer checks. |
+| Reddy–Kashyap, *Realizing Logical Diagonal Gates via Transversal Physical $Z$-Rotations in CSS Codes*, arXiv:2608.19094, 2026 | Extending a CSS code by appending qubits to realize transversal logical $Z$-rotations with controllable distance loss (`E-EXTEND` distance-loss conditional cell, `spec/OPERATIONAL_SEMANTICS.md` §4.30). |
+| Entanglement-Assisted Quantum Locally Recoverable Codes, arXiv:2607.27091, 2026 | CSS-like construction without dual-containment using pre-shared entanglement; recorded as deferred extended-state candidate `X-EAQLRC` (`spec/TAXONOMY.md` §4.9). |
+| Wolanski, *Stitching Quantum Codes into Quilts*, arXiv:2611.26329, 2026 | Direct measurement of a joint logical operator without ancilla (prior art only; measurement/surgery lies outside the code-level state model). |
 
 ### Relation to specific calculus operations
 

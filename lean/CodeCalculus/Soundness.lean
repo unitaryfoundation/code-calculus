@@ -421,10 +421,31 @@ theorem eval_puncture_eq {q : Nat} {s t : CodeState}
   cases h with
   | puncture _ hst _ => exact hst
 
+/-- The global instance (`T = Q` or `T = ∅`) of `E-LOCAL-HADAMARD`. -/
 theorem eval_hadamard_eq {T : List Nat} {s t : CodeState}
-    (h : Eval (Command.hadamard T) s t) : t = hadamardState s T := by
+    (h : Eval (Command.hadamard T) s t) (hg : T.Perm s.Q ∨ T = []) :
+    t = hadamardState s T := by
   cases h with
   | hadamard _ hst _ => exact hst
+  | hadamardSplit hsub _ _ _ _ _ => exact absurd hg (not_perm_or_nil_of_properSubset hsub)
+
+/-- The split-subset instance (`0 < |T| < |Q|`, issue #571). -/
+theorem eval_hadamardSplit_eq {T : List Nat} {s t : CodeState}
+    (h : Eval (Command.hadamard T) s t) (hsplit : ProperSubset T s.Q) :
+    t = splitHadamardState s T := by
+  cases h with
+  | hadamard hg _ _ => exact absurd hg (not_perm_or_nil_of_properSubset hsplit)
+  | hadamardSplit _ _ hst _ _ _ => exact hst
+
+/-- Every hadamard derivation is the global instance or the split instance. -/
+theorem eval_hadamard_cases {T : List Nat} {s t : CodeState}
+    (h : Eval (Command.hadamard T) s t) :
+    ((T.Perm s.Q ∨ T = []) ∧ t = hadamardState s T) ∨
+    (ProperSubset T s.Q ∧ splitGuard s T = true ∧ t = splitHadamardState s T ∧
+      stateK t = stateK s) := by
+  cases h with
+  | hadamard hg hst _ => exact Or.inl ⟨hg, hst⟩
+  | hadamardSplit hsub hguard hst _ hk _ => exact Or.inr ⟨hsub, hguard, hst, hk⟩
 
 theorem eval_rebase_eq {sector : Sector} {matrix : List (List Nat)} {s t : CodeState}
     (h : Eval (Command.rebase sector matrix) s t) : t = rebaseState s sector matrix := by
@@ -435,6 +456,15 @@ theorem eval_extend_eq {delta : List Nat} {adds : List (Sector × List Nat)} {s 
     (h : Eval (Command.extend delta adds) s t) : t = extendState s delta adds := by
   cases h with
   | extend _ hs' _ _ => exact hs'
+
+theorem eval_cnotSwap_eq {U : List (List Bool)} {s t : CodeState}
+    (h : Eval (Command.cnotSwap U) s t) : t = cnotSwapState s U := by
+  cases h with
+  | cnotSwap _ hs' _ => exact hs'
+theorem eval_split_eq {QA R : List Nat} {s t : CodeState}
+    (h : Eval (Command.split QA R) s t) : t = deleteAll s R := by
+  cases h with
+  | split _ _ _ _ _ hs' => exact hs'
 
 /-- Agreement of `peelSupport` with `graftSupport` on every surviving row of a
     valid `E-PEEL` evaluation (`spec/JUDGMENT_LAYER.md` §4): because `Eval.peel`
@@ -800,12 +830,13 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
       (hstep : Eval (Command.puncture q) s t) (hsurvives : ¬ S.contains q)
       (h : Derives dMeasure cs (Ann.gen i r σ S)) :
       Derives dMeasure cs (Ann.gen (i + 1) r σ S)
-  -- (Gate 6 `E-LOCAL-HADAMARD`, `T=Q`): hadamard keeps every
-  -- displayed row; its sector is swapped when `T` is non-empty.
+  -- (Gate 6 `E-LOCAL-HADAMARD`, global instance `T=Q` or `T=∅`): hadamard
+  -- keeps every displayed row; its sector is swapped when `T` is non-empty.
   | genHadamard (i r : Nat) (σ : Sector) (S : List Nat) (T : List Nat)
       (s t : CodeState)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
       (hstep : Eval (Command.hadamard T) s t)
+      (hglobal : T.Perm s.Q ∨ T = [])
       (h : Derives dMeasure cs (Ann.gen i r σ S)) :
       Derives dMeasure cs (Ann.gen (i + 1) r
         (if T.isEmpty then σ else oppositeSector σ) S)
@@ -818,6 +849,15 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
       (hstep : Eval (Command.rebase sector matrix) s t) (hsurvives : σ ≠ sector)
       (h : Derives dMeasure cs (Ann.gen i r σ S)) :
       Derives dMeasure cs (Ann.gen (i + 1) r σ S)
+  -- (`E-LOCAL-HADAMARD`, split-subset instance `0 < |T| < |Q|`, issue #571):
+  -- every row of the canonical update is sourced, as the rebase's minted rows
+  -- are; pure rows keep their identifier and support (§4.27).
+  | genHadamardSplit (i : Nat) (T : List Nat) (s t : CodeState) (row : Row)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.hadamard T) s t)
+      (hsplit : ProperSubset T s.Q)
+      (hrow : row ∈ (splitHadamardState s T).rows) :
+      Derives dMeasure cs (Ann.gen (i + 1) row.id row.sector row.support)
   | genRebaseMint (i : Nat) (sector : Sector) (matrix : List (List Nat)) (s t : CodeState) (row : Row)
       (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
       (hstep : Eval (Command.rebase sector matrix) s t)
@@ -828,6 +868,22 @@ inductive Derives (dMeasure : Field → CodeState → Nat) (cs : List CodeState)
       (hstep : Eval (Command.extend delta adds) s t)
       (hrow : row ∈ extendMintedRows s adds) :
       Derives dMeasure cs (Ann.gen (i + 1) row.id row.sector row.support)
+  -- (`C-COLUMN-CNOT`, §4.42): every displayed row retains its identifier and
+  -- sector while its support transforms via `cnotSwapSupport`.
+  | genCnotSwap (i r : Nat) (σ : Sector) (S : List Nat) (U : List (List Bool))
+      (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.cnotSwap U) s t)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ (cnotSwapSupport s.Q U σ S))
+  -- (`E-SPLIT`, admitted 2026-11-25): split deletes every cut row in `R`
+  -- and keeps every other displayed row unchanged; there is no row for `r ∈ R`
+  -- (`W13` half, `not_derivable_gen_of_split` in `Transport.lean`).
+  | genSplit (i r : Nat) (σ : Sector) (S : List Nat) (QA R : List Nat) (s t : CodeState)
+      (hi : cs[i]? = some s) (hj : cs[i + 1]? = some t)
+      (hstep : Eval (Command.split QA R) s t) (hsurvives : r ∉ R)
+      (h : Derives dMeasure cs (Ann.gen i r σ S)) :
+      Derives dMeasure cs (Ann.gen (i + 1) r σ S)
 
 /-- Satisfaction `(S, m, S') ⊨ R` of §4.11, on the chain a closed command
     unfolds through: the chain evaluates and the annotation holds of it. A
@@ -1107,11 +1163,11 @@ theorem judgment_soundness (dMeasure : Field → CodeState → Nat)
       refine ⟨t, hj, ?_⟩
       rw [eval_graft_eq hstep]
       exact mem_graftState_of_minted hrow
-  | genHadamard i r σ S T s t hi hj hstep _ ih =>
+  | genHadamard i r σ S T s t hi hj hstep hg _ ih =>
       obtain ⟨s0, hs0, hmem⟩ := ih
       have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
       refine ⟨t, hj, ?_⟩
-      rw [eval_hadamard_eq hstep]
+      rw [eval_hadamard_eq hstep hg]
       by_cases hT : T.isEmpty
       · have ht : hadamardState s T = s := by simp [hadamardState, hT]
         rw [ht, ← hs]
@@ -1126,10 +1182,21 @@ theorem judgment_soundness (dMeasure : Field → CodeState → Nat)
       refine ⟨t, hj, ?_⟩
       rw [eval_rebase_eq hstep]
       exact List.mem_append_left _ (List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩)
+  | genHadamardSplit i T s t row hi hj hstep hsplit hrow =>
+      refine ⟨t, hj, ?_⟩
+      rw [eval_hadamardSplit_eq hstep hsplit]
+      exact hrow
   | genRebaseMint i sector matrix s t row hi hj hstep hrow =>
       refine ⟨t, hj, ?_⟩
       rw [eval_rebase_eq hstep]
       exact List.mem_append_right _ hrow
+  | genCnotSwap i r σ S U s t hi hj hstep _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_cnotSwap_eq hstep]
+      exact List.mem_map.mpr
+        ⟨{ id := r, sector := σ, support := S }, hs ▸ hmem, rfl⟩
   | genExtend i r σ S delta adds s t hi hj hstep _ ih =>
       obtain ⟨s0, hs0, hmem⟩ := ih
       have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
@@ -1161,6 +1228,12 @@ theorem judgment_soundness (dMeasure : Field → CodeState → Nat)
       refine ⟨t, hj, ?_⟩
       rw [eval_puncture_eq hstep]
       exact List.mem_filter.mpr ⟨hs ▸ hmem, decide_eq_true hsurvives⟩
+  | genSplit i r σ S QA R s t hi hj hstep hsurvives _ ih =>
+      obtain ⟨s0, hs0, hmem⟩ := ih
+      have hs : s0 = s := Option.some.inj (hs0.symm.trans hi)
+      refine ⟨t, hj, ?_⟩
+      rw [eval_split_eq hstep]
+      exact (mem_deleteAll_rows R s _).mpr ⟨hs ▸ hmem, hsurvives⟩
 
 /-! ## Deriving the context from the input state -/
 

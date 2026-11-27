@@ -40,15 +40,28 @@ A release is named `<line>-<ordinal>`.
 
 - **Line** — the state model. `stdCSS` is the phase-insensitive standard-CSS line
  ([`STATE_MODEL.md`](STATE_MODEL.md)).
-- **Ordinal** — within a line: increment for a conservative language or assertion
- addition; a patch level for an obligation- or proof-only change; a markedly
- rarer in-line erratum otherwise (§4).
+- **Ordinal** — within a line: increment for a change to the calculus's
+ **shape**, the interfaces its metatheorems and judgments quantify over (§4.1),
+ unless the change is additive and folded into the current ordinal by dated
+ maintainer decision (§4.1, *Fold*).
+ A new **instance** of an existing interface (an operation, constructor, or
+ cell that meets the instance contract of §4.2), a proof, or tooling does not
+ change the ordinal; a markedly rarer in-line erratum otherwise (§4).
 
-The current development release is `stdCSS-3` (software `v0.3.0`, prepared
-2026-11-19 and not yet tagged; `v0.2.0` shipped at commit `e94fa83` on
-2026-11-17; `v0.1` shipped at commit `078cab2` on 2026-11-02); `MVP`
-remains an alias for the historical `stdCSS-1` baseline. The release table
-records all axis sets.
+An ordinal names a shape, not an inventory, and names it only up to the folds
+its §5 rows record. From `v0.3.2` on, the ordinal alone does not determine the
+assertion language: `stdCSS-3` / `v0.3.1` and `stdCSS-3` / `v0.3.2` have
+different ones (§5.3). The exact interfaces and the exact operation,
+constructor, and cell inventory of a release are pinned by its software tag
+(§8) and its row in the release table (§5), so a citation names the tag, for
+example `stdCSS-3` / `v0.3.2`.
+
+The current release is `stdCSS-3`: software `v0.3.0` (tagged 2026-11-20),
+`v0.3.1` (tagged 2026-11-23), and `v0.3.2` (prepared 2026-11-26) publish it.
+`v0.2.0` was tagged 2026-11-17
+and `v0.1` shipped at commit `078cab2` on 2026-11-02. `MVP` remains an alias
+for the historical `stdCSS-1` baseline. The release table records all axis
+sets.
 
 `stdCSS-1` axes:
 
@@ -114,25 +127,111 @@ form of heuristic search outcomes (`spec/CLAIMS.md`, *Admission*): a dated
 note on the current ordinal, since the shape already exists; the record
 licenses no endpoint.
 
-### 4.1 Bump criteria (calculus line)
+### 4.1 Bump criteria (calculus line): shape and inventory
 
-A change's **bump** is determined by which axes it touches, not by its size.
-The table is exhaustive; if a change does not fit a row, it is not yet a
-release and needs a decision-log disposition first.
+A change's **bump** is determined by whether it changes an interface, not by
+its size or by how many derivations it adds. An **interface** is anything a
+metatheorem or a judgment quantifies over. The interfaces of a line are the
+closed list in the first rows below. A change that adds or changes one of
+them is a **shape** change and takes a new ordinal, unless it is additive and
+folded (*Fold*, below). A change that adds an
+**instance** of an existing interface is an **inventory** change and keeps
+the ordinal, provided the instance meets the contract of §4.2.
 
-| Change | Axis touched | Bump | Notes |
+The test for a borderline change: does any metatheorem's proof have to
+change, rather than gain a case that a local lemma of the new instance
+discharges? If it does, the change is a shape change.
+
+The table is exhaustive. A change that fits no row needs a decision-log
+disposition before it is released.
+
+| Change | Axis touched | Kind | Bump |
 | --- | --- | --- | --- |
-| New state model (e.g. phase-sensitive or extended-state CSS) | 1 | new **line** | No supersession; requires an embedding/migration relation (§4). |
-| New admitted operation or grammar production; new conditional cell admitted as `transition-defined` | 2 | new **ordinal** within the line | Creates re-discharge obligations for every metatheorem scoped to the old operation set (§4). |
-| New assertion or judgment vocabulary; new evidence-status or claim-shape label (e.g. `certificate-checked`, `probabilistic`) | 3 | new **ordinal** within the line | Visible as an axis-3 change even with no axis-2 change. |
-| New property added to the inventory ($w$, $r$, …) with no term-language change | 3 | **dated note** only, no new row | On the `w`/`r` precedent; the ordinal is unchanged. |
-| Obligation discharged; proof landed; `discharged-through` advances | 4 | **patch level** within the ordinal | Proof-only; no new derivation is invalidated. |
-| Hand derivation corrected in a way that changes what it asserts | 4 (erratum) | rare **in-line erratum** | Recorded in the dated notes, not as a new row, unless it alters an admitted rule. |
-| Transcription fix in `machine/` or `lean/` that changes no admitted semantics | none | **no bump** | Transcription is derived; prose wins (AGENTS.md). |
-| Machine-only provider work (new enumerator, benchmark, planner mode) | none | **no bump** | Explicit non-goal (§7). |
+| New state model (e.g. phase-sensitive or extended-state CSS) | 1 | line | new **line**; requires an embedding/migration relation (§4) |
+| Change to state equality $\equiv$, to the invariants I1–I5, or to the canonical-mint rule | 1 | shape | new **ordinal**; never folded |
+| New grammar sort, or a production of a new form (for example a command returning more than one state, or one that reads `steps`) | 2 | shape | new **ordinal**; never folded |
+| New judgment form, assertion predicate, or assertion-language operator (for example $\mathsf{preserves}_U$, family-level transport) | 3 | shape | new **ordinal**, or a **fold** if additive |
+| New evidence status or claim shape (for example `certificate-checked`, `probabilistic`) | 3 | shape | new **ordinal**, or a **fold** if additive |
+| New metatheorem | 4 | shape | new **ordinal**, or a **fold** if additive |
+| Change to the statement of an existing metatheorem | 4 | shape | new **ordinal**; never folded |
+| New command or expression constructor of an existing form, or a widened input domain of an existing one, meeting §4.2 | 2 | inventory | **patch level** |
+| New conditional cell in an existing cell format with an existing status, meeting §4.2 | 3 | inventory | **patch level** |
+| New property added to the inventory ($w$, $r$, …) with no term-language change | 3 | inventory | **patch level**, on the `w`/`r` precedent |
+| Obligation discharged; proof landed; `discharged-through` advances | 4 | proof | **patch level** |
+| Hand derivation corrected in a way that changes what it asserts | 4 (erratum) | erratum | rare **in-line erratum**, recorded in the dated notes unless it alters an admitted rule |
+| New certificate format or checker for an existing evidence status, with a mechanized proof that acceptance implies the certified bound | 3 | inventory | **patch level** |
+| Addition to the representation contract ([`REPRESENTATION.md`](REPRESENTATION.md)) that changes no state, production, or judgment, for example an ingestion contract | none | inventory | **patch level** |
+| Rung promotion of an admitted operation ([`CLAIMS.md`](CLAIMS.md)) | 4 | proof | **patch level** |
+| Gate ratification, admission refusal, or other dated decision that admits nothing | none | decision | **patch level** |
+| Transcription fix in `machine/` or `lean/` that changes no admitted semantics | none | tooling | **patch level**; transcription is derived and prose wins (AGENTS.md) |
+| Consumer or machine-only provider work (new enumerator, benchmark, planner mode, search reporting) | none | tooling | **patch level**; explicit non-goal (§7) |
+| Documentation, CI, or Lean hygiene that changes no admitted semantics | none | tooling | **patch level** |
 
-A bump is never free: every new ordinal re-opens the re-discharge obligations
-of §4, and `discharged-through` does not advance until the re-proof lands.
+A shape change is never free: every new ordinal re-opens the re-discharge
+obligations of §4, and `discharged-through` does not advance until the
+re-proof lands. An inventory change admitted under §4.2 re-opens nothing,
+because the contract requires the instance to bring its own cases. Items
+admitted before the contract existed are the exception recorded in §5.2.
+
+**Fold.** A shape change may be published under the current ordinal, instead
+of opening a new one, when it is **additive** and a dated maintainer decision
+folds it. A shape change is additive when it adds an interface and changes
+none:
+
+1. every existing derivation, judgment form, predicate, evidence status, claim
+   shape, and grammar form reads as before;
+2. every existing metatheorem keeps its statement on the interfaces and
+   instances its disposition names
+   ([`OBLIGATIONS.md`](OBLIGATIONS.md), *Re-discharge status of
+   metatheorems*), and no `discharged-through` value is read as covering the
+   new interface until a disposition names it.
+
+A change to the state model, a new grammar sort or production form, and a
+change to the statement of an existing metatheorem are never additive, since
+they change what every metatheorem quantifies over; the table marks them
+"never folded". A fold is not free either: it opens no ordinal, but the
+folded interface stands only on the evidence recorded for it until the §4
+re-discharge audit names it in a disposition.
+
+The release preparation records each folded item in §5, as §4.2 items are
+recorded for instances: the §4.1 row it falls under; why it is additive; the
+evidence its new cells or obligations stand on; the metatheorems whose
+dispositions do not yet cover it; and the re-discharge audit still owed. The
+decision to fold is the maintainer's
+([`AUTHORITY.md`](../AUTHORITY.md)); whether a change is eligible is
+computed from this section.
+
+### 4.2 Instance contract
+
+An operation, constructor, or cell is admitted as an instance of an existing
+interface only when it supplies, at admission, every local obligation that the
+line's metatheorems need from an instance of that kind:
+
+1. a taxonomy ID ([`TAXONOMY.md`](TAXONOMY.md)), a production of an existing
+   form ([`TERM_LANGUAGE.md`](TERM_LANGUAGE.md)), and an update-ownership row
+   ([`STATE_MODEL.md`](STATE_MODEL.md) §4);
+2. a card and a dated hand derivation of output well-formedness
+   ([`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md) §2, §4), as an
+   instance of `OBL-WELL-FORMEDNESS-PRESERVATION`;
+3. single-valuedness on fixed presentations, as an instance of
+   `OBL-PRIMITIVE-DETERMINISM`, and, for a command, that it reads no `steps`
+   (`OBL-SKIP-IDENTITY`);
+4. its structural carry cells and their rows of `OBL-JUDGMENT-SOUNDNESS`
+   ([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md)); a property it does not carry is
+   recorded as such, never left blank;
+5. for a cell: an existing cell format and an existing evidence status, with
+   its hypotheses named as priced inputs (`OBL-PRICED-INPUT-SEMANTICS`);
+6. for each metatheorem that is restricted to a named fragment, either a proof
+   of the instance's case or an explicit statement that the instance lies
+   outside the fragment.
+
+An instance that lacks an item is not admitted at patch level. Either the
+item lands first, or the instance waits for the next ordinal and its
+re-discharge audit. The contract binds admissions from 2026-11-24; the items
+admitted earlier, and what each still lacks, are recorded in §5.2. A
+metatheorem whose `discharged-through` reads the current ordinal covers
+exactly the instances named in its disposition
+([`OBLIGATIONS.md`](OBLIGATIONS.md), *Re-discharge status of metatheorems*).
 
 ## 5. Release table
 
@@ -146,6 +245,8 @@ discharged.
 | `v0.1.0` (software release of `stdCSS-2`) | phase-insensitive standard CSS (`stdCSS-2`) | `stdCSS-1` operations plus `E-GRAFT` (conditional) and the six Gate 6 CSS-level conditional cells (`E-GLUE`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`, `E-LOCAL-HADAMARD`, `P-REBASE`), at their recorded rungs; `E-GLUE` has no unary grammar production | Gates 0 and 1 ratified (2026-10-29); `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32, 2026-10-28); `OBL-JUDGMENT-SOUNDNESS` proved by hand derivation (§4.11) with partial Lean mechanization; measure-monotonicity hypothesis discharged for the exact sector distance | Prepared 2026-11-10 at commit `1afc766`; not yet tagged. Gates 2–7 unchecked by design. Re-discharge obligations of §3/§4 remain open until the re-proofs land; `discharged-through` values are not advanced by this preparation. |
 | `stdCSS-3` / `v0.2.0` | phase-insensitive standard CSS (`stdCSS-2` state model) | `stdCSS-2` operations plus the `stdCSS-3` candidate scope of §5.1: the distance-increasing constructors (`L-HGP`, `L-LIFTED`, `L-GROUP-ALGEBRA`, `A-CONCAT`, `L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`), `L-NESTED-CSS`, layout-transfer cells, puncturing/peeling price cells, `E-GLUE` promotion with seam-certificate equality, `E-LOCAL-HADAMARD` sector-swap support, W13 half, and the admitted heuristic statuses; `E-GLUE` retains no unary grammar production | Gates 0 and 1 ratified; `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32); `OBL-JUDGMENT-SOUNDNESS` proved by hand (§4.11) with partial Lean mechanization; `discharged-through` values **not advanced** — re-discharge obligations of §4 remain open until the re-proofs land | **Prepared 2026-11-14 ( "prepare but do not tag"):** candidate scope of §5.1 staged as a release row; not tagged. Gates 2–7 unchecked by design. Rows are not edited after the fact; a changed release is a new row. |
 | `stdCSS-3` / `v0.3.0` | phase-insensitive standard CSS (`stdCSS-3` state model) | `stdCSS-2` operations plus the `stdCSS-3` candidate scope of §5.1, now completed: gate-realization judgment rows (`preserves_U`, `ω` floor, §2h/§7.1–§7.4), W13 Gate 6 rows and Trace/StepChain seam discharge (§4.11/§4.37), one-shot level-map transport (§2j), `A-QUOTIENT` monomial-quotient specialization (§2i), kernel five promoted to rung 6 (§4.40), `E-GLUE` mechanization with binary-only production (§1–§2, §4.31/§4.33) | Gates 0–6 ratified (2026-11-19); `OBL-GATE6-CSS-EXTENSIONS` discharged (§4.32); `OBL-JUDGMENT-SOUNDNESS` proved by hand (§4.11) with partial Lean mechanization; `discharged-through` advanced to `stdCSS-3` for all metatheorems (§4.40) | **Prepared 2026-11-19 (maintainer decision):** completes the `stdCSS-3` candidate scope; `discharged-through` values advanced; Gate 7 unchecked by design. Re-discharge obligations of §4 remain scoped to the named fragments (§4.40). Tagging and appending the final tag record remain maintainer-only (AGENTS.md *Hard rules*). |
+| `stdCSS-3` / `v0.3.1` | phase-insensitive standard CSS (`stdCSS-3` state model) | the `stdCSS-3` / `v0.3.0` row's set plus the inventory of §5.2: published in `v0.3.0` but missing from that row, `C-COLUMN-CNOT`, `L-MAPPING-CONE`, `L-EMPTY`, `L-FREE`, `A-PULLBACK`, `A-PUSHOUT`, and the sector-split `C-DELETE-CHECK` price cells; published in `v0.3.1`, `L-PAIR-PARTITION`, `PP-SCALE`, nonabelian group inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED`, and the conditional constructor distance cells with witness lifting | Gates 0–6 ratified (2026-11-19); `discharged-through` at `stdCSS-3` for every metatheorem, covering the inventory each disposition names; for the §5.2 inventory, what each item has and lacks under §4.2 is recorded item by item in §5.2, under a transitional clause ([`OBLIGATIONS.md`](OBLIGATIONS.md), *Re-discharge status of metatheorems*) | Recorded 2026-11-24 by maintainer decision: everything published in a `v0.3.x` tag is `stdCSS-3`. The `v0.3.0` row is not edited; this row completes its inventory. Gate 7 unchecked by design. |
+| `stdCSS-3` / `v0.3.2` | phase-insensitive standard CSS (`stdCSS-3` state model) | the `stdCSS-3` / `v0.3.1` row's set plus the §5.3 inventory: `E-SPLIT` separating deletion (`split(Q_A; R)`), split-subset `E-LOCAL-HADAMARD` ($\varnothing \subsetneq T \subsetneq Q$), coset inputs for `L-LIFTED` ($\mathrm{lift}_{G;H}(A, B)$), the `E-EXTEND` distance-loss conditional cell, and the frame-reading gate-realization predicates (`preserves_U(C \| F)`, `phase_U(C \| F) = z`, `image_U(C; e) ≡ P`, `addresses_U(C; F, A)`) and any-angle `C-ADD-CHECK` cell (`JUDGMENT_LAYER.md` §2h Rows C–F), together with the `open` completeness obligation `OBL-ELEMENTARY-COMPLETENESS` | Gates 0–7 ratified (Gate 7 for `stdCSS-3`, 2026-11-26); §5.2 transitional clause retired (all `v0.3.x` inventory items meet §4.2, including `Command.cnotSwap`); four rank axioms of `L-HGP`/`A-PRODUCT` proved in `ClosedK.lean` (no Lean axioms remain, `AXIOMS.md`); `discharged-through` remains at `stdCSS-3` on the §4.40 / §5.2–§5.3 inventory; Rows C–F stand on dated hand derivations (§4.37 Lemmas 5–11, not mechanized, not yet covered by §4.40 metatheorem dispositions); `OBL-ELEMENTARY-COMPLETENESS` remains `open` | Prepared 2026-11-26 by maintainer decision: ships as `v0.3.2` (`stdCSS-3`), folding the items formerly staged for `stdCSS-4` (#572, #606) into `stdCSS-3` as additive shape changes under §4.1 (*Fold*), with the fold records of §5.3. Also ships external code ingestion (`REPRESENTATION.md` §9), pruning-tree distance certificates, formal challenge-certificate generation, `L-TANNER`/`L-TILE` `k` bounds and no-go theorems, `W25`–`W29` Lean replays, planner applicability/canonical-key/layout-provider tooling, and the asserted stress battery. Tagging and publishing remain maintainer-only. |
 
 **Dated note (2026-11-14).** The `stdCSS-3` / `v0.2.0` release
 row above is **prepared but not tagged** ("prepare but do not tag"): it stages
@@ -300,12 +401,12 @@ re-proofs land (§4).
  retained-display theorem, $n$, and the `L-HGP` overlap proved. The
  other three overlaps are proved in Lean since. Of the $k$
  closed forms, that of `L-GROUP-ALGEBRA` is proved in Lean since and that of `A-CONCAT`, with the retention of every natural row,
- since. Since 2026-11-16, the closed forms of
- `L-HGP` and `A-PRODUCT` are proved modulo the four rank axioms
- `hgp_rankX`, `hgp_rankZ`, `product_rankX`, and `product_rankZ` recorded
- in `lean/extra/ClosedK.lean` and `AXIOMS.md`; those axioms are accepted
- as `proposed (classical)` assumptions, not discharged obligations, and
- `L-HGP` otherwise stays a hand derivation (§4.34). The
+ since. From 2026-11-16 the closed forms of
+ `L-HGP` and `A-PRODUCT` were proved modulo the four rank axioms
+ `hgp_rankX`, `hgp_rankZ`, `product_rankX`, and `product_rankZ` of
+ `lean/extra/ClosedK.lean`. Since 2026-11-24 the four are theorems of
+ `lean/CodeCalculus/ClosedK.lean` and the two closed forms rest on no
+ assumption (`AXIOMS.md`). The
  re-discharge obligations of §4 apply to the metatheorems scoped to the
  `stdCSS-2` operation set once the row ships. The other five
  (`L-BALANCED`, `L-TANNER`, `L-TILE`, `A-PRODUCT`, `A-DOUBLE`) landed the
@@ -473,106 +574,329 @@ or grammar production). Existing §5 release rows are not edited; appending the
 `v0.3.0` release row and tagging remain maintainer-only actions (§8), rung 7
 (`mechanized`) remains owed, and Gates 2–7 remain unchecked.
 
-**Dated note (2026-11-19).** The sector-split deletion price
-cells for `C-DELETE-CHECK` (deleted sector
-$d'_\tau=\min(d_\tau,w_{\mathrm{del}})$, opposite sector
-$d'_{\bar\tau}=\min(d_{\bar\tau},w_{\mathrm{exp}})$, full distance
-$d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$) are admitted as new-admission
-scope under the 2026-11-18 re-schedule and ship in `v0.4.0`; they do not form
-part of the `v0.3.x` patches. `discharged-through` values are not advanced.
-See `the decision log`.
-
-
 **Not in this candidate (guardrails, the issue tracker §13):** exact-distance
 computation as a calculus move; heuristic search results presented as lower
 bounds; release-ordinal bumps for machine-only provider work.
 
-**Dated note (2026-11-19, `v0.4.0` target).** Axis: 2 (operation
-set / term language). By dated maintainer decision
-(`the decision log`),
-`L-EMPTY` (`empty`), `L-FREE` (`free(Q)`), `A-PULLBACK`
-(`pullback(e₁, e₂, e_I; φ₁, φ₂)`), and `A-PUSHOUT`
-(`pushout(e₁, e₂, e_S; ψ₁, ψ₂)`) are admitted as `transition-defined`
-expression constructors (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md`
-§2 cards, §4.43; `JUDGMENT_LAYER.md` §2g, §2d.5; `CLAIMS.md`), and the
-Kan-extension candidate remains refused. They carry no automatic distance
-Rule beyond §2g (`DistanceLedger.for_constructed`). Existing §5 release rows
-are not edited, and `discharged-through` values do not advance (re-discharge
-obligations of §4 apply).
+## 5.2 `stdCSS-3` inventory published in `v0.3.x`
 
-**Dated note (2026-11-22, `v0.4.0` target).** Axis: 2 (operation set / term
-language) and 3 (conditional interval cell and family-level ceiling). The
-dated maintainer decision is recorded in the decision log (2026-11-22):
-`L-PAIR-PARTITION`
-(`pair_partition(p; B_X, B_Z)`) is admitted and `PP-SCALE` (`pp_scale(e; P)`)
-is promoted, both as `transition-defined` expression constructors
-(`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2 cards, §4.46–§4.47;
-`JUDGMENT_LAYER.md` §2d.5, §2g, §2l; `CLAIMS.md`; `OBLIGATIONS.md`
-`OBL-PP-SCALE` and `OBL-WELL-FORMEDNESS-PRESERVATION`). Existing §5 release
-rows are not edited, and `discharged-through` values do not advance
-(re-discharge obligations of §4 apply).
+Everything published in a `v0.3.x` tag belongs to `stdCSS-3` (maintainer
+decision, 2026-11-24). Each item below is an instance of an interface that
+`stdCSS-3` already has: a command of an existing form, an expression
+constructor, a widened input domain, or a conditional cell in the §2g
+format with the existing `conditional` status. None adds a grammar sort,
+judgment form, evidence status, claim shape, or metatheorem, so none is a
+shape change under §4.1. The `stdCSS-3` / `v0.3.1` row of §5 records them;
+no item is staged on a later row.
 
-**Dated note (2026-11-23, `stdCSS-4` / `v0.4.0` candidate scope; machine-side).**
-The consumer capabilities of software `v0.3.1` are staged on the `stdCSS-4`
-row under the §8 staged-admission rule: (1) objective-aware search, in which
-`bounded_sector_search` and `plan` select the ranking objective (distance,
-check weight, n, k, an axis/targets dict, or a callable); (2) applicability
-diagnostics, in which `bounded_sector_search` reports per-move-family
-`enabled`, `enumerated` and first-drop-reason counts; (3) constructor
-screening and separation, in which typed constructor specifications enter the
-objective-filtered pool with a `structural_profile`, and sector swaps are
-reported as presentation-only candidates and never as improvements; and (4)
-stop and budget reporting, in which `bounded_sector_search` names its stop
-reason and the budget it declined, and `run_campaign` records a `stop_reason`.
-None of these changes an axis, an admitted rung, or an obligation status, and
-none advances a `discharged-through` value. Each is a new advertised consumer
-capability. Under §8 it may ship in the `v0.3.1` PATCH only as a staged
-admission on the `stdCSS-4` row, as this note stages it; without this note it
-would be a MINOR criterion.
+**Published in `v0.3.0`, missing from its row:**
 
-**Dated note (2026-11-22, `v0.4.0` target).** Axes: 2 (operation set / term
-language) and 3 (judgment set / distance ledger).
-1. **Nonabelian finite group inputs (Axis 2, `OBL-NONABELIAN-GROUP-INPUTS`):**
-   `L-LIFTED`, `L-GROUP-ALGEBRA`, and `L-BALANCED` are generalized from finite
-   abelian groups given by cyclic orders to arbitrary finite groups $G$
-   (presented by cyclic orders, an explicit multiplication table, or
-   permutation generators; `TAXONOMY.md` §1 and §3.3–§3.5; `TERM_LANGUAGE.md`
-   §1, §2, §7; `OPERATIONAL_SEMANTICS.md` §2 cards and §4.44;
-   `lean/CodeCalculus/ConstructorOverlap.lean`). Left and right regular
-   representations $L(x)$ and $R(y)$ commute over $\mathbb{F}_2$, and for
-   abelian groups $R(y) = L(y)$ entry for entry, so the extension is strictly
-   conservative on the abelian fragment.
-2. **Conditional constructor distance cells and witness lifting (Axis 3,
-   `OBL-CONDITIONAL-CONSTRUCTOR-CELLS`):** `JUDGMENT_LAYER.md` §2g and §2g.1
-   and `OPERATIONAL_SEMANTICS.md` §4.45 define conditional lower-bound cells
-   and deterministic factor-to-child witness lifting for `L-HGP`,
-   `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, and `A-DOUBLE`
-   (`lean/CodeCalculus/PricedInterval.lean`; `machine/intervals.py`;
-   `machine/constructors.py`).
-3. **Admission of `L-PAIR-PARTITION` (Axis 2):** `L-PAIR-PARTITION`
-   (`pair_partition(p; B_X, B_Z)`) is admitted as a `transition-defined`
-   expression constructor (`TERM_LANGUAGE.md` §1–§2;
-   `OPERATIONAL_SEMANTICS.md` §2 card, §4.46; `JUDGMENT_LAYER.md` §2d.5, §2g;
-   `CLAIMS.md`; `OBLIGATIONS.md` `OBL-WELL-FORMEDNESS-PRESERVATION`). It carries
-   no automatic distance rule beyond §2g (`DistanceLedger.for_constructed`).
-4. **Re-discharge obligations (§4):** Per §4, this axis-2/axis-3 change does not
-   edit existing §5 release rows and does not automatically advance
-   `discharged-through` values on pre-existing obligations; re-discharge of
-   `OBL-WELL-FORMEDNESS-PRESERVATION` on the widened nonabelian domain is
-   supplied by §4.44 and `cayleyTwoblock_naturalOrthogonal`,
-   `cayleyLift_naturalOrthogonal`, and `cayleyBalanced_naturalOrthogonal`,
-   while all other tracked obligations retain
-   their existing `discharged-through` markers until the `v0.4.0` release audit.
+- `C-COLUMN-CNOT` (`cnotSwap(U)`, $U \in \mathrm{GL}(Q, 2)$), a command
+  admitted 2026-11-18 (`TERM_LANGUAGE.md` §2; `OPERATIONAL_SEMANTICS.md`
+  §4.42).
+- `L-MAPPING-CONE` (`cone(∂_A, ∂_B, f_1, f_0)`), admitted 2026-11-18 under
+  the chain-map premise (`OPERATIONAL_SEMANTICS.md` §2 card, §4.41).
+- `L-EMPTY` (`empty`), `L-FREE` (`free(Q)`), `A-PULLBACK`
+  (`pullback(e₁, e₂, e_I; φ₁, φ₂)`), and `A-PUSHOUT`
+  (`pushout(e₁, e₂, e_S; ψ₁, ψ₂)`), admitted 2026-11-19 as
+  `transition-defined` expression constructors (`TERM_LANGUAGE.md` §1–§2;
+  `OPERATIONAL_SEMANTICS.md` §2 cards, §4.43; `JUDGMENT_LAYER.md` §2g,
+  §2d.5; `CLAIMS.md`). They carry no automatic distance rule beyond §2g
+  (`DistanceLedger.for_constructed`). The Kan-extension candidate remains
+  refused.
+- The sector-split deletion price cells for `C-DELETE-CHECK`, admitted
+  2026-11-19: deleted sector $d'_\tau=\min(d_\tau,w_{\mathrm{del}})$,
+  opposite sector $d'_{\bar\tau}=\min(d_{\bar\tau},w_{\mathrm{exp}})$, and
+  full distance $d'=\min(d,w_{\mathrm{del}},w_{\mathrm{exp}})$. They are
+  conditional on the supplied $w_{\mathrm{del}}$ and $w_{\mathrm{exp}}$,
+  which the consumer checks for shape, not truth.
 
+**Published in `v0.3.1`:**
+
+- `L-PAIR-PARTITION` (`pair_partition(p; B_X, B_Z)`), admitted 2026-11-22,
+  and `PP-SCALE` (`pp_scale(e; P)`), promoted 2026-11-22, both as
+  `transition-defined` expression constructors (`TERM_LANGUAGE.md` §1–§2;
+  `OPERATIONAL_SEMANTICS.md` §2 cards, §4.46–§4.47; `JUDGMENT_LAYER.md`
+  §2d.5, §2g, §2l; `CLAIMS.md`; `OBLIGATIONS.md` `OBL-PP-SCALE`). Neither
+  carries an automatic distance rule beyond §2g; the `PP-SCALE`
+  family-level ceiling is `conjectural`.
+- Nonabelian finite group inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, and
+  `L-BALANCED` (`OBL-NONABELIAN-GROUP-INPUTS`): groups presented by cyclic
+  orders, an explicit multiplication table, or permutation generators
+  (`TAXONOMY.md` §1, §3.3–§3.5; `TERM_LANGUAGE.md` §1, §2, §7;
+  `OPERATIONAL_SEMANTICS.md` §4.44). Left and right regular representations
+  commute over $\mathbb{F}_2$ and agree for abelian groups, so the widening
+  is conservative on the abelian fragment. The abelian $k$ closed form does
+  not extend: an explicit $D_4$ instance refutes it (§4.44).
+- Conditional constructor distance cells and factor-to-child witness
+  lifting for `L-HGP`, `L-NESTED-CSS`, `A-CONCAT`, `A-PRODUCT`, and
+  `A-DOUBLE` (`OBL-CONDITIONAL-CONSTRUCTOR-CELLS`; `JUDGMENT_LAYER.md` §2g,
+  §2g.1; `OPERATIONAL_SEMANTICS.md` §4.45). The lower-bound cells are priced
+  hypotheses, not proved bounds.
+
+The consumer capabilities that also shipped in `v0.3.1` (objective-aware
+search, applicability diagnostics, constructor screening and separation,
+stop and budget reporting) are tooling under §4.1. They change no axis,
+rung, or obligation status.
+
+**Instance-contract record (completed 2026-11-25, issue #657).** The 2026-11-24
+transitional clause is retired: every item above now meets all six items of the
+§4.2 instance contract, recorded item by item below, and no `discharged-through`
+value moves. §4.2 continues to bind every admission from 2026-11-24 on.
+
+**Expression constructors (`L-MAPPING-CONE`, `L-EMPTY`, `L-FREE`, `A-PULLBACK`,
+`A-PUSHOUT`, `L-PAIR-PARTITION`, `PP-SCALE`, and the multiplication-table
+productions of the nonabelian inputs for `L-LIFTED`, `L-GROUP-ALGEBRA`, and
+`L-BALANCED`).** Every item has:
+- a taxonomy ID, grammar production, §2 card, contract row in `CLAIMS.md`,
+  update-ownership row in `STATE_MODEL.md` §4, and matching entries in
+  `machine/state.json`, `machine/semantics.json`, and
+  `machine/operation_registry.json` (including `L-MAPPING-CONE`);
+- a hand derivation of output well-formedness (§4.41, §4.43, §4.44, §4.46,
+  §4.47), mechanized for every `StateExpr` constructor by `wf_of_evalExpr`
+  (`lean/CodeCalculus/ExpandedSoundness.lean`);
+- single-valuedness on fixed presentations, recorded in §4.40 item 2 and
+  `OBL-PRIMITIVE-DETERMINISM` and mechanized for every `StateExpr` constructor
+  by `evalExpr_unique` (`ExpandedSoundness.lean`);
+- structural carry rows recorded in §4.40 item 12 and `OBL-JUDGMENT-SOUNDNESS`
+  and mechanized under `ext_judgment_soundness_of_term` (`ExpandedSoundness.lean`:
+  `instExprWF` for all constructors, `instConeN`/`instConeK`,
+  `instEmptyN`/`instEmptyK`, `instFreeN`/`instFreeK`, `instPullbackN`,
+  `instPushoutN`, `instPairPartitionN`, `instPpScaleN`, `instLiftTableN`,
+  `instTwoblockTableN`, and `instBalancedTableN`; no automatic distance rule
+  beyond §2g, and no nonabelian `k` closed form).
+
+**Command (`C-COLUMN-CNOT`).** Has:
+- a taxonomy ID, grammar production (`TERM_LANGUAGE.md` §2), carry rows in
+  `JUDGMENT_LAYER.md` §2k, a §2 card in `OPERATIONAL_SEMANTICS.md`, an
+  update-ownership row in `STATE_MODEL.md` §4, a contract row in `CLAIMS.md`,
+  and entries in `machine/state.json`, `machine/semantics.json`, and
+  `machine/operation_registry.json`, with executable counterpart
+  `machine/css_preserving_cnot_swap.py`;
+- a dated hand derivation of well-formedness, $n' = n$, $k' = k$,
+  inapplicability/malformation behavior (meeting `transition-defined`),
+  single-valuedness, `steps` inertness, and sequence associativity (§4.42);
+- a constructor `Command.cnotSwap` and rule `Eval.cnotSwap` in Lean
+  (`Term.lean`, `Eval.lean`, `ColumnCnot.lean`), so `eval_unique`,
+  `eval_deterministic`, `denote_eval`, `denote_seq_assoc`,
+  `seq_assoc_fwd`/`bwd`, `eval_cnotSwap_skip_left`/`right`, `StepChain`,
+  `Derives.genCnotSwap`, and `ext_judgment_soundness_of_term`
+  (`instCnotSwapN`, `instCnotSwapK`, `instCnotSwapWF`, `genCnotSwap`) cover
+  it, with an explicit well-formedness qualification: `Eval.cnotSwap` takes
+  `EncodingWellFormed s'` as a premise, so `wf_of_eval_all` and
+  `instCnotSwapWF` cover `Command.cnotSwap` through the well-formedness
+  premise its transition carries (a premise restatement rather than a
+  mechanized proof of I1–I5 preservation), and `eval_cnotSwap_k` relies on
+  that premise as well; the theorem that an invertible column map $U$
+  preserves I1–I5 is hand-derived in `OPERATIONAL_SEMANTICS.md` §4.42 and
+  not mechanized in Lean.
+
+**Conditional cells.** The sector-split `C-DELETE-CHECK` price cells are
+covered by the `C-DELETE-CHECK` case of `OBL-PRICED-INTERVAL-SOUNDNESS`
+(§4.13, priced sector-split bullet). The conditional constructor cells are
+covered by `OBL-CONDITIONAL-CONSTRUCTOR-CELLS` (§4.45; `LedgerSound` in
+`lean/CodeCalculus/PricedInterval.lean`), under their hypotheses (`OBL-PRICED-INPUT-SEMANTICS`).
+
+**Restricted metatheorems (§4.2 item 6).** Every item above lies outside
+the named fragments of `OBL-ORDER-INDEPENDENT-DELETION`,
+`OBL-CROSS-SECTOR-PERMUTATION`, `OBL-FIXED-NAMESPACE-REACHABILITY`,
+`OBL-PRESENTATION-CONJUGATION`, and `OBL-DERIVED-TERM-FACTORIZATION`, since
+none is a kernel command or `E-GRAFT` (and `C-COLUMN-CNOT` is a primitive
+extension command). `OBL-JUDGMENT-TRANSPORT` covers `C-COLUMN-CNOT` in command
+sequences (`SeamChains.lean`, `ExpandedSoundness.lean`) and excludes expression
+constructors from command-sequence position (they enter at chain position 0).
+`OBL-PRICED-INTERVAL-SOUNDNESS` is restricted to the core §8.3 transformers:
+the sector-split cells lie inside it as above, `C-COLUMN-CNOT` widens to reset
+in `propagateCmd` (governed by §2k/§4.42), and the constructors and their
+conditional cells lie outside it.
+
+**Scope of the dispositions.** The metatheorem dispositions in
+[`OBLIGATIONS.md`](OBLIGATIONS.md) (*Re-discharge status of metatheorems*,
+*Scope of `stdCSS-3`*) and [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md)
+§4.40 now name every item above. No `discharged-through` value moves.
+
+**Dated note (2026-11-25, updated 2026-11-26; Gate 7 completeness obligation,
+issue #606).** By dated maintainer decision (MathysRennela, Option (a)), the
+scoped non-circular completeness obligation `OBL-ELEMENTARY-COMPLETENESS` is
+opened in [`OBLIGATIONS.md`](OBLIGATIONS.md) at status `open`, backed by the
+feasibility argument in [`TAXONOMY.md`](TAXONOMY.md) (*Completeness
+feasibility decision*). Originally staged for `stdCSS-4` (`v0.4.0`) under §4.1,
+it was folded into `stdCSS-3` / `v0.3.2` by maintainer decision on 2026-11-26
+(alongside issue #572; §5.3). No existing §5 release row is edited, the
+obligation remains `open`, and no `stdCSS-3` `discharged-through` value moves.
+
+## 5.3 `stdCSS-3` inventory published in `v0.3.2`
+
+Each item in the first group below was admitted after 2026-11-24 under the
+instance contract of §4.2, item by item, as patch-level `stdCSS-3` inventory.
+The second group records the two items originally staged for `stdCSS-4` that
+were folded into `stdCSS-3` / `v0.3.2` by maintainer decision on 2026-11-26.
+The `stdCSS-3` / `v0.3.2` row of §5 records them.
+
+- **`E-EXTEND` distance-loss cell** (2026-11-26, issue #677). This is a new
+  conditional cell of an existing format on an existing command, for
+  $\Delta\neq\varnothing$. The §4.2 items are met as follows:
+  1. The taxonomy ID, the production and the update-ownership row exist
+     unchanged.
+  2. The card is unchanged, and so is the well-formedness derivation
+     (`OPERATIONAL_SEMANTICS.md` §4.30): the cell moves no state.
+  3. Single-valuedness is unchanged. The cell reads its hypothesis and no
+     `steps`.
+  4. The structural rows are unchanged. The distance rows of
+     `JUDGMENT_LAYER.md` §2a, §2b and the cell table record the cell.
+  5. The format is the existing conditional-price format (cf. `peel_price`),
+     with evidence status `conditional`, and the hypothesis is named as a
+     priced input (`extend_distance_loss`, `OBL-PRICED-INPUT-SEMANTICS`).
+  6. The dispositions are in `OBLIGATIONS.md`, *Re-discharge status of
+     metatheorems*. The cell is covered by hand derivation only
+     (`OBL-EXTEND-DISTANCE-LOSS`). It lies outside the core §8.3 slice of
+     `OBL-PRICED-INTERVAL-SOUNDNESS` and outside the Lean
+     `gate6_interval_soundness`, which covers the unpriced `E-EXTEND`
+     transformer.
+
+- **Coset inputs for `L-LIFTED`** (2026-11-26, issue #675). This is a widened
+  input domain of the existing constructor: the production
+  $\mathrm{lift}_{G;H}(A, B)$ takes a subgroup $H \le G$, with $B$ over
+  $\mathbb{F}_2[N_G(H)]$. The §4.2 items are met as follows:
+  1. The taxonomy ID exists, the production is in `TERM_LANGUAGE.md` §1, and
+     the update-ownership row is in `STATE_MODEL.md` §4.
+  2. The card is at `OPERATIONAL_SEMANTICS.md` §2, and the dated
+     well-formedness derivation at §4.49.
+  3. Single-valuedness is in §4.49 (not a command, so no `steps` item).
+  4. The $n$ and $k$ rows are in `JUDGMENT_LAYER.md`; the other structural rows
+     are those of the regular lift.
+  5. Not applicable: this is not a cell.
+  6. The dispositions are in `OBLIGATIONS.md`, *Re-discharge status of
+     metatheorems*. The instance is covered by hand derivation only and lies
+     outside every Lean `StateExpr` theorem.
+
+  No Lean counterpart exists (`OBL-COSET-LIFT-INPUTS`, *Owed*).
+
+- **Split-subset `E-LOCAL-HADAMARD`** (2026-11-26, issue #571). This is a
+  widened input domain of the existing command `hadamard(T)`: it admits
+  $\varnothing\subsetneq T\subsetneq Q$ under the decidable row-space
+  splitting guard, and the canonical-mint rule is unchanged. The §4.2 items
+  are met as follows:
+  1. The taxonomy ID and production already exist, and the update-ownership
+     row is in `STATE_MODEL.md` §4.
+  2. The card is at `OPERATIONAL_SEMANTICS.md` §2, and the dated
+     well-formedness derivation at §4.27(b).
+  3. The update is a deterministic function of the state: it reads displayed
+     rows in identifier order (the order of the fixed identifier enumeration)
+     both for the seed and for the mixed-row pass, so it is single-valued
+     (`eval_deterministic`) and $\equiv$-input invariant
+     (`splitHadamardState_equiv`), and reads no `steps`.
+  4. The carry rows are in `JUDGMENT_LAYER.md` §2b, §2d.2, §2d.5, §2f and
+     §9.4, and the $\mathsf{gen}_i$ row in §4.
+  5. Not applicable: this is not a cell.
+  6. The per-metatheorem dispositions are in `OBLIGATIONS.md`, *Re-discharge
+     status of metatheorems*.
+
+  Lean mechanizes the transition, determinism, well-formedness (as a
+  checked premise), and the structural and generator rows. For the exact
+  distance it also mechanizes the ledger's relations $d'=d$ and
+  $d_\sigma'\ge d$ (`lean/CodeCalculus/SplitHadamard.lean`). The
+  factor-code closed forms of §4.27(b) are hand-derived.
+
+- **`E-SPLIT` separating deletion** (2026-11-25, issue #546): admitted by
+  dated maintainer decision (MathysRennela) at rung 3 (`transition-defined`,
+  `introduced-in: stdCSS-3 / v0.3.2`) as the command production
+  $\mathrm{split}_{Q_A; R}$ over an explicit cut $(Q_A, R)$
+  (`TERM_LANGUAGE.md` §1–§2; `OPERATIONAL_SEMANTICS.md` §2, §4.48), derived
+  over `C-DELETE-CHECK` and `C-SEQUENCE`, while the two-state projection
+  reading is refused (returning two states would be a production of a new
+  form, a §4.1 shape change that is never folded because it changes the
+  evaluation relation every metatheorem quantifies over).
+  Satisfies all six items of §4.2 at admission (§4.48 item 10): (1) taxonomy
+  ID, command production, and update-ownership row (`STATE_MODEL.md` §4,
+  `machine/state.json`); (2) §2 card and §4.48 well-formedness derivation
+  (`wf_of_eval_all`); (3) single-valuedness and `steps` inertness
+  (`eval_unique`, `KernelObligations.lean`); (4) structural, layout, and `W13`
+  carry cells (`JUDGMENT_LAYER.md`, `ExpandedSoundness.lean`); (5) conditional
+  `split_block_intervals` cell (`OBL-PRICED-INPUT-SEMANTICS`,
+  `OBL-GATE6-CSS-EXTENSIONS`, consumer and Lean support); and (6) explicit
+  dispositions for every fragment-restricted metatheorem. Existing §5 release
+  rows are not edited; no re-discharge obligation is re-opened.
+
+**Folded into `stdCSS-3` / `v0.3.2` (§4.1, *Fold*; maintainer decision
+2026-11-26).** The two items below are shape changes under §4.1. Both are
+additive, and by dated maintainer decision (MathysRennela, 2026-11-26) both
+are folded into `stdCSS-3` / `v0.3.2` rather than opening `stdCSS-4`. The
+fold record of §4.1 is given for each.
+
+- **Frame-reading gate predicates (issue #572, admitted 2026-11-26).** Four
+  operator- and frame-indexed assertion predicates on CSS displays,
+  $\mathsf{preserves}_U(C \mid F)$, $\mathsf{phase}_U(C \mid F) = z$,
+  $\mathsf{image}_U(C; e) \equiv P$, and $\mathsf{addresses}_U(C; F, A)$,
+  reading the logical-witness field as a frame supplied with the state
+  ([`JUDGMENT_LAYER.md`](JUDGMENT_LAYER.md) §2h, Rows C–F;
+  [`STATE_MODEL.md`](STATE_MODEL.md) §1a, *Eigenvalue reading*; hand
+  derivations at [`OPERATIONAL_SEMANTICS.md`](OPERATIONAL_SEMANTICS.md)
+  §4.37, Lemmas 5–11). The same derivations decide the `C-ADD-CHECK` cell of
+  $\mathsf{preserves}_U$ for every rational angle $\theta_j \in \pi\mathbb{Q}$
+  (Corollary 7.1; other angles have no admitted decision procedure and stay
+  `not yet defined`), replacing its `not yet defined` non-$\pi/4$ branch by a
+  proved cell. No state field, equality clause, invariant, grammar production,
+  or taxonomy operation identifier changes, so
+  $C = (Q, X, Z, \mathsf{pres}, \mathsf{used})$ is unchanged.
+  The fold record:
+  1. *Row:* new assertion predicate (§4.1, axis 3).
+  2. *Why additive:* the four predicates are new rows beside the existing
+     ones. No existing judgment form, predicate, evidence status, claim
+     shape, or grammar form changes, and no existing derivation changes. The
+     any-angle `C-ADD-CHECK` cell replaces a `not yet defined` branch, from
+     which nothing was derivable. No metatheorem's statement changes on the
+     interfaces its disposition names.
+  3. *Evidence:* the cells of `JUDGMENT_LAYER.md` §2h Rows C–F stand on the
+     dated hand derivations of `OPERATIONAL_SEMANTICS.md` §4.37 (Lemmas
+     5–11), and are not mechanized.
+  4. *Not yet covered:* no §4.40 metatheorem disposition names Rows C–F. In
+     particular `OBL-JUDGMENT-SOUNDNESS`, `discharged-through` `stdCSS-3`,
+     covers the judgment rows its disposition names and not these
+     ([`OBLIGATIONS.md`](OBLIGATIONS.md), *Re-discharge status of
+     metatheorems*).
+  5. *Owed:* the §4 re-discharge audit of `OBL-JUDGMENT-SOUNDNESS` and the
+     other metatheorems against Rows C–F. No `discharged-through` value
+     advances until it lands.
+- **Scoped elementary completeness obligation (`OBL-ELEMENTARY-COMPLETENESS`,
+  issue #606, opened 2026-11-25).** Recorded in
+  [`OBLIGATIONS.md`](OBLIGATIONS.md) as `Introduced in: stdCSS-3 / v0.3.2`
+  at status `open`, backed by the feasibility sketch in
+  [`TAXONOMY.md`](TAXONOMY.md) (*Completeness feasibility decision*). No
+  completeness theorem is claimed for `stdCSS-3` / `v0.3.2`, and deliberate
+  judgment incompleteness is unchanged. The fold record:
+  1. *Row:* new metatheorem (§4.1, axis 4).
+  2. *Why additive:* the obligation is new and `open`. It changes the
+     statement of no existing metatheorem and asserts nothing.
+  3. *Evidence:* the feasibility sketch only; it claims no theorem.
+  4. *Not yet covered:* the obligation has no `discharged-through` value.
+  5. *Owed:* its own discharge, or a dated restriction of its statement.
+
+Neither fold extends a `discharged-through` value. A reader of
+"`discharged-through` `stdCSS-3`" reads it on the interfaces and instances
+named in the metatheorem's disposition (§6), which from `v0.3.2` on is
+narrower than everything `stdCSS-3` contains.
+
+## 5.4 Candidate next ordinal (`stdCSS-4` / `v0.4.0`)
+
+No items are currently staged for `stdCSS-4` / `v0.4.0`: by maintainer
+decision on 2026-11-26, issues #572 and #606 were folded into `stdCSS-3` /
+`v0.3.2` (§5.3). The next shape change under §4.1 that is not folded opens
+`stdCSS-4` / `v0.4.0`.
 
 ## 6. Item-level conventions and owners
 
 Declared here; applied where each item is owned.
 
-- **`introduced-in`** — the release that first admitted the item. Absent means
- `stdCSS-1`.
-- **`discharged-through`** — the latest release for which the item's proof has
- been (re-)established.
+- **`introduced-in`** — the release that first published the item, written
+ `<ordinal> / <tag>` (for example `stdCSS-3` / `v0.3.1`). Absent means
+ `stdCSS-1`. An item admitted on `main` and not yet tagged reads
+ `<ordinal>` followed by `(unreleased)`; the tag is filled in when the release
+ is prepared.
+- **`discharged-through`** — the latest ordinal for which the item's proof has
+ been (re-)established, covering the interfaces and instances its disposition
+ names (§4.2). An interface folded into that ordinal (§4.1, *Fold*) is not
+ covered until a disposition names it.
 
 | Fact | Owner |
 | --- | --- |
@@ -586,10 +910,10 @@ This note references those files; it does not restate their contents.
 
 - no retrofit of `stdCSS-1` tags onto existing entries;
 - no mechanization in the current phase;
-- no single global version counter and no per-layer counters beyond the
- line/ordinal scheme.
-- no release-ordinal or software-MINOR bump for machine-only or
- documentation work; such changes are PATCH only (§4.1, §8).
+- no version counter beyond the line/ordinal and the software tag, and no
+ per-layer counters;
+- no release-ordinal or software-MINOR bump for inventory, proof,
+ machine-only, or documentation work; such changes are PATCH only (§4.1, §8).
 
 **Dated note.** The six Gate 6 CSS-level productions
 (`P-REBASE`, `E-LOCAL-HADAMARD`, `E-PEEL`, `E-PUNCTURE`, `E-EXTEND`,
@@ -603,53 +927,50 @@ update-ownership table of `spec/STATE_MODEL.md` §4 and `machine/state.json`.
 
 ## 8. Software release track (`vMAJOR.MINOR.PATCH`)
 
-The repository is also released as a software artifact, independently of the
-calculus line (§3, §5). The two tracks are cross-referenced but never merged:
-a calculus line names a mathematical object; a software release names a build.
+The repository is released as a software artifact, tagged
+`vMAJOR.MINOR.PATCH` (e.g. `v0.1.0`; the bare `v0.1` form is legacy). A tag
+pins the whole repository (`spec/`, `machine/`, `lean/`, docs, CI), and with
+it the exact inventory of the calculus. The tag and the calculus ordinal are
+one track: each version component answers one question.
 
-- **Track A — calculus line** (`stdCSS-n`): normative content. Bump rules in
- §4 and §4.1.
-- **Track B — software release** (`vMAJOR.MINOR.PATCH`): the repository as
- distributed (`machine/`, `lean/`, `spec/`, docs, CI). Tag form is
- `vMAJOR.MINOR.PATCH` (e.g. `v0.1.0`); the bare `v0.1` form is legacy.
+| Component | Question it answers | Bumps when |
+| --- | --- | --- |
+| **MAJOR** | Is the research objective met? | `v1.0.0`: the `stdCSS` stopping point is reached ([`../design/SCOPE.md`](../design/SCOPE.md) §3: its in-scope transformations, properties, and cells are admitted and the soundness metatheorem is mechanized for the current ordinal, with every admitted instance named in its dispositions and none `open`). After `v1.0.0`: a new calculus line (new state model), a non-conservative change breaking existing derivations, or removal of an admitted operation. |
+| **MINOR** | Which calculus is this, up to folds? | A shape change under §4.1 that is not folded, together with the new ordinal and its §5 row. From `v0.4.0` on, software `v0.N.x` publishes `stdCSS-N`. A folded shape change (§4.1, *Fold*) ships at PATCH; the tag, not the ordinal, then fixes the exact interfaces (§3). |
+| **PATCH** | How much of it is admitted, proved, and usable? | Anything else: inventory instances meeting §4.2, proofs and advanced `discharged-through` values, gate ratifications and refusal decisions, consumer and machine features and fixes, transcription fixes, documentation, CI, Lean hygiene. |
 
-**Bump criteria (Track B):**
+**The bump is computed; a fold is a recorded decision.** When a release is
+prepared, each change merged since the previous tag is classified by the §4.1
+table, and each instance among them is checked against §4.2: the release
+preparation records, per instance, where each contract item is met. The
+release is a MINOR if it contains a shape change that is not folded (§4.1,
+*Fold*: additive, folded by dated maintainer decision, with its fold record);
+otherwise it is a PATCH. Whether a shape change is
+eligible for a fold is computed from §4.1; whether to fold it is the
+maintainer's decision, never an agent's. An instance
+that fails §4.2 is completed before the tag or reverted; it never ships as
+inventory. Milestones and issue titles state intent and do not fix the
+label.
 
-| Bump | When |
-| --- | --- |
-| **PATCH** (`v0.1.x`) | No change to any calculus axis, admitted rung, or obligation status, except a staged admission under the rule below. Documentation fixes, transcription fixes, CI/pinned-replay re-pinning, consumer bug fixes that do not alter admitted semantics, accepted machine-side candidates (§5.1), Lean hygiene. All validation gates (lint, pytest, fixture conformance, priced harness, `lake build`) green. |
-| **MINOR** (`v0.2.0`) | A new calculus ordinal/row (conservative addition), or admission of new conditional cells as `transition-defined`, or an advanced `discharged-through`, or a new advertised consumer capability. Normally accompanied by a `stdCSS-(n+1)` row (§5). |
-| **MAJOR** (`v1.0.0`) | A new calculus line (new state model), a non-conservative change breaking existing derivations, removal of an admitted operation, or — by convention — all in-scope obligations discharged and the soundness metatheorem mechanized. |
+**Every tag has a §5 row.** A PATCH row names the same ordinal as the row
+before it and records the inventory and discharge status at that tag. A
+MINOR row names the new ordinal and records the re-discharge status the §4
+audit reached; a metatheorem not yet re-established keeps its previous
+`discharged-through` value.
 
-**Staged admissions may ride a PATCH.** A PATCH may carry axis-2 or axis-3
-content (new productions, new conditional cells, and the rungs and obligations
-minted with them), together with the consumer capabilities that realize it,
-when all of the following hold:
+**Alignment.** The earlier tags do not follow the equation above: `v0.1.0`
+published `stdCSS-2`, and `v0.2.0`, `v0.3.0`, `v0.3.1`, and `v0.3.2` publish
+`stdCSS-3`. They are not renumbered. The first MINOR under this section is
+`v0.4.0`, which publishes `stdCSS-4`, so the two numbers agree from there.
 
-1. a dated note in this file already stages that content on the next §5
-   release row, with its operation or judgment set stated;
-2. each consumer capability the PATCH ships is named in a dated §5.1 note as
-   staged on that same row; a capability not so named is a MINOR under the
-   table above;
-3. the PATCH appends no §5 row and advances no `discharged-through` value;
-4. the §4 re-discharge obligations are deferred to the audit of that next
-   MINOR;
-5. the changelog records the staging and the label decision.
-
-The PATCH records no calculus-row fact of its own. The ordinal bump and the
-row append fall due together at the next MINOR, which is the release that
-records the staged content.
-
-**Invariant.** A software MINOR lands together with the calculus-row change it
-records: a new §5 row, a new ordinal, or an advanced `discharged-through`. A
-release with no such change is a PATCH, and a PATCH never appends a §5 row.
-This keeps the line number meaningful ("which calculus").
+**Validation.** Every release, of either kind, requires the validation gates
+green on the release commit: lint, pytest, fixture conformance, the priced
+harness, and `lake build`.
 
 **Tagging and publishing are maintainer-only** (AGENTS.md *Hard rules*). A
-release is prepared (four-axis pin recorded, changelog drafted, `discharged-
-through` values staged) but not tagged by an agent; the maintainer appends the
-release row and tags in the same change.
-
+release is prepared (four-axis pin recorded, changelog drafted, row drafted)
+but not tagged by an agent; the maintainer appends the release row and tags
+in the same change.
 
 **Dated note (2026-11-16).** The four rank axioms of
 `lean/extra/ClosedK.lean` (`hgp_rankX`, `hgp_rankZ`, `product_rankX`,
@@ -659,6 +980,14 @@ condition. The arithmetic that combines the ranks
 (`hgp_arith`, `product_arith`) remains proved. This is a mechanization
 status change only: it advances no `discharged-through` value, creates no
 new calculus row, and does not make the rank identities `established`.
+
+**Dated note (2026-11-24).** The four rank statements of the note above
+are theorems of `lean/CodeCalculus/ClosedK.lean`, an audited module, and
+`lean/` declares no axiom (`AXIOMS.md`). This is a mechanization status
+change only: it advances no `discharged-through` value and creates no new
+calculus row. Whether the closed forms for $k$ of `L-HGP` and `A-PRODUCT`
+now read `established` is a maintainer decision and is not made by this
+note.
 
 **Dated note (2026-11-16, CI).** The validation workflow's scaled
 conformance case count was reduced to `SCALED_CASES=500`; this is a machine-only change with no calculus-axis effect and no
